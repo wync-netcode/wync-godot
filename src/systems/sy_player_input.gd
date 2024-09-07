@@ -1,5 +1,5 @@
-class_name SyPlayerInput
 extends System
+class_name SyPlayerInput
 
 func _ready():
 	components = "coplayerinput,coactorinput"
