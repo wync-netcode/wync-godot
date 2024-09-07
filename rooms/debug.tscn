@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://dw363hxpjmwto"]
+
+[ext_resource type="Script" path="res://rooms/try_json.gd" id="1_fuys8"]
+
+[node name="Debug" type="Node2D"]
+
+[node name="TryJson" type="Node" parent="."]
+script = ExtResource("1_fuys8")

@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3 uid="uid://h60skvil25dc"]
+
+[ext_resource type="Script" path="res://rooms/lab0/co_collider.gd" id="1_k474c"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_rhwx1"]
+
+[node name="CoCollider" type="Node2D"]
+script = ExtResource("1_k474c")
+
+[node name="CharacterBody2D" type="CharacterBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D"]
+shape = SubResource("RectangleShape2D_rhwx1")

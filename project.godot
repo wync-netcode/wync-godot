@@ -1,0 +1,30 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="combies-ecs"
+run/main_scene="res://rooms/debug.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[autoload]
+
+ECS="*res://addons/gs_ecs/ecs.gd"
+Logger="*res://addons/gs_logger/logger.gd"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gs_ecs/plugin.cfg", "res://addons/gs_logger/plugin.cfg")
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
