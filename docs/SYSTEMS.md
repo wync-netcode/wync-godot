@@ -4,13 +4,13 @@
 
 Behaviour only.
 
-## PlayerInputSys
+## SyPlayerInput
 * PlayerInput
 * Input
 
 It fills player inputs
 
-## AIInputSys
+## SyAIInput
 * AIInput
 * Input
 * Position
@@ -18,7 +18,7 @@ It fills player inputs
 
 Uses pathfinding to generate AI inputs
 
-## ActorMovementSys
+## SyActorMovement
 * ActorId
 * Position
 * Velocity
@@ -26,7 +26,7 @@ Uses pathfinding to generate AI inputs
 
 Moves actors like players and zombies
 
-## ProjectileMovementSys
+## SyProjectileMovement
 * Position
 * Velocity
 * Collider
@@ -34,7 +34,7 @@ Moves actors like players and zombies
 
 Moves projectiles
 
-## ReloadWeaponSys
+## SyReloadWeapon
 * WeaponInventory
 * HeldWeapon
 * Input
@@ -42,7 +42,7 @@ Moves projectiles
 
 Handles reloading a weapon
 
-## ShootWeaponSys
+## SyShootWeapon
 * WeaponInventory
 * HeldWeapon
 * Input
@@ -54,7 +54,7 @@ Handles reloading a weapon
 - Should we buffer shots?
 - If collided with actor need to get health component.
 
-## ExplosionsSys
+## SyExplosions
 * ActorId
 * Position
 * CircleCollider
@@ -65,14 +65,14 @@ Handles reloading a weapon
 - Affects nearby actors.
 - If collided with actor need to get health component.
 
-## SpawnerSys
+## SySpawner
 * Position
 * SpawnerData
 * RoundTrackerSingleton
 
 Spawns enemies.
 
-## StoreSys
+## SyStore
 * PlayerInput
 * Collider
 * WeaponInventory
@@ -82,7 +82,7 @@ Spawns enemies.
 - Opens on proximity.
 - Allows to buy weapons and ammo.
 
-## HUDSys
+## SyHUD
 * HUDData
 * PlayerTrackerSingleton
 * RoundTrackerSingleton

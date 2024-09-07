@@ -3,6 +3,7 @@ extends Node
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+	"""
 	# Using the JsonClassConverter 
 	var player = StaticData.new()
 	player.Player = StaticPlayer.new()
@@ -22,3 +23,7 @@ func _ready() -> void:
 		print(new_player.Player.max_health)
 		print(JsonClassConverter.class_to_json(new_player))
 		print(new_player.Weapons[0].damage)
+		"""
+	
+	print(StaticData.singleton.Player.max_health)
+	print(StaticData.singleton.Weapons[StaticData.WEAPON.ROCKET].damage)

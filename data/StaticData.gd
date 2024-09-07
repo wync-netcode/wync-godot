@@ -1,3 +1,4 @@
+extends Node
 class_name StaticData
 
 var Player: StaticPlayer
@@ -8,7 +9,9 @@ var Explosion: Array[StaticExplosion]
 enum WEAPON {
 	MELEE,
 	PISTOL,
-	UZI
+	SHOTGUN,
+	UZI,
+	ROCKET
 }
 
 enum ZOMBIE {
@@ -22,3 +25,8 @@ enum EXPLOSION {
 	ROCKET,
 	ZOMBIE
 }
+
+static var singleton: StaticData
+
+func _ready():
+	StaticData.singleton = JsonClassConverter.json_file_to_class(StaticData, "res://data/data.json")

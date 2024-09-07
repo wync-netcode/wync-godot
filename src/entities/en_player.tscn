@@ -1,0 +1,50 @@
+[gd_scene load_steps=13 format=3 uid="uid://4o33ca5n1fw6"]
+
+[ext_resource type="Script" path="res://addons/gs_ecs/entity.gd" id="1_fi820"]
+[ext_resource type="Script" path="res://src/components/co_actor.gd" id="1_ncl83"]
+[ext_resource type="Script" path="res://src/components/co_velocity.gd" id="2_hsf2x"]
+[ext_resource type="PackedScene" uid="uid://crmc58c1fac1p" path="res://src/components/co_collider.tscn" id="3_xkv6g"]
+[ext_resource type="Script" path="res://src/components/co_health.gd" id="5_5tuql"]
+[ext_resource type="Script" path="res://src/components/co_player_input.gd" id="6_i3pb1"]
+[ext_resource type="Script" path="res://src/components/co_shield.gd" id="6_il6qs"]
+[ext_resource type="PackedScene" uid="uid://bvb7cfhjfcegr" path="res://src/components/co_actor_renderer.tscn" id="7_4yv8f"]
+[ext_resource type="Script" path="res://src/components/co_actor_input.gd" id="7_exlt3"]
+[ext_resource type="Script" path="res://src/components/co_weapon_inventory.gd" id="9_pj8os"]
+[ext_resource type="Script" path="res://src/components/co_weapon_held.gd" id="10_poc8g"]
+[ext_resource type="Script" path="res://src/components/co_money.gd" id="12_0dkhu"]
+
+[node name="EnPlayer" type="Node2D"]
+script = ExtResource("1_fi820")
+
+[node name="Components" type="Node2D" parent="."]
+
+[node name="CoActor" type="Node" parent="Components"]
+script = ExtResource("1_ncl83")
+
+[node name="CoVelocity" type="Node" parent="Components"]
+script = ExtResource("2_hsf2x")
+
+[node name="CoCollider" parent="Components" instance=ExtResource("3_xkv6g")]
+
+[node name="CoActorRenderer" parent="Components" instance=ExtResource("7_4yv8f")]
+
+[node name="CoPlayerInput" type="Node" parent="Components"]
+script = ExtResource("6_i3pb1")
+
+[node name="CoActorInput" type="Node" parent="Components"]
+script = ExtResource("7_exlt3")
+
+[node name="CoHealth" type="Node" parent="Components"]
+script = ExtResource("5_5tuql")
+
+[node name="CoWeaponInventory" type="Node" parent="Components"]
+script = ExtResource("9_pj8os")
+
+[node name="CoWeaponHeld" type="Node" parent="Components"]
+script = ExtResource("10_poc8g")
+
+[node name="CoShield" type="Node" parent="Components"]
+script = ExtResource("6_il6qs")
+
+[node name="CoMoney" type="Node" parent="Components"]
+script = ExtResource("12_0dkhu")

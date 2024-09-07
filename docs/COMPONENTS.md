@@ -27,7 +27,7 @@ time_shield_activated: int
 ### PlayerInput
 void
 
-### Input
+### ActorInput
 movement_dir: Vector2
 aim: Vector2
 shoot: bool
@@ -35,16 +35,16 @@ reload: bool
 open_store: bool
 
 ### WeaponInventory
-Inventory: Array[StoredWeaponCom]
+Inventory: Array[CoWeaponStored]
 
-### StoredWeapon
+### WeaponStored (never used as a component)
 weapon_id: enum
 bullets_total_left: int
 bullets_magazine_left: int
 time_last_shot: int # to avoid quick switching
 infinite_ammo: bool # for bots
 
-### HeldWeapon
+### WeaponHeld
 weapon_id: enum
 reloading: bool
 time_started_reloading: int
@@ -72,7 +72,7 @@ base_damage: int
 open: bool
 ui_node: RID
 
-### HUDData
+### HUD
 ui_node: RID
 
 ### SpawnerData

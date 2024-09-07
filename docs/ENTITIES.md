@@ -11,10 +11,10 @@ Only entities here.
 * ActorRenderer
 
 * PlayerInput
-* Input
+* ActorInput
 * Health
 * WeaponInventory
-* HeldWeapon
+* WeaponHeld
 
 * Shield
 * Money
@@ -27,9 +27,9 @@ Only entities here.
 * ActorRenderer
 
 * AIInput
-* Input
+* ActorInput
 * Health
-* HeldWeapon
+* WeaponHeld
 
 ## ExplosiveZombie
 * (extends RegularZombie)
