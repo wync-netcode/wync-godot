@@ -4,7 +4,7 @@ var id: int
 var name: String
 var pellet_count: int
 var magazine_size: int
-var spread: int
+var spread_deg: int
 var shoot_delay: int
 var reload_delay: int
 var bullet_type: int # (raycast or projectile)

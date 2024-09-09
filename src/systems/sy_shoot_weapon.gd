@@ -48,31 +48,57 @@ func on_process_entity(entity: Entity, _delta: float):
 		return
 	if has_bullets:
 		weapon_stored.bullets_magazine_left -= 1
-	
 
 	# perform raycast
-	# account for weapon reach
+	# + account for weapon reach
 
 	var raycast_ent = EntitySingletons.singleton.get_entity("EnRaycastSingleton")
-	var raycast = raycast_ent.get_component("coraycast") as RayCast2D
-	var ray_dir = node2d.global_position.direction_to(input.aim)
-	var reach = (raycast as CoRaycast).default_reach
+	var raycast_co = raycast_ent.get_component("coraycast") as CoRaycast
+	var raycast: RayCast2D = raycast_co as Node as RayCast2D
+	var pellets: int = StaticData.singleton.Weapons[weapon.weapon_id].pellet_count
+	var spread: int = StaticData.singleton.Weapons[weapon.weapon_id].spread_deg
+	var aim_angle: float = node2d.global_position.angle_to_point(input.aim)
+	var reach = raycast_co.default_reach
 	if StaticData.singleton.Weapons[weapon_stored.weapon_id].reach != 0:
 		reach = StaticData.singleton.Weapons[weapon_stored.weapon_id].reach
-	
-	raycast.global_position = node2d.global_position
-	raycast.target_position = ray_dir * reach
-	
+
 	raycast.clear_exceptions()
 	raycast.add_exception(collider as CharacterBody2D)
-	raycast.force_raycast_update()
-	if not raycast.is_colliding():
+	raycast.global_position = node2d.global_position
+
+	# make one of the pellets have perfect accuracy
+
+	if pellets > 1:
+		bullet_raycast(weapon.weapon_id, raycast, aim_angle, reach)
+		pellets -= 1
+
+	# calculate the rest
+
+	for i in range(pellets):
+		var angle = aim_angle + deg_to_rad(spread) * randf_range(-1, 1)
+		bullet_raycast(weapon.weapon_id, raycast, angle, reach)
+
+
+func bullet_raycast(weapon_id: int, raycast: RayCast2D, angle: float, reach: float):
+	var entity = bullet_raycast_get_entity(raycast, angle, reach)
+	if not entity:
 		return
-	var ray_collider = raycast.get_collider() as Node2D
-	print("collider ", ray_collider)
-
-
-	# TODO: find a more elegant way of doing this
-	var collider_entity = ECSUtils.get_entity_from_component(ray_collider as Component)
-	print("collider entity ", collider_entity)
+	if not entity.has_component(CoHealth.label):
+		return
+	var damage = StaticData.singleton.Weapons[weapon_id].damage
+	print("DAMAGE entity: %s for damage: %s" % [entity, damage])
 	
+	
+func bullet_raycast_get_entity(raycast: RayCast2D, angle: float, reach: float) -> Entity:
+	raycast.target_position = Vector2.from_angle(angle) * reach
+	raycast.force_raycast_update()
+	
+	if raycast.is_colliding():
+		var collider_node = raycast.get_collider() as Node2D
+		print("raycast collided with node ", collider_node)
+
+		if collider_node as Component:
+			var collider_entity = ECSUtils.get_entity_from_component(collider_node as Component) 
+			return collider_entity
+
+	return null

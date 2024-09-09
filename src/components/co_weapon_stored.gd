@@ -1,5 +1,6 @@
 extends Component
 class_name CoWeaponStored
+static var label = "coweaponstored"
 
 var weapon_id: StaticData.WEAPON
 var bullets_total_left: int

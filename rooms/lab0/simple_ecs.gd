@@ -14,8 +14,8 @@ func _ready() -> void:
 	# give it a weapon
 	var inventory = player.get_component("coweaponinventory") as CoWeaponInventory
 	var melee = CoWeaponStored.new()
-	melee.weapon_id = StaticData.singleton.WEAPON.SHOTGUN
-	melee.bullets_total_left = 30
+	melee.weapon_id = StaticData.singleton.WEAPON.UZI
+	melee.bullets_total_left = 300
 	melee.bullets_magazine_left = 2
 	inventory.inventory.append(melee)
 	var held_weapon = player.get_component("coweaponheld") as CoWeaponHeld

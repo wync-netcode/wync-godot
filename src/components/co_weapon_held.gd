@@ -1,5 +1,6 @@
 extends Component
 class_name CoWeaponHeld
+static var label = "coweaponheld"
 
 var weapon_id: StaticData.WEAPON
 var reloading: bool

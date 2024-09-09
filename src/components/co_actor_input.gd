@@ -1,5 +1,6 @@
 extends Component
 class_name CoActorInput
+static var label = "coactorinput"
 
 var movement_dir: Vector2
 var aim: Vector2

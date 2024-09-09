@@ -8,7 +8,7 @@ Data structures for static data only.
 * name: string
 * pellet_count: int
 * magazine_size: int
-* spread: int
+* spread_deg: int
 * shoot_delay: int
 * reload_delay: int
 * bullet_type: enum (raycast or projectile)
