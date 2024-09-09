@@ -87,7 +87,7 @@
 			"ammunition_price": 100,
 			"ammunition_size": 100,
 			"reach": 0,
-			"projectile_speed": 0,
+			"projectile_speed": 500,
 			"projectile_sprite": "RID(0)"
 		}
 	],

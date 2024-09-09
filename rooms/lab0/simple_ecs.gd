@@ -1,6 +1,8 @@
-extends Node
+extends ECSRoot
 
 func _ready() -> void:
+	super()
+	
 	Logger.set_logger_level(Logger.LOG_LEVEL_NONE)
 	ECS.update()
 	
@@ -15,29 +17,29 @@ func _ready() -> void:
 	var inventory = player.get_component("coweaponinventory") as CoWeaponInventory
 	
 	var w = CoWeaponStored.new()
-	w.weapon_id = StaticData.singleton.WEAPON.MELEE
+	w.weapon_id = StaticData.WEAPON.MELEE
 	inventory.inventory.append(w)
 	
 	w = CoWeaponStored.new()
-	w.weapon_id = StaticData.singleton.WEAPON.PISTOL
+	w.weapon_id = StaticData.WEAPON.PISTOL
 	w.bullets_total_left = 300
 	w.bullets_magazine_left = 2
 	inventory.inventory.append(w)
 
 	w = CoWeaponStored.new()
-	w.weapon_id = StaticData.singleton.WEAPON.UZI
+	w.weapon_id = StaticData.WEAPON.UZI
 	w.bullets_total_left = 300
 	w.bullets_magazine_left = 2
 	inventory.inventory.append(w)
 
 	w = CoWeaponStored.new()
-	w.weapon_id = StaticData.singleton.WEAPON.SHOTGUN
+	w.weapon_id = StaticData.WEAPON.SHOTGUN
 	w.bullets_total_left = 300
 	w.bullets_magazine_left = 2
 	inventory.inventory.append(w)
 
 	w = CoWeaponStored.new()
-	w.weapon_id = StaticData.singleton.WEAPON.ROCKET
+	w.weapon_id = StaticData.WEAPON.ROCKET
 	w.bullets_total_left = 300
 	w.bullets_magazine_left = 1
 	inventory.inventory.append(w)

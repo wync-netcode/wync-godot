@@ -1,0 +1,33 @@
+[gd_scene load_steps=8 format=3 uid="uid://c51bfdd3ckhnk"]
+
+[ext_resource type="Script" path="res://addons/gs_ecs/entity.gd" id="1_vs0dl"]
+[ext_resource type="Script" path="res://src/components/co_actor.gd" id="2_6fjdl"]
+[ext_resource type="Script" path="res://src/components/co_velocity.gd" id="3_sk7nh"]
+[ext_resource type="PackedScene" uid="uid://cf0xt5y7pclvb" path="res://src/components/co_projectile_renderer.tscn" id="5_eh4a8"]
+[ext_resource type="Script" path="res://src/components/co_projectile_data.gd" id="5_qmshh"]
+[ext_resource type="PackedScene" uid="uid://c2r10to1fm6gn" path="res://src/components/co_area.tscn" id="6_peyxx"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_xapm8"]
+
+[node name="EnRocket" type="Node2D"]
+script = ExtResource("1_vs0dl")
+
+[node name="Components" type="Node2D" parent="."]
+
+[node name="CoActor" type="Node" parent="Components"]
+script = ExtResource("2_6fjdl")
+
+[node name="CoVelocity" type="Node" parent="Components"]
+script = ExtResource("3_sk7nh")
+
+[node name="CoProjectileData" type="Node" parent="Components"]
+script = ExtResource("5_qmshh")
+
+[node name="CoProjectileRenderer" parent="Components" instance=ExtResource("5_eh4a8")]
+
+[node name="CoArea" parent="Components" instance=ExtResource("6_peyxx")]
+collision_layer = 4
+collision_mask = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Components/CoArea"]
+shape = SubResource("RectangleShape2D_xapm8")

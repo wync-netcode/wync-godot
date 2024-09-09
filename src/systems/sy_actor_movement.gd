@@ -14,17 +14,17 @@ func on_process_entity(entity: Entity, _delta: float):
 
 	# apply friction
 	if input.movement_dir.length() == 0:
-		var friction: float = StaticData.singleton.Player.friction * _delta
+		var friction: float = StaticData.entity.Player.friction * _delta
 		if velocity.velocity.length() < friction:
 			velocity.velocity = Vector2.ZERO
 		else:
 			velocity.velocity -= velocity.velocity.normalized() * friction
 
 	# apply inputs to velocity
-	velocity.velocity += input.movement_dir * StaticData.singleton.Player.acc * _delta
+	velocity.velocity += input.movement_dir * StaticData.entity.Player.acc * _delta
 
 	# cap
-	var cap = StaticData.singleton.Player.max_speed
+	var cap = StaticData.entity.Player.max_speed
 	if velocity.velocity.length() > cap:
 		velocity.velocity = velocity.velocity.normalized() * cap
 
@@ -33,6 +33,4 @@ func on_process_entity(entity: Entity, _delta: float):
 	body.move_and_slide()
 	node2d.global_position = body.global_position
 	body.position = Vector2.ZERO
-	#node2d.position += velocity.velocity
-	
-	#print("velocity ", velocity.velocity.length())
+	velocity.velocity = body.velocity

@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://cw8uqs2q746kt"]
+[gd_scene load_steps=16 format=3 uid="uid://cw8uqs2q746kt"]
 
 [ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_k1as7"]
 [ext_resource type="Script" path="res://data/StaticData.gd" id="2_c1wwm"]
@@ -14,6 +14,7 @@
 [ext_resource type="Script" path="res://src/systems/sy_reload_weapon.gd" id="11_8yq6p"]
 [ext_resource type="Script" path="res://src/systems/sy_health.gd" id="12_y0sey"]
 [ext_resource type="Script" path="res://src/systems/sy_switch_weapon.gd" id="13_u7q3c"]
+[ext_resource type="Script" path="res://src/systems/sy_projectile_movement.gd" id="14_4neha"]
 
 [node name="Lab1" type="Node2D"]
 script = ExtResource("1_k1as7")
@@ -26,11 +27,13 @@ script = ExtResource("3_41epn")
 
 [node name="EnRaycastSingleton" parent="EntitySingletons" instance=ExtResource("4_ygxyn")]
 
-[node name="EnMap" type="Node2D" parent="."]
+[node name="Entities" type="Node" parent="."]
 
-[node name="MapDemo0" parent="EnMap" instance=ExtResource("5_a5fj4")]
+[node name="EnMap" type="Node2D" parent="Entities"]
 
-[node name="EnPlayer" parent="." instance=ExtResource("2_uqay5")]
+[node name="MapDemo0" parent="Entities/EnMap" instance=ExtResource("5_a5fj4")]
+
+[node name="EnPlayer" parent="Entities" instance=ExtResource("2_uqay5")]
 position = Vector2(153, 90)
 
 [node name="SyVelocity" type="Node" parent="."]
@@ -48,11 +51,14 @@ script = ExtResource("7_in0h3")
 [node name="SyReloadWeapon" type="Node" parent="."]
 script = ExtResource("11_8yq6p")
 
+[node name="SySwitchWeapon" type="Node" parent="."]
+script = ExtResource("13_u7q3c")
+
 [node name="SyHealth" type="Node" parent="."]
 script = ExtResource("12_y0sey")
 
-[node name="SySwitchWeapon" type="Node" parent="."]
-script = ExtResource("13_u7q3c")
+[node name="SyProjectileMovement" type="Node" parent="."]
+script = ExtResource("14_4neha")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 

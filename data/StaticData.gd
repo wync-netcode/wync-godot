@@ -1,11 +1,6 @@
 extends Node
 class_name StaticData
 
-var Player: StaticPlayer
-var Weapons: Array[StaticWeapon]
-var Zombies: Array[StaticZombie]
-var Explosion: Array[StaticExplosion]
-
 enum WEAPON {
 	MELEE,
 	PISTOL,
@@ -26,7 +21,11 @@ enum EXPLOSION {
 	ZOMBIE
 }
 
-static var singleton: StaticData
+static var entity: EntityData
+
+# list reusable entities
+static var en_scn_player: PackedScene = preload("res://src/entities/en_player.tscn")
+static var en_scn_rocket: PackedScene = preload("res://src/entities/en_rocket.tscn")
 
 func _ready():
-	StaticData.singleton = JsonClassConverter.json_file_to_class(StaticData, "res://data/data.json")
+	StaticData.entity = JsonClassConverter.json_file_to_class(EntityData, "res://data/data.json")

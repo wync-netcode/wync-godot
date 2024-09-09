@@ -26,7 +26,7 @@ func on_process_entity(entity: Entity, _delta: float):
 			weapon_stored = w
 			break
 	if weapon_stored == null:
-		print("D: SySwitchWeapon: You don't have weapon ", StaticData.singleton.Weapons[input.switch_weapon_to].name)
+		print("D: SySwitchWeapon: You don't have weapon ", StaticData.entity.Weapons[input.switch_weapon_to].name)
 		input.switch_weapon_to = -1
 		return
 

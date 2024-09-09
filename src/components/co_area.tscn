@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://c2r10to1fm6gn"]
+
+[ext_resource type="Script" path="res://src/components/co_area.gd" id="1_1t70b"]
+
+[node name="CoArea" type="Area2D"]
+script = ExtResource("1_1t70b")

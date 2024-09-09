@@ -23,8 +23,8 @@ func on_process_entity(entity: Entity, _delta: float):
 
 	# finish reload
 
-	var magazine_size = StaticData.singleton.Weapons[weapon_stored.weapon_id].magazine_size
-	var finished_reloading = curr_time - weapon_held.time_started_reloading >= StaticData.singleton.Weapons[weapon_held.weapon_id].reload_delay
+	var magazine_size = StaticData.entity.Weapons[weapon_stored.weapon_id].magazine_size
+	var finished_reloading = curr_time - weapon_held.time_started_reloading >= StaticData.entity.Weapons[weapon_held.weapon_id].reload_delay
 
 	if weapon_held.reloading and finished_reloading:
 		weapon_held.reloading = false
