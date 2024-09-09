@@ -94,3 +94,6 @@ current_round: int
 ### PlayerTracker
 players: Array[PlayerEntity]
 
+### Raycast
+raycast: Raycast
+

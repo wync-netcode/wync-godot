@@ -2,10 +2,10 @@
 	"ScriptName": "StaticData",
 	"Player": {
 		"ScriptName": "StaticPlayer",
-		"acc": 100,
-		"friction": 80,
+		"acc": 500,
+		"friction": 400,
 		"max_health": 10,
-		"max_speed": 5,
+		"max_speed": 100,
 		"sprite": "RID(0)"
 	},
 	"Weapons": [
@@ -15,7 +15,7 @@
 			"pellet_count": 1,
 			"magazine_size": 0,
 			"spread": 0,
-			"shoot_delay": 20,
+			"shoot_delay": 500,
 			"reload_delay": 20,
 			"bullet_type": 0,
 			"damage": 88,
@@ -31,7 +31,7 @@
 			"pellet_count": 1,
 			"magazine_size": 20,
 			"spread": 0,
-			"shoot_delay": 20,
+			"shoot_delay": 300,
 			"reload_delay": 20,
 			"bullet_type": 0,
 			"damage": 88,

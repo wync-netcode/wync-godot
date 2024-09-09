@@ -36,17 +36,17 @@ Moves projectiles
 
 ## SyReloadWeapon
 * WeaponInventory
-* HeldWeapon
+* WeaponHeld
 * Input
-* (undirectly) StoredWeapon
+* (undirectly) WeaponStored
 
 Handles reloading a weapon
 
 ## SyShootWeapon
 * WeaponInventory
-* HeldWeapon
+* WeaponHeld
 * Input
-* (undirectly) StoredWeapon
+* (undirectly) WeaponStored
 * (undirectly) Collider
 * (undirectly) Health
 
@@ -76,7 +76,7 @@ Spawns enemies.
 * PlayerInput
 * Collider
 * WeaponInventory
-* (Indirectly) StoredWeapon
+* (Indirectly) WeaponStored
 * (Indirectly) Player entity's collider
 
 - Opens on proximity.

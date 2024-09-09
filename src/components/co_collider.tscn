@@ -4,10 +4,8 @@
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_rhwx1"]
 
-[node name="CoCollider" type="Node2D"]
+[node name="CoCollider" type="CharacterBody2D"]
 script = ExtResource("1_r2bk6")
 
-[node name="CharacterBody2D" type="CharacterBody2D" parent="."]
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_rhwx1")

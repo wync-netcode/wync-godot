@@ -72,3 +72,6 @@ Singletons hold global state.
 
 ## PlayerTrackerSingleton
 * PlayerTracker
+
+## RaycastSingleton
+* Raycast
