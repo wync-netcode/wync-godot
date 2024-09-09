@@ -36,6 +36,8 @@ script = ExtResource("7_exlt3")
 
 [node name="CoHealth" type="Node" parent="Components"]
 script = ExtResource("5_5tuql")
+max_health = null
+health = null
 
 [node name="CoWeaponInventory" type="Node" parent="Components"]
 script = ExtResource("9_pj8os")

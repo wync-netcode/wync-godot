@@ -87,6 +87,7 @@ func bullet_raycast(weapon_id: int, raycast: RayCast2D, angle: float, reach: flo
 		return
 	var damage = StaticData.singleton.Weapons[weapon_id].damage
 	print("DAMAGE entity: %s for damage: %s" % [entity, damage])
+	HealthUtils.generate_health_damage_event(entity, damage, 0)
 	
 	
 func bullet_raycast_get_entity(raycast: RayCast2D, angle: float, reach: float) -> Entity:

@@ -4,3 +4,4 @@ static var label = "cohealth"
 
 @export var max_health: int
 @export var health: int
+var damage_events: Array[CoHealthDamageEvent]
