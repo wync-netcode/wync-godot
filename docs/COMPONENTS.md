@@ -19,6 +19,11 @@ rect: Rect2D
 ### Health
 max_health: int
 health: int
+damage_events: Array[HealthDamageEvent]
+
+### HealthDamageEvent (subcomponent)
+damage: int
+player_id: int
 
 ### Shield
 shield_active: bool
@@ -33,11 +38,12 @@ aim: Vector2
 shoot: bool
 reload: bool
 open_store: bool
+switch_weapon_to: int = -1
 
 ### WeaponInventory
 Inventory: Array[CoWeaponStored]
 
-### WeaponStored (never used as a component)
+### WeaponStored (subcomponent)
 weapon_id: enum
 bullets_total_left: int
 bullets_magazine_left: int

@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://cw8uqs2q746kt"]
+[gd_scene load_steps=15 format=3 uid="uid://cw8uqs2q746kt"]
 
 [ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_k1as7"]
 [ext_resource type="Script" path="res://data/StaticData.gd" id="2_c1wwm"]
@@ -13,6 +13,7 @@
 [ext_resource type="PackedScene" uid="uid://d170xboi2dsfr" path="res://src/ui/info.tscn" id="10_n3ejj"]
 [ext_resource type="Script" path="res://src/systems/sy_reload_weapon.gd" id="11_8yq6p"]
 [ext_resource type="Script" path="res://src/systems/sy_health.gd" id="12_y0sey"]
+[ext_resource type="Script" path="res://src/systems/sy_switch_weapon.gd" id="13_u7q3c"]
 
 [node name="Lab1" type="Node2D"]
 script = ExtResource("1_k1as7")
@@ -49,6 +50,9 @@ script = ExtResource("11_8yq6p")
 
 [node name="SyHealth" type="Node" parent="."]
 script = ExtResource("12_y0sey")
+
+[node name="SySwitchWeapon" type="Node" parent="."]
+script = ExtResource("13_u7q3c")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 

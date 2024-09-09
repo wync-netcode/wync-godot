@@ -4,6 +4,11 @@
 
 Behaviour only.
 
+## SyHealth
+* Health
+
+Manages damage events and entity death
+
 ## SyPlayerInput
 * PlayerInput
 * Input
@@ -53,6 +58,12 @@ Handles reloading a weapon
 - Handles weapon shooting: Raycast, Projectiles.
 - Should we buffer shots?
 - If collided with actor need to get health component.
+
+## SySwitchWeapon
+* WeaponInventory
+* WeaponHeld
+* Input
+* (undirectly) WeaponStored
 
 ## SyExplosions
 * ActorId

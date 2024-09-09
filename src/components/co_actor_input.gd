@@ -7,3 +7,4 @@ var aim: Vector2
 var shoot: bool
 var reload: bool
 var open_store: bool
+var switch_weapon_to: int = -1
