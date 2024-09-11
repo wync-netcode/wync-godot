@@ -81,9 +81,12 @@ func _ready():
 func _enter_tree():
 	Logger.trace("[entity] _enter_tree")
 
-	# add self as an entity
-	ECS.add_entity(self)
-	on_enter_tree()
+	var world = ECS.find_world_up(self)
+	if world:
+		print("I found a world!", world.name, self)
+		# add self as an entity
+		ECS.add_entity(world, self)
+		on_enter_tree()
 	
 	
 func _exit_tree():

@@ -66,10 +66,12 @@ func _ready():
 	if ENABLED:		enabled = ENABLED
 	
 	var _components = components.to_lower().split(",")
-	ECS.add_system(self, _components)
-	
-	on_ready()
-	
+	var world = ECS.find_world_up(self)
+	if world:
+		print(world)
+		ECS.add_system(world, self, _components)
+		on_ready()
+
 	
 func _init():
 	Logger.trace("[system] _init")

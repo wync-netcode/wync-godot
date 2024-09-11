@@ -14,25 +14,43 @@
 
 extends Node
 
-# scene entities
-var entities = {}
+# Map<world_id: int, Map<entity_id: int, entity: Entity>>
+var world_entities = {}  
+
 # entities with a component
-var component_entities = {}
+# Map<comp_id: string, map<entity_id: int, comp: Comp>>
+var component_entities = {}  
+
 # a system processes entities with certain components
-var systems = {}
+# Map<world_id: int, map<system_name: string, system: System>>
+var world_systems = {}
+
 # the components filtered in a system
-var system_components = {}
+# Map<system_name: string, comp_names: Array<string>>
+var system_components = {}  
+
 # the entities in a given system
-var system_entities = {}
+# Map<world_id: int, map<system_name: string, entities: Array<Entity>>
+var world_system_entities = {}
+
 # a group represents a collection of systems
+# Map<group_name: string, group: Group>
 var groups = {}
+
 # systems in a group
+# Map<group_name: string, systems: Array<System>>
 var group_systems = {}
+
 # a list of entities to remove after group processing is complete
 var entity_remove_queue = []
 
-var is_dirty = false
-var do_clean = false
+# Map<world_id: int, world: World>
+var worlds = {}
+
+
+# Map<world_id: int, bool>
+var is_dirty = {}
+var do_clean = {}
 
 const version = "4.2-R1"
 
@@ -41,7 +59,7 @@ const version = "4.2-R1"
 # register a component
 func add_component(component):
 	Logger.trace("[ECS] add_component")
-	is_dirty = true
+
 	var _name = str(component.name).to_lower()
 	if has_component(_name):
 		Logger.warn("- component %s was already registered -- skipping" % [_name])
@@ -51,15 +69,20 @@ func add_component(component):
 	Logger.debug("- new component %s was registered" % [_name])
 
 # register an entity
-func add_entity(entity):
+func add_entity(world: World, entity):
 	Logger.trace("[ECS] add_entity")
-	is_dirty = true
 
 	var _id = entity.get_instance_id()
+	var _world_id = world.get_instance_id()
 	var _name = entity.name
 
+	is_dirty[_world_id] = true
+
+	if not has_world(_world_id):
+		add_world(world)
+
 	# warn if trying to use same instance_id and exit
-	if has_entity(_id):
+	if has_entity(_world_id, _id):
 		Logger.warn("- entity %s already exists, skipping")
 		return
 
@@ -74,7 +97,7 @@ func add_entity(entity):
 		entity.on_before_add()
 
 	# add the entity node reference using its instance_id as key
-	entities[_id] = entity
+	world_entities[_world_id][_id] = entity
 
 	Logger.debug("- entity %s:%s has been registered" % [entity, _name])
 
@@ -84,29 +107,38 @@ func add_entity(entity):
 
 
 # register a system
-func add_system(system, components = []):
+#func add_system(system, components = []):
+func add_system(world: World, system, components = []):
 	Logger.trace("[ECS] add_system")
-	is_dirty = true
 
-	var _id = str(system.name).to_lower()
+	var _sys_id = str(system.name).to_lower()
+	var _world_id = world.get_instance_id()
 
-	if has_system(_id):
-		Logger.warn("- system %s already exists, skipping" % [_id])
+	is_dirty[_world_id] = true
+
+	if has_system(_world_id, _sys_id):
+		Logger.warn("- system %s already exists, skipping" % [_sys_id])
 		return
+
+	if not has_world(_world_id):
+		Logger.warn("- world %s:%s not registered " % [world, world.name])
+		add_world(world)
+		Logger.debug("- world was registered")
 
 	# call on_before_add if available
 	if system.has_method("on_before_add"):
 		system.on_before_add()
 
 	# add the system and create an empty list of component names
-	systems[_id] = system
-	system_components[_id] = []
+	system_components[_sys_id] = []
+	world_systems[_world_id][_sys_id] = system
+	world_system_entities[_world_id][_sys_id] = []
 
 	# add the components to the system
 	for _component in components:
-		system_components[_id].append(_component.to_lower().strip_edges())
+		system_components[_sys_id].append(_component.to_lower().strip_edges())
 
-	Logger.debug("- system %s has been registered" % [_id])
+	Logger.debug("- system %s has been registered" % [_sys_id])
 
 	# call on_after_add if available
 	if system.has_method("on_after_add"):
@@ -116,7 +148,7 @@ func add_system(system, components = []):
 # register a group
 func add_group(group, systems = []):
 	Logger.trace("[ECS] add_group")
-	is_dirty = true
+	#is_dirty = true  # TODO support worlds
 
 	var _id = group.name.to_lower()
 
@@ -133,22 +165,50 @@ func add_group(group, systems = []):
 	Logger.debug("- group %s has been registered" % [_id])
 
 
+# register a world
+func add_world(world: World):
+	Logger.trace("[ECS] add_world")
+
+	var _id = world.get_instance_id()
+
+	# warn if trying to use same instance_id and exit
+	if has_world(_id):
+		Logger.warn("- world %s already exists, skipping")
+		return
+
+	# add the entity node reference using its instance_id as key
+	worlds[_id] = world
+	world_systems[_id] = {}
+	world_system_entities[_id] = {}
+	world_entities[_id] = {}
+	is_dirty[_id] = true
+	do_clean[_id] = false
+
+	Logger.debug("- world %s:%s has been registered" % [world, world.name])
+
+
 # remove everything from the framework
-func clean():
+func clean(world: World):
 	Logger.trace("[ECS] clean")
-	do_clean = true
+	do_clean[world.get_instance_id()] = true
 	
 
 # add an entity to a component
 func entity_add_component(entity, component):
 	Logger.trace("[ECS] entity_add_component")
-	is_dirty = true
 
+	var world = find_world_up(entity)
+	if not world:
+		Logger.warn("- world for entity %s:%s not found " % [entity, entity.name])
+		return
 	var _entity_id = entity.get_instance_id()
+	var _world_id = world.get_instance_id()
 
-	if not has_entity(_entity_id):
+	is_dirty[_world_id] = true
+
+	if not has_entity(_world_id, _entity_id):
 		Logger.warn("- entity %s:%s not registered " % [entity, entity.name])
-		add_entity(entity)
+		add_entity(_world_id, entity)
 		Logger.debug("- entity was registered")
 
 	var _id = str( component.name ).to_lower()
@@ -183,11 +243,17 @@ func entity_has_component(entity_id, component_name):
 
 func entity_remove_component(entity, component_name):
 	Logger.trace("[ECS] entity_remove_component")
-	is_dirty = true
 
+	var world = find_world_up(entity)
+	if not world:
+		Logger.warn("- world for entity %s:%s not found " % [entity, entity.name])
+		return
+	var _world_id = world.get_instance_id()
 	var _entity_id = entity.get_instance_id()
 
-	if not has_entity(_entity_id):
+	is_dirty[_world_id] = true
+
+	if not has_entity(_world_id, _entity_id):
 		Logger.warn("- entity %s:%s not registered " % [entity, entity.name])
 		return
 
@@ -202,7 +268,6 @@ func entity_remove_component(entity, component_name):
 	Logger.debug("- removed component %s for entity %s:%s" % [_id, entity, entity.name])
 
 	return
-
 
 
 # return component from the framework
@@ -224,17 +289,18 @@ func has_component(component_name):
 
 
 # returns true if entity already exists
-func has_entity(entity_id):
+func has_entity(world_id, entity_id):
 	Logger.trace("[ECS] has_entity")
-	if entities.has(entity_id):
+
+	if world_entities[world_id].has(entity_id):
 		return true
 
 	return false
 
 # returns true if the system already exists
-func has_system(system_name):
+func has_system(world_id, system_name):
 	Logger.trace("[ECS] has_system")
-	if systems.has(system_name):
+	if world_systems[world_id].has(system_name):
 		return true
 
 	return false
@@ -249,23 +315,55 @@ func has_group(group_name):
 	return false
 
 
-# rebuild system entities
-func rebuild():
-	Logger.trace("[ECS] rebuild")
-	system_entities.clear()
-	for _system in systems:
-		if systems[_system].enabled:
-			_add_system_entities(_system)
+# returns true if entity already exists
+func has_world(world_id: int):
+	Logger.trace("[ECS] has_world")
+	if worlds.has(world_id):
+		return true
 
-	is_dirty = false
+	return false
+
+
+# tries to find a World node up the tree
+func find_world_up(node: Node) -> World:
+	var _parent = node
+	
+	while true:
+		if _parent == null:
+			break
+		
+		if _parent is World:
+			return _parent
+
+		_parent = _parent.get_parent()
+
+	return null
+
+
+# rebuild system entities
+func rebuild(world_id):
+	Logger.trace("[ECS] rebuild")
+
+	world_system_entities[world_id].clear()
+	for _system in world_systems[world_id]:
+		if world_systems[world_id][_system].enabled:
+			_add_system_entities(world_id, _system)
+
+	is_dirty[world_id] = false
 
 
 # remove component from the framework
 func remove_component(entity, component_name):
 	Logger.trace("[ECS] remove_component")
-	is_dirty = true
 
+	var world = find_world_up(entity)
+	if not world:
+		Logger.warn("- world for entity %s:%s not found " % [entity, entity.name])
+		return
 	var _key = component_name.to_lower()
+	var _world_id = world.get_instance_id()
+
+	is_dirty[_world_id] = true
 
 	if has_component(_key):
 
@@ -284,31 +382,39 @@ func remove_component(entity, component_name):
 # queue an entity for removal
 func remove_entity(entity):
 	Logger.trace("[ECS] remove_entity")
-	is_dirty = true
+
+	var world = find_world_up(entity)
+	if not world:
+		Logger.warn("- world for entity %s:%s not found " % [entity, entity.name])
+		return
+	var _world_id = world.get_instance_id()
+	is_dirty[_world_id] = true
+
 	if (entity.has_method("get_instance_id")):
 		entity_remove_queue.append(entity.get_instance_id())
 
 
 # remove a system
-func remove_system(system_name):
+func remove_system(world: World, system_name):
 	
 	Logger.trace("[ECS] remove_system")
 
 	var _id = system_name.to_lower()
-	var _system = systems[system_name]
+	var _world_id = world.get_instance_id()
+	var _system = world_systems[_world_id][system_name]
 
-	if not has_system(_id):
+	if not has_system(_world_id, _id):
 		Logger.warn("- system %s is not registered, skipping" % [_id])
 		return
 
-	is_dirty = true
+	is_dirty[_world_id] = true
 
 	# call on_before_remove if available
 	if _system.has_method("on_before_remove"):
 		_system.on_before_remove()
 
 	# remove the system and create an empty list of component names
-	systems.erase(_id)
+	world_systems[_world_id].erase(_id)
 	system_components.erase(_id)
 
 	# call on_after_remove if available
@@ -319,13 +425,15 @@ func remove_system(system_name):
 
 
 # update the systems, specified by group name (or not)
-func update(group = null, delta = null):
+func update(world: World, group = null, delta = null):
 	Logger.fine("[ECS] update")
 
+	var world_id = world.get_instance_id()
+
 	# rebuild if dirty
-	if is_dirty:
+	if is_dirty[world_id]:
 		Logger.debug("- system is dirty, rebuilding indexes")
-		rebuild()
+		rebuild(world_id)
 
 	var _delta = delta
 
@@ -335,60 +443,62 @@ func update(group = null, delta = null):
 
 	# if no group passed, do all systems
 	if group == null:
-		for _system in systems.values():
+		for _system in world_systems[world_id].values():
 			if _system != null:
 				if _system.enabled:
-					_system.on_process(system_entities[str(_system.name).to_lower()], _delta)
+					print("%s %s %s %s" % [world.name, _system.name])
+					_system.on_process(world_system_entities[world_id][str(_system.name).to_lower()], _delta)
 
+	# FIXME
 	# process each system in this group group
-	if (group && group_systems.has(group)):
-		for _system_name in group_systems[group]:
-			if systems.has(_system_name):
-				var _system = systems[_system_name]
-				if _system != null:
-					if _system.enabled:
-						_system.on_process(system_entities[_system.name.to_lower()], _delta)
+	#if (group && group_systems.has(group)):
+	#	for _system_name in group_systems[group]:
+	#		if systems.has(_system_name):
+	#			var _system = systems[_system_name]
+	#			if _system != null:
+	#				if _system.enabled:
+	#					_system.on_process(world_system_entities[world_id][_system.name.to_lower()], _delta)
 
 	# clean up entities queued for removal
 	if entity_remove_queue.size() > 0:	
-		is_dirty = true
+		is_dirty[world_id] = true
 		for _entity_id in entity_remove_queue:
-			if entities.has(_entity_id):
+			if world_entities[world_id].has(_entity_id):
 				# when the entity has not yet been freed then
-				if entities[_entity_id] != null:
-					entities[_entity_id].queue_free()
-				entities.erase(_entity_id)
+				if world_entities[world_id][_entity_id] != null:
+					world_entities[world_id][_entity_id].queue_free()
+				world_entities[world_id].erase(_entity_id)
 
 	# and clear the queue
 	entity_remove_queue.clear()
 	
 	# full cleaning requested?
-	if (do_clean):
+	if (do_clean[world_id]):
 		
-		entities.clear()
+		world_entities[world_id].clear()
 		component_entities.clear()
-		systems.clear()
+		world_systems[world_id].clear()
 		system_components.clear()
-		system_entities.clear()
+		world_system_entities[world_id].clear()
 		groups.clear()
 		group_systems.clear()
 		entity_remove_queue.clear()
-		do_clean = false
+		do_clean[world_id] = false
 
 	return
 
 
-func _add_system_entities(system_name):
+func _add_system_entities(world_id, system_name):
 	Logger.trace("[ECS] _add_system_entities")
 
 	var _entities = []
 
-	for entity_id in entities:
+	for entity_id in world_entities[world_id]:
 
-		if entities[entity_id] == null:
+		if world_entities[world_id][entity_id] == null:
 			continue
 			
-		if not entities[entity_id].enabled:
+		if not world_entities[world_id][entity_id].enabled:
 			continue
 
 		var has_all_components = true
@@ -412,16 +522,18 @@ func _add_system_entities(system_name):
 				break
 
 		if has_all_components:
-			_entities.append(entities[entity_id])
+			_entities.append(world_entities[world_id][entity_id])
 
 
-	system_entities[system_name] = _entities
+	#system_entities[system_name] = _entities
+	world_system_entities[world_id][system_name] = _entities
 
 
 # do some cleanup
 func _exit_tree():
 	Logger.trace("[ECS] _exit_tree")
-	clean()
+	for world in worlds.values():
+		clean(world)
 
 
 func _init() -> void:
