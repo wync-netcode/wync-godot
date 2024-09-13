@@ -104,11 +104,11 @@ Updates the HUD. i.e. On screen, health, ammo, etc.
 
 ## SyTransportLoopbackConnection
 * CoClient
-* CoLoopbackPeers
+* CoIOPackets
 
 Singletons:
 * EnSingleServer
-    * CoLoopbackPeers
+    * CoIOPackets
     * CoServer
 
 - Clients connect (forcefully) to the singleton server
@@ -131,7 +131,6 @@ Singletons:
 
 ## SyTransportLoopback
 * CoIOPackets
-* CoLoopbackPeers
 
 Singletons:
 * EnSingleTransportLoopback

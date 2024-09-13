@@ -110,6 +110,7 @@ raycast: Raycast
 ticks: int
 
 ### CoTransportLoopback
+peers: Array[LoopbackPeer] = []  # registered peers
 packets: Array[LoopbackPacket] = []  # represent packets flying in the network
 lag: int = 0  # (ms)
 jitter: int = 0  # (ms) how many frames a package might be late
@@ -118,15 +119,12 @@ time_last_pkt_sent: int = 0
 jitter_unordered_packets: bool = false # Allows jitter to mangle packet order
 duplicated_packets_percentage: int = 0 # [0-100] Allows duplicated packets
 
+#### LoopbackPeer
+peer_packet_buffer: CoIOPackets # represents the peer location
+
 #### LoopbackPacket
 deliver_time: int # ms
 data: NetPacket
-
-### CoLoopbackPeers
-peers: Array[LoopbackPeer] # identified by array index
-
-#### LoopbackPeer
-peer_packet_buffer: CoIOPackets # represents the peer location
 
 ### CoIOPackets
 in_packets: Array[NetPacket]

@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3 uid="uid://cw8uqs2q746kt"]
+[gd_scene load_steps=26 format=3 uid="uid://cw8uqs2q746kt"]
 
 [ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_k1as7"]
 [ext_resource type="Script" path="res://data/StaticData.gd" id="2_c1wwm"]
@@ -14,6 +14,7 @@
 [ext_resource type="Script" path="res://src/systems/sy_shoot_weapon.gd" id="7_in0h3"]
 [ext_resource type="PackedScene" uid="uid://wtwk5yuubmba" path="res://src/entities/en_single_ticks.tscn" id="8_2bamu"]
 [ext_resource type="PackedScene" uid="uid://dwbgr3rmq2o0u" path="res://src/entities/en_client.tscn" id="8_lebon"]
+[ext_resource type="PackedScene" uid="uid://ck1h3hbitv3qy" path="res://src/entities/en_single_transport_loopback.tscn" id="9_sltp8"]
 [ext_resource type="PackedScene" uid="uid://d170xboi2dsfr" path="res://src/ui/info.tscn" id="10_n3ejj"]
 [ext_resource type="Script" path="res://src/systems/sy_reload_weapon.gd" id="11_8yq6p"]
 [ext_resource type="Script" path="res://src/systems/sy_health.gd" id="12_y0sey"]
@@ -21,7 +22,9 @@
 [ext_resource type="Script" path="res://src/systems/sy_projectile_movement.gd" id="14_4neha"]
 [ext_resource type="Script" path="res://src/systems/network/sy_transport_loopback_connection.gd" id="17_k7l5y"]
 [ext_resource type="Script" path="res://src/systems/network/sy_ticks.gd" id="18_tpfcl"]
+[ext_resource type="Script" path="res://src/systems/network/sy_transport_loopback_peer_register.gd" id="19_st7rm"]
 [ext_resource type="Script" path="res://src/systems/network/sy_state_extractor.gd" id="20_7h1p4"]
+[ext_resource type="Script" path="res://src/systems/network/sy_transport_loopback.gd" id="22_lja4e"]
 
 [node name="Lab1" type="Node2D"]
 script = ExtResource("1_k1as7")
@@ -47,6 +50,9 @@ script = ExtResource("3_41epn")
 singleton = true
 
 [node name="EnSingleTicks" parent="World/Entities" instance=ExtResource("8_2bamu")]
+singleton = true
+
+[node name="EnSingleTransportLoopback" parent="World/Entities" instance=ExtResource("9_sltp8")]
 singleton = true
 
 [node name="EnClient" parent="World/Entities" instance=ExtResource("8_lebon")]
@@ -79,6 +85,9 @@ script = ExtResource("14_4neha")
 
 [node name="SystemsNetwork" type="Node" parent="World"]
 
+[node name="SyTransportLoopbackPeerRegister" type="Node" parent="World/SystemsNetwork"]
+script = ExtResource("19_st7rm")
+
 [node name="SyTicks" type="Node" parent="World/SystemsNetwork"]
 script = ExtResource("18_tpfcl")
 
@@ -87,6 +96,9 @@ script = ExtResource("17_k7l5y")
 
 [node name="SyStateExtractor" type="Node" parent="World/SystemsNetwork"]
 script = ExtResource("20_7h1p4")
+
+[node name="SyTransportLoopback" type="Node" parent="World/SystemsNetwork"]
+script = ExtResource("22_lja4e")
 
 [node name="World2" type="Node" parent="."]
 script = ExtResource("2_kibt1")

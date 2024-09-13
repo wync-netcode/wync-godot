@@ -1,8 +1,7 @@
-[gd_scene load_steps=6 format=3 uid="uid://dwbgr3rmq2o0u"]
+[gd_scene load_steps=5 format=3 uid="uid://dwbgr3rmq2o0u"]
 
 [ext_resource type="Script" path="res://addons/gs_ecs/entity.gd" id="1_i8ogn"]
 [ext_resource type="Script" path="res://src/components/network/co_io_packets.gd" id="1_k7rwu"]
-[ext_resource type="Script" path="res://src/components/network/co_loopback_peers.gd" id="2_2mt47"]
 [ext_resource type="Script" path="res://src/components/network/co_snapshots.gd" id="3_qd06p"]
 [ext_resource type="Script" path="res://src/components/network/co_client.gd" id="4_h2qou"]
 
@@ -13,9 +12,6 @@ script = ExtResource("1_i8ogn")
 
 [node name="CoIOPackets" type="Node" parent="Components"]
 script = ExtResource("1_k7rwu")
-
-[node name="CoLoopbackPeers" type="Node" parent="Components"]
-script = ExtResource("2_2mt47")
 
 [node name="CoSnapshots" type="Node" parent="Components"]
 script = ExtResource("3_qd06p")

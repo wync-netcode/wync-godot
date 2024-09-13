@@ -90,8 +90,6 @@ Keeps track of game ticks
 
 ## EnSingleServer
 * CoIOPackets # leaving / incoming pkts
-* CoLoopbackPeers
-    peers: Array[LoopbackPeer]
 * CoServer
     state: int
     peers: Array[ServerPeer]
@@ -99,12 +97,10 @@ Keeps track of game ticks
 
     #### ServerPeer
     identifier: int
-    peer_key: int # key to actual peer
+    peer_id: int # key to actual peer
 
 ## EnClient
 * CoIOPackets # leaving / incoming pkts
-* CoLoopbackPeers
-    peers: Array[LoopbackPeer]
 * CoSnapshots
 * CoClient # contains server peer connection identifier (void*)
     state: int

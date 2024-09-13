@@ -9,7 +9,7 @@ enum STATE {
 
 class ServerPeer:
     var identifier: int
-    var peer_key: int # key to actual peer
+    var peer_id: int # key to actual peer
 
 var state: STATE = STATE.STARTED
 var peers: Array[ServerPeer]

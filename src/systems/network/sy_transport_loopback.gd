@@ -1,0 +1,51 @@
+extends System
+class_name SyTransportLoopback
+
+
+func _ready():
+	components = "%s" % [CoIOPackets.label]
+	super()
+
+	
+func on_process_entity(entity: Entity, _delta: float):
+
+	var curr_time = Time.get_ticks_msec()
+
+	# components
+
+	var co_io_packets = entity.get_component(CoIOPackets.label) as CoIOPackets
+
+	var single_transport = ECS.get_singleton(entity, "EnSingleTransportLoopback")
+	if not single_transport:
+		print("E: Couldn't find singleton EnSingleTransportLoopback")
+		return
+	var co_loopback = single_transport.get_component(CoTransportLoopback.label) as CoTransportLoopback
+	
+	# look for pending packets to send flying over our fake network
+
+	for pkt: NetPacket in co_io_packets.out_packets:
+		var loopback_pkt = LoopbackPacket.new()
+		loopback_pkt.packet = pkt
+		loopback_pkt.deliver_time = curr_time + co_loopback.lag
+
+		co_loopback.packets.append(loopback_pkt)
+
+	# look for packets ready to be delivered
+
+	for pkt: LoopbackPacket in co_loopback.packets:
+		if curr_time < pkt.deliver_time:
+			continue
+
+		co_loopback.packets.erase(pkt)
+
+		# get destination buffer from registered peers
+
+		var peer: LoopbackPeer = co_loopback.peers[pkt.packet.to_peer]
+		if not peer:
+			print("E: Couldn't find peer %s" % [pkt.packet.to_peer])
+			continue
+
+		# deliver
+
+		var buffer: CoIOPackets = peer.peer_packet_buffer
+		buffer.in_packets.append(pkt.packet)
