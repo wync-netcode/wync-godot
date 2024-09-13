@@ -27,6 +27,8 @@ var id:
 	
 var enabled = true
 
+@export var singleton: bool = false
+
 # virtual calls
 
 func on_init():
@@ -85,7 +87,7 @@ func _enter_tree():
 	if world:
 		print("I found a world!", world.name, self)
 		# add self as an entity
-		ECS.add_entity(world, self)
+		ECS.add_entity(world, self, singleton)
 		on_enter_tree()
 	
 	

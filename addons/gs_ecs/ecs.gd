@@ -17,6 +17,9 @@ extends Node
 # Map<world_id: int, Map<entity_id: int, entity: Entity>>
 var world_entities = {}  
 
+## Map<world_id: int, Map<entity_name: string, entity: Entity>>
+var world_singleton_entities = {}
+
 # entities with a component
 # Map<comp_id: string, map<entity_id: int, comp: Comp>>
 var component_entities = {}  
@@ -68,8 +71,9 @@ func add_component(component):
 	component_entities[_name] = {}
 	Logger.debug("- new component %s was registered" % [_name])
 
+
 # register an entity
-func add_entity(world: World, entity):
+func add_entity(world: World, entity: Entity, singleton: bool = false):
 	Logger.trace("[ECS] add_entity")
 
 	var _id = entity.get_instance_id()
@@ -97,7 +101,11 @@ func add_entity(world: World, entity):
 		entity.on_before_add()
 
 	# add the entity node reference using its instance_id as key
+
 	world_entities[_world_id][_id] = entity
+	if singleton:
+		print("Registering entity singleton %s:%s" % [entity, _name])
+		world_singleton_entities[_world_id][_name] = entity
 
 	Logger.debug("- entity %s:%s has been registered" % [entity, _name])
 
@@ -181,6 +189,7 @@ func add_world(world: World):
 	world_systems[_id] = {}
 	world_system_entities[_id] = {}
 	world_entities[_id] = {}
+	world_singleton_entities[_id] = {}
 	is_dirty[_id] = true
 	do_clean[_id] = false
 
@@ -268,6 +277,20 @@ func entity_remove_component(entity, component_name):
 	Logger.debug("- removed component %s for entity %s:%s" % [_id, entity, entity.name])
 
 	return
+
+
+# returns entity singleton
+func get_singleton(caller: Node, entity_name: String) -> Entity:
+	var world = find_world_up(caller)
+	if not world:
+		Logger.warn("- world for node %s:%s not found " % [caller, caller.name])
+		return null
+
+	var world_id = world.get_instance_id()
+	if not world_singleton_entities[world_id].has(entity_name):
+		return null
+
+	return world_singleton_entities[world_id][entity_name]
 
 
 # return component from the framework
@@ -446,7 +469,7 @@ func update(world: World, group = null, delta = null):
 		for _system in world_systems[world_id].values():
 			if _system != null:
 				if _system.enabled:
-					print("%s %s %s %s" % [world.name, _system.name])
+					#print("%s %s %s %s" % [world.name, _system.name])
 					_system.on_process(world_system_entities[world_id][str(_system.name).to_lower()], _delta)
 
 	# FIXME
