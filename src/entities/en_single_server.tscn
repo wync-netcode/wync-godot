@@ -1,0 +1,20 @@
+[gd_scene load_steps=5 format=3 uid="uid://ex31s4wv3adg"]
+
+[ext_resource type="Script" path="res://addons/gs_ecs/entity.gd" id="1_wy8te"]
+[ext_resource type="Script" path="res://src/components/network/co_io_packets.gd" id="2_q5kde"]
+[ext_resource type="Script" path="res://src/components/network/co_loopback_peers.gd" id="3_miecs"]
+[ext_resource type="Script" path="res://src/components/network/co_server.gd" id="4_6jnuf"]
+
+[node name="EnSingleServer" type="Node"]
+script = ExtResource("1_wy8te")
+
+[node name="Components" type="Node" parent="."]
+
+[node name="CoIOPackets" type="Node" parent="Components"]
+script = ExtResource("2_q5kde")
+
+[node name="CoLoopbackPeers" type="Node" parent="Components"]
+script = ExtResource("3_miecs")
+
+[node name="CoServer" type="Node" parent="Components"]
+script = ExtResource("4_6jnuf")

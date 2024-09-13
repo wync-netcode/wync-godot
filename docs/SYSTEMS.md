@@ -99,3 +99,80 @@ Spawns enemies.
 * RoundTrackerSingleton
 
 Updates the HUD. i.e. On screen, health, ammo, etc.
+
+# Networking Systems
+
+## SyTransportLoopbackConnection
+* CoClient
+* CoLoopbackPeers
+
+Singletons:
+* EnSingleServer
+    * CoLoopbackPeers
+    * CoServer
+
+- Clients connect (forcefully) to the singleton server
+- Clients are assigned an identifier, client identifiers are managed by the server state
+
+## SyStateExtractor
+* CoActor (tag)
+* CoCollider
+
+Singletons:
+* EnSingleTicks
+    * CoTicks
+* EnSingleServer
+    * CoIOPackets
+    * CoServer
+
+- (Server) Compiles game state in a packet and buffers it
+- The packet contains data and destination client
+
+
+## SyTransportLoopback
+* CoIOPackets
+* CoLoopbackPeers
+
+Singletons:
+* EnSingleTransportLoopback
+    * CoTransportLoopback
+
+Only Sends and Receives packets from the network
+
+## SyClientProcessPackets
+* CoInPackets
+* CoSnapshots
+
+Reads packets to snapshots
+
+---
+
+
+## SysTransportLoopbackServer
+
+Singletons:
+* EnSingleServer
+    * CoOutPackets
+    * CoInPackets
+    * CoPeers
+* EnSingleTransportLoopback
+    * CoTransportLoopback
+
+Sends and receives packets from the network
+
+## SysTransportLoopbackClient
+* CoOutPackets
+* CoInPackets
+* CoHostPeer
+
+Singletons:
+* EnSingleTransportLoopback
+    * CoTransportLoopback
+
+Receives packets from the network
+
+## SysNetReceive
+* ActorId
+* Collider
+
+(Client) Consumes network packets and sets actor positions

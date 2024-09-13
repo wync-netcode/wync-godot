@@ -103,3 +103,53 @@ players: Array[PlayerEntity]
 ### Raycast
 raycast: Raycast
 
+
+# Networking Components
+
+### CoTicks
+ticks: int
+
+### CoTransportLoopback
+packets: Array[LoopbackPacket] = []  # represent packets flying in the network
+lag: int = 0  # (ms)
+jitter: int = 0  # (ms) how many frames a package might be late
+packet_loss_percentage: int = 0 # [0-100]
+time_last_pkt_sent: int = 0
+jitter_unordered_packets: bool = false # Allows jitter to mangle packet order
+duplicated_packets_percentage: int = 0 # [0-100] Allows duplicated packets
+
+#### LoopbackPacket
+deliver_time: int # ms
+data: NetPacket
+
+### CoLoopbackPeers
+peers: Array[LoopbackPeer] # identified by array index
+
+#### LoopbackPeer
+peer_packet_buffer: CoIOPackets # represents the peer location
+
+### CoIOPackets
+in_packets: Array[NetPacket]
+out_packets: Array[NetPacket]
+
+#### NetPacket
+to_peer: int # peer key
+data: NetSnapshot
+
+#### NetSnapshot
+tick: int
+entity_ids: Array[int]
+positions: Array[Vector]
+
+### CoSnapshots
+entity_snapshots: Map[entity_id: int, position_snapshots: Array<4>[PositionSnapshot]]
+
+#### PositionSnapshot
+tick: int
+position: Vector2
+
+### CoServer
+(see entities.md)
+
+### CoClient
+(see entities.md)

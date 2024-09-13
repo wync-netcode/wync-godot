@@ -13,6 +13,7 @@ func on_process_entity(entity: Entity, _delta: float):
 	var body = collider as CharacterBody2D
 
 	# apply friction
+	#print(entity.name, input.movement_dir)
 	if input.movement_dir.length() == 0:
 		var friction: float = StaticData.entity.Player.friction * _delta
 		if velocity.velocity.length() < friction:

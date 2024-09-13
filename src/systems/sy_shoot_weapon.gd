@@ -22,14 +22,14 @@ func on_process_entity(entity: Entity, _delta: float):
 
 	var weapon_stored: CoWeaponStored = null
 	for w: CoWeaponStored in inventory.inventory:
-		print("CoWeaponStored ", w)
-		print("w.weapon_id", w.weapon_id)
+		#print("CoWeaponStored ", w)
+		#print("w.weapon_id", w.weapon_id)
 		
 		if w.weapon_id == weapon.weapon_id:
 			weapon_stored = w
 			break
 
-	print("weapon_stored", weapon_stored)
+	#sdprint("weapon_stored", weapon_stored)
 	if weapon_stored == null:
 		return
 	
@@ -95,8 +95,13 @@ func on_process_entity(entity: Entity, _delta: float):
 
 func launch_projectile(weapon_id: int, actor_id: int, owner_body: CoCollider, angle: float):
 	var projectile_ent: Entity = StaticData.en_scn_rocket.instantiate() as Entity
-	ECS.add_entity(projectile_ent)
-	ECSRootManagerSingleton.add_entity_node(projectile_ent)
+	
+	# register entity and add it to the scene
+	var world = ECS.find_world_up(owner_body)
+	if world:
+		ECS.add_entity(world, projectile_ent)
+		world.add_entity_node(projectile_ent)
+	#ECSRootManagerSingleton.add_entity_node(projectile_ent)
 
 	# Cast until entity scene typing is implemented in the ECS library
 	# setup projectile entity

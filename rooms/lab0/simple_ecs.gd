@@ -1,16 +1,21 @@
 extends ECSRoot
 
+@onready var world: World = $World
+@onready var world2: World = $World2
+var counter = 0
+
 func _ready() -> void:
 	super()
 	
 	Logger.set_logger_level(Logger.LOG_LEVEL_NONE)
-	ECS.update()
+	ECS.update(world)
+	ECS.update(world2)
 	
 	# create player
 	var player_scene: PackedScene = preload("res://src/entities/en_player.tscn")
 	var player = player_scene.instantiate() as Entity
-	ECS.add_entity(player)
-	add_child(player)
+	ECS.add_entity(world, player)
+	world.add_child(player)
 	print(player)
 
 	# give it a weapon
@@ -46,7 +51,19 @@ func _ready() -> void:
 	
 	var held_weapon = player.get_component("coweaponheld") as CoWeaponHeld
 	held_weapon.weapon_id = w.weapon_id
-	print(inventory)
+	
+	# the other player
+	
+	inventory = $World2/Entities/EnPlayer2.get_component("coweaponinventory") as CoWeaponInventory
+	
+	w = CoWeaponStored.new()
+	w.weapon_id = StaticData.WEAPON.ROCKET
+	w.bullets_total_left = 300
+	w.bullets_magazine_left = 1
+	inventory.inventory.append(w)
+	
+	held_weapon = $World2/Entities/EnPlayer2.get_component("coweaponheld") as CoWeaponHeld
+	held_weapon.weapon_id = w.weapon_id
 
 
 func _process(delta):
@@ -54,6 +71,11 @@ func _process(delta):
 	pass
 	
 func _physics_process(delta: float) -> void:
-	ECS.update()
+	counter += 1
+	ECS.update(world)
+	#ECS.update(world2)
+	if counter % 3 == 0:
+		#ECS.update(world2)
+		pass
 	pass
 	
