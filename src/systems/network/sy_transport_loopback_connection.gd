@@ -57,4 +57,4 @@ func on_process_entity(entity: Entity, _delta: float):
 	co_client.identifier = server_peer.identifier
 	co_client.server_peer = co_server_io.peer_id
 
-	print("Client connected %s:%s " % [entity, entity.name])
+	print("D: Client connected %s:%s to %s" % [entity, entity.name, co_server])

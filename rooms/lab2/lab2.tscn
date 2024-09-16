@@ -93,7 +93,6 @@ script = ExtResource("16_5f1s6")
 
 [node name="SyTicks" type="Node" parent="WorldServer/SystemsNetwork"]
 script = ExtResource("18_oeqdo")
-ENABLED = false
 
 [node name="SyActorRegister" type="Node" parent="WorldServer/SystemsNetwork"]
 script = ExtResource("19_rcs17")
@@ -101,17 +100,11 @@ script = ExtResource("19_rcs17")
 [node name="SyTransportLoopbackPeerRegister" type="Node" parent="WorldServer/SystemsNetwork"]
 script = ExtResource("17_320aq")
 
-[node name="SyTransportLoopbackConnection" type="Node" parent="WorldServer/SystemsNetwork"]
-script = ExtResource("19_56q07")
-ENABLED = false
-
 [node name="SyStateExtractor" type="Node" parent="WorldServer/SystemsNetwork"]
 script = ExtResource("20_03l6t")
-ENABLED = false
 
 [node name="SyTransportLoopback" type="Node" parent="WorldServer/SystemsNetwork"]
 script = ExtResource("21_rayuf")
-ENABLED = false
 
 [node name="WorldClient1" type="Node" parent="."]
 script = ExtResource("4_wplyx")
@@ -165,27 +158,24 @@ ENABLED = false
 
 [node name="SystemsNetwork" type="Node" parent="WorldClient1"]
 
+[node name="SyTicks" type="Node" parent="WorldClient1/SystemsNetwork"]
+script = ExtResource("18_oeqdo")
+ENABLED = false
+
 [node name="SyActorRegister" type="Node" parent="WorldClient1/SystemsNetwork"]
 script = ExtResource("19_rcs17")
 
 [node name="SyTransportLoopbackPeerRegister" type="Node" parent="WorldClient1/SystemsNetwork"]
 script = ExtResource("17_320aq")
 
-[node name="SyTicks" type="Node" parent="WorldClient1/SystemsNetwork"]
-script = ExtResource("18_oeqdo")
-ENABLED = false
-
 [node name="SyTransportLoopbackConnection" type="Node" parent="WorldClient1/SystemsNetwork"]
 script = ExtResource("19_56q07")
-ENABLED = false
 
 [node name="SyTransportLoopback" type="Node" parent="WorldClient1/SystemsNetwork"]
 script = ExtResource("21_rayuf")
-ENABLED = false
 
 [node name="SyClientProcessPackets" type="Node" parent="WorldClient1/SystemsNetwork"]
 script = ExtResource("24_f7iic")
-ENABLED = false
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 

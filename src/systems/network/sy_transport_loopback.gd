@@ -1,6 +1,7 @@
 extends System
 class_name SyTransportLoopback
 
+## Fake network to sends and receives packets to itself
 
 func _ready():
 	components = "%s" % [CoIOPackets.label]
@@ -14,13 +15,11 @@ func on_process_entity(entity: Entity, _delta: float):
 	# components
 
 	var co_io_packets = entity.get_component(CoIOPackets.label) as CoIOPackets
-
-	var single_transport = ECS.get_singleton(entity, "EnSingleTransportLoopback")
-	if not single_transport:
-		print("E: Couldn't find singleton EnSingleTransportLoopback")
+	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
+	if not co_loopback:
+		print("E: Couldn't find singleton CoTransportLoopback")
 		return
-	var co_loopback = single_transport.get_component(CoTransportLoopback.label) as CoTransportLoopback
-	
+		
 	# look for pending packets to send flying over our fake network
 
 	for pkt: NetPacket in co_io_packets.out_packets:
