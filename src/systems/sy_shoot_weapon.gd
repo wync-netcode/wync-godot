@@ -61,7 +61,7 @@ func on_process_entity(entity: Entity, _delta: float):
 	var raycast: RayCast2D = null
 
 	if not is_projectile:
-		var raycast_ent = ECS.get_singleton(self, "EnRaycastSingleton")
+		var raycast_ent = ECS.get_singleton_entity(self, "EnRaycastSingleton")
 		if not raycast_ent:
 			print("E: Couldn't find singleton EnRaycastSingleton")
 			return

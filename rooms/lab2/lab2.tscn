@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3 uid="uid://b8oeiuufqe32c"]
+[gd_scene load_steps=30 format=3 uid="uid://b8oeiuufqe32c"]
 
 [ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_1ps8v"]
 [ext_resource type="Script" path="res://data/StaticData.gd" id="2_2epi3"]
@@ -13,6 +13,7 @@
 [ext_resource type="Script" path="res://src/systems/sy_player_input.gd" id="10_47ome"]
 [ext_resource type="PackedScene" uid="uid://5n6bvvfq608d" path="res://src/entities/en_single_actors.tscn" id="10_k0r3w"]
 [ext_resource type="Script" path="res://src/systems/sy_actor_movement.gd" id="11_1eesg"]
+[ext_resource type="Script" path="res://src/components/co_single_world.gd" id="12_8x65i"]
 [ext_resource type="Script" path="res://src/systems/sy_shoot_weapon.gd" id="12_dhgio"]
 [ext_resource type="Script" path="res://src/systems/sy_reload_weapon.gd" id="13_5ywtb"]
 [ext_resource type="Script" path="res://src/systems/sy_switch_weapon.gd" id="14_4qbu2"]
@@ -59,6 +60,10 @@ singleton = true
 [node name="EnRaycastSingleton" parent="WorldServer/Singletons" instance=ExtResource("8_ry87g")]
 
 [node name="EnSingleActors" parent="WorldServer/Singletons" instance=ExtResource("10_k0r3w")]
+singleton = true
+
+[node name="CoSingleWorld" type="Node" parent="WorldServer/Singletons"]
+script = ExtResource("12_8x65i")
 singleton = true
 
 [node name="Entities" type="Node" parent="WorldServer"]
@@ -117,6 +122,11 @@ singleton = false
 [node name="EnSingleTicks" parent="WorldClient1/Singletons" instance=ExtResource("6_ib3pf")]
 
 [node name="EnSingleActors" parent="WorldClient1/Singletons" instance=ExtResource("10_k0r3w")]
+singleton = true
+
+[node name="CoSingleWorld" type="Node" parent="WorldClient1/Singletons"]
+script = ExtResource("12_8x65i")
+world_id = 1
 singleton = true
 
 [node name="Entities" type="Node" parent="WorldClient1"]

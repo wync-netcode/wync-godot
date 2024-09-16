@@ -9,7 +9,7 @@ func _ready():
 
 func on_process_entity(entity: Entity, _delta: float):
 	var co_io = entity.get_component(CoIOPackets.label) as CoIOPackets
-	var single_actors = ECS.get_singleton(self, "EnSingleActors")
+	var single_actors = ECS.get_singleton_entity(self, "EnSingleActors")
 	if not single_actors:
 		print("E: Couldn't find singleton EnSingleActors")
 		return

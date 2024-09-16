@@ -11,13 +11,13 @@ func on_process(entities, _delta: float):
 
 	# get singletons
 
-	var single_ticks = ECS.get_singleton(self, "EnSingleTicks")
+	var single_ticks = ECS.get_singleton_entity(self, "EnSingleTicks")
 	if not single_ticks:
 		print("E: Couldn't find singleton EnSingleTicks")
 		return
 	var co_ticks = single_ticks.get_component(CoTicks.label) as CoTicks
 	
-	var single_server = ECS.get_singleton(self, "EnSingleServer")
+	var single_server = ECS.get_singleton_entity(self, "EnSingleServer")
 	if not single_server:
 		print("E: Couldn't find singleton EnSingleServer")
 		return

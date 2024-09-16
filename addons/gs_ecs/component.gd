@@ -21,6 +21,8 @@ extends Node
 
 class_name Component
 
+@export var singleton: bool = false
+
 func on_init():
 	Logger.trace("[component] on_init")
 	pass
@@ -33,6 +35,10 @@ func on_ready():
 	
 func _enter_tree():
 	Logger.trace("[component] _enter_tree")
+
+	if singleton:
+		ECS.add_singleton_component(self)
+		return
 	
 	# find parent entity and register
 	var _done = false

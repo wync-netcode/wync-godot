@@ -22,6 +22,9 @@ var world_entities = {}
 ## Map<world_id: int, Map<entity_name: string, entity: Entity>>
 var world_singleton_entities = {}
 
+## Map<world_id: int, Map<component_name: string, comp: Comp>>
+var world_singleton_components = {}
+
 # entities with a component
 # Map<comp_id: string, map<entity_id: int, comp: Comp>>
 var component_entities = {}  
@@ -67,7 +70,6 @@ func add_component(component):
 	Logger.trace("[ECS] add_component")
 	is_dirty[0] = true
 
-
 	var _name = str(component.name).to_lower()
 	if has_component(_name):
 		Logger.warn("- component %s was already registered -- skipping" % [_name])
@@ -75,6 +77,26 @@ func add_component(component):
 				
 	component_entities[_name] = {}
 	Logger.debug("- new component %s was registered" % [_name])
+
+
+# register a component
+func add_singleton_component(component: Component):
+
+	Logger.trace("[ECS] add_singleton_component")
+
+	var world = find_world_up(component)
+	if not world:
+		Logger.warn("- world for component %s:%s not found " % [component, component.name])
+		return
+	var world_id = world.get_instance_id()
+
+	var _name = str(component.name).to_lower()
+	if world_singleton_components[world_id].has(_name):
+		Logger.warn("- singleton component %s was already registered -- skipping" % [_name])
+		return
+				
+	world_singleton_components[world_id][_name] = component
+	Logger.debug("- new singleton component %s was registered" % [_name])
 
 
 # register an entity
@@ -195,6 +217,7 @@ func add_world(world: World):
 	world_system_entities[_id] = {}
 	world_entities[_id] = {}
 	world_singleton_entities[_id] = {}
+	world_singleton_components[_id] = {}
 	is_dirty[_id] = true
 	do_clean[_id] = false
 
@@ -293,7 +316,7 @@ func entity_remove_component(entity, component_name):
 
 
 # returns entity singleton
-func get_singleton(caller: Node, entity_name: String) -> Entity:
+func get_singleton_entity(caller: Node, entity_name: String) -> Entity:
 	var world = find_world_up(caller)
 	if not world:
 		Logger.warn("- world for node %s:%s not found " % [caller, caller.name])
@@ -304,6 +327,19 @@ func get_singleton(caller: Node, entity_name: String) -> Entity:
 		return null
 
 	return world_singleton_entities[world_id][entity_name]
+
+
+func get_singleton_component(caller: Node, entity_name: String) -> Component:
+	var world = find_world_up(caller)
+	if not world:
+		Logger.warn("- world for node %s:%s not found " % [caller, caller.name])
+		return null
+
+	var world_id = world.get_instance_id()
+	if not world_singleton_components[world_id].has(entity_name):
+		return null
+
+	return world_singleton_components[world_id][entity_name]
 
 
 # return component from the framework

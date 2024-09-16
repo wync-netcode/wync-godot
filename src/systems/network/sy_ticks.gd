@@ -8,7 +8,7 @@ func _ready():
 func on_process(entities, _delta: float):
 	for entity: Entity in entities:
 
-		var single_ticks = ECS.get_singleton(entity, "EnSingleTicks")
+		var single_ticks = ECS.get_singleton_entity(entity, "EnSingleTicks")
 		if not single_ticks:
 			print("E: Couldn't find ticks singleton EnSingleTicks")
 			return
