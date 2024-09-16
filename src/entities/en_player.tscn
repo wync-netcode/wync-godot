@@ -31,6 +31,8 @@ script = ExtResource("2_hsf2x")
 position = Vector2(0, -20)
 
 [node name="CoCollider" parent="Components" instance=ExtResource("3_xkv6g")]
+collision_layer = 1024
+collision_mask = 1025
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Components/CoCollider"]
 shape = SubResource("RectangleShape2D_rkk3i")
