@@ -3,28 +3,25 @@ class_name SyTransportLoopbackPeerRegister
 
 
 func _ready():
-	components = "%s" % [CoIOPackets.label]
+	components = "%s,!%s" % [CoIOPackets.label, CoPeerRegisteredFlag.label]
 	super()
 	
 
-func on_process(entities, _delta: float):
-	var single_transport = ECS.get_singleton(self, "EnSingleTransportLoopback")
-	if not single_transport:
-		print("E: Couldn't find singleton EnSingleTransportLoopback")
-		return
-	var co_loopback = single_transport.get_component(CoTransportLoopback.label) as CoTransportLoopback
-
-
-	# NOTE: Better to use a one off component tag
-	if co_loopback.peers.size():
+func on_process_entity(entity, _delta: float):
+	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
+	if not co_loopback:
+		print("E: Couldn't find singleton CoTransportLoopback")
 		return
 
+	# register
 
-	for i in range(entities.size()):
-		var entity: Entity = entities[i]
-		var co_io_packets = entity.get_component(CoIOPackets.label) as CoIOPackets
-		co_io_packets.peer_id = i
+	var co_io_packets = entity.get_component(CoIOPackets.label) as CoIOPackets
+	co_io_packets.peer_id = co_loopback.peers.size()
 
-		var loopback_peer = LoopbackPeer.new()
-		loopback_peer.peer_packet_buffer = co_io_packets
-		co_loopback.peers.append(loopback_peer)
+	var loopback_peer = LoopbackPeer.new()
+	loopback_peer.peer_packet_buffer = co_io_packets
+	co_loopback.peers.append(loopback_peer)
+
+	var flag = CoPeerRegisteredFlag.new()
+	ECS.entity_add_component_node(entity, flag)
+	print("D: Registered Peer %s:%s with id %s" % [entity, entity.name, co_io_packets.peer_id])

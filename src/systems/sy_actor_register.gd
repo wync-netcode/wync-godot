@@ -1,9 +1,11 @@
 extends System
 class_name SyActorRegister
 
+
 func _ready():
 	components = "%s,!%s" % [CoActor.label, CoActorRegisteredFlag.label]
 	super()
+
 	
 func on_process_entity(entity : Entity, _delta: float):
 	var single_actors = ECS.get_singleton(self, "EnSingleActors")
@@ -26,9 +28,7 @@ func on_process_entity(entity : Entity, _delta: float):
 			co_actor.id = cursor
 			var flag = CoActorRegisteredFlag.new()
 			ECS.entity_add_component_node(entity, flag)
-			#entity.add_component(flag)
-			#entity.add_child(flag)
-			print("D: Registered %s:%s with id %s" % [entity, entity.name, cursor])
+			print("D: Registered Actor %s:%s with id %s" % [entity, entity.name, cursor])
 			break
 
 	co_actors.cursor = cursor

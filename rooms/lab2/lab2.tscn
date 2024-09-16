@@ -91,16 +91,15 @@ script = ExtResource("16_5f1s6")
 
 [node name="SystemsNetwork" type="Node" parent="WorldServer"]
 
+[node name="SyTicks" type="Node" parent="WorldServer/SystemsNetwork"]
+script = ExtResource("18_oeqdo")
+ENABLED = false
+
 [node name="SyActorRegister" type="Node" parent="WorldServer/SystemsNetwork"]
 script = ExtResource("19_rcs17")
 
 [node name="SyTransportLoopbackPeerRegister" type="Node" parent="WorldServer/SystemsNetwork"]
 script = ExtResource("17_320aq")
-ENABLED = false
-
-[node name="SyTicks" type="Node" parent="WorldServer/SystemsNetwork"]
-script = ExtResource("18_oeqdo")
-ENABLED = false
 
 [node name="SyTransportLoopbackConnection" type="Node" parent="WorldServer/SystemsNetwork"]
 script = ExtResource("19_56q07")
@@ -123,6 +122,9 @@ script = ExtResource("4_wplyx")
 singleton = false
 
 [node name="EnSingleTicks" parent="WorldClient1/Singletons" instance=ExtResource("6_ib3pf")]
+
+[node name="EnSingleActors" parent="WorldClient1/Singletons" instance=ExtResource("10_k0r3w")]
+singleton = true
 
 [node name="Entities" type="Node" parent="WorldClient1"]
 
@@ -163,9 +165,11 @@ ENABLED = false
 
 [node name="SystemsNetwork" type="Node" parent="WorldClient1"]
 
+[node name="SyActorRegister" type="Node" parent="WorldClient1/SystemsNetwork"]
+script = ExtResource("19_rcs17")
+
 [node name="SyTransportLoopbackPeerRegister" type="Node" parent="WorldClient1/SystemsNetwork"]
 script = ExtResource("17_320aq")
-ENABLED = false
 
 [node name="SyTicks" type="Node" parent="WorldClient1/SystemsNetwork"]
 script = ExtResource("18_oeqdo")
