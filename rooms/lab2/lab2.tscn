@@ -51,11 +51,12 @@ script = ExtResource("4_wplyx")
 [node name="Singletons" type="Node" parent="WorldServer"]
 
 [node name="EnSingleServer" parent="WorldServer/Singletons" instance=ExtResource("5_gpsy3")]
+singleton = true
 
 [node name="EnSingleTicks" parent="WorldServer/Singletons" instance=ExtResource("6_ib3pf")]
+singleton = true
 
 [node name="EnRaycastSingleton" parent="WorldServer/Singletons" instance=ExtResource("8_ry87g")]
-singleton = false
 
 [node name="EnSingleActors" parent="WorldServer/Singletons" instance=ExtResource("10_k0r3w")]
 singleton = true

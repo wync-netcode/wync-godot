@@ -23,7 +23,7 @@ func on_process_entity(entity: Entity, delta: float):
 			if body is Component:
 				var actor: CoActor = get_actor_from_component(body)
 				if actor:
-					print("actor.id %s == %s ?" % [actor.id, pro_data.owner_actor_id])
+					print("D: actor.id %s == %s ?" % [actor.id, pro_data.owner_actor_id])
 
 					if actor.id == pro_data.owner_actor_id:
 						continue
@@ -34,12 +34,12 @@ func on_process_entity(entity: Entity, delta: float):
 
 			else:
 				explode = true
-				print("collided iwht solid")
+				print("D: Collided iwht solid")
 
 		# explode
 
 		if explode:
-			print("Projectile Exploded")
+			print("D: Projectile Exploded")
 			ECS.remove_entity(entity)
 			return
 
