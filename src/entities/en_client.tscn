@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3 uid="uid://dwbgr3rmq2o0u"]
+[gd_scene load_steps=5 format=3 uid="uid://dqillnt7k6deb"]
 
 [ext_resource type="Script" path="res://addons/gs_ecs/entity.gd" id="1_i8ogn"]
 [ext_resource type="Script" path="res://src/components/network/co_io_packets.gd" id="1_k7rwu"]

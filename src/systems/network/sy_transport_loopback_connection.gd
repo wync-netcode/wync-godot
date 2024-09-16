@@ -1,10 +1,12 @@
 extends System
 class_name SyTransportLoopbackConnection
 
+
 func _ready():
 	components = "%s,%s" % [CoClient.label, CoIOPackets.label]
 	super()
 	
+
 func on_process_entity(entity: Entity, _delta: float):
 	var co_client = entity.get_component(CoClient.label) as CoClient
 	var co_client_io = entity.get_component(CoIOPackets.label) as CoIOPackets

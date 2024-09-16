@@ -14,6 +14,8 @@
 
 extends Node
 
+# NOTE: IDEA: For Nodes to be able to access the world the find themselves in, we could modify the context for every node script call.
+
 # Map<world_id: int, Map<entity_id: int, entity: Entity>>
 var world_entities = {}  
 
@@ -61,7 +63,10 @@ const version = "4.2-R1"
 
 # register a component
 func add_component(component):
+
 	Logger.trace("[ECS] add_component")
+	is_dirty[0] = true
+
 
 	var _name = str(component.name).to_lower()
 	if has_component(_name):
@@ -231,6 +236,14 @@ func entity_add_component(entity, component):
 	Logger.debug("- registered %s component for entity %s:%s " % [_id, entity, entity.name])
 
 	return
+
+
+# NOTE: Could use the label instead of the name
+func entity_add_component_node(entity: Entity, component: Component):
+	entity.add_child(component)
+	if component.label:
+		component.name = component.label
+	entity_add_component(entity, component)
 
 
 # returns a component for an entity

@@ -1,21 +1,21 @@
 extends ECSRoot
 
-@onready var world: World = $World
-@onready var world2: World = $World2
+@onready var world_server: World = $WorldServer
+@onready var world_client_1: World = $WorldClient1
 var counter = 0
 
 func _ready() -> void:
 	super()
 	
 	Logger.set_logger_level(Logger.LOG_LEVEL_NONE)
-	ECS.update(world)
-	ECS.update(world2)
+	ECS.update(world_server)
+	ECS.update(world_client_1)
 	
 	# create player
 	var player_scene: PackedScene = preload("res://src/entities/en_player.tscn")
 	var player = player_scene.instantiate() as Entity
-	ECS.add_entity(world, player)
-	world.add_child(player)
+	ECS.add_entity(world_server, player)
+	world_server.add_child(player)
 	print(player)
 
 	# give it a weapon
@@ -54,7 +54,7 @@ func _ready() -> void:
 	
 	# the other player
 	
-	inventory = $World2/Entities/EnPlayer2.get_component("coweaponinventory") as CoWeaponInventory
+	inventory = world_client_1.get_node("Entities/EnPlayer2").get_component("coweaponinventory") as CoWeaponInventory
 	
 	w = CoWeaponStored.new()
 	w.weapon_id = StaticData.WEAPON.ROCKET
@@ -62,20 +62,20 @@ func _ready() -> void:
 	w.bullets_magazine_left = 1
 	inventory.inventory.append(w)
 	
-	held_weapon = $World2/Entities/EnPlayer2.get_component("coweaponheld") as CoWeaponHeld
+	held_weapon = world_client_1.get_node("Entities/EnPlayer2").get_component("coweaponheld") as CoWeaponHeld
 	held_weapon.weapon_id = w.weapon_id
 
 
 func _process(delta):
-	#ECS.update()
 	pass
-	
+
+
 func _physics_process(delta: float) -> void:
-	counter += 1
-	ECS.update(world)
-	#ECS.update(world2)
-	if counter % 3 == 0:
-		#ECS.update(world2)
-		pass
-	pass
+	ECS.update(world_server)
+	ECS.update(world_client_1)
 	
+	counter += 1
+	if counter % 3 == 0:
+		#ECS.update(world_client_1)
+		pass
+ 

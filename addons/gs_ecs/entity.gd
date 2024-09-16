@@ -56,7 +56,7 @@ func on_after_remove():
 	Logger.trace("[entity] on_after_remove")
 
 
-func add_component(component):
+func add_component(component: Component):
 	ECS.entity_add_component(self, component)
 
 func get_component(component_name):

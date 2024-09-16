@@ -139,39 +139,8 @@ Singletons:
 Only Sends and Receives packets from the network
 
 ## SyClientProcessPackets
-* CoInPackets
+* CoIOPackets
 * CoSnapshots
 
 Reads packets to snapshots
 
----
-
-
-## SysTransportLoopbackServer
-
-Singletons:
-* EnSingleServer
-    * CoOutPackets
-    * CoInPackets
-    * CoPeers
-* EnSingleTransportLoopback
-    * CoTransportLoopback
-
-Sends and receives packets from the network
-
-## SysTransportLoopbackClient
-* CoOutPackets
-* CoInPackets
-* CoHostPeer
-
-Singletons:
-* EnSingleTransportLoopback
-    * CoTransportLoopback
-
-Receives packets from the network
-
-## SysNetReceive
-* ActorId
-* Collider
-
-(Client) Consumes network packets and sets actor positions

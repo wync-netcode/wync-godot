@@ -3,7 +3,7 @@ class_name SyProjectileMovement
 
 
 func _ready():
-	components = "%s,%s,%s,%s" % [CoVelocity.label, CoArea.label, CoProjectileData.label, CoActor.label]
+	components = "%s,%s,%s" % [CoVelocity.label, CoArea.label, CoProjectileData.label]
 	super()
 
 	
@@ -11,7 +11,7 @@ func on_process_entity(entity: Entity, delta: float):
 	var entity_node = entity as Node as Node2D
 	var velocity = entity.get_component(CoVelocity.label) as CoVelocity
 	var area_node: Area2D = entity.get_component(CoArea.label) as Area2D
-	var owner_actor = entity.get_component(CoActor.label) as CoActor
+	var pro_data = entity.get_component(CoProjectileData.label) as CoProjectileData
 
 	if area_node.has_overlapping_bodies():
 		var explode = false
@@ -23,9 +23,9 @@ func on_process_entity(entity: Entity, delta: float):
 			if body is Component:
 				var actor: CoActor = get_actor_from_component(body)
 				if actor:
-					print("actor.id %s == %s ?" % [actor.id, owner_actor.id])
+					print("actor.id %s == %s ?" % [actor.id, pro_data.owner_actor_id])
 
-					if actor.id == owner_actor.id:
+					if actor.id == pro_data.owner_actor_id:
 						continue
 					else:
 						explode = true

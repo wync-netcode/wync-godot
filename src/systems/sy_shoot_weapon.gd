@@ -61,7 +61,10 @@ func on_process_entity(entity: Entity, _delta: float):
 	var raycast: RayCast2D = null
 
 	if not is_projectile:
-		var raycast_ent = EntitySingletons.singleton.get_entity("EnRaycastSingleton")
+		var raycast_ent = ECS.get_singleton(self, "EnRaycastSingleton")
+		if not raycast_ent:
+			print("E: Couldn't find singleton EnRaycastSingleton")
+			return
 		var raycast_co = raycast_ent.get_component("coraycast") as CoRaycast
 		raycast = raycast_co as Node as RayCast2D
 		reach = raycast_co.default_reach
@@ -109,12 +112,11 @@ func launch_projectile(weapon_id: int, actor_id: int, owner_body: CoCollider, an
 	var velocity = projectile_ent.get_component(CoVelocity.label) as CoVelocity
 	#var area_node: Area2D = projectile_ent.get_component(CoArea.label) as Area2D
 	var pro_data: CoProjectileData = projectile_ent.get_component(CoProjectileData.label) as CoProjectileData
-	var actor: CoActor = projectile_ent.get_component(CoActor.label) as CoActor
 
 	(projectile_ent as Node as Node2D).global_position = (owner_body as Node as Node2D).global_position
 	velocity.velocity = Vector2.from_angle(angle) * StaticData.entity.Weapons[weapon_id].projectile_speed
 	pro_data.weapon_id = weapon_id as StaticData.WEAPON
-	actor.id = actor_id
+	pro_data.owner_actor_id = actor_id
 
 
 
