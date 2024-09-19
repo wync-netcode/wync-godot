@@ -89,6 +89,10 @@ func add_singleton_component(component: Component):
 		Logger.warn("- world for component %s:%s not found " % [component, component.name])
 		return
 	var world_id = world.get_instance_id()
+	
+	# FIXME: Ugly world check
+	if not worlds.has(world_id):
+		ECS.add_world(world)
 
 	var _name = str(component.name).to_lower()
 	if world_singleton_components[world_id].has(_name):
@@ -405,6 +409,22 @@ func find_world_up(node: Node) -> World:
 			break
 		
 		if _parent is World:
+			return _parent
+
+		_parent = _parent.get_parent()
+
+	return null
+
+
+# tries to find an entity up
+func find_entity_up(node: Node) -> Entity:
+	var _parent = node
+	
+	while true:
+		if _parent == null:
+			break
+		
+		if _parent is Entity:
 			return _parent
 
 		_parent = _parent.get_parent()
