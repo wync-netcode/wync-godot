@@ -43,11 +43,18 @@ var world_system_entities = {}
 
 # a group represents a collection of systems
 # Map<group_name: string, group: Group>
-var groups = {}
+#var groups = {}
 
 # systems in a group
 # Map<group_name: string, systems: Array<System>>
-var group_systems = {}
+#var world_group_systems = {}
+
+# a group represents a collection of systems
+# Map<world_id: int, group_name: string, group: Group>
+var world_groups = {}
+
+# Map<world_id: int, group_name: string, systems: Array<System>>
+var world_group_systems = {}
 
 # a list of entities to remove after group processing is complete
 var entity_remove_queue = []
@@ -187,19 +194,26 @@ func add_system(world: World, system, components = []):
 # register a group
 func add_group(group, systems = []):
 	Logger.trace("[ECS] add_group")
-	#is_dirty = true  # TODO support worlds
+
+	var world = find_world_up(group)
+	if not world:
+		Logger.warn("- world for component %s not found " % [group])
+		return
+	var world_id = world.get_instance_id()
 
 	var _id = group.name.to_lower()
 
-	if has_group(_id):
+	is_dirty[world_id] = true  # TODO support worlds
+
+	if has_group(world_id, _id):
 		Logger.warn("- group %s already exists, skipping" % [_id])
 		return
 
-	groups[_id] = group
-	group_systems[_id] = []
+	world_groups[world_id][_id] = group
+	world_group_systems[world_id][_id] = []
 
 	for system in systems:
-		group_systems[_id].append(system.to_lower().strip_edges())
+		world_group_systems[world_id][_id].append(system.to_lower().strip_edges())
 
 	Logger.debug("- group %s has been registered" % [_id])
 
@@ -222,6 +236,8 @@ func add_world(world: World):
 	world_entities[_id] = {}
 	world_singleton_entities[_id] = {}
 	world_singleton_components[_id] = {}
+	world_groups[_id] = {}
+	world_group_systems[_id] = {}
 	is_dirty[_id] = true
 	do_clean[_id] = false
 
@@ -383,9 +399,9 @@ func has_system(world_id, system_name):
 
 
 # returns true if the system already exists
-func has_group(group_name):
+func has_group(world_id, group_name):
 	Logger.trace("[ECS] has_group")
-	if groups.has(group_name):
+	if world_groups[world_id].has(group_name):
 		return true
 
 	return false
@@ -517,10 +533,11 @@ func remove_system(world: World, system_name):
 
 
 # update the systems, specified by group name (or not)
-func update(world: World, group = null, delta = null):
+func update(world: World, group: String = "", delta = null):
 	Logger.fine("[ECS] update")
 
 	var world_id = world.get_instance_id()
+	group = group.to_lower()
 
 	# rebuild if dirty
 	if is_dirty[world_id]:
@@ -534,7 +551,7 @@ func update(world: World, group = null, delta = null):
 		_delta = get_process_delta_time()
 
 	# if no group passed, do all systems
-	if group == null:
+	if not group.length():
 		for _system in world_systems[world_id].values():
 			if _system != null:
 				if _system.enabled:
@@ -543,13 +560,13 @@ func update(world: World, group = null, delta = null):
 
 	# FIXME
 	# process each system in this group group
-	#if (group && group_systems.has(group)):
-	#	for _system_name in group_systems[group]:
-	#		if systems.has(_system_name):
-	#			var _system = systems[_system_name]
-	#			if _system != null:
-	#				if _system.enabled:
-	#					_system.on_process(world_system_entities[world_id][_system.name.to_lower()], _delta)
+	if (group.length() && world_group_systems[world_id].has(group)):
+		for _system_name in world_group_systems[world_id][group]:
+			if world_systems[world_id].has(_system_name):
+				var _system = world_systems[world_id][_system_name]
+				if _system != null:
+					if _system.enabled:
+						_system.on_process(world_system_entities[world_id][str(_system.name).to_lower()], _delta)
 
 	# clean up entities queued for removal
 	if entity_remove_queue.size() > 0:	
@@ -572,8 +589,8 @@ func update(world: World, group = null, delta = null):
 		world_systems[world_id].clear()
 		system_components.clear()
 		world_system_entities[world_id].clear()
-		groups.clear()
-		group_systems.clear()
+		world_groups[world_id].clear()
+		world_group_systems[world_id].clear()
 		entity_remove_queue.clear()
 		do_clean[world_id] = false
 
