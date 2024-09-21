@@ -541,28 +541,26 @@ func remove_system(world: World, system_name):
 	Logger.debug("- system %s has been removed" % [_id])
 
 
-func update_all(world: World, delta = null):
-	update(world, world_systems[world.get_instance_id()].values())
+func update_all(world: World, data = null, delta = null):
+	update(world, world_systems[world.get_instance_id()].values(), data)
 
 
-func update_group(world: World, group_instance: Group, delta = null):
-	update(world, group_instance.systems, delta)
+func update_group(world: World, group_instance: Group, data = null, delta = null):
+	update(world, group_instance.systems, delta, data)
 
 
-# update the systems, specified by group name (or not)
-func update(world: World, systems: Array[StringName] = [], delta = null):
+# update the systems
+func update(world: World, systems: Array = [], data = null, delta = null):
 	Logger.fine("[ECS] update")
 
-	var world_id = world.get_instance_id()
-
 	# rebuild if dirty
+	var world_id = world.get_instance_id()
 	if is_dirty[world_id]:
 		Logger.debug("- system is dirty, rebuilding indexes")
 		rebuild(world_id)
 
-	var _delta = delta
-
 	# if no delta is passed, use the current delta
+	var _delta = delta
 	if _delta == null:
 		_delta = get_process_delta_time()
 
@@ -572,12 +570,7 @@ func update(world: World, systems: Array[StringName] = [], delta = null):
 			var _system = world_systems[world_id][_system_name]
 			if _system != null:
 				if _system.enabled:
-					_system.on_process(world_system_entities[world_id][_system_name], _delta)
-	
-	clean_up_if_necessary(world_id)
-
-
-func clean_up_if_necessary(world_id):
+					_system.on_process(world_system_entities[world_id][_system_name], data, _delta)
 
 	# clean up entities queued for removal
 	if entity_remove_queue.size() > 0:	

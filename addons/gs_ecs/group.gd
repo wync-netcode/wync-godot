@@ -47,7 +47,6 @@ func _ready():
 func _find_systems(node: Node, list: Array[StringName], depth: int):
 	for child in node.get_children():
 		if child is System:
-			#var system_name = str(child.name).to_lower()
 			list.append(child.get_label())
 		if child.get_child_count() && depth < maximun_depth_system_lookup:
 			_find_systems(child, list, depth+1)
