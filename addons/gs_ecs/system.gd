@@ -22,6 +22,14 @@ class_name System
 var components = ""
 var enabled = false
 
+
+## Labels identify systems in ECS
+## All subclasses should implement a label constant
+func get_label() -> StringName:
+	assert(self.label is StringName)
+	return self.label
+
+
 # virtual calls
 
 func on_init():
@@ -46,6 +54,15 @@ func on_before_remove():
 	
 func on_after_remove():
 	Logger.trace("[system] on_after_remove")
+
+
+func on_event_process(entities, data, delta):
+	for entity in entities:
+		on_process_entity(entity, delta)
+
+
+func on_event_process_entity(entity, data, delta):
+	Logger.trace("[system] on_event_process_entity")
 	
 	
 func on_process(entities, delta):

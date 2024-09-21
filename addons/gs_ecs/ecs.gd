@@ -154,10 +154,10 @@ func add_entity(world: World, entity: Entity, singleton: bool = false):
 
 # register a system
 #func add_system(system, components = []):
-func add_system(world: World, system, components = []):
+func add_system(world: World, system: System, components = []):
 	Logger.trace("[ECS] add_system")
 
-	var _sys_id = str(system.name).to_lower()
+	var _sys_id = system.get_label()
 	var _world_id = world.get_instance_id()
 
 	is_dirty[_world_id] = true
@@ -541,12 +541,19 @@ func remove_system(world: World, system_name):
 	Logger.debug("- system %s has been removed" % [_id])
 
 
+func update_all(world: World, delta = null):
+	update(world, world_systems[world.get_instance_id()].values())
+
+
+func update_group(world: World, group_instance: Group, delta = null):
+	update(world, group_instance.systems, delta)
+
+
 # update the systems, specified by group name (or not)
-func update(world: World, group: String = "", delta = null):
+func update(world: World, systems: Array[StringName] = [], delta = null):
 	Logger.fine("[ECS] update")
 
 	var world_id = world.get_instance_id()
-	group = group.to_lower()
 
 	# rebuild if dirty
 	if is_dirty[world_id]:
@@ -559,23 +566,18 @@ func update(world: World, group: String = "", delta = null):
 	if _delta == null:
 		_delta = get_process_delta_time()
 
-	# if no group passed, do all systems
-	if not group.length():
-		for _system in world_systems[world_id].values():
+	# process each system
+	for _system_name: StringName in systems:
+		if world_systems[world_id].has(_system_name):
+			var _system = world_systems[world_id][_system_name]
 			if _system != null:
 				if _system.enabled:
-					#print("%s %s %s %s" % [world.name, _system.name])
-					_system.on_process(world_system_entities[world_id][str(_system.name).to_lower()], _delta)
+					_system.on_process(world_system_entities[world_id][_system_name], _delta)
+	
+	clean_up_if_necessary(world_id)
 
-	# FIXME
-	# process each system in this group group
-	if (group.length() && world_group_systems[world_id].has(group)):
-		for _system_name in world_group_systems[world_id][group]:
-			if world_systems[world_id].has(_system_name):
-				var _system = world_systems[world_id][_system_name]
-				if _system != null:
-					if _system.enabled:
-						_system.on_process(world_system_entities[world_id][str(_system.name).to_lower()], _delta)
+
+func clean_up_if_necessary(world_id):
 
 	# clean up entities queued for removal
 	if entity_remove_queue.size() > 0:	
@@ -602,8 +604,6 @@ func update(world: World, group: String = "", delta = null):
 		world_group_systems[world_id].clear()
 		entity_remove_queue.clear()
 		do_clean[world_id] = false
-
-	return
 
 
 func _add_system_entities(world_id, system_name):
