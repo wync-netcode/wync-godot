@@ -281,12 +281,21 @@ func entity_add_component(entity, component):
 	return
 
 
-# NOTE: Could use the label instead of the name
 func entity_add_component_node(entity: Entity, component: Component):
 	entity.add_child(component)
 	if component.label:
 		component.name = component.label
 	entity_add_component(entity, component)
+
+
+func entity_remove_component_plus_node(entity: Entity, component_label: String):
+	if not entity.has_component(component_label):
+		return
+	var component = entity_get_component(entity.get_instance_id(), component_label)
+	if not component:
+		return
+	entity_remove_component(entity, component_label)
+	component.queue_free()
 
 
 # returns a component for an entity
