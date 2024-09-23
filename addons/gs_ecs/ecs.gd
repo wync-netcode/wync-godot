@@ -113,6 +113,7 @@ func add_singleton_component(component: Component):
 # register an entity
 func add_entity(world: World, entity: Entity, singleton: bool = false):
 	Logger.trace("[ECS] add_entity")
+	entity.world = world
 
 	var _id = entity.get_instance_id()
 	var _world_id = world.get_instance_id()
@@ -254,12 +255,8 @@ func clean(world: World):
 func entity_add_component(entity, component):
 	Logger.trace("[ECS] entity_add_component")
 
-	var world = find_world_up(entity)
-	if not world:
-		Logger.warn("- world for entity %s:%s not found " % [entity, entity.name])
-		return
 	var _entity_id = entity.get_instance_id()
-	var _world_id = world.get_instance_id()
+	var _world_id = entity.world.get_instance_id()
 
 	is_dirty[_world_id] = true
 
@@ -318,11 +315,7 @@ func entity_has_component(entity_id, component_name):
 func entity_remove_component(entity, component_name):
 	Logger.trace("[ECS] entity_remove_component")
 
-	var world = find_world_up(entity)
-	if not world:
-		Logger.warn("- world for entity %s:%s not found " % [entity, entity.name])
-		return
-	var _world_id = world.get_instance_id()
+	var _world_id = entity.world.get_instance_id()
 	var _entity_id = entity.get_instance_id()
 
 	is_dirty[_world_id] = true
@@ -473,12 +466,8 @@ func rebuild(world_id):
 func remove_component(entity, component_name):
 	Logger.trace("[ECS] remove_component")
 
-	var world = find_world_up(entity)
-	if not world:
-		Logger.warn("- world for entity %s:%s not found " % [entity, entity.name])
-		return
 	var _key = component_name.to_lower()
-	var _world_id = world.get_instance_id()
+	var _world_id = entity.world.get_instance_id()
 
 	is_dirty[_world_id] = true
 
@@ -500,11 +489,7 @@ func remove_component(entity, component_name):
 func remove_entity(entity):
 	Logger.trace("[ECS] remove_entity")
 
-	var world = find_world_up(entity)
-	if not world:
-		Logger.warn("- world for entity %s:%s not found " % [entity, entity.name])
-		return
-	var _world_id = world.get_instance_id()
+	var _world_id = entity.world.get_instance_id()
 	is_dirty[_world_id] = true
 
 	if (entity.has_method("get_instance_id")):
