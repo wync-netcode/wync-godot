@@ -19,7 +19,7 @@ class_name System
 @export var COMPONENTS = ""
 @export var ENABLED = true
 
-var components = ""
+var components: Array[int] = []
 var enabled = false
 
 
@@ -73,11 +73,9 @@ func _ready():
 	if COMPONENTS:	components = COMPONENTS
 	if ENABLED:		enabled = ENABLED
 	
-	var _components = components.to_lower().split(",")
 	var world = ECS.find_world_up(self)
 	if world:
-		print(world)
-		ECS.add_system(world, self, _components)
+		ECS.add_system(world, self, components)
 		on_ready()
 
 	

@@ -22,19 +22,19 @@ var world_entities = {}
 ## Map<world_id: int, Map<entity_name: string, entity: Entity>>
 var world_singleton_entities = {}
 
-## Map<world_id: int, Map<component_name: string, comp: Comp>>
+## Map<world_id: int, Array<comp_id: int, comp: Comp>>
 var world_singleton_components = {}
 
 # entities with a component
-# Map<comp_id: string, map<entity_id: int, comp: Comp>>
-var component_entities = {}  
+# Array<comp_id: int, map<entity_id: int, comp: Comp>>
+var component_entities: Array = [null]
 
 # a system processes entities with certain components
 # Map<world_id: int, map<system_name: string, system: System>>
 var world_systems = {}
 
 # the components filtered in a system
-# Map<system_name: string, comp_names: Array<string>>
+# Map<system_name: string, comp_ids: List<int>> # use negative comp_id for excluding
 var system_components = {}  
 
 # the entities in a given system
@@ -72,18 +72,16 @@ const version = "4.2-R1"
 # Group: Public Methods
 
 # register a component
-func add_component(component):
+func add_component() -> int:
 
 	Logger.trace("[ECS] add_component")
 	is_dirty[0] = true
 
-	var _name = str(component.name).to_lower()
-	if has_component(_name):
-		Logger.warn("- component %s was already registered -- skipping" % [_name])
-		return
-				
-	component_entities[_name] = {}
-	Logger.debug("- new component %s was registered" % [_name])
+	var comp_id = component_entities.size()
+	component_entities.resize(comp_id + 1)
+	component_entities[comp_id] = {}
+	Logger.debug("- new component registered with id %s" % [comp_id])
+	return comp_id
 
 
 # register a component
@@ -96,18 +94,23 @@ func add_singleton_component(component: Component):
 		Logger.warn("- world for component %s:%s not found " % [component, component.name])
 		return
 	var world_id = world.get_instance_id()
+	var comp_id = component.label
 	
 	# FIXME: Ugly world check
 	if not worlds.has(world_id):
 		ECS.add_world(world)
 
-	var _name = str(component.name).to_lower()
-	if world_singleton_components[world_id].has(_name):
-		Logger.warn("- singleton component %s was already registered -- skipping" % [_name])
+	# already has it
+	if world_has_singleton_component(world_id, comp_id):
+		Logger.warn("- singleton component %s(id %s) was already registered -- skipping" % [component.name, comp_id])
 		return
 				
-	world_singleton_components[world_id][_name] = component
-	Logger.debug("- new singleton component %s was registered" % [_name])
+	# register
+	var singletons_size = world_singleton_components[world_id].size()
+	if (comp_id >= singletons_size):
+		world_singleton_components[world_id].resize(comp_id +1)
+	world_singleton_components[world_id][comp_id] = component
+	Logger.debug("- new singleton component %s(id %s) was registered" % [component.name, comp_id])
 
 
 # register an entity
@@ -155,7 +158,7 @@ func add_entity(world: World, entity: Entity, singleton: bool = false):
 
 # register a system
 #func add_system(system, components = []):
-func add_system(world: World, system: System, components = []):
+func add_system(world: World, system: System, components: Array[int] = []):
 	Logger.trace("[ECS] add_system")
 
 	var _sys_id = system.get_label()
@@ -183,7 +186,7 @@ func add_system(world: World, system: System, components = []):
 
 	# add the components to the system
 	for _component in components:
-		system_components[_sys_id].append(_component.to_lower().strip_edges())
+		system_components[_sys_id].append(_component)
 
 	Logger.debug("- system %s has been registered" % [_sys_id])
 
@@ -236,7 +239,7 @@ func add_world(world: World):
 	world_system_entities[_id] = {}
 	world_entities[_id] = {}
 	world_singleton_entities[_id] = {}
-	world_singleton_components[_id] = {}
+	world_singleton_components[_id] = []
 	world_groups[_id] = {}
 	world_group_systems[_id] = {}
 	is_dirty[_id] = true
@@ -265,54 +268,48 @@ func entity_add_component(entity, component):
 		add_entity(_world_id, entity)
 		Logger.debug("- entity was registered")
 
-	var _id = str( component.name ).to_lower()
-
-	# add new component
-	if not has_component(_id):
-		add_component(component)
+	var comp_id = component.label
 
 	# add entity to the component
-	component_entities[_id][_entity_id] = component
-	Logger.debug("- registered %s component for entity %s:%s " % [_id, entity, entity.name])
+	component_entities[comp_id][_entity_id] = component
+	Logger.debug("- registered %s(id %s) component for entity %s:%s " % [component.name, comp_id, entity, entity.name])
 
 	return
 
 
 func entity_add_component_node(entity: Entity, component: Component):
 	entity.add_child(component)
-	if component.label:
-		component.name = component.label
 	entity_add_component(entity, component)
 
 
-func entity_remove_component_plus_node(entity: Entity, component_label: String):
-	if not entity.has_component(component_label):
+func entity_remove_component_plus_node(entity: Entity, comp_id: int):
+	if not entity.has_component(comp_id):
 		return
-	var component = entity_get_component(entity.get_instance_id(), component_label)
+	var component = entity_get_component(entity.get_instance_id(), comp_id)
 	if not component:
 		return
-	entity_remove_component(entity, component_label)
+	entity_remove_component(entity, comp_id)
 	component.queue_free()
 
 
 # returns a component for an entity
-func entity_get_component(entity_id, component_name):
+func entity_get_component(entity_id, comp_id):
 	Logger.trace("[ECS] entity_get_component")
-	if (component_entities.has(component_name)):
-		return component_entities[component_name][entity_id]
+	if has_component(comp_id):
+		return component_entities[comp_id][entity_id]
 
 
 # returns true if the entity has the component
-func entity_has_component(entity_id, component_name):
+func entity_has_component(entity_id, comp_id):
 	Logger.trace("[ECS] entity_has_component")
-	if component_entities.has(component_name):
-		if component_entities[component_name].has(entity_id):
+	if has_component(comp_id):
+		if component_entities[comp_id].has(entity_id):
 			return true
 	return false
 
 
 
-func entity_remove_component(entity, component_name):
+func entity_remove_component(entity, comp_id: int):
 	Logger.trace("[ECS] entity_remove_component")
 
 	var _world_id = entity.world.get_instance_id()
@@ -324,16 +321,9 @@ func entity_remove_component(entity, component_name):
 		Logger.warn("- entity %s:%s not registered " % [entity, entity.name])
 		return
 
-	var _id = component_name.to_lower()
-
-	if not has_component(_id):
-		Logger.warn("- component %s not registered " % [_id])
-		return
-
 	# remove entity
-	component_entities[_id].erase(_entity_id)
-	Logger.debug("- removed component %s for entity %s:%s" % [_id, entity, entity.name])
-
+	component_entities[comp_id].erase(_entity_id)
+	Logger.debug("- removed component %s for entity %s:%s" % [comp_id, entity, entity.name])
 	return
 
 
@@ -351,23 +341,23 @@ func get_singleton_entity(caller: Node, entity_name: String) -> Entity:
 	return world_singleton_entities[world_id][entity_name]
 
 
-func get_singleton_component(caller: Node, entity_name: String) -> Component:
+func get_singleton_component(caller: Node, comp_id: int) -> Component:
 	var world = find_world_up(caller)
 	if not world:
 		Logger.warn("- world for node %s:%s not found " % [caller, caller.name])
 		return null
 
 	var world_id = world.get_instance_id()
-	if not world_singleton_components[world_id].has(entity_name):
+	if not world_has_singleton_component(world_id, comp_id):
 		return null
 
-	return world_singleton_components[world_id][entity_name]
+	return world_singleton_components[world_id][comp_id]
 
 
 # return component from the framework
-func get_component(component_name):
+func get_component(comp_id):
 	Logger.trace("[ECS] get_component")
-	return component_entities[component_name]
+	return component_entities[comp_id]
 
 
 # return all components
@@ -377,9 +367,15 @@ func get_all_components():
 
 
 # returns true if component already exists in the framework
-func has_component(component_name):
+func has_component(comp_id):
 	Logger.trace("[ECS] has_component")
-	return component_entities.has(component_name)
+	return comp_id > -1 && comp_id < component_entities.size()
+
+
+func world_has_singleton_component(world_id: int, comp_id: int):
+	return (comp_id > -1
+		&& comp_id < world_singleton_components[world_id].size()
+		&& world_singleton_components[world_id][comp_id] != null)
 
 
 # returns true if entity already exists
@@ -463,20 +459,18 @@ func rebuild(world_id):
 
 
 # remove component from the framework
-func remove_component(entity, component_name):
+func remove_component(entity, comp_id: int):
 	Logger.trace("[ECS] remove_component")
 
-	var _key = component_name.to_lower()
 	var _world_id = entity.world.get_instance_id()
 
 	is_dirty[_world_id] = true
 
-	if has_component(_key):
+	if has_component(comp_id):
 
 		var _id = entity.get_instance_id()
-		component_entities[_key].erase(_id)
-
-		Logger.debug("- %s component was removed for entity %s:%s" % [_key, entity, entity.name])
+		component_entities[comp_id].erase(_id)
+		Logger.debug("- %s component was removed for entity %s:%s" % [comp_id, entity, entity.name])
 
 	else:
 
@@ -598,22 +592,22 @@ func _add_system_entities(world_id, system_name):
 			continue
 
 		var has_all_components = true
-		for component in system_components[system_name]:
+		for component_int in system_components[system_name]:
+			var comp_id = abs(component_int)
 
-			if component.substr(0,1) == "!":
-				var _component_id = component.substr(1,999)
-				if (has_component(_component_id)):
-					if component_entities[_component_id].has(entity_id):
+			if component_int < 0:
+				if (has_component(comp_id)):
+					if component_entities[comp_id].has(entity_id):
 						has_all_components = false
 						break
 					break
 				break
 
-			if not component_entities.has(component):
+			if not has_component(comp_id):
 				has_all_components = false
 				break
 
-			if not component_entities[component].has(entity_id):
+			if not component_entities[comp_id].has(entity_id):
 				has_all_components = false
 				break
 
