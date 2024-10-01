@@ -16,6 +16,7 @@ func on_process_entity(entity : Entity, _delta: float):
 	var co_actor = entity.get_component(CoActor.label) as CoActor
 
 	print("D: Trying to register %s:%s" % [entity, entity.name])
+	
 	# register actors that aren't registered
 
 	var cursor = co_actors.cursor

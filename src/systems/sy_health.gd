@@ -1,10 +1,12 @@
 extends System
 class_name SyHealth
 
+
 func _ready():
 	components = "%s" % [CoHealth.label]
 	super()
-	
+
+
 func on_process_entity(entity: Entity, _delta: float):
 	var health = entity.get_component(CoHealth.label) as CoHealth
 

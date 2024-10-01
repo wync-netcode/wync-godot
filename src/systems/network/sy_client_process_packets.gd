@@ -17,7 +17,6 @@ func on_process_entity(entity: Entity, _delta: float):
 	
 
 	for pkt: NetPacket in co_io.in_packets:
-		co_io.in_packets.erase(pkt)
 
 		# TODO: proper packet checking
 		if pkt.data.positions.size() != pkt.data.entity_ids.size():
@@ -33,3 +32,5 @@ func on_process_entity(entity: Entity, _delta: float):
 				continue
 
 			(actor as Node2D).position = pkt.data.positions[id]
+	
+	co_io.in_packets.clear()

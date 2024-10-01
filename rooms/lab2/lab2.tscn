@@ -51,16 +51,16 @@ script = ExtResource("4_wplyx")
 
 [node name="Singletons" type="Node" parent="WorldServer"]
 
-[node name="EnSingleServer" parent="WorldServer/Singletons" instance=ExtResource("5_gpsy3")]
-singleton = true
-
 [node name="EnSingleTicks" parent="WorldServer/Singletons" instance=ExtResource("6_ib3pf")]
 singleton = true
 
-[node name="EnRaycastSingleton" parent="WorldServer/Singletons" instance=ExtResource("8_ry87g")]
-
 [node name="EnSingleActors" parent="WorldServer/Singletons" instance=ExtResource("10_k0r3w")]
 singleton = true
+
+[node name="EnSingleServer" parent="WorldServer/Singletons" instance=ExtResource("5_gpsy3")]
+singleton = true
+
+[node name="EnRaycastSingleton" parent="WorldServer/Singletons" instance=ExtResource("8_ry87g")]
 
 [node name="CoSingleWorld" type="Node" parent="WorldServer/Singletons"]
 script = ExtResource("12_8x65i")
@@ -116,13 +116,13 @@ script = ExtResource("4_wplyx")
 
 [node name="Singletons" type="Node" parent="WorldClient1"]
 
-[node name="EnRaycastSingleton" parent="WorldClient1/Singletons" instance=ExtResource("8_ry87g")]
-singleton = false
-
 [node name="EnSingleTicks" parent="WorldClient1/Singletons" instance=ExtResource("6_ib3pf")]
 
 [node name="EnSingleActors" parent="WorldClient1/Singletons" instance=ExtResource("10_k0r3w")]
 singleton = true
+
+[node name="EnRaycastSingleton" parent="WorldClient1/Singletons" instance=ExtResource("8_ry87g")]
+singleton = false
 
 [node name="CoSingleWorld" type="Node" parent="WorldClient1/Singletons"]
 script = ExtResource("12_8x65i")

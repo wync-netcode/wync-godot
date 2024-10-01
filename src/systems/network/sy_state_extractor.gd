@@ -3,9 +3,11 @@ class_name SyStateExtractor
 
 ## Extracts state from actors
 
+
 func _ready():
 	components = "%s,%s" % [CoActor.label, CoCollider.label]
 	super()
+
 
 func on_process(entities, _delta: float):
 

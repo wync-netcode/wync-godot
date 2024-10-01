@@ -1,7 +1,8 @@
 extends System
 class_name SyTransportLoopback
 
-## Fake network to sends and receives packets to itself
+## Fake network that sends and receives packets between peers
+
 
 func _ready():
 	components = "%s" % [CoIOPackets.label]
@@ -20,16 +21,18 @@ func on_process_entity(entity: Entity, _delta: float):
 		print("E: Couldn't find singleton CoTransportLoopback")
 		return
 		
-	# look for pending packets to send flying over our fake network
+	# look for pending packets to send
 
 	for pkt: NetPacket in co_io_packets.out_packets:
 		var loopback_pkt = LoopbackPacket.new()
 		loopback_pkt.packet = pkt
 		loopback_pkt.deliver_time = curr_time + co_loopback.lag
 
+		# NOTE: shouldn't the packet be erased here?
+
 		co_loopback.packets.append(loopback_pkt)
 
-	# look for packets ready to be delivered
+	# look for packets ready to be received
 
 	for pkt: LoopbackPacket in co_loopback.packets:
 		if curr_time < pkt.deliver_time:

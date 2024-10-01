@@ -9,4 +9,4 @@ enum STATE {
 
 var state: STATE = STATE.DISCONNECTED
 var identifier: int = -1
-var server_peer: int = -1 # key to actual peer
+var server_peer: int = -1  # key to actual peer

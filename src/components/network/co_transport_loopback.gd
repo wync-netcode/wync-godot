@@ -2,8 +2,10 @@ extends Component
 class_name CoTransportLoopback
 const label = "cotransportloopback"
 
-var peers: Array[LoopbackPeer]  # registered peers
-var packets: Array[LoopbackPacket]  # represent packets flying in the network
+## registered peers
+var peers: Array[LoopbackPeer]  
+## represent packets flying in the network
+var packets: Array[LoopbackPacket]
 var lag: int = 500  # (ms)
 var jitter: int = 0  # (ms) how many frames a package might be late
 var packet_loss_percentage: int = 0 # [0-100]
