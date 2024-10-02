@@ -16,3 +16,5 @@ class ServerPeer:
 var state: STATE = STATE.STARTED
 var peers: Array[ServerPeer]
 var peer_count: int = 0
+
+# TODO: Define update rate

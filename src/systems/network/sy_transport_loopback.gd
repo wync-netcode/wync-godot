@@ -27,10 +27,9 @@ func on_process_entity(entity: Entity, _delta: float):
 		var loopback_pkt = LoopbackPacket.new()
 		loopback_pkt.packet = pkt
 		loopback_pkt.deliver_time = curr_time + co_loopback.lag
-
-		# NOTE: shouldn't the packet be erased here?
-
 		co_loopback.packets.append(loopback_pkt)
+
+	co_io_packets.out_packets.clear()
 
 	# look for packets ready to be received
 

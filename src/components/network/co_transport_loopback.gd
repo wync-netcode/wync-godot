@@ -7,7 +7,7 @@ var peers: Array[LoopbackPeer]
 ## represent packets flying in the network
 var packets: Array[LoopbackPacket]
 var lag: int = 500  # (ms)
-var jitter: int = 0  # (ms) how many frames a package might be late
+var jitter: int = 0  # (ms) how late/early a packet might be
 var packet_loss_percentage: int = 0 # [0-100]
 var time_last_pkt_sent: int = 0
 var jitter_unordered_packets: bool = false # Allows jitter to mangle packet order

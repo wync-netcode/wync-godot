@@ -11,13 +11,17 @@ func _ready():
 
 func on_process(entities, _delta: float):
 
-	# get singletons
-
 	var single_ticks = ECS.get_singleton_entity(self, "EnSingleTicks")
 	if not single_ticks:
 		print("E: Couldn't find singleton EnSingleTicks")
 		return
 	var co_ticks = single_ticks.get_component(CoTicks.label) as CoTicks
+
+	# throttle send rate
+	# TODO: make this configurable
+
+	if co_ticks.ticks % 10 != 0:
+		return
 	
 	var single_server = ECS.get_singleton_entity(self, "EnSingleServer")
 	if not single_server:
@@ -40,10 +44,6 @@ func on_process(entities, _delta: float):
 
 		snapshot.entity_ids[i] = co_actor.id
 		snapshot.positions[i] = node2d.position
-	
-	# NOTE: Might want no to cleaning the buffer
-
-	co_io_packets.out_packets.clear()
 
 	# prepare packets to send
 

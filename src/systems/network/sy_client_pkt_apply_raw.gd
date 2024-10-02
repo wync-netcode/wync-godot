@@ -1,5 +1,5 @@
 extends System
-class_name SyClientProcessPackets
+class_name SyClientPktApplyRaw
 
 
 func _ready():
@@ -14,7 +14,6 @@ func on_process_entity(entity: Entity, _delta: float):
 		print("E: Couldn't find singleton EnSingleActors")
 		return
 	var co_actors = single_actors.get_component(CoSingleActors.label) as CoSingleActors
-	
 
 	for pkt: NetPacket in co_io.in_packets:
 
