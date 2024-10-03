@@ -1,6 +1,26 @@
 extends System
 class_name SyNetSaveConfirmedStates
 
+"""
+Components:
+* (Data)    NetTickData
+* (Storage) CoNetConfirmedStates
+				RingBuffer[NetTickData]
+* (Storage) CoNetPredictedStates
+				RingBuffer[NetTickData]
+# (Storage) CoNetBufferedInputs
+				Array[tick_id: int, input: Input]
+
+* (Flag)    CoFlagNetExtrapolate
+* (Flag)    CoFlagSelfPredict
+
+Systems:
+* (Gather/Generation) SyNetSaveConfirmedStates (CoNetConfirmedStates)
+* (Gather/Generation) SyNetExtrapolate (CoNetConfirmedStates, CoNetPredictedStates, CoNetExtrapolate)
+* (Gather/Generation) SyNetSelfPredict (CoNetConfirmedStates, CoNetPredictedStates, CoSelfPredict, CoNetBufferedInputs)
+* (Display) SyNetInterpolate (CoNetConfirmedStates || CoNetPredictedStates)
+"""
+
 
 func _ready():
 	components = "%s,%s,%s,%s" % [CoNetConfirmedStates.label, CoActor.label, CoCollider.label, CoActorRegisteredFlag.label]
@@ -37,7 +57,7 @@ func on_process(_entities, _delta: float):
 				Log.err(self, "Couldn't find actor with id %s" % actor_id)
 				continue
 
-			var tick_data = CoNetConfirmedStates.TickData.new()
+			var tick_data = NetTickData.new()
 			tick_data.tick = data.tick
 			tick_data.timestamp = curr_time
 			tick_data.data = data.positions[i]
@@ -45,6 +65,5 @@ func on_process(_entities, _delta: float):
 			var co_net_confirmed_states = actor_entity.get_component(CoNetConfirmedStates.label) as CoNetConfirmedStates
 			var ring = co_net_confirmed_states.buffer
 			ring.push(tick_data)
-			#co_net_confirmed_states.add_tick(data.tick, data.positions[i])
 
 	co_io.in_packets.clear()

@@ -41,8 +41,8 @@ func on_process(entities, _delta: float):
 
 		# find two snapshots
 
-		var snap_left: CoNetConfirmedStates.TickData = null
-		var snap_right: CoNetConfirmedStates.TickData = null
+		var snap_left: NetTickData = null
+		var snap_right: NetTickData = null
 		var found_snapshots = false
 
 		# find the closest two snapshots around the target time

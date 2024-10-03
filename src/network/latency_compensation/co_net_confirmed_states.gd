@@ -2,12 +2,8 @@ extends Component
 class_name CoNetConfirmedStates
 const label = "conetconfirmedstates"
 
-class TickData:
-	var tick: int
-	var timestamp: int
-	var data#: Any
+var buffer: RingBuffer = RingBuffer.new(4) #:RingBuffer[NetTickData]
 
-var buffer: RingBuffer = RingBuffer.new(4) #:RingBuffer[TickData]
 
 """
 
