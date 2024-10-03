@@ -1,0 +1,275 @@
+[gd_scene load_steps=31 format=3 uid="uid://e4enao3jmf22"]
+
+[ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_8726f"]
+[ext_resource type="Script" path="res://data/StaticData.gd" id="2_w1jha"]
+[ext_resource type="PackedScene" uid="uid://br3o7pgduj72n" path="res://rooms/demo0/map_demo_0.tscn" id="3_wmj1m"]
+[ext_resource type="Script" path="res://src/utils/global_singletons.gd" id="4_xpm1l"]
+[ext_resource type="Script" path="res://src/network/co_transport_loopback.gd" id="5_hmn43"]
+[ext_resource type="Script" path="res://addons/gs_ecs/world.gd" id="6_odp22"]
+[ext_resource type="PackedScene" uid="uid://wtwk5yuubmba" path="res://src/entities/en_single_ticks.tscn" id="7_yflts"]
+[ext_resource type="PackedScene" uid="uid://5n6bvvfq608d" path="res://src/entities/en_single_actors.tscn" id="8_kw7sn"]
+[ext_resource type="PackedScene" uid="uid://ex31s4wv3adg" path="res://src/entities/en_single_server.tscn" id="9_i26gw"]
+[ext_resource type="PackedScene" uid="uid://hmishy6acfrk" path="res://src/entities/en_raycast_singleton.tscn" id="10_kimqb"]
+[ext_resource type="Script" path="res://src/components/co_single_world.gd" id="11_qsqtq"]
+[ext_resource type="Script" path="res://src/systems/sy_velocity.gd" id="12_8kbcw"]
+[ext_resource type="Script" path="res://src/systems/sy_player_input.gd" id="13_m60h0"]
+[ext_resource type="Script" path="res://src/systems/sy_actor_movement.gd" id="14_xlqji"]
+[ext_resource type="Script" path="res://src/systems/sy_shoot_weapon.gd" id="15_csddj"]
+[ext_resource type="Script" path="res://src/systems/sy_reload_weapon.gd" id="16_vopm6"]
+[ext_resource type="Script" path="res://src/systems/sy_switch_weapon.gd" id="17_85rsx"]
+[ext_resource type="Script" path="res://src/systems/sy_health.gd" id="18_5mmd6"]
+[ext_resource type="Script" path="res://src/systems/sy_projectile_movement.gd" id="19_461pf"]
+[ext_resource type="Script" path="res://src/network/sy_ticks.gd" id="20_0bne6"]
+[ext_resource type="Script" path="res://src/systems/sy_actor_register.gd" id="21_hnbx7"]
+[ext_resource type="Script" path="res://src/network/sy_transport_loopback_peer_register.gd" id="22_632h5"]
+[ext_resource type="Script" path="res://src/network/sy_state_extractor.gd" id="23_w1ldw"]
+[ext_resource type="Script" path="res://src/network/sy_transport_loopback.gd" id="24_rg7ja"]
+[ext_resource type="PackedScene" uid="uid://dqillnt7k6deb" path="res://src/entities/en_client.tscn" id="25_d2wxo"]
+[ext_resource type="PackedScene" uid="uid://4o33ca5n1fw6" path="res://src/entities/en_player.tscn" id="26_ph57h"]
+[ext_resource type="Script" path="res://src/network/sy_transport_loopback_connection.gd" id="27_844vy"]
+[ext_resource type="Script" path="res://src/network/sy_client_pkt_apply_raw.gd" id="28_sibuh"]
+[ext_resource type="Script" path="res://src/network/sy_client_pkt_interpolation.gd" id="29_5a8up"]
+[ext_resource type="PackedScene" uid="uid://d170xboi2dsfr" path="res://src/ui/info.tscn" id="30_372eq"]
+
+[node name="Lab3" type="Node2D"]
+script = ExtResource("1_8726f")
+
+[node name="StaticData" type="Node" parent="."]
+script = ExtResource("2_w1jha")
+
+[node name="EnMap" type="Node2D" parent="."]
+
+[node name="MapDemo0" parent="EnMap" instance=ExtResource("3_wmj1m")]
+
+[node name="GlobalSingletons" type="Node" parent="."]
+script = ExtResource("4_xpm1l")
+
+[node name="CoTransportLoopback" type="Node" parent="GlobalSingletons"]
+script = ExtResource("5_hmn43")
+
+[node name="worlds" type="Node" parent="."]
+
+[node name="WorldServer" type="Node" parent="worlds"]
+script = ExtResource("6_odp22")
+
+[node name="Singletons" type="Node" parent="worlds/WorldServer"]
+
+[node name="EnSingleTicks" parent="worlds/WorldServer/Singletons" instance=ExtResource("7_yflts")]
+singleton = true
+
+[node name="EnSingleActors" parent="worlds/WorldServer/Singletons" instance=ExtResource("8_kw7sn")]
+singleton = true
+
+[node name="EnSingleServer" parent="worlds/WorldServer/Singletons" instance=ExtResource("9_i26gw")]
+singleton = true
+
+[node name="EnRaycastSingleton" parent="worlds/WorldServer/Singletons" instance=ExtResource("10_kimqb")]
+
+[node name="CoSingleWorld" type="Node" parent="worlds/WorldServer/Singletons"]
+script = ExtResource("11_qsqtq")
+singleton = true
+
+[node name="Entities" type="Node" parent="worlds/WorldServer"]
+
+[node name="SystemsGameplay" type="Node" parent="worlds/WorldServer"]
+
+[node name="SyVelocity" type="Node" parent="worlds/WorldServer/SystemsGameplay"]
+script = ExtResource("12_8kbcw")
+
+[node name="SyActorMovement" type="Node" parent="worlds/WorldServer/SystemsGameplay"]
+script = ExtResource("14_xlqji")
+
+[node name="SyShootWeapon" type="Node" parent="worlds/WorldServer/SystemsGameplay"]
+script = ExtResource("15_csddj")
+
+[node name="SyReloadWeapon" type="Node" parent="worlds/WorldServer/SystemsGameplay"]
+script = ExtResource("16_vopm6")
+
+[node name="SySwitchWeapon" type="Node" parent="worlds/WorldServer/SystemsGameplay"]
+script = ExtResource("17_85rsx")
+
+[node name="SyHealth" type="Node" parent="worlds/WorldServer/SystemsGameplay"]
+script = ExtResource("18_5mmd6")
+
+[node name="SyProjectileMovement" type="Node" parent="worlds/WorldServer/SystemsGameplay"]
+script = ExtResource("19_461pf")
+
+[node name="SystemsNetwork" type="Node" parent="worlds/WorldServer"]
+
+[node name="SyTicks" type="Node" parent="worlds/WorldServer/SystemsNetwork"]
+script = ExtResource("20_0bne6")
+
+[node name="SyActorRegister" type="Node" parent="worlds/WorldServer/SystemsNetwork"]
+script = ExtResource("21_hnbx7")
+
+[node name="SyTransportLoopbackPeerRegister" type="Node" parent="worlds/WorldServer/SystemsNetwork"]
+script = ExtResource("22_632h5")
+
+[node name="SyStateExtractor" type="Node" parent="worlds/WorldServer/SystemsNetwork"]
+script = ExtResource("23_w1ldw")
+
+[node name="SyTransportLoopback" type="Node" parent="worlds/WorldServer/SystemsNetwork"]
+script = ExtResource("24_rg7ja")
+
+[node name="WorldClient2" type="Node" parent="worlds"]
+script = ExtResource("6_odp22")
+
+[node name="Singletons" type="Node" parent="worlds/WorldClient2"]
+
+[node name="EnSingleTicks" parent="worlds/WorldClient2/Singletons" instance=ExtResource("7_yflts")]
+
+[node name="EnSingleActors" parent="worlds/WorldClient2/Singletons" instance=ExtResource("8_kw7sn")]
+singleton = true
+
+[node name="EnRaycastSingleton" parent="worlds/WorldClient2/Singletons" instance=ExtResource("10_kimqb")]
+singleton = false
+
+[node name="CoSingleWorld" type="Node" parent="worlds/WorldClient2/Singletons"]
+script = ExtResource("11_qsqtq")
+world_id = 1
+singleton = true
+
+[node name="Entities" type="Node" parent="worlds/WorldClient2"]
+
+[node name="EnClient" parent="worlds/WorldClient2/Entities" instance=ExtResource("25_d2wxo")]
+
+[node name="EnPlayer2" parent="worlds/WorldClient2/Entities" instance=ExtResource("26_ph57h")]
+position = Vector2(134, 228)
+
+[node name="SystemsGameplay" type="Node" parent="worlds/WorldClient2"]
+
+[node name="SyVelocity" type="Node" parent="worlds/WorldClient2/SystemsGameplay"]
+script = ExtResource("12_8kbcw")
+ENABLED = false
+
+[node name="SyPlayerInput" type="Node" parent="worlds/WorldClient2/SystemsGameplay"]
+script = ExtResource("13_m60h0")
+
+[node name="SyActorMovement" type="Node" parent="worlds/WorldClient2/SystemsGameplay"]
+script = ExtResource("14_xlqji")
+ENABLED = false
+
+[node name="SyShootWeapon" type="Node" parent="worlds/WorldClient2/SystemsGameplay"]
+script = ExtResource("15_csddj")
+ENABLED = false
+
+[node name="SyReloadWeapon" type="Node" parent="worlds/WorldClient2/SystemsGameplay"]
+script = ExtResource("16_vopm6")
+ENABLED = false
+
+[node name="SySwitchWeapon" type="Node" parent="worlds/WorldClient2/SystemsGameplay"]
+script = ExtResource("17_85rsx")
+ENABLED = false
+
+[node name="SyHealth" type="Node" parent="worlds/WorldClient2/SystemsGameplay"]
+script = ExtResource("18_5mmd6")
+ENABLED = false
+
+[node name="SyProjectileMovement" type="Node" parent="worlds/WorldClient2/SystemsGameplay"]
+script = ExtResource("19_461pf")
+ENABLED = false
+
+[node name="SystemsNetwork" type="Node" parent="worlds/WorldClient2"]
+
+[node name="SyTicks" type="Node" parent="worlds/WorldClient2/SystemsNetwork"]
+script = ExtResource("20_0bne6")
+ENABLED = false
+
+[node name="SyActorRegister" type="Node" parent="worlds/WorldClient2/SystemsNetwork"]
+script = ExtResource("21_hnbx7")
+
+[node name="SyTransportLoopbackPeerRegister" type="Node" parent="worlds/WorldClient2/SystemsNetwork"]
+script = ExtResource("22_632h5")
+
+[node name="SyTransportLoopbackConnection" type="Node" parent="worlds/WorldClient2/SystemsNetwork"]
+script = ExtResource("27_844vy")
+
+[node name="SyTransportLoopback" type="Node" parent="worlds/WorldClient2/SystemsNetwork"]
+script = ExtResource("24_rg7ja")
+
+[node name="SyClientPktApplyRaw" type="Node" parent="worlds/WorldClient2/SystemsNetwork"]
+script = ExtResource("28_sibuh")
+
+[node name="WorldClient1" type="Node" parent="worlds"]
+script = ExtResource("6_odp22")
+
+[node name="Singletons" type="Node" parent="worlds/WorldClient1"]
+
+[node name="EnSingleTicks" parent="worlds/WorldClient1/Singletons" instance=ExtResource("7_yflts")]
+
+[node name="EnSingleActors" parent="worlds/WorldClient1/Singletons" instance=ExtResource("8_kw7sn")]
+singleton = true
+
+[node name="EnRaycastSingleton" parent="worlds/WorldClient1/Singletons" instance=ExtResource("10_kimqb")]
+singleton = false
+
+[node name="CoSingleWorld" type="Node" parent="worlds/WorldClient1/Singletons"]
+script = ExtResource("11_qsqtq")
+world_id = 1
+singleton = true
+
+[node name="Entities" type="Node" parent="worlds/WorldClient1"]
+
+[node name="EnClient" parent="worlds/WorldClient1/Entities" instance=ExtResource("25_d2wxo")]
+
+[node name="EnPlayer2" parent="worlds/WorldClient1/Entities" instance=ExtResource("26_ph57h")]
+position = Vector2(134, 228)
+
+[node name="SystemsGameplay" type="Node" parent="worlds/WorldClient1"]
+
+[node name="SyVelocity" type="Node" parent="worlds/WorldClient1/SystemsGameplay"]
+script = ExtResource("12_8kbcw")
+ENABLED = false
+
+[node name="SyActorMovement" type="Node" parent="worlds/WorldClient1/SystemsGameplay"]
+script = ExtResource("14_xlqji")
+ENABLED = false
+
+[node name="SyShootWeapon" type="Node" parent="worlds/WorldClient1/SystemsGameplay"]
+script = ExtResource("15_csddj")
+ENABLED = false
+
+[node name="SyReloadWeapon" type="Node" parent="worlds/WorldClient1/SystemsGameplay"]
+script = ExtResource("16_vopm6")
+ENABLED = false
+
+[node name="SySwitchWeapon" type="Node" parent="worlds/WorldClient1/SystemsGameplay"]
+script = ExtResource("17_85rsx")
+ENABLED = false
+
+[node name="SyHealth" type="Node" parent="worlds/WorldClient1/SystemsGameplay"]
+script = ExtResource("18_5mmd6")
+ENABLED = false
+
+[node name="SyProjectileMovement" type="Node" parent="worlds/WorldClient1/SystemsGameplay"]
+script = ExtResource("19_461pf")
+ENABLED = false
+
+[node name="SystemsNetwork" type="Node" parent="worlds/WorldClient1"]
+
+[node name="SyTicks" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
+script = ExtResource("20_0bne6")
+ENABLED = false
+
+[node name="SyActorRegister" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
+script = ExtResource("21_hnbx7")
+
+[node name="SyTransportLoopbackPeerRegister" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
+script = ExtResource("22_632h5")
+
+[node name="SyTransportLoopbackConnection" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
+script = ExtResource("27_844vy")
+
+[node name="SyTransportLoopback" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
+script = ExtResource("24_rg7ja")
+
+[node name="SyClientPktApplyRaw" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
+script = ExtResource("28_sibuh")
+ENABLED = false
+
+[node name="SyClientPktInterpolation" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
+script = ExtResource("29_5a8up")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="ui" parent="CanvasLayer" instance=ExtResource("30_372eq")]

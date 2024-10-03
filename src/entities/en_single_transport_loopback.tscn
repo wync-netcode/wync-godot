@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://ck1h3hbitv3qy"]
 
 [ext_resource type="Script" path="res://addons/gs_ecs/entity.gd" id="1_ww2nv"]
-[ext_resource type="Script" path="res://src/components/network/co_transport_loopback.gd" id="2_ar8un"]
+[ext_resource type="Script" path="res://src/network/co_transport_loopback.gd" id="2_ar8un"]
 
 [node name="EnSingleTransportLoopback" type="Node"]
 script = ExtResource("1_ww2nv")

@@ -8,7 +8,6 @@ class_name SyClientPktInterpolation
 ## * There will be visual glitches because of jitter
 
 
-
 func _ready():
 	components = "%s,%s,%s" % [CoClient.label, CoIOPackets.label, CoSnapshots.label]
 	super()
@@ -50,24 +49,18 @@ func on_process_entity(entity: Entity, _delta: float):
 
 		co_io.in_packets.clear()
 	
-	# TODO
-	# 1. Definir la cantidad de tiempo en el pasado a mostrar e.g. ticks(RTT) + 1 tick
-	
-	var tick_rate = 60 # TODO: Extract from engine or define elsewhere
-
+	# define target time to render
+	# TODO: Extract from engine or define elsewhere
+	var tick_rate = 60 
 	# TODO: The server should communicate this information
 	# NOTE: What if we have different send rates for different entities as a LOD measure?
 	co_snapshots.pkt_inter_arrival_time = ((1000.0 / 60) * 10) 
+	# TODO: How to define the padding? Maybe it should be a display tick?
+	var padding = (1000.0 / tick_rate)
+	var target_time = curr_time - co_snapshots.pkt_inter_arrival_time - padding
 
-	# TODO: How to define the padding? Maybe it should be a tick?
-	var padding = 0
-	var time_to_render = curr_time - co_snapshots.pkt_inter_arrival_time - padding
+	# interpolate entities
 
-	# 2. find two snapshots
-
-	var target_time = time_to_render
-
-	#for snapshot in co_snapshots.entity_snapshots[actor_id]
 	for actor_entity in co_actors.actors:
 		if not actor_entity:
 			continue
@@ -100,18 +93,9 @@ func on_process_entity(entity: Entity, _delta: float):
 		if not found_snapshots:
 			Log.out(self, "left: %s | target: %s | right: %s | curr: %s" % [0, target_time, 0, curr_time])
 			continue
-		else:
-			Log.out(self, "left: %s | target: %s | right: %s | curr: %s" % [snap_left.timestamp, target_time, snap_right.timestamp, curr_time])
+		#else: Log.out(self, "left: %s | target: %s | right: %s | curr: %s" % [snap_left.timestamp, target_time, snap_right.timestamp, curr_time])
 
-		#Sesión 2 11:30
 		# interpolate between the two
 
 		var new_pos = snap_left.position.lerp(snap_right.position, (target_time - snap_left.timestamp) / (snap_right.timestamp - snap_left.timestamp))
 		(actor_entity as Node2D).position = new_pos
-
-
-
-
-	# 3. Calculate the position based on stored snapshots
-	# 4. Apply it
-
