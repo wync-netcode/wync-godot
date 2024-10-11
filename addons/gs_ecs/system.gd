@@ -19,8 +19,16 @@ class_name System
 @export var COMPONENTS = ""
 @export var ENABLED = true
 
-var components = ""
+var components: Array[int] = []
 var enabled = false
+
+
+## Labels identify systems in ECS
+## All subclasses should implement a label constant
+func get_label() -> StringName:
+	assert(self.label is StringName)
+	return self.label
+
 
 # virtual calls
 
@@ -48,12 +56,12 @@ func on_after_remove():
 	Logger.trace("[system] on_after_remove")
 	
 	
-func on_process(entities, delta):
+func on_process(entities, data, delta):
 	for entity in entities:
-		on_process_entity(entity, delta)
+		on_process_entity(entity, data, delta)
 	
 	
-func on_process_entity(entity, delta):
+func on_process_entity(entity, data, delta):
 	Logger.trace("[system] on_process_entity")
 	pass
 	
@@ -65,11 +73,9 @@ func _ready():
 	if COMPONENTS:	components = COMPONENTS
 	if ENABLED:		enabled = ENABLED
 	
-	var _components = components.to_lower().split(",")
 	var world = ECS.find_world_up(self)
 	if world:
-		print(world)
-		ECS.add_system(world, self, _components)
+		ECS.add_system(world, self, components)
 		on_ready()
 
 	

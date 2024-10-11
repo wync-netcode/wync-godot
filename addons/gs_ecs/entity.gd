@@ -7,7 +7,7 @@
 #		Helper Class for Developers to quickly attach to a Node to
 #		mark it as an Entity.
 #
-#		Components are automatically added to the Entity in the
+#		Components are automatically already_added to the Entity in the
 #		Framework.
 #
 #	Remarks:
@@ -26,6 +26,8 @@ var id:
 	get = _get_id
 	
 var enabled = true
+var already_added = false
+var world: World = null
 
 @export var singleton: bool = false
 
@@ -83,9 +85,11 @@ func _ready():
 func _enter_tree():
 	Logger.trace("[entity] _enter_tree")
 
-	var world = ECS.find_world_up(self)
+	if already_added:
+		return
+	if not world:
+		world = ECS.find_world_up(self)
 	if world:
-		print("I found a world!", world.name, self)
 		# add self as an entity
 		ECS.add_entity(world, self, singleton)
 		on_enter_tree()

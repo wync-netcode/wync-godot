@@ -34,7 +34,7 @@ func on_ready():
 	
 	
 func _enter_tree():
-	Logger.trace("[component] _enter_tree")
+	Logger.trace("[component] _enter_tree %s" % name)
 
 	if singleton:
 		ECS.add_singleton_component(self)
