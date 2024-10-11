@@ -1,3 +1,3 @@
 extends Component
 class_name CoFlagNetSelfPredict
-const label = "coflagnetselfpredict"
+static var label = ECS.add_component()

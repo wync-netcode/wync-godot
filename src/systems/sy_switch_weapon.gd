@@ -1,11 +1,12 @@
 extends System
 class_name SySwitchWeapon
+const label: StringName = StringName("SySwitchWeapon")
 
 func _ready():
-	components = "%s,%s,%s" % [CoWeaponInventory.label, CoWeaponHeld.label, CoActorInput.label]
+	components = [CoWeaponInventory.label, CoWeaponHeld.label, CoActorInput.label]
 	super()
 	
-func on_process_entity(entity: Entity, _delta: float):
+func on_process_entity(entity: Entity, _data, _delta: float):
 	var input = entity.get_component(CoActorInput.label) as CoActorInput
 	var weapon_held = entity.get_component(CoWeaponHeld.label) as CoWeaponHeld
 	var inventory = entity.get_component(CoWeaponInventory.label) as CoWeaponInventory

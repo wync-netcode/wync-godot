@@ -1,6 +1,6 @@
 extends Component
 class_name CoSingleNetPredictionData
-const label = "cosinglenetpredictiondata"
+static var label = ECS.add_component()
 # TODO: Pick a better class name
 
 #var pkt_inter_arrival_time: int

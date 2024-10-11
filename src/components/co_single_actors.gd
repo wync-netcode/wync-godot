@@ -1,6 +1,6 @@
 extends Component
 class_name CoSingleActors
-static var label = "cosingleactors"
+static var label = ECS.add_component()
 
 ## Ring buffer to keep track of actors
 

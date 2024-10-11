@@ -521,7 +521,7 @@ func remove_system(world: World, system_name):
 
 
 func update_all(world: World, data = null, delta = null):
-	update(world, world_systems[world.get_instance_id()].values(), data)
+	update(world, world_systems[world.get_instance_id()].keys(), data)
 
 
 func update_group(world: World, group_instance: Group, data = null, delta = null):

@@ -1,13 +1,14 @@
 extends System
 class_name SyTransportLoopbackPeerRegister
+const label: StringName = StringName("SyTransportLoopbackPeerRegister")
 
 
 func _ready():
-	components = "%s,!%s" % [CoIOPackets.label, CoPeerRegisteredFlag.label]
+	components = [CoIOPackets.label, -CoPeerRegisteredFlag.label]
 	super()
 	
 
-func on_process_entity(entity, _delta: float):
+func on_process_entity(entity, _data, _delta: float):
 	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
 	if not co_loopback:
 		print("E: Couldn't find singleton CoTransportLoopback")

@@ -1,3 +1,3 @@
 extends Component
 class_name CoSelfPredictedRegistered
-const label = "coselfpredictedregistered"
+static var label = ECS.add_component()

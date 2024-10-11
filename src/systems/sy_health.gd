@@ -1,13 +1,14 @@
 extends System
 class_name SyHealth
+const label: StringName = StringName("SyHealth")
 
 
 func _ready():
-	components = "%s" % [CoHealth.label]
+	components = [CoHealth.label]
 	super()
 
 
-func on_process_entity(entity: Entity, _delta: float):
+func on_process_entity(entity: Entity, _data, _delta: float):
 	var health = entity.get_component(CoHealth.label) as CoHealth
 
 	if health.damage_events.size() > 0:

@@ -1,5 +1,7 @@
 extends System
 class_name SyVelocity
+const label: StringName = StringName("SyVelocity")
+"""
 
 func _ready():
 	components = "covelocity,cocollider"
@@ -12,3 +14,4 @@ func on_process_entity(entity : Entity, delta: float):
 	assert((entity as Node) is Node2D)
 	entity.position += _component.velocity * delta
 	#print(entity.position)
+"""

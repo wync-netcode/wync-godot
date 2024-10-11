@@ -1,14 +1,15 @@
 extends System
 class_name SyReloadWeapon
+const label: StringName = StringName("SyReloadWeapon")
 
 func _ready():
-	components = "CoWeaponInventory,CoWeaponHeld,CoActorInput"
+	components = [CoWeaponInventory.label, CoWeaponHeld.label, CoActorInput.label]
 	super()
 	
-func on_process_entity(entity: Entity, _delta: float):
-	var input = entity.get_component("coactorinput") as CoActorInput
-	var weapon_held = entity.get_component("coweaponheld") as CoWeaponHeld
-	var inventory = entity.get_component("coweaponinventory") as CoWeaponInventory
+func on_process_entity(entity: Entity, _data, _delta: float):
+	var input = entity.get_component(CoActorInput.label) as CoActorInput
+	var weapon_held = entity.get_component(CoWeaponHeld.label) as CoWeaponHeld
+	var inventory = entity.get_component(CoWeaponInventory.label) as CoWeaponInventory
 	var curr_time = Time.get_ticks_msec()
 
 	# find WeaponStored to update

@@ -1,14 +1,14 @@
 class_name SyActorMovement
 extends System
-const label: StringName = StringName("syactormovement")
+const label: StringName = StringName("SyActorMovement")
 
 
 func _ready():
-	components = "%s,%s,%s" % [CoActor.label, CoCollider.label, CoActorInput.label]
+	components = [CoActor.label, CoCollider.label, CoActorInput.label]
 	super()
 
 	
-func on_process_entity(entity: Entity, delta: float):
+func on_process_entity(entity: Entity, _data, delta: float):
 	var input = entity.get_component(CoActorInput.label) as CoActorInput
 	var collider = entity.get_component(CoCollider.label) as CoCollider
 	simulate_movement(input, collider, delta)

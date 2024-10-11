@@ -1,5 +1,5 @@
 class_name CoSingleWorld
 extends Component
-static var label = "cosingleworld"
+static var label = ECS.add_component()
 
 @export var world_id: int = 0

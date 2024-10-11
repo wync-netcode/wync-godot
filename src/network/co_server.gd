@@ -1,6 +1,6 @@
 extends Component
 class_name CoServer
-const label = "coserver"
+static var label = ECS.add_component()
 
 ## Keeps track of client peers
 

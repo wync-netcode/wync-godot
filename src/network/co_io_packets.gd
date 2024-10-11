@@ -1,6 +1,6 @@
 extends Component
 class_name CoIOPackets
-const label = "coiopackets"
+static var label = ECS.add_component()
 
 
 ## Packet buffers for the network transport to send out and deliver in

@@ -1,5 +1,6 @@
 class_name SySelfPredictionRegister
 extends System
+const label: StringName = StringName("SySelfPredictionRegister")
 
 ## Registers actors that will be predicted
 ## This could be done in other ways, however,
@@ -7,11 +8,11 @@ extends System
 
 
 func _ready():
-	components = "%s,%s,%s,!%s" % [CoActor.label, CoActorRegisteredFlag.label, CoSelfPredicted.label, CoSelfPredictedRegistered.label]
+	components = [CoActor.label, CoActorRegisteredFlag.label, CoSelfPredicted.label, -CoSelfPredictedRegistered.label]
 	super()
 
 
-func on_process(entities: Array[Entity], _delta: float):
+func on_process(entities: Array[Entity], _data, _delta: float):
 	
 	var co_single_self_predicted_actors = ECS.get_singleton_component(self, CoSingleSelfPredictedActors.label) as CoSingleSelfPredictedActors
 

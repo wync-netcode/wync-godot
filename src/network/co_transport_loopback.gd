@@ -1,6 +1,6 @@
 extends Component
 class_name CoTransportLoopback
-const label = "cotransportloopback"
+static var label = ECS.add_component()
 
 ## registered peers
 var peers: Array[LoopbackPeer]  

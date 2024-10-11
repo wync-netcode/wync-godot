@@ -1,3 +1,3 @@
 extends Component
 class_name CoFlagNetExtrapolate
-const label = "coflagnetextrapolate"
+static var label = ECS.add_component()

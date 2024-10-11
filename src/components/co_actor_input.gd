@@ -1,6 +1,6 @@
 extends Component
 class_name CoActorInput
-static var label = "coactorinput"
+static var label = ECS.add_component()
 
 var movement_dir: Vector2
 var aim: Vector2

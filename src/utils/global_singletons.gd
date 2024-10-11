@@ -10,12 +10,13 @@ func _ready():
 	GlobalSingletons.singleton = self
 	
 	for child in get_children():
-		var label = str(child.name).to_lower()
 		if child is Entity:
+			var label = str(child.name).to_lower()
 			print("Registering singleton: ", label)
 			entities[label] = child
 		elif child is Component:
-			print("Registering singleton: ", label)
+			var label = child.label
+			print("Registering singleton: ", child.name)
 			components[label] = child
 			
 
@@ -23,5 +24,5 @@ func get_entity(query_name: String) -> Entity:
 	return entities.get(query_name)
 
 			
-func get_component(query_name: String) -> Component:
-	return components.get(query_name)
+func get_component(query_label: int) -> Component:
+	return components.get(query_label)

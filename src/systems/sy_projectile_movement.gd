@@ -1,13 +1,14 @@
 extends System
 class_name SyProjectileMovement
+const label: StringName = StringName("SyProjectileMovement")
 
 
 func _ready():
-	components = "%s,%s,%s" % [CoVelocity.label, CoArea.label, CoProjectileData.label]
+	components = [CoVelocity.label, CoArea.label, CoProjectileData.label]
 	super()
 
 	
-func on_process_entity(entity: Entity, delta: float):
+func on_process_entity(entity: Entity, _data, delta: float):
 	var entity_node = entity as Node as Node2D
 	var velocity = entity.get_component(CoVelocity.label) as CoVelocity
 	var area_node: Area2D = entity.get_component(CoArea.label) as Area2D

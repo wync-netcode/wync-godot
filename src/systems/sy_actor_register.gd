@@ -1,13 +1,14 @@
 extends System
 class_name SyActorRegister
+const label: StringName = StringName("SyActorRegister")
 
 
 func _ready():
-	components = "%s,!%s" % [CoActor.label, CoActorRegisteredFlag.label]
+	components = [CoActor.label, -CoActorRegisteredFlag.label]
 	super()
 
 	
-func on_process_entity(entity : Entity, _delta: float):
+func on_process_entity(entity : Entity, _data, _delta: float):
 	var single_actors = ECS.get_singleton_entity(self, "EnSingleActors")
 	if not single_actors:
 		print("E: Couldn't find singleton EnSingleActors")

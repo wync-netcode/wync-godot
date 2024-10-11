@@ -1,5 +1,6 @@
 extends System
 class_name SyNetSaveConfirmedStates
+const label: StringName = StringName("SyNetSaveConfirmedStates")
 
 """
 Components:
@@ -34,11 +35,11 @@ TODO:
 
 
 func _ready():
-	components = "%s,%s,%s,%s" % [CoNetConfirmedStates.label, CoActor.label, CoCollider.label, CoActorRegisteredFlag.label]
+	components = [CoNetConfirmedStates.label, CoActor.label, CoCollider.label, CoActorRegisteredFlag.label]
 	super()
 	
 
-func on_process(_entities, _delta: float):
+func on_process(_entities, _data, _delta: float):
 
 	var en_client = ECS.get_singleton_entity(self, "EnSingleClient")
 	if not en_client:

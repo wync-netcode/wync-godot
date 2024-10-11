@@ -1,6 +1,6 @@
 extends Component
 class_name CoHealth
-static var label = "cohealth"
+static var label = ECS.add_component()
 
 @export var max_health: int
 @export var health: int

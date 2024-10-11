@@ -1,11 +1,12 @@
 extends System
 class_name SyPlayerInput
+const label: StringName = StringName("SyPlayerInput")
 
 func _ready():
-	components = "%s,%s" % [CoPlayerInput.label, CoActorInput.label]
+	components = [CoPlayerInput.label, CoActorInput.label]
 	super()
 	
-func on_process_entity(entity : Entity, _delta: float):
+func on_process_entity(entity : Entity, _data, _delta: float):
 	var input = entity.get_component(CoActorInput.label) as CoActorInput
 
 	input.movement_dir = Vector2(

@@ -1,15 +1,16 @@
 extends System
 class_name SyStateExtractor
+const label: StringName = StringName("SyStateExtractor")
 
 ## Extracts state from actors
 
 
 func _ready():
-	components = "%s,%s" % [CoActor.label, CoCollider.label]
+	components = [CoActor.label, CoCollider.label]
 	super()
 
 
-func on_process(entities, _delta: float):
+func on_process(entities, _data, _delta: float):
 
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 

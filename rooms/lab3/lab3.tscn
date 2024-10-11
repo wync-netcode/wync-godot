@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3 uid="uid://e4enao3jmf22"]
+[gd_scene load_steps=29 format=3 uid="uid://e4enao3jmf22"]
 
 [ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_8726f"]
 [ext_resource type="Script" path="res://data/StaticData.gd" id="2_w1jha"]
@@ -27,7 +27,6 @@
 [ext_resource type="PackedScene" uid="uid://4o33ca5n1fw6" path="res://src/entities/en_player.tscn" id="26_ph57h"]
 [ext_resource type="Script" path="res://src/network/sy_transport_loopback_connection.gd" id="27_844vy"]
 [ext_resource type="Script" path="res://src/network/sy_client_pkt_apply_raw.gd" id="28_sibuh"]
-[ext_resource type="Script" path="res://src/network/sy_client_pkt_interpolation.gd" id="29_5a8up"]
 [ext_resource type="PackedScene" uid="uid://d170xboi2dsfr" path="res://src/ui/info.tscn" id="30_372eq"]
 
 [node name="Lab3" type="Node2D"]
@@ -258,9 +257,6 @@ script = ExtResource("24_rg7ja")
 [node name="SyClientPktApplyRaw" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
 script = ExtResource("28_sibuh")
 ENABLED = false
-
-[node name="SyClientPktInterpolation" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
-script = ExtResource("29_5a8up")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 

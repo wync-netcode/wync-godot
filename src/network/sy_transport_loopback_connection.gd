@@ -1,14 +1,15 @@
 extends System
 class_name SyTransportLoopbackConnection
+const label: StringName = StringName("SyTransportLoopbackConnection")
 
 ## Clients tries to "connect" to the first server it finds
 
 func _ready():
-	components = "%s,%s" % [CoClient.label, CoIOPackets.label]
+	components = [CoClient.label, CoIOPackets.label]
 	super()
 	
 
-func on_process_entity(entity: Entity, _delta: float):
+func on_process_entity(entity: Entity, _data, _delta: float):
 	var co_client = entity.get_component(CoClient.label) as CoClient
 
 	# NOTE: Could use a flag instead

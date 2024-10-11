@@ -1,11 +1,12 @@
 extends System
 class_name SyShootWeapon
+const label: StringName = StringName("SyShootWeapon")
 
 func _ready():
-	components = "CoActor,CoWeaponInventory,CoWeaponHeld,CoActorInput,CoCollider"
+	components = [CoActor.label, CoWeaponInventory.label, CoWeaponHeld.label, CoActorInput.label, CoCollider.label]
 	super()
 	
-func on_process_entity(entity: Entity, _delta: float):
+func on_process_entity(entity: Entity, _data, _delta: float):
 	var node2d = entity as Node as Node2D
 	var actor = entity.get_component(CoActor.label) as CoActor
 	var input = entity.get_component(CoActorInput.label) as CoActorInput
@@ -65,7 +66,7 @@ func on_process_entity(entity: Entity, _delta: float):
 		if not raycast_ent:
 			print("E: Couldn't find singleton EnRaycastSingleton")
 			return
-		var raycast_co = raycast_ent.get_component("coraycast") as CoRaycast
+		var raycast_co = raycast_ent.get_component(CoRaycast.label) as CoRaycast
 		raycast = raycast_co as Node as RayCast2D
 		reach = raycast_co.default_reach
 

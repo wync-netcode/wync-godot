@@ -1,3 +1,3 @@
 extends Component
 class_name CoActorRegisteredFlag
-static var label = "coactorregisteredflag"
+static var label = ECS.add_component()

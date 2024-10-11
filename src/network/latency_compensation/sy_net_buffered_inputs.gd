@@ -1,15 +1,16 @@
 extends System
 class_name SyNetBufferedInputs
+const label: StringName = StringName("SyNetBufferedInputs")
 
 ## * Buffers the inputs per tick
 
 
 func _ready():
-	components = "%s,%s,%s" % [CoActorInput.label, CoFlagNetSelfPredict.label, CoNetBufferedInputs.label]
+	components = [CoActorInput.label, CoFlagNetSelfPredict.label, CoNetBufferedInputs.label]
 	super()
 	
 
-func on_process(entities, _delta: float):
+func on_process(entities, _data, _delta: float):
 
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 

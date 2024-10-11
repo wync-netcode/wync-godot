@@ -1,15 +1,16 @@
 extends System
 class_name SyTransportLoopback
+const label: StringName = StringName("SyTransportLoopback")
 
 ## Fake network that sends and receives packets between peers
 
 
 func _ready():
-	components = "%s" % [CoIOPackets.label]
+	components = [CoIOPackets.label]
 	super()
 
 	
-func on_process_entity(entity: Entity, _delta: float):
+func on_process_entity(entity: Entity, _data, _delta: float):
 
 	var curr_time = Time.get_ticks_msec()
 

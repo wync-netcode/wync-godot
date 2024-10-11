@@ -1,6 +1,6 @@
 extends Component
 class_name CoNetConfirmedStates
-const label = "conetconfirmedstates"
+static var label = ECS.add_component()
 
 var buffer: RingBuffer = RingBuffer.new(4) #:RingBuffer[NetTickData]
 

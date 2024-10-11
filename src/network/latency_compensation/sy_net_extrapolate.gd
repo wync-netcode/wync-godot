@@ -1,15 +1,16 @@
 extends System
 class_name SyNetExtrapolate
+const label: StringName = StringName("SyNetExtrapolate")
 
 ## * Simple extrapolation using last two confirmed positions
 
 
 func _ready():
-	components = "%s,%s,%s" % [CoNetConfirmedStates.label, CoNetPredictedStates.label, CoFlagNetExtrapolate.label]
+	components = [CoNetConfirmedStates.label, CoNetPredictedStates.label, CoFlagNetExtrapolate.label]
 	super()
 	
 
-func on_process(entities, _delta: float):
+func on_process(entities, _data, _delta: float):
 
 	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
 	if not co_loopback:

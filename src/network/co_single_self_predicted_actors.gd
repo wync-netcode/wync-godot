@@ -1,6 +1,6 @@
 extends Component
 class_name CoSingleSelfPredictedActors
-const label = "cosingleselfpredictedactors"
+static var label = ECS.add_component()
 
 #class SelfPredictSnapshot:
 	#var position: Vector2

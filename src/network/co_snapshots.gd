@@ -1,6 +1,6 @@
 extends Component
 class_name CoSnapshots
-const label = "cosnapshots"
+static var label = ECS.add_component()
 
 ## Map[entity_id: int, position_snapshots: Array<4>[PositionSnapshot]]
 ## or Dictionary[int, RingBuffer[PositionSnapshot]]

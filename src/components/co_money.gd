@@ -1,5 +1,5 @@
 extends Component
 class_name CoMoney
-static var label = "comoney"
+static var label = ECS.add_component()
 
 var money: int

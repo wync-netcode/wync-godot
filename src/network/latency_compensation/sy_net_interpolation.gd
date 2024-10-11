@@ -1,5 +1,6 @@
 extends System
 class_name SyNetInterpolation
+const label: StringName = StringName("SyNetInterpolation")
 
 ## This interpolation implementation applies:
 ## * Asumes there is no jitter
@@ -9,11 +10,11 @@ class_name SyNetInterpolation
 
 
 func _ready():
-	components = "%s,%s,%s" % [CoNetConfirmedStates.label, CoActor.label, CoCollider.label]
+	components = [CoNetConfirmedStates.label, CoActor.label, CoCollider.label]
 	super()
 	
 
-func on_process(entities, _delta: float):
+func on_process(entities, _data, _delta: float):
 
 	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
 	if not co_loopback:
@@ -58,8 +59,6 @@ func on_process(entities, _delta: float):
 		# else fall back to using confirmed state
 
 		else:
-			pass
-			"""
 			
 			var co_net_confirmed_states = entity.get_component(CoNetConfirmedStates.label) as CoNetConfirmedStates
 			var ring = co_net_confirmed_states.buffer
@@ -76,19 +75,17 @@ func on_process(entities, _delta: float):
 					found_snapshots = true
 					snap_left = snapshot
 					break
-			"""
 
 		if not found_snapshots:
 			Log.out(self, "left: %s | target: %s | right: %s | curr: %s" % [0, target_time, 0, curr_time])
 			continue
 		#else: Log.out(self, "left: %s | target: %s | right: %s | curr: %s" % [snap_left.timestamp, target_time, snap_right.timestamp, curr_time])
+		# Log.out(self, "%s new_pos: %s | left: %s | target: %s | right: %s | curr: %s" % [snap_left.tick == snap_right.tick, new_pos, snap_left.timestamp, target_time, snap_right.timestamp, curr_time])
 
 		# interpolate between the two
 
-		var new_pos = (snap_left.data.position as Vector2).lerp((snap_right.data.position as Vector2), (target_time - snap_left.timestamp) / (snap_right.timestamp - snap_left.timestamp))
-		co_collider.global_position = new_pos
-		#Log.out(self, "new_pos %s" % new_pos)
-		Log.out(self, "%s new_pos: %s | left: %s | target: %s | right: %s | curr: %s" % [snap_left.tick == snap_right.tick, new_pos, snap_left.timestamp, target_time, snap_right.timestamp, curr_time])
 		if abs(snap_left.timestamp - snap_right.timestamp) < 0.000001:
-			print("Break")
-		#(entity as Node as Node2D).position = snap_right.data.position
+			co_collider.global_position = snap_right.data.position
+		else:
+			var new_pos = (snap_left.data.position as Vector2).lerp((snap_right.data.position as Vector2), (target_time - snap_left.timestamp) / (snap_right.timestamp - snap_left.timestamp))
+			co_collider.global_position = new_pos

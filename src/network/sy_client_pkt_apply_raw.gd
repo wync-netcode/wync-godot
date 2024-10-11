@@ -1,13 +1,14 @@
 extends System
 class_name SyClientPktApplyRaw
+const label: StringName = StringName("SyClientPktApplyRaw")
 
 
 func _ready():
-	components = "%s,%s,%s" % [CoClient.label, CoIOPackets.label, CoSnapshots.label]
+	components = [CoClient.label, CoIOPackets.label, CoSnapshots.label]
 	super()
 	
 
-func on_process_entity(entity: Entity, _delta: float):
+func on_process_entity(entity: Entity, _data, _delta: float):
 	var co_io = entity.get_component(CoIOPackets.label) as CoIOPackets
 	var single_actors = ECS.get_singleton_entity(self, "EnSingleActors")
 	if not single_actors:

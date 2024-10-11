@@ -1,6 +1,6 @@
 extends Component
 class_name CoNetBufferedInputs
-const label = "conetbufferedinputs"
+static var label = ECS.add_component()
 
 const BUFFER_SIZE = 100
 var buffer_inputs: Array[CoActorInput]  ## Array[tick_id: int, input: Input]

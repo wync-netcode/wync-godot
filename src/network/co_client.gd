@@ -1,6 +1,6 @@
 extends Component
 class_name CoClient
-const label = "coclient"
+static var label = ECS.add_component()
 
 enum STATE {
 	DISCONNECTED,

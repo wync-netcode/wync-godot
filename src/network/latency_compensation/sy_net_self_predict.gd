@@ -1,5 +1,6 @@
 extends System
 class_name SyNetSelfPredict
+const label: StringName = StringName("SyNetSelfPredict")
 
 ## * Simple extrapolation using last two confirmed positions
 
@@ -7,11 +8,11 @@ class_name SyNetSelfPredict
 func _ready():
 	# Components from SyActorMovement
 	# components = "CoActor,CoVelocity,CoCollider,CoActorInput"
-	components = "%s,%s,%s,%s" % [CoNetConfirmedStates.label, CoNetPredictedStates.label, CoFlagNetSelfPredict.label, CoNetBufferedInputs.label]
+	components = [CoNetConfirmedStates.label, CoNetPredictedStates.label, CoFlagNetSelfPredict.label, CoNetBufferedInputs.label]
 	super()
 	
 
-func on_process(entities, _delta: float):
+func on_process(entities, _data, _delta: float):
 
 	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
 	if not co_loopback:
