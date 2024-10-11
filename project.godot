@@ -21,6 +21,11 @@ Logger="*res://addons/gs_logger/logger.gd"
 ECS="*res://addons/gs_ecs/ecs.gd"
 ECSRootManagerSingleton="*res://src/utils/ecs_root_manager.gd"
 
+[display]
+
+window/size/viewport_width=750
+window/size/viewport_height=510
+
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/gs_ecs/plugin.cfg", "res://addons/gs_logger/plugin.cfg")

@@ -74,5 +74,6 @@ func _process(delta):
 
 
 func _physics_process(delta: float) -> void:
+	#print(delta)
 	for world in worlds:
-		ECS.update(world)
+		ECS.update(world, null, delta)

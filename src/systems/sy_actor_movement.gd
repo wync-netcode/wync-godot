@@ -1,37 +1,67 @@
-extends System
 class_name SyActorMovement
+extends System
+const label: StringName = StringName("syactormovement")
+
 
 func _ready():
-	components = "CoActor,CoVelocity,CoCollider,CoActorInput"
+	components = "%s,%s,%s" % [CoActor.label, CoCollider.label, CoActorInput.label]
 	super()
+
 	
-func on_process_entity(entity: Entity, _delta: float):
-	var node2d = entity as Node as Node2D
-	var input = entity.get_component("coactorinput") as CoActorInput
-	var velocity = entity.get_component("covelocity") as CoVelocity
-	var collider = entity.get_component("cocollider") as CoCollider
-	var body = collider as CharacterBody2D
+func on_process_entity(entity: Entity, delta: float):
+	var input = entity.get_component(CoActorInput.label) as CoActorInput
+	var collider = entity.get_component(CoCollider.label) as CoCollider
+	simulate_movement(input, collider, delta)
 
+
+static func simulate_movement(input: CoActorInput, collider: CoCollider, delta: float) -> void:
+	var body = collider as Node as CharacterBody2D
+	var velocity = body.velocity
+
+	#body.velocity = input.movement_dir.normalized() * StaticData.entity.Player.max_speed
+	#body.move_and_slide()
+	#return
+		
 	# apply friction
-	#print(entity.name, input.movement_dir)
-	if input.movement_dir.length() == 0:
-		var friction: float = StaticData.entity.Player.friction * _delta
-		if velocity.velocity.length() < friction:
-			velocity.velocity = Vector2.ZERO
-		else:
-			velocity.velocity -= velocity.velocity.normalized() * friction
 
-	# apply inputs to velocity
-	velocity.velocity += input.movement_dir * StaticData.entity.Player.acc * _delta
+	var friction: float = StaticData.entity.Player.friction * delta
+	if body.velocity.length() < friction:
+		body.velocity = Vector2.ZERO
+	else:
+		body.velocity -= body.velocity.normalized() * friction
 
-	# cap
-	var cap = StaticData.entity.Player.max_speed
-	if velocity.velocity.length() > cap:
-		velocity.velocity = velocity.velocity.normalized() * cap
+	# apply input
 
-	# integrate velocity to position
-	body.velocity = velocity.velocity
+	input.movement_dir = input.movement_dir.normalized()
+	var increment = input.movement_dir * StaticData.entity.Player.acc * delta
+	var max_speed = StaticData.entity.Player.max_speed
+	var curr_speed = body.velocity.length()
+	var would_be_speed = (body.velocity + increment).length()
+
+	# Two cases:
+	# (1) reduce speed
+
+	if would_be_speed < curr_speed:
+		body.velocity += increment
+
+	# (2) increase speed
+	else:
+
+		# allow to achieve maximum speed
+		if curr_speed < max_speed && would_be_speed > max_speed:
+			curr_speed = max_speed
+
+		# allow to move from stall
+		elif would_be_speed <= max_speed:
+			curr_speed += increment.length()
+
+		# merge directions
+		var dir = (body.velocity + increment).normalized()
+		body.velocity = dir * curr_speed
+
+	# integrate
 	body.move_and_slide()
-	node2d.global_position = body.global_position
-	body.position = Vector2.ZERO
-	velocity.velocity = body.velocity
+
+
+	pass
+	

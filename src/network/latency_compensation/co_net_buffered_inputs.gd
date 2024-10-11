@@ -2,7 +2,7 @@ extends Component
 class_name CoNetBufferedInputs
 const label = "conetbufferedinputs"
 
-const BUFFER_SIZE = 10
+const BUFFER_SIZE = 100
 var buffer_inputs: Array[CoActorInput]  ## Array[tick_id: int, input: Input]
 var buffer_head: int = 0
 

@@ -3,11 +3,16 @@ class_name SyNetSaveConfirmedStates
 
 """
 Components:
+* (Data)    CoSingleNetPredictionData
+				pkt_inter_arrival_time: int
+				last_tick_confirmed: int
+
 * (Data)    NetTickData
 * (Storage) CoNetConfirmedStates
 				RingBuffer[NetTickData]
 * (Storage) CoNetPredictedStates
-				RingBuffer[NetTickData]
+				curr: NetTickData
+				prev: NetTickData
 # (Storage) CoNetBufferedInputs
 				Array[tick_id: int, input: Input]
 
@@ -15,10 +20,16 @@ Components:
 * (Flag)    CoFlagSelfPredict
 
 Systems:
+* (Gather/Generation) SyNeyBufferInputs (CoFlagSelfPredict, CoNetBufferedInputs)
 * (Gather/Generation) SyNetSaveConfirmedStates (CoNetConfirmedStates)
-* (Gather/Generation) SyNetExtrapolate (CoNetConfirmedStates, CoNetPredictedStates, CoNetExtrapolate)
-* (Gather/Generation) SyNetSelfPredict (CoNetConfirmedStates, CoNetPredictedStates, CoSelfPredict, CoNetBufferedInputs)
+* (Gather/Generation) SyNetExtrapolate (CoNetConfirmedStates, CoNetPredictedStates, CoFlagNetExtrapolate)
+* (Gather/Generation) SyNetSelfPredict (CoNetConfirmedStates, CoNetPredictedStates, CoFlagSelfPredict, CoNetBufferedInputs)
 * (Display) SyNetInterpolate (CoNetConfirmedStates || CoNetPredictedStates)
+
+TODO:
+* A client system to send buffered inputs back to server
+* A server system to receive and interpret (and store) player buffered inputs
+* A way to ensure client and server ticks are synced.
 """
 
 
@@ -41,6 +52,8 @@ func on_process(_entities, _delta: float):
 		return
 	var co_actors = single_actors.get_component(CoSingleActors.label) as CoSingleActors
 
+	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
+
 	var curr_time = Time.get_ticks_msec()
 
 	# save tick data from packets
@@ -49,6 +62,8 @@ func on_process(_entities, _delta: float):
 		var data = pkt.data as NetSnapshot
 		if not data:
 			continue
+
+		Log.out(self, "consume | co_io.in_packets.size() %s" % co_io.in_packets.size())
 
 		for i in range(data.entity_ids.size()):
 			var actor_id = data.entity_ids[i]
@@ -60,10 +75,25 @@ func on_process(_entities, _delta: float):
 			var tick_data = NetTickData.new()
 			tick_data.tick = data.tick
 			tick_data.timestamp = curr_time
-			tick_data.data = data.positions[i]
+			tick_data.data = CoCollider.SnapData.new()
+			tick_data.data.position = data.positions[i]
+			tick_data.data.velocity = data.velocities[i]
+
+			#Log.out(self, "data.tick %s" % data.tick)
+
+			#if ((data.positions[i] as Vector2) != Vector2.ZERO):
+				#print(data.positions[i])
+				#print("BREAK")
 
 			var co_net_confirmed_states = actor_entity.get_component(CoNetConfirmedStates.label) as CoNetConfirmedStates
 			var ring = co_net_confirmed_states.buffer
 			ring.push(tick_data)
 
+			# update last tick
+
+			if data.tick > co_predict_data.last_tick_confirmed:
+				co_predict_data.last_tick_confirmed = data.tick
+				co_predict_data.last_tick_timestamp = curr_time
+
 	co_io.in_packets.clear()
+	Log.out(self, "consume | cleared co_io.in_packets.size() %s" % co_io.in_packets.size())

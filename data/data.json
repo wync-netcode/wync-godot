@@ -2,10 +2,10 @@
 	"ScriptName": "StaticData",
 	"Player": {
 		"ScriptName": "StaticPlayer",
-		"acc": 500,
+		"acc": 800,
 		"friction": 400,
 		"max_health": 10,
-		"max_speed": 100,
+		"max_speed": 150,
 		"sprite": "RID(0)"
 	},
 	"Weapons": [

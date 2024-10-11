@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3 uid="uid://e4enao3jmf22"]
+[gd_scene load_steps=30 format=3 uid="uid://e4enao3jmf22"]
 
 [ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_8726f"]
 [ext_resource type="Script" path="res://data/StaticData.gd" id="2_w1jha"]
@@ -6,7 +6,6 @@
 [ext_resource type="Script" path="res://src/utils/global_singletons.gd" id="4_xpm1l"]
 [ext_resource type="Script" path="res://src/network/co_transport_loopback.gd" id="5_hmn43"]
 [ext_resource type="Script" path="res://addons/gs_ecs/world.gd" id="6_odp22"]
-[ext_resource type="PackedScene" uid="uid://wtwk5yuubmba" path="res://src/entities/en_single_ticks.tscn" id="7_yflts"]
 [ext_resource type="PackedScene" uid="uid://5n6bvvfq608d" path="res://src/entities/en_single_actors.tscn" id="8_kw7sn"]
 [ext_resource type="PackedScene" uid="uid://ex31s4wv3adg" path="res://src/entities/en_single_server.tscn" id="9_i26gw"]
 [ext_resource type="PackedScene" uid="uid://hmishy6acfrk" path="res://src/entities/en_raycast_singleton.tscn" id="10_kimqb"]
@@ -53,9 +52,6 @@ script = ExtResource("5_hmn43")
 script = ExtResource("6_odp22")
 
 [node name="Singletons" type="Node" parent="worlds/WorldServer"]
-
-[node name="EnSingleTicks" parent="worlds/WorldServer/Singletons" instance=ExtResource("7_yflts")]
-singleton = true
 
 [node name="EnSingleActors" parent="worlds/WorldServer/Singletons" instance=ExtResource("8_kw7sn")]
 singleton = true
@@ -115,8 +111,6 @@ script = ExtResource("24_rg7ja")
 script = ExtResource("6_odp22")
 
 [node name="Singletons" type="Node" parent="worlds/WorldClient2"]
-
-[node name="EnSingleTicks" parent="worlds/WorldClient2/Singletons" instance=ExtResource("7_yflts")]
 
 [node name="EnSingleActors" parent="worlds/WorldClient2/Singletons" instance=ExtResource("8_kw7sn")]
 singleton = true
@@ -194,8 +188,6 @@ script = ExtResource("28_sibuh")
 script = ExtResource("6_odp22")
 
 [node name="Singletons" type="Node" parent="worlds/WorldClient1"]
-
-[node name="EnSingleTicks" parent="worlds/WorldClient1/Singletons" instance=ExtResource("7_yflts")]
 
 [node name="EnSingleActors" parent="worlds/WorldClient1/Singletons" instance=ExtResource("8_kw7sn")]
 singleton = true

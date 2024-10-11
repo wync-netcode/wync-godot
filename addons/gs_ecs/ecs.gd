@@ -89,7 +89,9 @@ func add_singleton_component(component: Component):
 		Logger.warn("- world for component %s:%s not found " % [component, component.name])
 		return
 	var world_id = world.get_instance_id()
-
+	if not has_world(world_id):
+		add_world(world)
+		
 	var _name = str(component.name).to_lower()
 	if world_singleton_components[world_id].has(_name):
 		Logger.warn("- singleton component %s was already registered -- skipping" % [_name])

@@ -28,10 +28,15 @@ func on_process_entity(entity: Entity, _delta: float):
 		loopback_pkt.packet = pkt
 		loopback_pkt.deliver_time = curr_time + co_loopback.lag
 		co_loopback.packets.append(loopback_pkt)
+		Log.out(self, "consume | sent 1 packet")
 
 	co_io_packets.out_packets.clear()
 
 	# look for packets ready to be received
+
+	Log.out(self, "consume | curr_time %s" % [curr_time])
+
+	var amount = 0
 
 	for pkt: LoopbackPacket in co_loopback.packets:
 		if curr_time < pkt.deliver_time:
@@ -50,3 +55,9 @@ func on_process_entity(entity: Entity, _delta: float):
 
 		var buffer: CoIOPackets = peer.peer_packet_buffer
 		buffer.in_packets.append(pkt.packet)
+
+		Log.out(self, "consume | received 1 packet, size %s curr_time %s deliver_time %s" % [buffer.in_packets.size(), curr_time, pkt.deliver_time])
+		amount += 1
+		if buffer.in_packets.size() >= 2:
+			print("break")
+		

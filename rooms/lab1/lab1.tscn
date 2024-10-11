@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://cw8uqs2q746kt"]
+[gd_scene load_steps=25 format=3 uid="uid://cw8uqs2q746kt"]
 
 [ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_k1as7"]
 [ext_resource type="Script" path="res://data/StaticData.gd" id="2_c1wwm"]
@@ -11,7 +11,6 @@
 [ext_resource type="PackedScene" uid="uid://br3o7pgduj72n" path="res://rooms/demo0/map_demo_0.tscn" id="5_a5fj4"]
 [ext_resource type="PackedScene" uid="uid://ex31s4wv3adg" path="res://src/entities/en_single_server.tscn" id="7_05ds2"]
 [ext_resource type="Script" path="res://src/systems/sy_shoot_weapon.gd" id="7_in0h3"]
-[ext_resource type="PackedScene" uid="uid://wtwk5yuubmba" path="res://src/entities/en_single_ticks.tscn" id="8_2bamu"]
 [ext_resource type="PackedScene" uid="uid://dqillnt7k6deb" path="res://src/entities/en_client.tscn" id="8_lebon"]
 [ext_resource type="PackedScene" uid="uid://ck1h3hbitv3qy" path="res://src/entities/en_single_transport_loopback.tscn" id="9_sltp8"]
 [ext_resource type="PackedScene" uid="uid://d170xboi2dsfr" path="res://src/ui/info.tscn" id="10_n3ejj"]
@@ -24,7 +23,6 @@
 [ext_resource type="Script" path="res://src/network/sy_transport_loopback_peer_register.gd" id="19_st7rm"]
 [ext_resource type="Script" path="res://src/network/sy_state_extractor.gd" id="20_7h1p4"]
 [ext_resource type="Script" path="res://src/network/sy_transport_loopback.gd" id="22_lja4e"]
-[ext_resource type="Script" path="res://src/systems/network/sy_client_process_packets.gd" id="24_8ai7u"]
 [ext_resource type="Script" path="res://src/utils/global_singletons.gd" id="25_hcmb7"]
 
 [node name="Lab1" type="Node2D"]
@@ -43,9 +41,6 @@ script = ExtResource("2_kibt1")
 [node name="Singletons" type="Node" parent="WorldServer"]
 
 [node name="EnSingleServer" parent="WorldServer/Singletons" instance=ExtResource("7_05ds2")]
-singleton = true
-
-[node name="EnSingleTicks" parent="WorldServer/Singletons" instance=ExtResource("8_2bamu")]
 singleton = true
 
 [node name="EnSingleTransportLoopback" parent="WorldServer/Singletons" instance=ExtResource("9_sltp8")]
@@ -105,9 +100,6 @@ script = ExtResource("2_kibt1")
 
 [node name="EnRaycastSingleton" parent="WorldClient1/Singletons" instance=ExtResource("4_ygxyn")]
 
-[node name="EnSingleTicks" parent="WorldClient1/Singletons" instance=ExtResource("8_2bamu")]
-singleton = true
-
 [node name="EnSingleTransportLoopback" parent="WorldClient1/Singletons" instance=ExtResource("9_sltp8")]
 singleton = true
 
@@ -156,7 +148,6 @@ script = ExtResource("17_k7l5y")
 script = ExtResource("22_lja4e")
 
 [node name="SyClientProcessPackets" type="Node" parent="WorldClient1/SystemsNetwork"]
-script = ExtResource("24_8ai7u")
 
 [node name="WorldBackup" type="Node" parent="."]
 script = ExtResource("2_kibt1")
@@ -166,9 +157,6 @@ script = ExtResource("2_kibt1")
 [node name="EnRaycastSingleton" parent="WorldBackup/Singletons" instance=ExtResource("4_ygxyn")]
 
 [node name="EnSingleServer" parent="WorldBackup/Singletons" instance=ExtResource("7_05ds2")]
-singleton = true
-
-[node name="EnSingleTicks" parent="WorldBackup/Singletons" instance=ExtResource("8_2bamu")]
 singleton = true
 
 [node name="EnSingleTransportLoopback" parent="WorldBackup/Singletons" instance=ExtResource("9_sltp8")]
@@ -224,7 +212,6 @@ script = ExtResource("20_7h1p4")
 script = ExtResource("22_lja4e")
 
 [node name="SyClientProcessPackets" type="Node" parent="WorldBackup/SystemsNetwork"]
-script = ExtResource("24_8ai7u")
 
 [node name="WorldOld" type="Node" parent="."]
 script = ExtResource("2_kibt1")

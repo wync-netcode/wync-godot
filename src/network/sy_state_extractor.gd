@@ -11,17 +11,13 @@ func _ready():
 
 func on_process(entities, _delta: float):
 
-	var single_ticks = ECS.get_singleton_entity(self, "EnSingleTicks")
-	if not single_ticks:
-		print("E: Couldn't find singleton EnSingleTicks")
-		return
-	var co_ticks = single_ticks.get_component(CoTicks.label) as CoTicks
+	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 
 	# throttle send rate
 	# TODO: make this configurable
 
-	if co_ticks.ticks % 10 != 0:
-		return
+	#if co_ticks.ticks % 10 != 0:
+		#return
 	
 	var single_server = ECS.get_singleton_entity(self, "EnSingleServer")
 	if not single_server:
@@ -35,15 +31,17 @@ func on_process(entities, _delta: float):
 	var snapshot = NetSnapshot.new()
 	snapshot.entity_ids.resize(entities.size())
 	snapshot.positions.resize(entities.size())
+	snapshot.velocities.resize(entities.size())
 	snapshot.tick = co_ticks.ticks
 	
 	for i in range(entities.size()):
 		var entity = entities[i] as Entity
 		var co_actor = entity.get_component(CoActor.label) as CoActor
-		var node2d = entity as Node2D
+		var co_collider = entity.get_component(CoCollider.label) as CoCollider
 
 		snapshot.entity_ids[i] = co_actor.id
-		snapshot.positions[i] = node2d.position
+		snapshot.positions[i] = (co_collider as Node as Node2D).global_position
+		snapshot.velocities[i] = (co_collider as Node as CharacterBody2D).velocity
 
 	# prepare packets to send
 
