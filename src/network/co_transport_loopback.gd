@@ -12,3 +12,6 @@ var packet_loss_percentage: int = 0 # [0-100]
 var time_last_pkt_sent: int = 0
 var jitter_unordered_packets: bool = false # Allows jitter to mangle packet order
 var duplicated_packets_percentage: int = 0 # [0-100] Allows duplicated packets
+
+const simulate_every_ms: int = 10
+var simulation_delta_acumulator: float = 0

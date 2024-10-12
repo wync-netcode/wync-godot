@@ -525,7 +525,7 @@ func update_all(world: World, data = null, delta = null):
 
 
 func update_group(world: World, group_instance: Group, data = null, delta = null):
-	update(world, group_instance.systems, delta, data)
+	update(world, group_instance.systems, data, delta)
 
 
 # update the systems

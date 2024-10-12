@@ -9,6 +9,7 @@ func _ready():
 
 	
 func on_process_entity(entity: Entity, _data, delta: float):
+	print(delta)
 	var input = entity.get_component(CoActorInput.label) as CoActorInput
 	var collider = entity.get_component(CoCollider.label) as CoCollider
 	simulate_movement(input, collider, delta)

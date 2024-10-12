@@ -25,10 +25,10 @@ func on_process(entities, _data, _delta: float):
 	
 	# define target time to render
 	# TODO: Extract from engine or define elsewhere
-	var tick_rate = 60 
+	var tick_rate = 30 
 	# TODO: The server should communicate this information
 	# NOTE: What if we have different send rates for different entities as a LOD measure?
-	var pkt_inter_arrival_time = ((1000.0 / 60) * 10) 
+	var pkt_inter_arrival_time = ((1000.0 / 30) * 10) 
 	# TODO: How to define the padding? Maybe it should be a display tick?
 	var padding = (1000.0 / tick_rate)
 	var target_time = curr_time - pkt_inter_arrival_time - padding

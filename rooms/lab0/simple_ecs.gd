@@ -1,19 +1,33 @@
 extends ECSRoot
 
 var worlds: Array[World] = []
-var counter = 0
+var worlds_physics_groups: Dictionary = {}
+var worlds_process_groups: Dictionary = {}
 
 func _ready() -> void:
 	super()
 	Logger.set_logger_level(Logger.LOG_LEVEL_NONE)
 	
+	# get worlds
+
 	for child in get_node("worlds").get_children():
 		if child is World:
 			worlds.append(child)
 			ECS.update(child)
-			
+
+	# get system groups
+
+	for world in worlds:
+		for child in world.get_children():
+			if child is not Group:
+				continue
+			if child.name == "GroupProcess":
+				worlds_process_groups[world.get_instance_id()] = child
+			else:
+				worlds_physics_groups[world.get_instance_id()] = child
 	
 	# create player
+
 	var player_scene: PackedScene = preload("res://src/entities/en_player.tscn")
 	var player = player_scene.instantiate() as Entity
 	ECS.add_entity(worlds[0], player)
@@ -69,11 +83,19 @@ func _ready() -> void:
 	"""
 
 
-func _process(delta):
-	pass
+func _process(delta: float) -> void:
+	# updte process groups
+	var world_id = 0
+	for world in worlds:
+		world_id = world.get_instance_id()
+		if worlds_process_groups.has(world_id):
+			ECS.update_group(world, worlds_process_groups[world_id], null, delta)
 
 
 func _physics_process(delta: float) -> void:
-	#print(delta)
+	# updte physics groups
+	var world_id = 0
 	for world in worlds:
-		ECS.update_all(world, null, delta)
+		world_id = world.get_instance_id()
+		if worlds_physics_groups.has(world_id):
+			ECS.update_group(world, worlds_physics_groups[world_id], null, delta)

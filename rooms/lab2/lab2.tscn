@@ -1,4 +1,4 @@
-[gd_scene load_steps=39 format=3 uid="uid://b8oeiuufqe32c"]
+[gd_scene load_steps=40 format=3 uid="uid://b8oeiuufqe32c"]
 
 [ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_1ps8v"]
 [ext_resource type="Script" path="res://data/StaticData.gd" id="2_2epi3"]
@@ -36,6 +36,7 @@
 [ext_resource type="Script" path="res://src/network/latency_compensation/co_flag_net_self_predict.gd" id="30_jafaw"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/co_net_buffered_inputs.gd" id="31_10fi0"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_extrapolate.gd" id="31_76jww"]
+[ext_resource type="Script" path="res://addons/gs_ecs/group.gd" id="32_wj45u"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_buffered_inputs.gd" id="36_n5l6y"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_self_predict.gd" id="37_q7221"]
 
@@ -80,48 +81,54 @@ singleton = true
 
 [node name="Entities" type="Node" parent="worlds/WorldServer"]
 
-[node name="SystemsGameplay" type="Node" parent="worlds/WorldServer"]
+[node name="GroupPhysics" type="Node" parent="worlds/WorldServer"]
+script = ExtResource("32_wj45u")
 
-[node name="SyVelocity" type="Node" parent="worlds/WorldServer/SystemsGameplay"]
+[node name="SystemsGameplay" type="Node" parent="worlds/WorldServer/GroupPhysics"]
+
+[node name="SyVelocity" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsGameplay"]
 script = ExtResource("9_rrivg")
 
-[node name="SyPlayerInput" type="Node" parent="worlds/WorldServer/SystemsGameplay"]
+[node name="SyPlayerInput" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsGameplay"]
 script = ExtResource("10_47ome")
 ENABLED = false
 
-[node name="SyActorMovement" type="Node" parent="worlds/WorldServer/SystemsGameplay"]
+[node name="SyActorMovement" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsGameplay"]
 script = ExtResource("11_1eesg")
 
-[node name="SyShootWeapon" type="Node" parent="worlds/WorldServer/SystemsGameplay"]
+[node name="SyShootWeapon" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsGameplay"]
 script = ExtResource("12_dhgio")
 
-[node name="SyReloadWeapon" type="Node" parent="worlds/WorldServer/SystemsGameplay"]
+[node name="SyReloadWeapon" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsGameplay"]
 script = ExtResource("13_5ywtb")
 
-[node name="SySwitchWeapon" type="Node" parent="worlds/WorldServer/SystemsGameplay"]
+[node name="SySwitchWeapon" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsGameplay"]
 script = ExtResource("14_4qbu2")
 
-[node name="SyHealth" type="Node" parent="worlds/WorldServer/SystemsGameplay"]
+[node name="SyHealth" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsGameplay"]
 script = ExtResource("15_uanrs")
 
-[node name="SyProjectileMovement" type="Node" parent="worlds/WorldServer/SystemsGameplay"]
+[node name="SyProjectileMovement" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsGameplay"]
 script = ExtResource("16_5f1s6")
 
-[node name="SystemsNetwork" type="Node" parent="worlds/WorldServer"]
+[node name="SystemsNetwork" type="Node" parent="worlds/WorldServer/GroupPhysics"]
 
-[node name="SyTicks" type="Node" parent="worlds/WorldServer/SystemsNetwork"]
+[node name="SyTicks" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
 script = ExtResource("18_oeqdo")
 
-[node name="SyActorRegister" type="Node" parent="worlds/WorldServer/SystemsNetwork"]
+[node name="SyActorRegister" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
 script = ExtResource("19_rcs17")
 
-[node name="SyTransportLoopbackPeerRegister" type="Node" parent="worlds/WorldServer/SystemsNetwork"]
+[node name="SyTransportLoopbackPeerRegister" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
 script = ExtResource("17_320aq")
 
-[node name="SyStateExtractor" type="Node" parent="worlds/WorldServer/SystemsNetwork"]
+[node name="SyStateExtractor" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
 script = ExtResource("20_03l6t")
 
-[node name="SyTransportLoopback" type="Node" parent="worlds/WorldServer/SystemsNetwork"]
+[node name="GroupProcess" type="Node" parent="worlds/WorldServer"]
+script = ExtResource("32_wj45u")
+
+[node name="SyTransportLoopback" type="Node" parent="worlds/WorldServer/GroupProcess"]
 script = ExtResource("21_rayuf")
 
 [node name="WorldClient1" type="Node" parent="worlds"]
@@ -169,71 +176,78 @@ script = ExtResource("30_jafaw")
 [node name="CoNetBufferedInputs" type="Node" parent="worlds/WorldClient1/Entities/EnPlayer2"]
 script = ExtResource("31_10fi0")
 
-[node name="SystemsGameplay" type="Node" parent="worlds/WorldClient1"]
+[node name="GroupPhysics" type="Node" parent="worlds/WorldClient1"]
+script = ExtResource("32_wj45u")
 
-[node name="SyVelocity" type="Node" parent="worlds/WorldClient1/SystemsGameplay"]
+[node name="SystemsGameplay" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
+
+[node name="SyVelocity" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsGameplay"]
 script = ExtResource("9_rrivg")
 ENABLED = false
 
-[node name="SyPlayerInput" type="Node" parent="worlds/WorldClient1/SystemsGameplay"]
+[node name="SyPlayerInput" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsGameplay"]
 script = ExtResource("10_47ome")
 
-[node name="SyActorMovement" type="Node" parent="worlds/WorldClient1/SystemsGameplay"]
+[node name="SyActorMovement" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsGameplay"]
 script = ExtResource("11_1eesg")
 ENABLED = false
 
-[node name="SyShootWeapon" type="Node" parent="worlds/WorldClient1/SystemsGameplay"]
+[node name="SyShootWeapon" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsGameplay"]
 script = ExtResource("12_dhgio")
 ENABLED = false
 
-[node name="SyReloadWeapon" type="Node" parent="worlds/WorldClient1/SystemsGameplay"]
+[node name="SyReloadWeapon" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsGameplay"]
 script = ExtResource("13_5ywtb")
 ENABLED = false
 
-[node name="SySwitchWeapon" type="Node" parent="worlds/WorldClient1/SystemsGameplay"]
+[node name="SySwitchWeapon" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsGameplay"]
 script = ExtResource("14_4qbu2")
 ENABLED = false
 
-[node name="SyHealth" type="Node" parent="worlds/WorldClient1/SystemsGameplay"]
+[node name="SyHealth" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsGameplay"]
 script = ExtResource("15_uanrs")
 ENABLED = false
 
-[node name="SyProjectileMovement" type="Node" parent="worlds/WorldClient1/SystemsGameplay"]
+[node name="SyProjectileMovement" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsGameplay"]
 script = ExtResource("16_5f1s6")
 ENABLED = false
 
-[node name="SystemsNetwork" type="Node" parent="worlds/WorldClient1"]
+[node name="SystemsNetwork" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 
-[node name="SyTicks" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
+[node name="SyTicks" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("18_oeqdo")
 
-[node name="SyActorRegister" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
+[node name="SyActorRegister" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("19_rcs17")
 
-[node name="SyTransportLoopbackPeerRegister" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
+[node name="SyTransportLoopbackPeerRegister" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("17_320aq")
 
-[node name="SyTransportLoopbackConnection" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
+[node name="SyTransportLoopbackConnection" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("19_56q07")
 
-[node name="SyTransportLoopback" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
-script = ExtResource("21_rayuf")
-
-[node name="SyNetSaveConfirmedStates" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
+[node name="SyNetSaveConfirmedStates" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("29_eipoi")
 
-[node name="SyNetExtrapolate" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
+[node name="SyNetExtrapolate" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("31_76jww")
 ENABLED = false
 
-[node name="SyNetBufferedInputs" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
+[node name="SyNetBufferedInputs" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("36_n5l6y")
 
-[node name="SyNetSelfPredict" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
+[node name="SyNetSelfPredict" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("37_q7221")
 
-[node name="SyNetInterpolation" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
+[node name="GroupProcess" type="Node" parent="worlds/WorldClient1"]
+script = ExtResource("32_wj45u")
+
+[node name="SyTransportLoopback" type="Node" parent="worlds/WorldClient1/GroupProcess"]
+script = ExtResource("21_rayuf")
+
+[node name="SyNetInterpolation" type="Node" parent="worlds/WorldClient1/GroupProcess"]
 script = ExtResource("30_5i022")
+ENABLED = false
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 

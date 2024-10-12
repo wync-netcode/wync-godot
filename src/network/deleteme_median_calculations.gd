@@ -23,12 +23,12 @@ func __on_process_entity(entity: Entity, _data, _delta: float):
 	# TODO
 	# 1. Definir la cantidad de tiempo en el pasado a mostrar e.g. ticks(RTT) + 1 tick
 	
-	var tick_rate = 60 # TODO: Extract from engine or define elsewhere
+	var tick_rate = 30 # TODO: Extract from engine or define elsewhere
 	var latency_in_ticks = ceil(co_loopback.lag / (1000.0 / tick_rate)) + 1
 
 	# TODO: The server should communicate this information
 	# NOTE: What if we have different send rates for different entities as a LOD measure?
-	co_snapshots.pkt_inter_arrival_time = ((1000.0 / 60) * 10) 
+	co_snapshots.pkt_inter_arrival_time = ((1000.0 / 30) * 10) 
 
 	# TODO: How to define the padding?
 	var padding = 0

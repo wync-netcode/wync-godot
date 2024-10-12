@@ -13,6 +13,7 @@ config_version=5
 config/name="combies-ecs"
 run/main_scene="res://rooms/lab2/lab2.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
+run/max_fps=300
 config/icon="res://icon.svg"
 
 [autoload]
@@ -25,6 +26,7 @@ ECSRootManagerSingleton="*res://src/utils/ecs_root_manager.gd"
 
 window/size/viewport_width=750
 window/size/viewport_height=510
+window/vsync/vsync_mode=0
 
 [editor_plugins]
 
@@ -96,6 +98,10 @@ p1_weapon5={
 [layer_names]
 
 2d_physics/layer_1="solid"
+
+[physics]
+
+common/physics_ticks_per_second=30
 
 [rendering]
 
