@@ -21,3 +21,14 @@ func copy() -> CoActorInput:
 	newi.switch_weapon_to = switch_weapon_to
 	newi.tick = tick
 	return newi
+
+
+func copy_to_instance(ins: CoActorInput) -> void:
+	ins.movement_dir = movement_dir
+	ins.aim = aim
+	ins.shoot = shoot
+	ins.reload = reload
+	ins.open_store = open_store
+	ins.switch_weapon_to = switch_weapon_to
+	ins.tick = tick
+	

@@ -27,12 +27,19 @@ func _ready() -> void:
 				worlds_physics_groups[world.get_instance_id()] = child
 	
 	# create player
-
+	"""
 	var player_scene: PackedScene = preload("res://src/entities/en_player.tscn")
 	var player = player_scene.instantiate() as Entity
 	ECS.add_entity(worlds[0], player)
 	worlds[0].add_child(player)
 	print(player)
+
+	# place it
+	var co_collider = player.get_component(CoCollider.label) as CoCollider
+	co_collider.global_position = Vector2(100, 50)
+	"""
+
+
 	"""
 	# give it a weapon
 	var inventory = player.get_component("coweaponinventory") as CoWeaponInventory

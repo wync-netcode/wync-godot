@@ -1,4 +1,4 @@
-[gd_scene load_steps=40 format=3 uid="uid://b8oeiuufqe32c"]
+[gd_scene load_steps=46 format=3 uid="uid://b8oeiuufqe32c"]
 
 [ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_1ps8v"]
 [ext_resource type="Script" path="res://data/StaticData.gd" id="2_2epi3"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://addons/gs_ecs/world.gd" id="4_wplyx"]
 [ext_resource type="PackedScene" uid="uid://ex31s4wv3adg" path="res://src/entities/en_single_server.tscn" id="5_gpsy3"]
 [ext_resource type="Script" path="res://src/network/co_transport_loopback.gd" id="5_r2rkq"]
+[ext_resource type="Script" path="res://src/network/debug/co_state_log.gd" id="6_8qi11"]
 [ext_resource type="PackedScene" uid="uid://hmishy6acfrk" path="res://src/entities/en_raycast_singleton.tscn" id="8_ry87g"]
 [ext_resource type="Script" path="res://src/systems/sy_velocity.gd" id="9_rrivg"]
 [ext_resource type="Script" path="res://src/systems/sy_player_input.gd" id="10_47ome"]
@@ -18,6 +19,7 @@
 [ext_resource type="Script" path="res://src/systems/sy_switch_weapon.gd" id="14_4qbu2"]
 [ext_resource type="Script" path="res://src/systems/sy_health.gd" id="15_uanrs"]
 [ext_resource type="Script" path="res://src/systems/sy_projectile_movement.gd" id="16_5f1s6"]
+[ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_receive_inputs.gd" id="16_egyqr"]
 [ext_resource type="Script" path="res://src/network/sy_transport_loopback_peer_register.gd" id="17_320aq"]
 [ext_resource type="Script" path="res://src/network/sy_ticks.gd" id="18_oeqdo"]
 [ext_resource type="Script" path="res://src/network/sy_transport_loopback_connection.gd" id="19_56q07"]
@@ -32,6 +34,7 @@
 [ext_resource type="Script" path="res://src/network/latency_compensation/co_net_confirmed_states.gd" id="27_kq1bv"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_save_confirmed_states.gd" id="29_eipoi"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/co_net_predicted_states.gd" id="29_vqkjw"]
+[ext_resource type="Script" path="res://src/network/debug/sy_state_logger_server.gd" id="29_wvn6l"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_interpolation.gd" id="30_5i022"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/co_flag_net_self_predict.gd" id="30_jafaw"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/co_net_buffered_inputs.gd" id="31_10fi0"]
@@ -39,6 +42,9 @@
 [ext_resource type="Script" path="res://addons/gs_ecs/group.gd" id="32_wj45u"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_buffered_inputs.gd" id="36_n5l6y"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_self_predict.gd" id="37_q7221"]
+[ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_send_inputs.gd" id="38_ju0vw"]
+[ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_prediction_ticks.gd" id="40_ailwx"]
+[ext_resource type="Script" path="res://src/network/debug/sy_state_logger_client.gd" id="42_aib70"]
 
 [node name="Lab2" type="Node2D"]
 script = ExtResource("1_1ps8v")
@@ -55,6 +61,9 @@ script = ExtResource("4_4lskg")
 
 [node name="CoTransportLoopback" type="Node" parent="GlobalSingletons"]
 script = ExtResource("5_r2rkq")
+
+[node name="CoStateLog" type="Node" parent="GlobalSingletons"]
+script = ExtResource("6_8qi11")
 
 [node name="worlds" type="Node" parent="."]
 
@@ -81,6 +90,12 @@ singleton = true
 
 [node name="Entities" type="Node" parent="worlds/WorldServer"]
 
+[node name="EnPlayer" parent="worlds/WorldServer/Entities" instance=ExtResource("23_ewwho")]
+position = Vector2(73, 58)
+
+[node name="CoNetBufferedInputs" type="Node" parent="worlds/WorldServer/Entities/EnPlayer"]
+script = ExtResource("31_10fi0")
+
 [node name="GroupPhysics" type="Node" parent="worlds/WorldServer"]
 script = ExtResource("32_wj45u")
 
@@ -88,6 +103,9 @@ script = ExtResource("32_wj45u")
 
 [node name="SyVelocity" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsGameplay"]
 script = ExtResource("9_rrivg")
+
+[node name="SyNetReceiveInputs" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsGameplay"]
+script = ExtResource("16_egyqr")
 
 [node name="SyPlayerInput" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsGameplay"]
 script = ExtResource("10_47ome")
@@ -113,9 +131,6 @@ script = ExtResource("16_5f1s6")
 
 [node name="SystemsNetwork" type="Node" parent="worlds/WorldServer/GroupPhysics"]
 
-[node name="SyTicks" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
-script = ExtResource("18_oeqdo")
-
 [node name="SyActorRegister" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
 script = ExtResource("19_rcs17")
 
@@ -124,6 +139,13 @@ script = ExtResource("17_320aq")
 
 [node name="SyStateExtractor" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
 script = ExtResource("20_03l6t")
+
+[node name="SyStateLoggerServer" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
+script = ExtResource("29_wvn6l")
+is_server = true
+
+[node name="SyTicks" type="Node" parent="worlds/WorldServer/GroupPhysics"]
+script = ExtResource("18_oeqdo")
 
 [node name="GroupProcess" type="Node" parent="worlds/WorldServer"]
 script = ExtResource("32_wj45u")
@@ -162,7 +184,7 @@ singleton = true
 
 [node name="EnPlayer2" parent="worlds/WorldClient1/Entities" instance=ExtResource("23_ewwho")]
 modulate = Color(1, 0.137255, 1, 1)
-position = Vector2(134, 228)
+position = Vector2(38, 83)
 
 [node name="CoNetConfirmedStates" type="Node" parent="worlds/WorldClient1/Entities/EnPlayer2"]
 script = ExtResource("27_kq1bv")
@@ -214,8 +236,8 @@ ENABLED = false
 
 [node name="SystemsNetwork" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 
-[node name="SyTicks" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
-script = ExtResource("18_oeqdo")
+[node name="SyNetPredictionTicks" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
+script = ExtResource("40_ailwx")
 
 [node name="SyActorRegister" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("19_rcs17")
@@ -238,6 +260,16 @@ script = ExtResource("36_n5l6y")
 
 [node name="SyNetSelfPredict" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("37_q7221")
+
+[node name="SyNetSendInputs" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
+script = ExtResource("38_ju0vw")
+
+[node name="SyStateLoggerClient" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
+script = ExtResource("42_aib70")
+ENABLED = false
+
+[node name="SyTicks" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
+script = ExtResource("18_oeqdo")
 
 [node name="GroupProcess" type="Node" parent="worlds/WorldClient1"]
 script = ExtResource("32_wj45u")

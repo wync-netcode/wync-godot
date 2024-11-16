@@ -3,6 +3,7 @@ class_name SyNetSaveConfirmedStates
 const label: StringName = StringName("SyNetSaveConfirmedStates")
 
 """
+(OUTDATED)
 Components:
 * (Data)    CoSingleNetPredictionData
 				pkt_inter_arrival_time: int
@@ -35,7 +36,7 @@ TODO:
 
 
 func _ready():
-	components = [CoNetConfirmedStates.label, CoActor.label, CoCollider.label, CoActorRegisteredFlag.label]
+	components = [CoNetConfirmedStates.label, CoActor.label, CoActorRegisteredFlag.label]
 	super()
 	
 
@@ -64,7 +65,7 @@ func on_process(_entities, _data, _delta: float):
 		if not data:
 			continue
 
-		Log.out(self, "consume | co_io.in_packets.size() %s" % co_io.in_packets.size())
+		#Log.out(self, "consume | co_io.in_packets.size() %s" % co_io.in_packets.size())
 
 		for i in range(data.entity_ids.size()):
 			var actor_id = data.entity_ids[i]
@@ -82,10 +83,6 @@ func on_process(_entities, _data, _delta: float):
 
 			#Log.out(self, "data.tick %s" % data.tick)
 
-			#if ((data.positions[i] as Vector2) != Vector2.ZERO):
-				#print(data.positions[i])
-				#print("BREAK")
-
 			var co_net_confirmed_states = actor_entity.get_component(CoNetConfirmedStates.label) as CoNetConfirmedStates
 			var ring = co_net_confirmed_states.buffer
 			ring.push(tick_data)
@@ -97,4 +94,4 @@ func on_process(_entities, _data, _delta: float):
 				co_predict_data.last_tick_timestamp = curr_time
 
 	co_io.in_packets.clear()
-	Log.out(self, "consume | cleared co_io.in_packets.size() %s" % co_io.in_packets.size())
+	#Log.out(self, "consume | cleared co_io.in_packets.size() %s" % co_io.in_packets.size())

@@ -10,25 +10,26 @@ func __on_process_entity(entity: Entity, _data, _delta: float):
 	var co_io = entity.get_component(CoIOPackets.label) as CoIOPackets
 	var single_actors = ECS.get_singleton_entity(self, "EnSingleActors")
 	if not single_actors:
-		print("E: Couldn't find singleton EnSingleActors")
+		Log.err(self, "E: Couldn't find singleton EnSingleActors")
 		return
 	var co_actors = single_actors.get_component(CoSingleActors.label) as CoSingleActors
 	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
 	if not co_loopback:
-		print("E: Couldn't find singleton CoTransportLoopback")
+		Log.err(self, "E: Couldn't find singleton CoTransportLoopback")
 		return
 	var co_snapshots = entity.get_component(CoSnapshots.label) as CoSnapshots
 	var curr_time = Time.get_ticks_msec()
+	var physics_fps = Engine.physics_ticks_per_second
 	
 	# TODO
 	# 1. Definir la cantidad de tiempo en el pasado a mostrar e.g. ticks(RTT) + 1 tick
 	
-	var tick_rate = 30 # TODO: Extract from engine or define elsewhere
+	var tick_rate = physics_fps # TODO: Extract from engine or define elsewhere
 	var latency_in_ticks = ceil(co_loopback.lag / (1000.0 / tick_rate)) + 1
 
 	# TODO: The server should communicate this information
 	# NOTE: What if we have different send rates for different entities as a LOD measure?
-	co_snapshots.pkt_inter_arrival_time = ((1000.0 / 30) * 10) 
+	co_snapshots.pkt_inter_arrival_time = ((1000.0 / physics_fps) * 10) 
 
 	# TODO: How to define the padding?
 	var padding = 0

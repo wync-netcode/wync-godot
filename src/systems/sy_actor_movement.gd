@@ -9,12 +9,12 @@ func _ready():
 
 	
 func on_process_entity(entity: Entity, _data, delta: float):
-	print(delta)
 	var input = entity.get_component(CoActorInput.label) as CoActorInput
 	var collider = entity.get_component(CoCollider.label) as CoCollider
 	simulate_movement(input, collider, delta)
 
 
+# do not modify input, it is read only. I'm debugging if the inputs are equal
 static func simulate_movement(input: CoActorInput, collider: CoCollider, delta: float) -> void:
 	var body = collider as Node as CharacterBody2D
 	var velocity = body.velocity
@@ -33,8 +33,7 @@ static func simulate_movement(input: CoActorInput, collider: CoCollider, delta: 
 
 	# apply input
 
-	input.movement_dir = input.movement_dir.normalized()
-	var increment = input.movement_dir * StaticData.entity.Player.acc * delta
+	var increment = input.movement_dir.normalized() * StaticData.entity.Player.acc * delta
 	var max_speed = StaticData.entity.Player.max_speed
 	var curr_speed = body.velocity.length()
 	var would_be_speed = (body.velocity + increment).length()
