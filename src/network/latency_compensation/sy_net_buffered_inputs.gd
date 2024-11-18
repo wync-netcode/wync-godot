@@ -16,7 +16,7 @@ func on_process(entities, _data, _delta: float):
 
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
-	var tick_local = co_ticks.ticks
+	var tick_curr = co_ticks.server_ticks
 	var tick_pred = co_predict_data.target_tick
 
 	# TODO: Save actual ticks
@@ -29,10 +29,9 @@ func on_process(entities, _data, _delta: float):
 		# save inputs
 
 		var curr_input = co_actor_input.copy()
-		curr_input.tick = tick_local
-		co_buffered_inputs.set_tick(tick_local, curr_input)
+		curr_input.tick = tick_curr
+		co_buffered_inputs.set_tick(tick_curr, curr_input)
 		
 		# save tick relationship
 		
-		co_buffered_inputs.set_tick_predicted(tick_pred, tick_local)
-		Log.out(self, "ticks %s %s" % [tick_local, tick_pred])
+		co_buffered_inputs.set_tick_predicted(tick_pred, tick_curr)

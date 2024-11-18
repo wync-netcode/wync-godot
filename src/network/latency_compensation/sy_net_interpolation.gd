@@ -21,17 +21,18 @@ func on_process(entities, _data, _delta: float):
 		Log.err(self, "Couldn't find singleton CoTransportLoopback")
 		return
 
-	var curr_time = Time.get_ticks_msec()
+	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
+	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+
+	var curr_time = ClockUtils.time_get_ticks_msec(co_ticks)
 	var physics_fps = Engine.physics_ticks_per_second
 	
 	# define target time to render
-	# TODO: Extract from engine or define elsewhere
-	var tick_rate = physics_fps
 	# TODO: The server should communicate this information
 	# NOTE: What if we have different send rates for different entities as a LOD measure?
 	var pkt_inter_arrival_time = ((1000.0 / physics_fps) * 10) 
 	# TODO: How to define the padding? Maybe it should be a display tick?
-	var padding = (1000.0 / tick_rate)
+	var padding = (1000.0 / physics_fps)
 	var target_time = curr_time - pkt_inter_arrival_time - padding
 
 	# interpolate entities
@@ -49,18 +50,23 @@ func on_process(entities, _data, _delta: float):
 		# check if it has predicted states
 
 		var co_net_predicted_states = entity.get_component(CoNetPredictedStates.label) as CoNetPredictedStates
-		if co_net_predicted_states != null:
-			if co_net_predicted_states.prev != null:
-				snap_left = co_net_predicted_states.prev
-				snap_right = co_net_predicted_states.curr
-				found_snapshots = true
+		if co_net_predicted_states != null && co_net_predicted_states.prev.data != null:
+			snap_left = co_net_predicted_states.prev
+			snap_right = co_net_predicted_states.curr
+			found_snapshots = true
 
-				target_time = curr_time + co_loopback.lag + padding
+			#target_time = co_predict_data.target_time
+			target_time = curr_time + co_predict_data.target_time_offset
+			#target_time = \
+			#	(curr_time - co_predict_data.last_tick_timestamp) \
+			#	+ 
+			#target_time = curr_time + co_predict_data.tick_offset * (1000.0 / physics_fps)
 
 		# else fall back to using confirmed state
 
 		else:
-			
+			continue
+			"""
 			var co_net_confirmed_states = entity.get_component(CoNetConfirmedStates.label) as CoNetConfirmedStates
 			var ring = co_net_confirmed_states.buffer
 
@@ -75,7 +81,7 @@ func on_process(entities, _data, _delta: float):
 				elif snap_right != null && snapshot.timestamp < target_time:
 					found_snapshots = true
 					snap_left = snapshot
-					break
+					break"""
 
 		if not found_snapshots:
 			Log.out(self, "left: %s | target: %s | right: %s | curr: %s" % [0, target_time, 0, curr_time])
@@ -85,8 +91,23 @@ func on_process(entities, _data, _delta: float):
 
 		# interpolate between the two
 
-		if abs(snap_left.timestamp - snap_right.timestamp) < 0.000001:
+		var left_timestamp = \
+			co_predict_data.last_tick_timestamp \
+			+ (snap_left.tick - co_predict_data.last_tick_confirmed) \
+			* (1000.0 / physics_fps)
+		var right_timestamp = \
+			co_predict_data.last_tick_timestamp \
+			+ (snap_right.tick - co_predict_data.last_tick_confirmed) \
+			* (1000.0 / physics_fps)
+		
+		
+		if abs(left_timestamp - right_timestamp) < 0.000001:
 			co_collider.global_position = snap_right.data.position
 		else:
-			var new_pos = (snap_left.data.position as Vector2).lerp((snap_right.data.position as Vector2), (target_time - snap_left.timestamp) / (snap_right.timestamp - snap_left.timestamp))
+			var left_pos = snap_left.data.position as Vector2
+			var right_pos = snap_right.data.position as Vector2
+			var factor = (target_time - left_timestamp) / (right_timestamp - left_timestamp)
+			var new_pos = left_pos.lerp(right_pos, factor)
 			co_collider.global_position = new_pos
+			
+			Log.out(self, "left: %s | target: %s | right: %s | curr: %s | factor %s" % [left_timestamp, target_time, right_timestamp, curr_time, factor])

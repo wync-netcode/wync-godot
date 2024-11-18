@@ -37,6 +37,7 @@ func on_process(entities, _data, _delta: float):
 		for i in range(tick_pred - CoNetBufferedInputs.AMOUNT_TO_SEND, tick_pred +1):
 			var tick_local = co_buffered_inputs.get_tick_predicted(i)
 			if not tick_local:
+				#Log.out(self, "we don't have an input for this tick %s" % [i])
 				continue
 			var input = co_buffered_inputs.get_tick(tick_local)
 			if input is not CoActorInput:

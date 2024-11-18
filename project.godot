@@ -101,7 +101,7 @@ p1_weapon5={
 
 [physics]
 
-common/physics_ticks_per_second=20
+common/physics_ticks_per_second=10
 2d/physics_engine="GodotPhysics2D"
 
 [rendering]

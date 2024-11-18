@@ -53,11 +53,13 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 
 	var amount = 0
 
-	for pkt: LoopbackPacket in co_loopback.packets:
+	for k in range(co_loopback.packets.size()-1, -1, -1):
+		var pkt = co_loopback.packets[k] as LoopbackPacket
 		if curr_time < pkt.deliver_time:
 			continue
-
-		co_loopback.packets.erase(pkt)
+			
+		# consume
+		co_loopback.packets.remove_at(k)
 
 		# get destination buffer from registered peers
 

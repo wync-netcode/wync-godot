@@ -20,9 +20,6 @@ func on_process(entities, _data, _delta: float):
 	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
 
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
-
-	var curr_time = Time.get_ticks_msec()
-	var physics_fps = Engine.physics_ticks_per_second
 	var target_tick = co_predict_data.target_tick
 	
 	# predict entities
@@ -36,6 +33,13 @@ func on_process(entities, _data, _delta: float):
 		var last_confirmed = co_net_confirmed_states.buffer.get_relative(0) as NetTickData
 		
 		if last_confirmed == null:
+			continue
+		
+		# Initialize stored predicted states. TODO: Move elsewhere
+		
+		if co_net_predicted_states.curr.data == null:
+			co_net_predicted_states.curr.data = CoCollider.SnapData.new()
+			co_net_predicted_states.prev = co_net_predicted_states.curr.copy()
 			continue
 		
 		# Reset state
@@ -57,7 +61,19 @@ func on_process(entities, _data, _delta: float):
 			
 			SyActorMovement.simulate_movement(input, collider, _delta)
 			
+			# store predicted states
+			# (run on last two iterations)
+			
+			if tick > (target_tick -1):
+				co_net_predicted_states.prev.data.position = co_net_predicted_states.curr.data.position
+				co_net_predicted_states.curr.data.position = collider.global_position
+				
 			# debug player trail
 			
 			var progress = (float(tick) - last_confirmed.tick) / (target_tick - last_confirmed.tick)
 			DebugPlayerTrail.spawn(self, collider.global_position, progress)
+
+		# update store predicted state metadata
+		
+		co_net_predicted_states.prev.tick = target_tick -1
+		co_net_predicted_states.curr.tick = target_tick

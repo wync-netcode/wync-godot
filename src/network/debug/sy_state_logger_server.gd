@@ -3,7 +3,6 @@ class_name SyStateLoggerServer
 const label: StringName = StringName("SyStateLoggerServer")
 
 const ACTOR_TO_LOG_ID = 0
-@export var is_server: bool = false
 
 func _ready():
 	components = [CoActor.label, CoCollider.label, CoActorInput.label]

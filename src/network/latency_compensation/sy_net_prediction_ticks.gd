@@ -3,6 +3,7 @@ class_name SyNetPredictionTicks
 const label: StringName = StringName("SyNetPredictionTicks")
 
 ## * Advances the local game tick and the predicted game tick
+## NOTE: What if we have different send rates for different entities as a LOD measure?
 
 
 func _ready():
@@ -19,29 +20,32 @@ func on_process(entities, _data, _delta: float):
 		return
 	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
-	var curr_time = Time.get_ticks_msec()
+	
+	var curr_time = ClockUtils.time_get_ticks_msec(co_ticks)
 	var physics_fps = Engine.physics_ticks_per_second
 	
-	# define target time to render
-	# TODO: Extract from engine or define elsewhere
-	#var tick_rate = physics_fps / 10.0
-	# TODO: The server should communicate this information
-	# NOTE: What if we have different send rates for different entities as a LOD measure?
-	#var pkt_inter_arrival_time = ((1000.0 / physics_fps) * 10) 
-	# TODO: How to define the padding? Maybe it should be a display tick?
-
-	#var padding = (1000.0 / tick_rate)
-	#var target_time = curr_time - pkt_inter_arrival_time - padding
-	var target_time = curr_time + co_loopback.lag * 2 + (1000.0 / physics_fps) * 3 + 200
-
-	# adjust periodically to compensate for unstable ping
+	# TODO: Move this DEBUG Random ping variation elsewhere
 	
 	if co_ticks.ticks % 30 == 0:
-		var target_tick = co_predict_data.last_tick_confirmed + ceil((target_time - co_predict_data.last_tick_timestamp) / float(1000.0 / physics_fps))
-		co_predict_data.tick_offset = target_tick - co_ticks.ticks
-		Log.out(self, "Updating tick offset to %s" % co_predict_data.tick_offset)
-	
-	co_predict_data.target_tick = co_ticks.ticks + co_predict_data.tick_offset
-	# TODO: Sumar 1 o no sumar 1 a target_tick?
+		co_loopback.lag += randf_range(-1, 1) * (co_loopback.lag * 0.2)
 
-	#Log.out(self, "target_time %s last_tick %s target_tick %s" % [target_time, co_predict_data.last_tick_confirmed, target_tick])
+	# Adjust target_time_offset periodically to compensate for unstable ping
+	
+	if co_ticks.ticks % 30 == 0:
+
+		# NOTE: To compensate for latency variation: use the latency median (sliding window algorithm) and use the variation (max) as the padding
+		
+		co_predict_data.target_time_offset = co_loopback.lag + (1000.0 / physics_fps) * 2
+		co_predict_data.tick_offset = ceil(co_predict_data.target_time_offset / (1000.0 / physics_fps))
+		
+		var target_tick = co_ticks.server_ticks + co_predict_data.tick_offset
+		var target_time = curr_time + co_predict_data.target_time_offset
+
+		Log.out(self, "Updating tick offset to %s" % co_predict_data.tick_offset)
+		Log.out(self, "target_tick %s | target_time %s | with tick offset %s" % [target_tick, target_time, curr_time + co_predict_data.tick_offset * (1000.0 / physics_fps) ])
+		Log.out(self, "target_tick_timestamp %s" % [target_tick * (1000.0 / physics_fps) ])
+	
+	co_predict_data.target_tick = co_ticks.server_ticks + co_predict_data.tick_offset
+	# NOTE: Sumar 1 o no sumar 1 a target_tick?
+	
+	Log.out(self, "ticks local %s | net %s %s %s" % [co_ticks.ticks, co_ticks.server_ticks, co_predict_data.target_tick, co_ticks.ticks + co_ticks.server_ticks_offset])

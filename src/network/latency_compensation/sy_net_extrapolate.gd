@@ -19,7 +19,9 @@ func on_process(entities, _data, _delta: float):
 
 	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
 
-	var curr_time = Time.get_ticks_msec()
+	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+
+	var curr_time = ClockUtils.time_get_ticks_msec(co_ticks)
 	var physics_fps = Engine.physics_ticks_per_second
 	
 	# define target time to render
@@ -46,7 +48,7 @@ func on_process(entities, _data, _delta: float):
 		var co_net_confirmed_states = entity.get_component(CoNetConfirmedStates.label) as CoNetConfirmedStates
 		var co_net_predicted_states = entity.get_component(CoNetPredictedStates.label) as CoNetPredictedStates
 
-		# Reset them
+		# Initialize them
 		# TODO: Move this elsewhere
 		#if co_net_predicted_states.curr == null && co_net_confirmed_states.buffer.get_relative(-1) != null:
 		if co_net_confirmed_states.buffer.get_relative(-1) != null:

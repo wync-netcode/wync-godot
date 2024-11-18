@@ -56,15 +56,21 @@ func on_process(_entities, _data, _delta: float):
 
 	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
 
-	var curr_time = Time.get_ticks_msec()
+	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+	var curr_time = ClockUtils.time_get_ticks_msec(co_ticks)
+	
 
 	# save tick data from packets
 
-	for pkt: NetPacket in co_io.in_packets:
+	for k in range(co_io.in_packets.size()-1, -1, -1):
+		var pkt = co_io.in_packets[k] as NetPacket
 		var data = pkt.data as NetSnapshot
 		if not data:
 			continue
-
+			
+		# consume
+		co_io.in_packets.remove_at(k)
+		
 		#Log.out(self, "consume | co_io.in_packets.size() %s" % co_io.in_packets.size())
 
 		for i in range(data.entity_ids.size()):
@@ -87,11 +93,4 @@ func on_process(_entities, _data, _delta: float):
 			var ring = co_net_confirmed_states.buffer
 			ring.push(tick_data)
 
-			# update last tick
-
-			if data.tick > co_predict_data.last_tick_confirmed:
-				co_predict_data.last_tick_confirmed = data.tick
-				co_predict_data.last_tick_timestamp = curr_time
-
-	co_io.in_packets.clear()
 	#Log.out(self, "consume | cleared co_io.in_packets.size() %s" % co_io.in_packets.size())

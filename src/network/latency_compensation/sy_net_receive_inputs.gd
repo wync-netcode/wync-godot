@@ -25,7 +25,6 @@ func on_process(entities, _data, _delta: float):
 	var co_actors = single_actors.get_component(CoSingleActors.label) as CoSingleActors
 
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
-	#var curr_time = Time.get_ticks_msec()
 
 	# look entity id in the packets and save accordingly to buffer
 
