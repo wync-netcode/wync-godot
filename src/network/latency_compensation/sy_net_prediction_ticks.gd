@@ -59,6 +59,7 @@ func on_process(entities, _data, _delta: float):
 			if co_predict_data.tick_offset == co_predict_data.tick_offset_prev:
 				co_predict_data.tick_offset -= 1
 			else:
+				# NOTE: Somehow I can't find another way to keep the prev updated
 				co_predict_data.tick_offset_prev = co_predict_data.tick_offset
 
 	co_predict_data.target_tick = max(co_ticks.server_ticks + co_predict_data.tick_offset, co_predict_data.target_tick)

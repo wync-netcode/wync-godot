@@ -35,3 +35,9 @@ func on_process(entities, _data, _delta: float):
 		# save tick relationship
 		
 		co_buffered_inputs.set_tick_predicted(tick_pred, tick_curr)
+		
+		# Compensate for UP smooth tick_offset transition
+		# check if previous input is missing -> then duplicate
+		
+		if not co_buffered_inputs.get_tick_predicted(tick_pred-1):
+			co_buffered_inputs.set_tick_predicted(tick_pred-1, tick_curr)
