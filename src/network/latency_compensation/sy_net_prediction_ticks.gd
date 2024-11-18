@@ -36,16 +36,32 @@ func on_process(entities, _data, _delta: float):
 		# NOTE: To compensate for latency variation: use the latency median (sliding window algorithm) and use the variation (max) as the padding
 		
 		co_predict_data.target_time_offset = co_loopback.lag + (1000.0 / physics_fps) * 2
-		co_predict_data.tick_offset = ceil(co_predict_data.target_time_offset / (1000.0 / physics_fps))
+		co_predict_data.tick_offset_desired = ceil(co_predict_data.target_time_offset / (1000.0 / physics_fps))
 		
-		var target_tick = co_ticks.server_ticks + co_predict_data.tick_offset
+		var target_tick = max(co_ticks.server_ticks + co_predict_data.tick_offset, co_predict_data.target_tick)
 		var target_time = curr_time + co_predict_data.target_time_offset
 
 		Log.out(self, "Updating tick offset to %s" % co_predict_data.tick_offset)
 		Log.out(self, "target_tick %s | target_time %s | with tick offset %s" % [target_tick, target_time, curr_time + co_predict_data.tick_offset * (1000.0 / physics_fps) ])
 		Log.out(self, "target_tick_timestamp %s" % [target_tick * (1000.0 / physics_fps) ])
+
+			
+	# Smoothly transition tick_offset
+	# NOTE: Should be configurable
 	
-	co_predict_data.target_tick = co_ticks.server_ticks + co_predict_data.tick_offset
+	if co_predict_data.tick_offset_desired != co_predict_data.tick_offset:
+		
+		# up transition
+		if co_predict_data.tick_offset_desired > co_predict_data.tick_offset:
+			co_predict_data.tick_offset += 1
+		# down transition
+		else:
+			if co_predict_data.tick_offset == co_predict_data.tick_offset_prev:
+				co_predict_data.tick_offset -= 1
+			else:
+				co_predict_data.tick_offset_prev = co_predict_data.tick_offset
+
+	co_predict_data.target_tick = max(co_ticks.server_ticks + co_predict_data.tick_offset, co_predict_data.target_tick)
 	# NOTE: Sumar 1 o no sumar 1 a target_tick?
 	
 	Log.out(self, "ticks local %s | net %s %s %s" % [co_ticks.ticks, co_ticks.server_ticks, co_predict_data.target_tick, co_ticks.ticks + co_ticks.server_ticks_offset])

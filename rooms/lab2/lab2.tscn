@@ -185,6 +185,7 @@ singleton = true
 singleton = true
 
 [node name="CoSingleNetPredictionData" type="Node" parent="worlds/WorldClient1/Singletons"]
+unique_name_in_owner = true
 script = ExtResource("26_uu4uh")
 singleton = true
 
