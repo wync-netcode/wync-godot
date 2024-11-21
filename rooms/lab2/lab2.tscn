@@ -287,7 +287,6 @@ script = ExtResource("45_6w0w5")
 
 [node name="SyNetInterpolation" type="Node" parent="worlds/WorldClient1/GroupProcess"]
 script = ExtResource("30_5i022")
-ENABLED = false
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 

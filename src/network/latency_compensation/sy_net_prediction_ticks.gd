@@ -64,5 +64,6 @@ func on_process(entities, _data, _delta: float):
 
 	co_predict_data.target_tick = max(co_ticks.server_ticks + co_predict_data.tick_offset, co_predict_data.target_tick)
 	# NOTE: Sumar 1 o no sumar 1 a target_tick?
+	co_predict_data.current_tick_timestamp = curr_time
 	
 	Log.out(self, "ticks local %s | net %s %s %s" % [co_ticks.ticks, co_ticks.server_ticks, co_predict_data.target_tick, co_ticks.ticks + co_ticks.server_ticks_offset])

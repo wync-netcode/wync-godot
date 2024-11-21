@@ -42,7 +42,6 @@ script = ExtResource("1_ncl83")
 script = ExtResource("2_hsf2x")
 
 [node name="CoActorRenderer" parent="CoCollider/Components" instance=ExtResource("7_4yv8f")]
-position = Vector2(0, -20)
 
 [node name="CoPlayerInput" type="Node" parent="CoCollider/Components"]
 script = ExtResource("6_i3pb1")

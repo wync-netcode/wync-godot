@@ -10,7 +10,7 @@ const label: StringName = StringName("SyNetInterpolation")
 
 
 func _ready():
-	components = [CoNetConfirmedStates.label, CoActor.label, CoCollider.label]
+	components = [CoNetConfirmedStates.label, CoActor.label, CoActorRenderer.label]
 	super()
 	
 
@@ -39,7 +39,7 @@ func on_process(entities, _data, _delta: float):
 
 	for entity: Entity in entities:
 
-		var co_collider = entity.get_component(CoCollider.label) as CoCollider
+		var co_renderer = entity.get_component(CoActorRenderer.label) as CoActorRenderer
 
 		# find two snapshots
 
@@ -54,13 +54,7 @@ func on_process(entities, _data, _delta: float):
 			snap_left = co_net_predicted_states.prev
 			snap_right = co_net_predicted_states.curr
 			found_snapshots = true
-
-			#target_time = co_predict_data.target_time
 			target_time = curr_time + co_predict_data.target_time_offset
-			#target_time = \
-			#	(curr_time - co_predict_data.last_tick_timestamp) \
-			#	+ 
-			#target_time = curr_time + co_predict_data.tick_offset * (1000.0 / physics_fps)
 
 		# else fall back to using confirmed state
 
@@ -91,6 +85,7 @@ func on_process(entities, _data, _delta: float):
 
 		# interpolate between the two
 
+		"""
 		var left_timestamp = \
 			co_predict_data.last_tick_timestamp \
 			+ (snap_left.tick - co_predict_data.last_tick_confirmed) \
@@ -99,15 +94,21 @@ func on_process(entities, _data, _delta: float):
 			co_predict_data.last_tick_timestamp \
 			+ (snap_right.tick - co_predict_data.last_tick_confirmed) \
 			* (1000.0 / physics_fps)
+		"""
+		# TODO: Determine if it's needed to keep the previous step for non-predicted interpolation
+		var left_timestamp = ClockUtils.get_predicted_tick_local_time_msec(snap_left.tick+2, co_ticks, co_predict_data)
+		var right_timestamp = ClockUtils.get_predicted_tick_local_time_msec(snap_right.tick+2, co_ticks, co_predict_data)
 		
 		
 		if abs(left_timestamp - right_timestamp) < 0.000001:
-			co_collider.global_position = snap_right.data.position
+			co_renderer.global_position = snap_right.data.position
 		else:
 			var left_pos = snap_left.data.position as Vector2
 			var right_pos = snap_right.data.position as Vector2
-			var factor = (target_time - left_timestamp) / (right_timestamp - left_timestamp)
+			var factor = clampf(
+				(float(target_time) - left_timestamp) / (right_timestamp - left_timestamp),
+				0, 1)
 			var new_pos = left_pos.lerp(right_pos, factor)
-			co_collider.global_position = new_pos
+			co_renderer.global_position = new_pos
 			
-			Log.out(self, "left: %s | target: %s | right: %s | curr: %s | factor %s" % [left_timestamp, target_time, right_timestamp, curr_time, factor])
+			#Log.out(self, "left: %s | target: %s | right: %s | curr: %s | factor %s" % [left_timestamp, target_time, right_timestamp, curr_time, factor])
