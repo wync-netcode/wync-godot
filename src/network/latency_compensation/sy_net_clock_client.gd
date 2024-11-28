@@ -38,15 +38,15 @@ func on_process(_entities, _data, _delta: float):
 		var physics_fps = Engine.physics_ticks_per_second
 		var server_time_diff = (data.time + data.latency) - curr_time
 	
-		# calculate median
+		# calculate mean
 		
 		co_predict_data.clock_packets_received += 1
 		co_predict_data.clock_offset_accumulator += server_time_diff
-		co_predict_data.clock_offset_median = (co_predict_data.clock_offset_median * (co_predict_data.clock_packets_received-1) + server_time_diff) / co_predict_data.clock_packets_received
+		co_predict_data.clock_offset_mean = (co_predict_data.clock_offset_mean * (co_predict_data.clock_packets_received-1) + server_time_diff) / co_predict_data.clock_packets_received
 		
 		# update ticks
 		
-		var current_server_time: float = curr_time + co_predict_data.clock_offset_median
+		var current_server_time: float = curr_time + co_predict_data.clock_offset_mean
 		var time_since_packet_sent: float = current_server_time - data.time
 		
 		if co_predict_data.clock_packets_received < 11:
@@ -70,7 +70,7 @@ func on_process(_entities, _data, _delta: float):
 			server_ticks,
 			server_ticks - co_ticks.server_ticks,
 			Time.get_ticks_msec() - data.time,
-			str(co_predict_data.clock_offset_median).pad_decimals(2),
+			str(co_predict_data.clock_offset_mean).pad_decimals(2),
 			str(time_since_packet_sent).pad_decimals(2),
 			str(time_since_packet_sent / (1000.0 / physics_fps)).pad_decimals(2),
 			co_ticks.server_ticks_offset,

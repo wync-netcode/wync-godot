@@ -13,7 +13,7 @@ static func get_predicted_tick_local_time_msec(ticks: int, co_ticks: CoTicks, co
 
 
 static func get_server_time(co_predict_data: CoSingleNetPredictionData, local_time: int) -> int:
-	return local_time + co_predict_data.clock_offset_median
+	return local_time + co_predict_data.clock_offset_mean
 
 
 static func get_net_ticks(co_ticks: CoTicks, co_predict_data: CoSingleNetPredictionData):
