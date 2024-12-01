@@ -1,4 +1,4 @@
-[gd_scene load_steps=48 format=3 uid="uid://b8oeiuufqe32c"]
+[gd_scene load_steps=49 format=3 uid="uid://b8oeiuufqe32c"]
 
 [ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_1ps8v"]
 [ext_resource type="Script" path="res://data/StaticData.gd" id="2_2epi3"]
@@ -44,6 +44,7 @@
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_buffered_inputs.gd" id="36_n5l6y"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_self_predict.gd" id="37_q7221"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_send_inputs.gd" id="38_ju0vw"]
+[ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_latency_stable.gd" id="38_vuulq"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_prediction_ticks.gd" id="40_ailwx"]
 [ext_resource type="Script" path="res://src/network/debug/sy_state_logger_client.gd" id="42_aib70"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_clock_client.gd" id="45_6w0w5"]
@@ -167,7 +168,7 @@ script = ExtResource("4_wplyx")
 [node name="CoTicks" type="Node" parent="worlds/WorldClient1/Singletons"]
 script = ExtResource("25_7a4bi")
 ticks_initial_value = 150
-time_ms_offset = 5000
+time_ms_offset = 5100
 singleton = true
 
 [node name="EnSingleActors" parent="worlds/WorldClient1/Singletons" instance=ExtResource("10_k0r3w")]
@@ -240,6 +241,9 @@ script = ExtResource("16_5f1s6")
 ENABLED = false
 
 [node name="SystemsNetwork" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
+
+[node name="SyNetLatencyStable" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
+script = ExtResource("38_vuulq")
 
 [node name="SyNetPredictionTicks" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("40_ailwx")

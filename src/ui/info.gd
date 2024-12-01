@@ -7,17 +7,20 @@ extends Control
 @onready var co_loopback: CoTransportLoopback = %CoTransportLoopback
 @onready var co_prediction_data: CoSingleNetPredictionData = %CoSingleNetPredictionData
 
-func _process(delta):
+
+func _process(_delta):
 	lblMain.text = \
 	"""
 	PhysicsFPS: %s
 	ScreenFPS: %s
 	Latency: %s
+	Latency_stable: %s
 	tick_offset: %s
 	""" % \
 	[
 		Engine.physics_ticks_per_second,
 		Performance.get_monitor(Performance.TIME_FPS),
-		co_loopback.lag,
+		co_loopback.latency,
+		co_prediction_data.latency_stable,
 		co_prediction_data.tick_offset,
 	]

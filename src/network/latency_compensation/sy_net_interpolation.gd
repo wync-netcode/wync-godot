@@ -54,7 +54,7 @@ func on_process(entities, _data, _delta: float):
 			snap_left = co_net_predicted_states.prev
 			snap_right = co_net_predicted_states.curr
 			found_snapshots = true
-			target_time = curr_time + co_predict_data.target_time_offset
+			target_time = curr_time + co_predict_data.tick_offset_desired * (1000.0 / physics_fps)
 
 		# else fall back to using confirmed state
 
@@ -96,6 +96,7 @@ func on_process(entities, _data, _delta: float):
 			* (1000.0 / physics_fps)
 		"""
 		# TODO: Determine if it's needed to keep the previous step for non-predicted interpolation
+		# TODO: Why is there a difference of two ticks?
 		var left_timestamp = ClockUtils.get_predicted_tick_local_time_msec(snap_left.tick+2, co_ticks, co_predict_data)
 		var right_timestamp = ClockUtils.get_predicted_tick_local_time_msec(snap_right.tick+2, co_ticks, co_predict_data)
 		
@@ -111,4 +112,4 @@ func on_process(entities, _data, _delta: float):
 			var new_pos = left_pos.lerp(right_pos, factor)
 			co_renderer.global_position = new_pos
 			
-			#Log.out(self, "left: %s | target: %s | right: %s | curr: %s | factor %s" % [left_timestamp, target_time, right_timestamp, curr_time, factor])
+			#Log.out(self, "leftardiff %s | left: %s | target: %s | right: %s | factor %s ||| target_time_offset %s" % [target_time - left_timestamp, left_timestamp, target_time, right_timestamp, factor, co_predict_data.target_time_offset])

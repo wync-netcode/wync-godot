@@ -41,7 +41,7 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 	for pkt: NetPacket in co_io_packets.out_packets:
 		var loopback_pkt = LoopbackPacket.new()
 		loopback_pkt.packet = pkt
-		loopback_pkt.deliver_time = curr_time + co_loopback.lag
+		loopback_pkt.deliver_time = curr_time + co_loopback.latency
 		co_loopback.packets.append(loopback_pkt)
 		#Log.out(self, "consume | sent 1 packet")
 

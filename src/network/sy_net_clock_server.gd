@@ -2,15 +2,10 @@ extends System
 class_name SyNetClockServer
 const label: StringName = StringName("SyNetClockServer")
 
-## Extracts state from actors
+## Periodically send server clock to clients
 
 
-func _ready():
-	components = [CoActor.label, CoCollider.label]
-	super()
-
-
-func on_process(entities, _data, _delta: float):
+func on_process(_entities, _data, _delta: float):
 
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 	var physics_fps = Engine.physics_ticks_per_second
@@ -36,7 +31,7 @@ func on_process(entities, _data, _delta: float):
 	var packet = NetPacketClock.new()
 	packet.tick = co_ticks.ticks
 	packet.time = ClockUtils.time_get_ticks_msec(co_ticks)
-	packet.latency = co_loopback.lag
+	packet.latency = co_loopback.latency # send raw latency
 
 	# queue for sending
 

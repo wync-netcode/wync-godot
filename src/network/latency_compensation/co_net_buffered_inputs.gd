@@ -2,7 +2,7 @@ extends Component
 class_name CoNetBufferedInputs
 static var label = ECS.add_component()
 
-const BUFFER_SIZE = 100  ## 60 ticks = 2 seconds worth of inputs at 30 fps
+const BUFFER_SIZE = 60 * 12  ## 1.2 seconds worth of inputs
 const AMOUNT_TO_SEND = 10
 
 var buffer_inputs: Array[CoActorInput]  ## Array[tick_id: int, input: Input]
