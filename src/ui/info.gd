@@ -16,6 +16,7 @@ func _process(_delta):
 	Latency: %s
 	Latency_stable: %s
 	tick_offset: %s
+	lerp_ms: %s
 	""" % \
 	[
 		Engine.physics_ticks_per_second,
@@ -23,4 +24,5 @@ func _process(_delta):
 		co_loopback.latency,
 		co_prediction_data.latency_stable,
 		co_prediction_data.tick_offset,
+		co_prediction_data.lerp_ms,
 	]

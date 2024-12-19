@@ -24,7 +24,7 @@ func on_process(_entities, _data, _delta: float):
 	
 	if co_ticks.ticks % 30 == 0:
 
-		co_predict_data.tick_offset_desired = ceil(co_predict_data.latency_stable / (1000.0 / physics_fps)) + 1
+		co_predict_data.tick_offset_desired = ceil(co_predict_data.latency_stable / (1000.0 / physics_fps)) + 2
 		
 		var target_tick = max(co_ticks.server_ticks + co_predict_data.tick_offset, co_predict_data.target_tick)
 		var target_time = curr_time + co_predict_data.tick_offset_desired * (1000.0 / physics_fps)

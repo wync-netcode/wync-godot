@@ -30,6 +30,15 @@ const LATENCY_BUFFER_SIZE: int = 20 ## 20 size, 2 polls per second -> 10 seconds
 var latency_buffer: Array[int]
 var latency_buffer_head: int = 0
 
+# Interpolation data
+# TODO: Move this elsewhere
+
+var lerp_ms: int = 50
+
 
 func _ready() -> void:
 	latency_buffer.resize(LATENCY_BUFFER_SIZE)
+	
+	# TODO: get server tick rate from server
+	var physics_fps = Engine.physics_ticks_per_second
+	lerp_ms = max(lerp_ms, (1000 / physics_fps) * 2)

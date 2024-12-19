@@ -1,7 +1,7 @@
 class_name NetTickData
 
 var tick: int
-var timestamp: float
+var timestamp: float # TODO rename to timestamp_arrived
 var data#: Any
 
 
