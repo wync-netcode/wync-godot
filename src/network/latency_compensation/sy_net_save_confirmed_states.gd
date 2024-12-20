@@ -33,6 +33,7 @@ TODO:
 * A server system to receive and interpret (and store) player buffered inputs
 * A way to ensure client and server ticks are synced.
 """
+# TODO: This preferable would be in process
 
 
 func _ready():

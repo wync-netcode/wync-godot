@@ -19,4 +19,3 @@ var pkt_inter_arrival_time: float
 
 ## (ms) this padding could be calculated depending on mean_pkt_inter_arrival_time variation / deviation
 # TODO: var interpolation_padding: int
-
