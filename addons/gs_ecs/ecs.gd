@@ -600,8 +600,7 @@ func _add_system_entities(world_id, system_name):
 					if component_entities[comp_id].has(entity_id):
 						has_all_components = false
 						break
-					break
-				break
+				continue
 
 			if not has_component(comp_id):
 				has_all_components = false
