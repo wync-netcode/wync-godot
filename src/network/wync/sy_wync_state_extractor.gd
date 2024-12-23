@@ -52,7 +52,7 @@ func on_process(entities, _data, _delta: float):
 			prop_snap.prop_value = prop.getter.call()
 			entity_snap.props.append(prop_snap)
 			
-			Log.out(self, "wync: Found prop %s" % prop.name_id)
+			#Log.out(self, "wync: Found prop %s" % prop.name_id)
 			
 		packet.snaps.append(entity_snap)
 

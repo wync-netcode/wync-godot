@@ -16,10 +16,10 @@ static func prop_register(
 	data_type: WyncEntityProp.DATA_TYPE,
 	getter: Callable,
 	setter: Callable
-	) -> bool:
+	) -> int:
 	
 	if not is_entity_tracked(ctx, entity_id):
-		return false
+		return -1
 		
 	var prop = WyncEntityProp.new()
 	prop.name_id = name_id
@@ -27,12 +27,18 @@ static func prop_register(
 	prop.getter = getter
 	prop.setter = setter
 	
-	
 	var prop_id = ctx.props.size()
 	var entity_props = ctx.entity_has_props[entity_id] as Array
 	ctx.props.append(prop)
 	entity_props.append(prop_id)
 	
+	return prop_id
+
+
+static func prop_set_predict(ctx: WyncCtx, prop_id: int) -> bool:
+	if prop_id > ctx.props.size() -1:
+		return false
+	ctx.props_to_predict.append(prop_id)
 	return true
 
 
@@ -59,7 +65,7 @@ static func is_entity_tracked(ctx: WyncCtx, entity_id: int) -> bool:
 # ================================================================
 
 
-# @returns tuple[NetTickData, NetTickData]
+## @returns tuple[NetTickData, NetTickData]
 static func find_closest_two_snapshots_from_prop_id(ctx: WyncCtx, target_time: int, prop_id: int) -> Array:
 	
 	if prop_id > ctx.props.size() -1:
@@ -71,7 +77,7 @@ static func find_closest_two_snapshots_from_prop_id(ctx: WyncCtx, target_time: i
 	)
 
 
-# @returns tuple[NetTickData, NetTickData]
+## @returns tuple[NetTickData, NetTickData]
 static func find_closest_two_snapshots_from_prop(target_time: int, prop: WyncEntityProp) -> Array:
 
 	var ring = prop.confirmed_states
@@ -96,3 +102,43 @@ static func find_closest_two_snapshots_from_prop(target_time: int, prop: WyncEnt
 		return []
 	
 	return [snap_left, snap_right]
+
+
+## @returns int sim_fun_id
+static func register_function(ctx: WyncCtx, sim_fun: Callable) -> int:
+	if not sim_fun:
+		return -1
+	ctx.simulation_functions.append(sim_fun)
+	return ctx.simulation_functions.size() -1
+
+
+static func entity_set_sim_fun(ctx: WyncCtx, entity_id: int, sim_fun_id: int) -> bool:
+	ctx.entity_has_simulation_fun[entity_id] = sim_fun_id
+	return true
+
+
+static func entity_set_integration_fun(ctx: WyncCtx, entity_id: int, sim_fun_id: int) -> bool:
+	ctx.entity_has_integrate_fun[entity_id] = sim_fun_id
+	return true
+
+
+## @returns optional<Callable>
+static func entity_get_sim_fun(ctx: WyncCtx, entity_id: int):# -> optional<Callable>
+	if not ctx.entity_has_simulation_fun.has(entity_id):
+		return null
+	var sim_fun_id = ctx.entity_has_simulation_fun[entity_id]
+	var sim_fun = ctx.simulation_functions[sim_fun_id]
+	if sim_fun is not Callable:
+		return null
+	return sim_fun
+
+
+## @returns optional<Callable>
+static func entity_get_integrate_fun(ctx: WyncCtx, entity_id: int):# -> optional<Callable>
+	if not ctx.entity_has_integrate_fun.has(entity_id):
+		return null
+	var sim_fun_id = ctx.entity_has_integrate_fun[entity_id]
+	var sim_fun = ctx.simulation_functions[sim_fun_id]
+	if sim_fun is not Callable:
+		return null
+	return sim_fun

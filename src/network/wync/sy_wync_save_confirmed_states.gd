@@ -42,7 +42,7 @@ func on_process(_entities, _data, _delta: float):
 		# consume
 		co_io.in_packets.remove_at(k)
 		
-		Log.out(self, "consume | co_io.in_packets.size() %s" % (co_io.in_packets.size()+1))
+		#Log.out(self, "consume | co_io.in_packets.size() %s" % (co_io.in_packets.size()+1))
 		
 		for snap: WyncPacketPropSnap.EntitySnap in data.snaps:
 			

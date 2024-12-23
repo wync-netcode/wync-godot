@@ -12,7 +12,14 @@ const label: StringName = StringName("SyWyncLerpPast")
 
 
 func _ready():
-	components = [CoActor.label, CoActorRenderer.label, CoNetConfirmedStates.label, -CoNetPredictedStates.label, CoFlagWyncEntityTracked.label]
+	components = [
+		CoActor.label,
+		CoActorRenderer.label,
+		CoNetConfirmedStates.label,
+		CoFlagWyncEntityTracked.label,
+		-CoNetPredictedStates.label,
+		-CoFlagNetExtrapolate.label,
+		]
 	super()
 	
 
@@ -58,7 +65,7 @@ func on_process(entities, _data, _delta: float):
 		var snaps = WyncUtils.find_closest_two_snapshots_from_prop(target_time, prop)
 
 		if not snaps.size():
-			Log.out(self, "lerppast NOTFOUND left: %s | target: %s | right: %s | curr: %s" % [0, target_time, 0, curr_time])
+		#	Log.out(self, "lerppast NOTFOUND left: %s | target: %s | right: %s | curr: %s" % [0, target_time, 0, curr_time])
 			continue
 		
 		var snap_left = snaps[0] as NetTickData
@@ -82,4 +89,4 @@ func on_process(entities, _data, _delta: float):
 			var new_pos = left_pos.lerp(right_pos, factor)
 			co_renderer.global_position = new_pos
 			
-			Log.out(self, "leftardiff %s | left: %s | target: %s | right: %s | factor %s" % [target_time - left_timestamp, left_timestamp, target_time, right_timestamp, factor])
+			#Log.out(self, "leftardiff %s | left: %s | target: %s | right: %s | factor %s" % [target_time - left_timestamp, left_timestamp, target_time, right_timestamp, factor])

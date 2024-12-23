@@ -6,8 +6,8 @@ static var label = ECS.add_component()
 var peers: Array[LoopbackPeer]  
 ## represent packets flying in the network
 var packets: Array[LoopbackPacket]
-var _latency_mean: int = 1000
-var _latency_std_dev: int = 10
+var _latency_mean: int = 500
+var _latency_std_dev: int = 5
 var latency: int = _latency_mean  # (ms)
 var jitter: int = 0  # (ms) how late/early a packet might be
 var packet_loss_percentage: int = 0 # [0-100]
