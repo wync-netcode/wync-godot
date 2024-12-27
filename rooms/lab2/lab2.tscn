@@ -374,14 +374,14 @@ script = ExtResource("35_m1lky")
 [node name="SyWyncSaveConfirmedStates" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
 script = ExtResource("52_65fst")
 
-[node name="SyWyncReceiveClientInfo" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
-script = ExtResource("55_wsisn")
-
 [node name="SyWyncXtrap" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
 script = ExtResource("53_qmyp1")
 
 [node name="SyWyncConnectReq" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
 script = ExtResource("58_gjl0a")
+
+[node name="SyWyncReceiveClientInfo" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
+script = ExtResource("55_wsisn")
 
 [node name="SyTicks" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 script = ExtResource("18_oeqdo")

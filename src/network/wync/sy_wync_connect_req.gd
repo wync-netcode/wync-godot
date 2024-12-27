@@ -45,7 +45,12 @@ func on_process(entities, _data, _delta: float):
 		# consume
 		co_io.in_packets.remove_at(k)
 		
-		if data.approved:
-			wync_ctx.connected = true
+		if not data.approved:
+			Log.err(self, "Connection DENIED for peer %s" % [co_io.peer_id])
+			continue
+			
+		wync_ctx.connected = true
+		wync_ctx.my_client_id = data.wync_client_id
+		WyncUtils.client_setup_my_client(wync_ctx, data.wync_client_id)
 
 		Log.out(self, "client wync %s connected" % [co_io.peer_id])

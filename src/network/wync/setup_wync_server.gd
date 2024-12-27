@@ -3,6 +3,8 @@ extends Node
 ## Just setup thing on the server for the Wync Library
 
 func _ready() -> void:
+	return
+	"""
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 	
 	#if co_ticks < 0
@@ -11,5 +13,5 @@ func _ready() -> void:
 	var wync_ctx = co_wync_ctx.ctx
 	
 	var wync_client_id = WyncUtils.client_register(wync_ctx, 0)
-	# --> continues in sy_wync_setup_sync_player
+	# --> continues in sy_wync_setup_sync_player"""
 	

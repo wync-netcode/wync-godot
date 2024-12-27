@@ -159,12 +159,29 @@ static func entity_get_integrate_fun(ctx: WyncCtx, entity_id: int):# -> optional
 	return sim_fun
 
 
-## @argument client_data (optional): store a custom int if needed
+## @argument client_data (optional): store a custom int if needed. Use it to save an external identifier.
  
 static func client_register(ctx: WyncCtx, client_data: int = -1) -> int:
 	var client_id = ctx.clients.size()
 	ctx.clients.append(client_data)
+	ctx.client_owns_prop[client_id] = []
 	return client_id
+
+
+static func client_setup_my_client(ctx: WyncCtx, client_id: int) -> bool:
+	ctx.my_client_id = client_id
+	ctx.client_owns_prop[client_id] = []
+	return true
+
+
+## @returns int: client_id if found; -1 if not found
+static func is_client_registered(ctx: WyncCtx, client_data: int) -> int:
+	#return client_id >= 0 && client_id < ctx.clients.size()
+	for client_id: int in range(ctx.clients.size()):
+		var i_client_data = ctx.clients[client_id]
+		if i_client_data == client_data:
+			return client_id
+	return -1
 
 
 static func prop_exists(ctx: WyncCtx, prop_id: int) -> bool:
@@ -179,7 +196,7 @@ static func prop_exists(ctx: WyncCtx, prop_id: int) -> bool:
 static func prop_set_client_owner(ctx: WyncCtx, prop_id: int, client_id: int) -> bool:
 	if not prop_exists(ctx, prop_id):
 		return false
-	ctx.client_owns_prop[client_id] = prop_id
+	ctx.client_owns_prop[client_id].append(prop_id)
 	return true
 	
 	
