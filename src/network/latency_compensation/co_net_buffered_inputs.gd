@@ -6,7 +6,6 @@ const BUFFER_SIZE = 60 * 12  ## 1.2 seconds worth of inputs
 const AMOUNT_TO_SEND = 10
 
 var buffer_inputs: Array[CoActorInput]  ## Array[tick_id: int, input: Input]
-var buffer_head: int = 0
 
 
 func _init() -> void:
@@ -16,8 +15,7 @@ func _init() -> void:
 
 
 func set_tick(tick: int, data) -> void:
-	buffer_head = tick % BUFFER_SIZE
-	buffer_inputs[buffer_head] = data
+	buffer_inputs[tick % BUFFER_SIZE] = data
 
 
 func get_tick(tick: int) -> CoActorInput:

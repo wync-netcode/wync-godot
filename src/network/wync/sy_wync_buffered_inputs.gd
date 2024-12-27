@@ -25,71 +25,68 @@ func on_process(entities, _data, _delta: float):
 	
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
-	
-	# TODO: get actual client id
-	var client_id = 0
 
-	# TODO: Save actual ticks
-
-	if not wync_ctx.client_owns_prop.has(client_id):
+	if not wync_ctx.connected:
 		return
-	"""
-	for prop_id in wync_ctx.client_owns_prop[client_id]:
-		if not WyncUtils.prop_exists(wync_ctx, prop_id):
-			continue
-		var prop = wync_ctx.props[prop_id] as WyncEntityProp
-		if prop.data_type != WyncEntityProp.DATA_TYPE.INPUT:
-			continue
-		
-		# feed inputs to prop
-	
-	for entity_id_key in wync_ctx.entity_has_props.keys():
-		var prop_ids_array = wync_ctx.entity_has_props[entity_id_key] as Array
-		if not prop_ids_array.size():
-			continue
-		
-		var entity_snap = WyncPktPropSnap.EntitySnap.new()
-		entity_snap.entity_id = entity_id_key
-		
-		for prop_id in prop_ids_array:
-			
-			var prop = wync_ctx.props[prop_id] as WyncEntityProp
-	"""
+
 	for entity: Entity in entities:
 
 		var co_actor = entity.get_component(CoActor.label) as CoActor
-		if not WyncUtils.is_entity_tracked(wync_ctx, co_actor.id):
+		var owned_prop_id = wync_get_owned_prop_input(wync_ctx, co_actor.id)
+		if owned_prop_id == -1:
 			continue
+		Log.out(self, "Input prop id is %s" % owned_prop_id)
 		
-		var input_prop_id = WyncUtils.entity_get_prop_id(wync_ctx, co_actor.id, "input")
-		if input_prop_id < 0:
-			continue
-		
-		if not (wync_ctx.client_owns_prop[client_id] as Array).has(input_prop_id):
-			continue
-		
-		var input_prop = wync_ctx.props[input_prop_id]
-		if input_prop == null:
-			continue
-		
-		Log.out(self, "Input prop is %s" % input_prop)
-		
-		continue
 		var co_actor_input = entity.get_component(CoActorInput.label) as CoActorInput
-		var co_buffered_inputs = entity.get_component(CoNetBufferedInputs.label) as CoNetBufferedInputs
+		wync_tick_set_input(co_predict_data, wync_ctx, owned_prop_id, tick_curr, co_actor_input.copy())
+		
+		# =================================================
+		# (2) TODO: Send inputs to server
 
-		# save inputs
 
-		var curr_input = co_actor_input.copy()
-		curr_input.tick = tick_curr
-		co_buffered_inputs.set_tick(tick_curr, curr_input)
-		
-		# save tick relationship
-		
-		co_buffered_inputs.set_tick_predicted(tick_pred, tick_curr)
-		
-		# Compensate for UP smooth tick_offset transition
-		# check if previous input is missing -> then duplicate
-		
-		if not co_buffered_inputs.get_tick_predicted(tick_pred-1):
-			co_buffered_inputs.set_tick_predicted(tick_pred-1, tick_curr)
+# @returns int: prop_id; -1 if nothing was found
+func wync_get_owned_prop_input(wync_ctx: WyncCtx, game_entity_id: int) -> int:
+	
+	if not WyncUtils.is_entity_tracked(wync_ctx, game_entity_id):
+		return -1
+	
+	var input_prop_id = WyncUtils.entity_get_prop_id(wync_ctx, game_entity_id, "input")
+	if input_prop_id < 0:
+		return -1
+	
+	# checking ownership
+	
+	if not (wync_ctx.client_owns_prop[wync_ctx.my_client_id] as Array).has(input_prop_id):
+		return -1
+	
+	return input_prop_id
+	
+
+func wync_tick_set_input(
+	co_predict_data: CoSingleNetPredictionData,
+	wync_ctx: WyncCtx,
+	input_prop_id: int,
+	tick_curr: int,
+	input #: any
+	) -> void:
+	
+	var tick_pred = co_predict_data.target_tick
+	
+	# save tick relationship
+	
+	co_predict_data.set_tick_predicted(tick_pred, tick_curr)
+	# Compensate for UP smooth tick_offset transition
+	# check if previous input is missing -> then duplicate
+	if not co_predict_data.get_tick_predicted(tick_pred-1):
+		co_predict_data.set_tick_predicted(tick_pred-1, tick_curr)
+	
+	# save input to actual prop
+	
+	# TODO: Create a wrapper/decorator class to add the tick to `any`
+	(input as CoActorInput).tick = tick_curr
+	
+	var input_prop = wync_ctx.props[input_prop_id] as WyncEntityProp
+	if input_prop == null:
+		return
+	
+	input_prop.confirmed_states.insert_at(tick_curr, input)

@@ -26,6 +26,10 @@ static func prop_register(
 	prop.data_type = data_type
 	prop.getter = getter
 	prop.setter = setter
+
+	# TODO: Dynamic sized buffer for all predicted props?
+	if data_type == WyncEntityProp.DATA_TYPE.INPUT:
+		prop.confirmed_states = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE)
 	
 	var prop_id = ctx.props.size()
 	var entity_props = ctx.entity_has_props[entity_id] as Array
@@ -35,6 +39,7 @@ static func prop_register(
 	return prop_id
 
 
+# NOTE: rename to prop_enable_prediction
 static func prop_set_predict(ctx: WyncCtx, prop_id: int) -> bool:
 	if prop_id > ctx.props.size() -1:
 		return false
@@ -198,6 +203,3 @@ static func prop_set_client_owner(ctx: WyncCtx, prop_id: int, client_id: int) ->
 		return false
 	ctx.client_owns_prop[client_id].append(prop_id)
 	return true
-	
-	
-# NOTE: Mind dump: on the server set the client as owner of certain INPUT Prop. Let the client know by syncing this Prop. Then on the client, check for owned INPUT Props to feed inputs to. 

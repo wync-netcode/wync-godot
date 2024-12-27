@@ -43,3 +43,6 @@ var entity_has_simulation_fun: Dictionary
 
 # Meta state / Managment
 var connected: bool = false
+
+# NOTE: Rename to PRED_INPUT_BUFFER_SIZE
+const INPUT_BUFFER_SIZE = 60 * 12

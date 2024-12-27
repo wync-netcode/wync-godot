@@ -24,6 +24,17 @@ func push(item) -> void:
 	buffer[head_pointer] = item
 
 
+## @argument i (int): position in the ring
+## @argument item (any)
+func insert_at(i: int, item):
+	buffer[i % size] = item
+	
+
+## @returns: Optional<any>
+func get_at(i: int):# -> any
+	return buffer[i % size]
+
+
 func clear() -> void:
 	head_pointer = 0
 	buffer.clear()

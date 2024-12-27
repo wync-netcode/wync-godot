@@ -10,10 +10,6 @@ func _ready():
 	super()
 
 
-func on_process(entities, _data, _delta: float):
-	var single_client = ECS.get_singleton_entity(self, "EnSingleClient")
-	if not single_client:
-		Log.err(self, "No single_client")
-		return
-	var co_io = single_client.get_component(CoIOPackets.label) as CoIOPackets
+func on_process_entity(entity, _data, _delta: float):
+	var co_io = entity.get_component(CoIOPackets.label) as CoIOPackets
 	co_io.in_packets.clear()
