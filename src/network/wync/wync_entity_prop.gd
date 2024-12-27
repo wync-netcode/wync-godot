@@ -3,7 +3,8 @@ class_name WyncEntityProp
 enum DATA_TYPE {
 	INT,
 	FLOAT,
-	VECTOR2
+	VECTOR2,
+	INPUT, # a.k.a. any
 }
 
 var name_id: String

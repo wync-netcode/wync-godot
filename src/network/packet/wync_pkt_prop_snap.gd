@@ -1,4 +1,4 @@
-class_name WyncPacketPropSnap
+class_name WyncPktPropSnap
 
 ## Ideal packet structure
 ## tick;[entity_id:[prop_id:prop_value,prop_id:prop_value]]
@@ -17,8 +17,8 @@ var tick: int
 var snaps: Array[EntitySnap]
 
 
-func duplicate() -> WyncPacketPropSnap:
-	var i = WyncPacketPropSnap.new()
+func duplicate() -> WyncPktPropSnap:
+	var i = WyncPktPropSnap.new()
 	i.tick = tick
 	
 	for snap: EntitySnap in snaps:

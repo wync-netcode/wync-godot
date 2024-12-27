@@ -6,7 +6,7 @@ const label: StringName = StringName("SyStateExtractor")
 
 
 func _ready():
-	components = [CoActor.label, CoCollider.label]
+	components = [CoActor.label, -CoBall.label, CoCollider.label]
 	super()
 
 

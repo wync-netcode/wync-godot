@@ -65,7 +65,7 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 		# save server address on client
 
 		co_client.state = CoClient.STATE.CONNECTED
-		co_client.identifier = -1
+		co_client.identifier = data.identifier
 		co_client.server_peer = pkt.from_peer
 
-		Log.out(self, "client_peer_id connected %s to server_peer_id %s" % [co_io.peer_id, co_client.server_peer])
+		Log.out(self, "client_peer_id %s connected to server_peer_id %s" % [co_io.peer_id, co_client.server_peer])

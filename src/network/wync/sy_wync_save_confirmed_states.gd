@@ -6,7 +6,7 @@ const label: StringName = StringName("SyWyncSaveConfirmedStates")
 
 
 func _ready():
-	components = [CoNetConfirmedStates.label, CoActor.label, CoActorRegisteredFlag.label, CoBall.label]
+	components = [CoClient.label, CoPeerRegisteredFlag.label]
 	super()
 	
 
@@ -35,7 +35,7 @@ func on_process(_entities, _data, _delta: float):
 
 	for k in range(co_io.in_packets.size()-1, -1, -1):
 		var pkt = co_io.in_packets[k] as NetPacket
-		var data = pkt.data as WyncPacketPropSnap
+		var data = pkt.data as WyncPktPropSnap
 		if not data:
 			continue
 			
@@ -44,12 +44,12 @@ func on_process(_entities, _data, _delta: float):
 		
 		#Log.out(self, "consume | co_io.in_packets.size() %s" % (co_io.in_packets.size()+1))
 		
-		for snap: WyncPacketPropSnap.EntitySnap in data.snaps:
+		for snap: WyncPktPropSnap.EntitySnap in data.snaps:
 			
 			if not WyncUtils.is_entity_tracked(wync_ctx, snap.entity_id):
 				continue
 			
-			for prop: WyncPacketPropSnap.PropSnap in snap.props:
+			for prop: WyncPktPropSnap.PropSnap in snap.props:
 				
 				if prop.prop_id > wync_ctx.props.size()-1:
 					continue

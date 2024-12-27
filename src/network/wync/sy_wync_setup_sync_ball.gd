@@ -1,9 +1,9 @@
-class_name SyWyncSetupBallSync
+class_name SyWyncSetupSyncBall
 extends System
 const label: StringName = StringName("SyWyncSetupBallSync")
 
 
-# This function aims to setup the entity types
+# This function aims to setup synchronization info for entities
 
 func _ready():
 	components = [CoActor.label, CoBall.label, CoActorRegisteredFlag.label, -CoFlagWyncEntityTracked.label]

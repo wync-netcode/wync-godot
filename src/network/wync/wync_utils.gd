@@ -57,6 +57,21 @@ static func entity_get_prop(ctx: WyncCtx, entity_id: int, prop_name_id: StringNa
 	return null
 
 
+static func entity_get_prop_id(ctx: WyncCtx, entity_id: int, prop_name_id: StringName) -> int:
+	
+	if not is_entity_tracked(ctx, entity_id):
+		return -1
+	
+	var entity_prop_ids = ctx.entity_has_props[entity_id] as Array
+	
+	for prop_id in entity_prop_ids:
+		var prop = ctx.props[prop_id] as WyncEntityProp
+		if prop.name_id == prop_name_id:
+			return prop_id
+	
+	return -1
+
+
 static func is_entity_tracked(ctx: WyncCtx, entity_id: int) -> bool:
 	return ctx.tracked_entities.has(entity_id)
 
@@ -142,3 +157,30 @@ static func entity_get_integrate_fun(ctx: WyncCtx, entity_id: int):# -> optional
 	if sim_fun is not Callable:
 		return null
 	return sim_fun
+
+
+## @argument client_data (optional): store a custom int if needed
+ 
+static func client_register(ctx: WyncCtx, client_data: int = -1) -> int:
+	var client_id = ctx.clients.size()
+	ctx.clients.append(client_data)
+	return client_id
+
+
+static func prop_exists(ctx: WyncCtx, prop_id: int) -> bool:
+	if prop_id < 0 || prop_id > ctx.props.size() -1:
+		return false
+	var prop = ctx.props[prop_id]
+	if prop is not WyncEntityProp:
+		return false
+	return true
+
+
+static func prop_set_client_owner(ctx: WyncCtx, prop_id: int, client_id: int) -> bool:
+	if not prop_exists(ctx, prop_id):
+		return false
+	ctx.client_owns_prop[client_id] = prop_id
+	return true
+	
+	
+# NOTE: Mind dump: on the server set the client as owner of certain INPUT Prop. Let the client know by syncing this Prop. Then on the client, check for owned INPUT Props to feed inputs to. 

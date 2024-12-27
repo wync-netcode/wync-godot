@@ -1,4 +1,4 @@
-[gd_scene load_steps=59 format=3 uid="uid://b8oeiuufqe32c"]
+[gd_scene load_steps=63 format=3 uid="uid://b8oeiuufqe32c"]
 
 [ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_1ps8v"]
 [ext_resource type="Script" path="res://data/StaticData.gd" id="2_2epi3"]
@@ -22,13 +22,14 @@
 [ext_resource type="Script" path="res://src/systems/sy_health.gd" id="15_uanrs"]
 [ext_resource type="Script" path="res://src/systems/sy_projectile_movement.gd" id="16_5f1s6"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_receive_inputs.gd" id="16_egyqr"]
-[ext_resource type="Script" path="res://src/network/sy_transport_loopback_peer_register.gd" id="17_320aq"]
+[ext_resource type="Script" path="res://src/network/sy_nete_loopback_peer_register.gd" id="17_320aq"]
+[ext_resource type="Script" path="res://src/network/wync/setup_wync_server.gd" id="17_gxp01"]
 [ext_resource type="Script" path="res://src/network/sy_ticks.gd" id="18_oeqdo"]
-[ext_resource type="Script" path="res://src/network/sy_transport_loopback_connection.gd" id="19_56q07"]
+[ext_resource type="Script" path="res://src/network/sy_nete_loopback_connect_req.gd" id="19_56q07"]
 [ext_resource type="Script" path="res://src/systems/sy_actor_register.gd" id="19_rcs17"]
 [ext_resource type="Script" path="res://src/network/sy_state_extractor.gd" id="20_03l6t"]
 [ext_resource type="Script" path="res://src/systems/sy_ball_movement.gd" id="21_bjix6"]
-[ext_resource type="Script" path="res://src/network/sy_transport_loopback.gd" id="21_rayuf"]
+[ext_resource type="Script" path="res://src/network/sy_nete_loopback.gd" id="21_rayuf"]
 [ext_resource type="PackedScene" uid="uid://dqillnt7k6deb" path="res://src/entities/en_client.tscn" id="22_c1lim"]
 [ext_resource type="PackedScene" uid="uid://4o33ca5n1fw6" path="res://src/entities/en_player.tscn" id="23_ewwho"]
 [ext_resource type="Script" path="res://src/network/co_ticks.gd" id="25_7a4bi"]
@@ -44,7 +45,9 @@
 [ext_resource type="Script" path="res://src/network/latency_compensation/co_net_buffered_inputs.gd" id="31_10fi0"]
 [ext_resource type="Script" path="res://addons/gs_ecs/group.gd" id="32_wj45u"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_state_extractor.gd" id="34_bmka7"]
+[ext_resource type="Script" path="res://src/network/wync/sy_wync_setup_sync_player.gd" id="35_m1lky"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_buffered_inputs.gd" id="36_n5l6y"]
+[ext_resource type="Script" path="res://src/network/sy_nete_loopback_connect_res.gd" id="37_0dn44"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_self_predict.gd" id="37_q7221"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_send_inputs.gd" id="38_ju0vw"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_latency_stable.gd" id="38_vuulq"]
@@ -52,11 +55,12 @@
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_prediction_ticks.gd" id="40_ailwx"]
 [ext_resource type="Script" path="res://src/network/debug/sy_state_logger_client.gd" id="42_aib70"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_clock_client.gd" id="45_6w0w5"]
-[ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_ball_extrapolate.gd" id="46_m3l0l"]
-[ext_resource type="Script" path="res://src/network/wync/sy_wync_setup_ball_sync.gd" id="49_4ofub"]
+[ext_resource type="Script" path="res://src/network/wync/sy_wync_setup_sync_ball.gd" id="49_4ofub"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_lerp_predicted.gd" id="49_dsdhr"]
+[ext_resource type="Script" path="res://src/network/wync/sy_wync_buffered_inputs.gd" id="50_jvul8"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_save_confirmed_states.gd" id="52_65fst"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_xtrap.gd" id="53_qmyp1"]
+[ext_resource type="Script" path="res://src/network/wync/sy_wync_receive_client_info.gd" id="55_wsisn"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_lerp_past.gd" id="56_0clym"]
 
 [node name="Lab2" type="Node2D"]
@@ -121,6 +125,11 @@ position = Vector2(100, 382)
 [node name="EnBallExtra" parent="worlds/WorldServer/Entities" instance=ExtResource("15_h11ql")]
 position = Vector2(114, 414)
 
+[node name="SetupSystems" type="Node" parent="worlds/WorldServer"]
+
+[node name="SetupWyncServer" type="Node" parent="worlds/WorldServer/SetupSystems"]
+script = ExtResource("17_gxp01")
+
 [node name="GroupPhysics" type="Node" parent="worlds/WorldServer"]
 script = ExtResource("32_wj45u")
 
@@ -167,7 +176,6 @@ script = ExtResource("17_320aq")
 
 [node name="SyStateExtractor" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
 script = ExtResource("20_03l6t")
-ENABLED = false
 
 [node name="SyStateLoggerServer" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
 script = ExtResource("29_wvn6l")
@@ -175,11 +183,18 @@ script = ExtResource("29_wvn6l")
 [node name="SyNetClockServer" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
 script = ExtResource("29_a0he2")
 
-[node name="SyWyncSetupBallSync" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
+[node name="SyWyncSetupSyncBall" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
 script = ExtResource("49_4ofub")
+
+[node name="SyWyncSetupSyncPlayer" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
+script = ExtResource("35_m1lky")
 
 [node name="SyWyncStateExtractor" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
 script = ExtResource("34_bmka7")
+COMPONENTS = null
+
+[node name="SyNeteLoopbackConnectRes" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
+script = ExtResource("37_0dn44")
 
 [node name="SyTicks" type="Node" parent="worlds/WorldServer/GroupPhysics"]
 script = ExtResource("18_oeqdo")
@@ -187,7 +202,7 @@ script = ExtResource("18_oeqdo")
 [node name="GroupProcess" type="Node" parent="worlds/WorldServer"]
 script = ExtResource("32_wj45u")
 
-[node name="SyTransportLoopback" type="Node" parent="worlds/WorldServer/GroupProcess"]
+[node name="SyNeteLoopback" type="Node" parent="worlds/WorldServer/GroupProcess"]
 script = ExtResource("21_rayuf")
 
 [node name="WorldClient1" type="Node" parent="worlds"]
@@ -245,6 +260,7 @@ script = ExtResource("31_10fi0")
 
 [node name="EnBallLerp" parent="worlds/WorldClient1/Entities" instance=ExtResource("15_h11ql")]
 modulate = Color(0.9545, 0.756308, 0.0831867, 1)
+position = Vector2(146, 290)
 
 [node name="CoNetConfirmedStates" type="Node" parent="worlds/WorldClient1/Entities/EnBallLerp"]
 script = ExtResource("27_kq1bv")
@@ -257,6 +273,7 @@ script = ExtResource("39_x655r")
 
 [node name="EnBallExtra" parent="worlds/WorldClient1/Entities" instance=ExtResource("15_h11ql")]
 modulate = Color(0.30377, 1, 0.358399, 1)
+position = Vector2(179, 291)
 
 [node name="CoNetConfirmedStates" type="Node" parent="worlds/WorldClient1/Entities/EnBallExtra"]
 script = ExtResource("27_kq1bv")
@@ -310,25 +327,23 @@ script = ExtResource("40_ailwx")
 [node name="SyActorRegister" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("19_rcs17")
 
-[node name="SyTransportLoopbackPeerRegister" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
+[node name="SyNeteTransportLoopbackPeerRegister" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("17_320aq")
 
-[node name="SyTransportLoopbackConnection" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
+[node name="SyNeteLoopbackConnectReq" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("19_56q07")
 
 [node name="SyNetSaveConfirmedStates" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("29_eipoi")
-ENABLED = false
 
 [node name="SyNetBufferedInputs" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("36_n5l6y")
 
+[node name="SyWyncBufferedInputs" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
+script = ExtResource("50_jvul8")
+
 [node name="SyNetSelfPredict" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("37_q7221")
-
-[node name="SyNetBallExtrapolate" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
-script = ExtResource("46_m3l0l")
-ENABLED = false
 
 [node name="SyNetSendInputs" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("38_ju0vw")
@@ -337,11 +352,17 @@ script = ExtResource("38_ju0vw")
 script = ExtResource("42_aib70")
 ENABLED = false
 
-[node name="SyWyncSetupBallSync" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
+[node name="SyWyncSetupSyncBall" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("49_4ofub")
+
+[node name="SyWyncSetupSyncPlayer" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
+script = ExtResource("35_m1lky")
 
 [node name="SyWyncSaveConfirmedStates" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("52_65fst")
+
+[node name="SyWyncReceiveClientInfo" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
+script = ExtResource("55_wsisn")
 
 [node name="SyWyncXtrap" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("53_qmyp1")
@@ -352,7 +373,7 @@ script = ExtResource("18_oeqdo")
 [node name="GroupProcess" type="Node" parent="worlds/WorldClient1"]
 script = ExtResource("32_wj45u")
 
-[node name="SyTransportLoopback" type="Node" parent="worlds/WorldClient1/GroupProcess"]
+[node name="SyNeteLoopback" type="Node" parent="worlds/WorldClient1/GroupProcess"]
 script = ExtResource("21_rayuf")
 
 [node name="SyNetClockClient" type="Node" parent="worlds/WorldClient1/GroupProcess"]

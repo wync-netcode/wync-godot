@@ -32,7 +32,7 @@ func on_process(entities, _data, _delta: float):
 
 	# extract actors positional data
 
-	var packet = WyncPacketPropSnap.new()
+	var packet = WyncPktPropSnap.new()
 	packet.tick = co_ticks.ticks
 	
 	for entity_id_key in wync_ctx.entity_has_props.keys():
@@ -40,13 +40,18 @@ func on_process(entities, _data, _delta: float):
 		if not prop_ids_array.size():
 			continue
 		
-		var entity_snap = WyncPacketPropSnap.EntitySnap.new()
+		var entity_snap = WyncPktPropSnap.EntitySnap.new()
 		entity_snap.entity_id = entity_id_key
 		
 		for prop_id in prop_ids_array:
 			
 			var prop = wync_ctx.props[prop_id] as WyncEntityProp
-			var prop_snap = WyncPacketPropSnap.PropSnap.new()
+			
+			# don't extract input values
+			if prop.data_type == WyncEntityProp.DATA_TYPE.INPUT:
+				continue
+			
+			var prop_snap = WyncPktPropSnap.PropSnap.new()
 			
 			prop_snap.prop_id = prop_id
 			prop_snap.prop_value = prop.getter.call()
