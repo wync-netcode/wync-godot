@@ -1,10 +1,11 @@
-[gd_scene load_steps=9 format=3 uid="uid://dp7hr35om6ih8"]
+[gd_scene load_steps=10 format=3 uid="uid://dp7hr35om6ih8"]
 
 [ext_resource type="Script" path="res://addons/gs_ecs/entity.gd" id="1_kv4uu"]
 [ext_resource type="PackedScene" uid="uid://crmc58c1fac1p" path="res://src/components/co_collider.tscn" id="2_3hrmx"]
 [ext_resource type="Script" path="res://src/components/co_actor.gd" id="3_s1th0"]
 [ext_resource type="Script" path="res://src/components/co_velocity.gd" id="4_0alde"]
-[ext_resource type="PackedScene" uid="uid://bvb7cfhjfcegr" path="res://src/components/co_actor_renderer.tscn" id="5_tbma4"]
+[ext_resource type="PackedScene" uid="uid://2gtgr4u6tb0w" path="res://src/components/co_actor_renderer.tscn" id="5_tbma4"]
+[ext_resource type="Texture2D" uid="uid://b6vptyjhyt5ty" path="res://icon.svg" id="7_fvdoi"]
 [ext_resource type="Script" path="res://src/components/co_ball.gd" id="7_ikjho"]
 [ext_resource type="Script" path="res://src/components/co_health.gd" id="8_pfnjf"]
 
@@ -33,14 +34,14 @@ shape = SubResource("RectangleShape2D_rkk3i")
 [node name="CoActor" type="Node" parent="CoCollider/Components"]
 script = ExtResource("3_s1th0")
 
-[node name="CoVelocity" type="Node" parent="CoCollider/Components"]
-script = ExtResource("4_0alde")
-
 [node name="CoActorRenderer" parent="CoCollider/Components" instance=ExtResource("5_tbma4")]
 
-[node name="Sprite2D" parent="CoCollider/Components/CoActorRenderer" index="0"]
-position = Vector2(0, 0)
+[node name="SpriteBall" type="Sprite2D" parent="CoCollider/Components/CoActorRenderer"]
 scale = Vector2(0.203125, 0.203125)
+texture = ExtResource("7_fvdoi")
+
+[node name="CoVelocity" type="Node" parent="CoCollider/Components"]
+script = ExtResource("4_0alde")
 
 [node name="CoHealth" type="Node" parent="CoCollider/Components"]
 script = ExtResource("8_pfnjf")
@@ -49,5 +50,3 @@ health = null
 
 [node name="CoBall" type="Node" parent="CoCollider/Components"]
 script = ExtResource("7_ikjho")
-
-[editable path="CoCollider/Components/CoActorRenderer"]

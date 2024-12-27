@@ -416,7 +416,6 @@ ENABLED = false
 
 [node name="SyNetLerpPredicted" type="Node" parent="worlds/WorldClient1/GroupProcess"]
 script = ExtResource("49_dsdhr")
-ENABLED = false
 
 [node name="SyWyncLerpPast" type="Node" parent="worlds/WorldClient1/GroupProcess"]
 script = ExtResource("56_0clym")

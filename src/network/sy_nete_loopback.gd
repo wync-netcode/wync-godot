@@ -10,8 +10,8 @@ func _ready():
 	super()
 
 ## NOTE: This system runs on "_on_process" (render frames)
-	
-func on_process_entity(entity: Entity, _data, _delta: float):
+
+func on_process_entity(entity: Entity, _data, delta: float):
 
 	var curr_time = Time.get_ticks_msec()
 
@@ -24,7 +24,7 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 
 	# ready to simulate
 
-	co_loopback.simulation_delta_acumulator += _delta
+	co_loopback.simulation_delta_acumulator += delta
 	#Log.out(self, "Simulating ??? %s" % (co_loopback.simulation_delta_acumulator * 1000))
 	
 	if co_loopback.simulation_delta_acumulator * 1000 < co_loopback.simulate_every_ms:

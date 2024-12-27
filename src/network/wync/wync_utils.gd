@@ -47,6 +47,12 @@ static func prop_set_predict(ctx: WyncCtx, prop_id: int) -> bool:
 	return true
 
 
+# TODO: this is not very well optimized
+static func prop_is_predicted(ctx: WyncCtx, prop_id: int) -> bool:
+	return ctx.props_to_predict.has(prop_id)
+
+
+## @returns Optional<WyncEntityProp>
 static func entity_get_prop(ctx: WyncCtx, entity_id: int, prop_name_id: StringName) -> WyncEntityProp:
 	
 	if not is_entity_tracked(ctx, entity_id):
@@ -62,6 +68,7 @@ static func entity_get_prop(ctx: WyncCtx, entity_id: int, prop_name_id: StringNa
 	return null
 
 
+## @returns int: prop_id; -1 if not found
 static func entity_get_prop_id(ctx: WyncCtx, entity_id: int, prop_name_id: StringName) -> int:
 	
 	if not is_entity_tracked(ctx, entity_id):

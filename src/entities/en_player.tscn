@@ -1,13 +1,14 @@
-[gd_scene load_steps=14 format=3 uid="uid://4o33ca5n1fw6"]
+[gd_scene load_steps=15 format=3 uid="uid://4o33ca5n1fw6"]
 
 [ext_resource type="Script" path="res://addons/gs_ecs/entity.gd" id="1_fi820"]
 [ext_resource type="Script" path="res://src/components/co_actor.gd" id="1_ncl83"]
 [ext_resource type="Script" path="res://src/components/co_velocity.gd" id="2_hsf2x"]
 [ext_resource type="PackedScene" uid="uid://crmc58c1fac1p" path="res://src/components/co_collider.tscn" id="3_xkv6g"]
 [ext_resource type="Script" path="res://src/components/co_health.gd" id="5_5tuql"]
+[ext_resource type="Texture2D" uid="uid://b6vptyjhyt5ty" path="res://icon.svg" id="5_6fm70"]
 [ext_resource type="Script" path="res://src/components/co_player_input.gd" id="6_i3pb1"]
 [ext_resource type="Script" path="res://src/components/co_shield.gd" id="6_il6qs"]
-[ext_resource type="PackedScene" uid="uid://bvb7cfhjfcegr" path="res://src/components/co_actor_renderer.tscn" id="7_4yv8f"]
+[ext_resource type="PackedScene" uid="uid://2gtgr4u6tb0w" path="res://src/components/co_actor_renderer.tscn" id="7_4yv8f"]
 [ext_resource type="Script" path="res://src/components/co_actor_input.gd" id="7_exlt3"]
 [ext_resource type="Script" path="res://src/components/co_weapon_inventory.gd" id="9_pj8os"]
 [ext_resource type="Script" path="res://src/components/co_weapon_held.gd" id="10_poc8g"]
@@ -38,10 +39,15 @@ shape = SubResource("RectangleShape2D_rkk3i")
 [node name="CoActor" type="Node" parent="CoCollider/Components"]
 script = ExtResource("1_ncl83")
 
+[node name="CoActorRenderer" parent="CoCollider/Components" instance=ExtResource("7_4yv8f")]
+
+[node name="SpritePlayer" type="Sprite2D" parent="CoCollider/Components/CoActorRenderer"]
+position = Vector2(0, -20)
+scale = Vector2(0.203125, 0.515625)
+texture = ExtResource("5_6fm70")
+
 [node name="CoVelocity" type="Node" parent="CoCollider/Components"]
 script = ExtResource("2_hsf2x")
-
-[node name="CoActorRenderer" parent="CoCollider/Components" instance=ExtResource("7_4yv8f")]
 
 [node name="CoPlayerInput" type="Node" parent="CoCollider/Components"]
 script = ExtResource("6_i3pb1")
