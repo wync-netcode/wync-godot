@@ -71,34 +71,6 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 		WyncUtils.prop_set_predict(wync_ctx, pos_prop_id)
 		WyncUtils.prop_set_predict(wync_ctx, vel_prop_id)
 		WyncUtils.prop_set_predict(wync_ctx, input_prop_id)
-	
-	# is server
-	else:
-		
-		var single_server = ECS.get_singleton_entity(self, "EnSingleServer")
-		if not single_server:
-			print("E: Couldn't find singleton EnSingleServer")
-			return
-		var co_io_packets = single_server.get_component(CoIOPackets.label) as CoIOPackets
-		var co_server = single_server.get_component(CoServer.label) as CoServer
-		
-		# FIXME
-		"""
-		var client_id = 0
-		WyncUtils.prop_set_client_owner(wync_ctx, input_prop_id, client_id)
-		var pkt_client_owns = WyncPacketClientOwnsProp.new()
-		pkt_client_owns.entity_id = co_actor.id
-		pkt_client_owns.prop_id = input_prop_id
-		
-		# submit packets to deliver
-
-		for peer: CoServer.ServerPeer in co_server.peers:
-			if peer.peer_id != client_id:
-				continue
-			var pkt = NetPacket.new()
-			pkt.to_peer = peer.peer_id
-			pkt.data = pkt_client_owns.duplicate()
-			co_io_packets.out_packets.append(pkt)"""
 
 		
 	var flag = CoFlagWyncEntityTracked.new()

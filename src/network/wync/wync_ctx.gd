@@ -24,7 +24,7 @@ var props_to_predict: Array[int]
 # Array<clients_id: int> # NOTE: Should be Ring
 var clients: Array[int]
 
-# Map<client_id: int, prop_id: int>
+# Map<client_id: int, prop_id: Array[int]>
 var client_owns_prop: Dictionary
 
 
