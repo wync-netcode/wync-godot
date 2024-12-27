@@ -40,3 +40,6 @@ var simulation_functions: Array[Callable]
 
 # Map<entity_id: int, sim_fun_id>
 var entity_has_simulation_fun: Dictionary
+
+# Meta state / Managment
+var connected: bool = false

@@ -33,7 +33,7 @@ func on_process(entities, _data, delta: float):
 	var target_tick = co_predict_data.target_tick
 	var last_confirmed_tick = 0
 	
-	Log.out(self, "Resetting entities here")
+	#Log.out(self, "Resetting entities here")
 	
 	# reset all extrapolated entities to last confirmed tick
 		
@@ -72,7 +72,7 @@ func on_process(entities, _data, delta: float):
 
 	# predict them back
 	
-	Log.out(self, "Predicting back entities here")
+	#Log.out(self, "Predicting back entities here")
 	
 	for tick in range(last_confirmed_tick +1, target_tick +1):
 		
@@ -92,7 +92,7 @@ func on_process(entities, _data, delta: float):
 			# predict ticks
 
 			sim_fun.call(entity, delta)
-			Log.out(self, "simulating entity %s" % co_actor.id)
+			#Log.out(self, "simulating entity %s" % co_actor.id)
 			
 			# store predicted states
 			# (run on last two iterations)

@@ -21,7 +21,7 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 	var co_io = entity.get_component(CoIOPackets.label) as CoIOPackets
 	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
 	if not co_loopback:
-		print("E: Couldn't find singleton CoTransportLoopback")
+		Log.err(self, "Couldn't find singleton CoTransportLoopback")
 		return
 	
 	# try to find a server
@@ -37,7 +37,7 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 					server_peer_id = i
 
 	if server_peer_id < 0:
-		print("E: Couldn't find registered server peer in CoTransportLoopback")
+		Log.err(self, "Couldn't find registered server peer in CoTransportLoopback")
 		return
 	
 	# "connect" to server
