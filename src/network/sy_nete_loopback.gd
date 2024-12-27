@@ -1,12 +1,12 @@
 extends System
-class_name SyTransportLoopback
-const label: StringName = StringName("SyTransportLoopback")
+class_name SyNeteLoopback
+const label: StringName = StringName("SyNeteLoopback")
 
 ## Fake network that sends and receives packets between peers
 
 
 func _ready():
-	components = [CoIOPackets.label]
+	components = [CoIOPackets.label, CoPeerRegisteredFlag.label]
 	super()
 
 ## NOTE: This system runs on "_on_process" (render frames)
@@ -39,6 +39,7 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 	# look for pending packets to send
 
 	for pkt: NetPacket in co_io_packets.out_packets:
+		pkt.from_peer = co_io_packets.peer_id
 		var loopback_pkt = LoopbackPacket.new()
 		loopback_pkt.packet = pkt
 		loopback_pkt.deliver_time = curr_time + co_loopback.latency

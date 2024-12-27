@@ -1,7 +1,9 @@
 extends System
-class_name SyTransportLoopbackPeerRegister
-const label: StringName = StringName("SyTransportLoopbackPeerRegister")
+class_name SyNeteLoopbackPeerRegister
+const label: StringName = StringName("SyNeteLoopbackPeerRegister")
 
+
+## Registers this peer (server or client) to the Global Fake Network
 
 func _ready():
 	components = [CoIOPackets.label, -CoPeerRegisteredFlag.label]

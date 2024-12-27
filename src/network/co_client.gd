@@ -9,7 +9,7 @@ enum STATE {
 
 var state: STATE = STATE.DISCONNECTED
 var identifier: int = -1
-var server_peer: int = -1  # key to actual peer
+var server_peer: int = -1  # key to actual peer, represents the connection stub
 
 var last_synced_server_tick: int = 0
 var last_synced_server_tick_timestamp: int = 0
