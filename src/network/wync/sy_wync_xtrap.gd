@@ -7,8 +7,8 @@ const label: StringName = StringName("SyWyncXtrap")
 func _ready():
 	components = [
 		CoActor.label,
-		CoBall.label,
-		CoFlagNetExtrapolate.label,
+		#CoBall.label,
+		#CoFlagNetExtrapolate.label,
 		CoNetConfirmedStates.label,
 		CoNetPredictedStates.label, 
 		CoActorRegisteredFlag.label,
@@ -33,8 +33,7 @@ func on_process(entities, _data, delta: float):
 	var target_tick = co_predict_data.target_tick
 	var last_confirmed_tick = 0
 	
-	#Log.out(self, "Resetting entities here")
-	
+	# Don't affect unwanted entities
 	# reset all extrapolated entities to last confirmed tick
 		
 	for entity: Entity in entities:
@@ -49,12 +48,16 @@ func on_process(entities, _data, delta: float):
 			var prop = wync_ctx.props[prop_id] as WyncEntityProp
 			if prop == null:
 				continue
-			var co_net_confirmed_states = prop.confirmed_states
-			var last_confirmed = co_net_confirmed_states.get_relative(0) as NetTickData
+			
+			
+			var last_confirmed = prop.confirmed_states.get_relative(0) as NetTickData
+
+			
 			if last_confirmed == null:
 				continue
 			if last_confirmed.data == null:
 				continue
+			
 			
 			prop.setter.call(last_confirmed.data)
 			
@@ -81,6 +84,22 @@ func on_process(entities, _data, delta: float):
 			var co_actor = entity.get_component(CoActor.label) as CoActor
 			if not wync_ctx.entity_has_props.has(co_actor.id):
 				continue
+			
+			# set input to correct value
+			
+			#wync_set_input_to_tick_value()
+			var input_prop = WyncUtils.entity_get_prop(wync_ctx, co_actor.id, "input")
+			if input_prop != null:
+				if input_prop.data_type == WyncEntityProp.DATA_TYPE.INPUT:
+					var local_tick = co_predict_data.get_tick_predicted(tick)
+					if local_tick == null:
+						continue
+					var input_snap = input_prop.confirmed_states.get_at(local_tick)
+					input_prop.setter.call(input_snap)
+					#print(input_snap)
+					#print(input_snap.aim)
+					#print(1)
+					#if las
 
 			# get simulation function
 				

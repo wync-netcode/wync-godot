@@ -59,7 +59,7 @@ func on_process(entities, _data, _delta: float):
 			if not input:
 				input = CoActorInput.new()
 			
-			SyActorMovement.simulate_movement(input, collider, _delta)
+			#SyActorMovement.simulate_movement(input, collider, _delta)
 			
 			# store predicted states
 			# (run on last two iterations)

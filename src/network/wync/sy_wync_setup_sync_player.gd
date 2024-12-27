@@ -56,7 +56,7 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 	# setup extrapolation
 	
 	if is_client(single_world):
-		var sim_fun_id = WyncUtils.register_function(wync_ctx, SyBallMovement.simulate_movement)
+		var sim_fun_id = WyncUtils.register_function(wync_ctx, SyActorMovement.simulate_movement)
 		if sim_fun_id < 0:
 			Log.err(self, "Couldn't register sim fun")
 		else:
@@ -70,6 +70,7 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 			
 		WyncUtils.prop_set_predict(wync_ctx, pos_prop_id)
 		WyncUtils.prop_set_predict(wync_ctx, vel_prop_id)
+		WyncUtils.prop_set_predict(wync_ctx, input_prop_id)
 	
 	# is server
 	else:

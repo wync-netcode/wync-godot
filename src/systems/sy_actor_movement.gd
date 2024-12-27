@@ -9,13 +9,14 @@ func _ready():
 
 	
 func on_process_entity(entity: Entity, _data, delta: float):
-	var input = entity.get_component(CoActorInput.label) as CoActorInput
-	var collider = entity.get_component(CoCollider.label) as CoCollider
-	simulate_movement(input, collider, delta)
+	simulate_movement(entity, delta)
 
 
 # do not modify input, it is read only. I'm debugging if the inputs are equal
-static func simulate_movement(input: CoActorInput, collider: CoCollider, delta: float) -> void:
+static func simulate_movement(entity: Entity, delta: float) -> void:
+	
+	var input = entity.get_component(CoActorInput.label) as CoActorInput
+	var collider = entity.get_component(CoCollider.label) as CoCollider
 	var body = collider as Node as CharacterBody2D
 	var velocity = body.velocity
 

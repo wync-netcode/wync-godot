@@ -349,9 +349,11 @@ script = ExtResource("29_eipoi")
 
 [node name="SyNetBufferedInputs" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("36_n5l6y")
+ENABLED = false
 
 [node name="SyNetSelfPredict" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("37_q7221")
+ENABLED = false
 
 [node name="SyNetSendInputs" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("38_ju0vw")
