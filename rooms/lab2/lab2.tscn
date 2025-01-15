@@ -1,4 +1,4 @@
-[gd_scene load_steps=68 format=3 uid="uid://b8oeiuufqe32c"]
+[gd_scene load_steps=62 format=3 uid="uid://b8oeiuufqe32c"]
 
 [ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_1ps8v"]
 [ext_resource type="Script" path="res://data/StaticData.gd" id="2_2epi3"]
@@ -27,7 +27,6 @@
 [ext_resource type="Script" path="res://src/network/sy_ticks.gd" id="18_oeqdo"]
 [ext_resource type="Script" path="res://src/network/sy_nete_loopback_connect_req.gd" id="19_56q07"]
 [ext_resource type="Script" path="res://src/systems/sy_actor_register.gd" id="19_rcs17"]
-[ext_resource type="Script" path="res://src/network/sy_state_extractor.gd" id="20_03l6t"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_receive_apply_inputs.gd" id="21_1k058"]
 [ext_resource type="Script" path="res://src/systems/sy_ball_movement.gd" id="21_bjix6"]
 [ext_resource type="Script" path="res://src/network/sy_nete_loopback.gd" id="21_rayuf"]
@@ -40,23 +39,18 @@
 [ext_resource type="Script" path="res://src/network/sy_net_clock_server.gd" id="29_a0he2"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_save_confirmed_states.gd" id="29_eipoi"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/co_net_predicted_states.gd" id="29_vqkjw"]
-[ext_resource type="Script" path="res://src/network/debug/sy_state_logger_server.gd" id="29_wvn6l"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_lerp.gd" id="30_5i022"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/co_flag_net_self_predict.gd" id="30_jafaw"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/co_net_buffered_inputs.gd" id="31_10fi0"]
 [ext_resource type="Script" path="res://addons/gs_ecs/group.gd" id="32_wj45u"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_state_extractor.gd" id="34_bmka7"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_setup_sync_player.gd" id="35_m1lky"]
-[ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_buffered_inputs.gd" id="36_n5l6y"]
 [ext_resource type="Script" path="res://src/network/sy_nete_loopback_connect_res.gd" id="37_0dn44"]
-[ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_self_predict.gd" id="37_q7221"]
-[ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_send_inputs.gd" id="38_ju0vw"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_connect_res.gd" id="38_kvckb"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_latency_stable.gd" id="38_vuulq"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/co_flag_net_extrapolate.gd" id="39_x655r"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_prediction_ticks.gd" id="40_ailwx"]
 [ext_resource type="Script" path="res://src/network/sy_nete_cleanup.gd" id="40_dopds"]
-[ext_resource type="Script" path="res://src/network/debug/sy_state_logger_client.gd" id="42_aib70"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_clock_client.gd" id="45_6w0w5"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_setup_sync_ball.gd" id="49_4ofub"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_lerp_predicted.gd" id="49_dsdhr"]
@@ -182,12 +176,6 @@ script = ExtResource("19_rcs17")
 
 [node name="SyTransportLoopbackPeerRegister" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
 script = ExtResource("17_320aq")
-
-[node name="SyStateExtractor" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
-script = ExtResource("20_03l6t")
-
-[node name="SyStateLoggerServer" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
-script = ExtResource("29_wvn6l")
 
 [node name="SyNetClockServer" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
 script = ExtResource("29_a0he2")
@@ -353,24 +341,8 @@ script = ExtResource("19_56q07")
 [node name="SyNetSaveConfirmedStates" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("29_eipoi")
 
-[node name="SyNetBufferedInputs" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
-script = ExtResource("36_n5l6y")
-ENABLED = false
-
-[node name="SyNetSelfPredict" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
-script = ExtResource("37_q7221")
-ENABLED = false
-
-[node name="SyNetSendInputs" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
-script = ExtResource("38_ju0vw")
-ENABLED = false
-
 [node name="SyWyncSendInputs" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
 script = ExtResource("56_1fh53")
-
-[node name="SyStateLoggerClient" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
-script = ExtResource("42_aib70")
-ENABLED = false
 
 [node name="SystemsWync" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 
