@@ -50,6 +50,27 @@ static func prop_set_predict(ctx: WyncCtx, prop_id: int) -> bool:
 # TODO: this is not very well optimized
 static func prop_is_predicted(ctx: WyncCtx, prop_id: int) -> bool:
 	return ctx.props_to_predict.has(prop_id)
+	
+static func entity_is_predicted(ctx: WyncCtx, entity_id: int) -> bool:
+	if not ctx.entity_has_props.has(entity_id):
+		return false
+	for prop_id in ctx.entity_has_props[entity_id]:
+		if prop_is_predicted(ctx, prop_id):
+			return true
+	return false
+
+static func prop_set_interpolate(ctx: WyncCtx, prop_id: int) -> bool:
+	if prop_id > ctx.props.size() -1:
+		return false
+	var prop = ctx.props[prop_id] as WyncEntityProp
+	prop.interpolated = true
+	return true
+	
+static func prop_is_interpolated(ctx: WyncCtx, prop_id: int) -> bool:
+	if prop_id > ctx.props.size() -1:
+		return false
+	var prop = ctx.props[prop_id] as WyncEntityProp
+	return prop.interpolated
 
 
 ## @returns Optional<WyncEntityProp>

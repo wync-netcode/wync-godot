@@ -62,3 +62,4 @@ func on_process(_entities, _data, _delta: float):
 				tick_data.timestamp = curr_time
 				tick_data.data = prop.prop_value
 				local_prop.confirmed_states.push(tick_data)
+				local_prop.dirty = true

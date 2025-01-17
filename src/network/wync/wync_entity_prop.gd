@@ -1,10 +1,17 @@
 class_name WyncEntityProp
+"""
+enum SYNC_STRAT {
+	LATEST_VALUE,
+	INTERPOLATED,
+	PREDICTED # aka extrapolation / self-prediction
+}"""
 
 enum DATA_TYPE {
 	INT,
 	FLOAT,
 	VECTOR2,
 	INPUT, # a.k.a. any
+	ANY,
 }
 
 var name_id: String
@@ -15,7 +22,10 @@ var setter: Callable
 # Optional properties:
 # TODO: Move these elsewhere
 
-# Ring<int | float | Vector2>
+var dirty: bool # new state was received from the server
+#var predicted: bool # aka extrapolation / self-prediction
+var interpolated: bool
+
 # Ring <NetTickData>
 var confirmed_states: RingBuffer = RingBuffer.new(10)
 

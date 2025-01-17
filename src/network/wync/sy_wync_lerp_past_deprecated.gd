@@ -15,10 +15,7 @@ func _ready():
 	components = [
 		CoActor.label,
 		CoActorRenderer.label,
-		CoNetConfirmedStates.label,
 		CoFlagWyncEntityTracked.label,
-		-CoNetPredictedStates.label,
-		-CoFlagNetExtrapolate.label,
 		]
 	super()
 	
@@ -45,11 +42,6 @@ func on_process(entities, _data, _delta: float):
 
 		var co_renderer = entity.get_component(CoActorRenderer.label) as CoActorRenderer
 		var co_actor = entity.get_component(CoActor.label) as CoActor
-
-		# else fall back to using confirmed state
-
-		var co_net_confirmed_states = entity.get_component(CoNetConfirmedStates.label) as CoNetConfirmedStates
-		var ring = co_net_confirmed_states.buffer
 			
 		# check if this entity has a "position" prop
 		

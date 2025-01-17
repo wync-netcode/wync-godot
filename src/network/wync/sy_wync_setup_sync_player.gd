@@ -10,7 +10,8 @@ func _ready():
 		CoActor.label,
 		CoCollider.label,
 		CoActorInput.label,
-		CoActorRegisteredFlag.label, -CoFlagWyncEntityTracked.label,
+		CoActorRegisteredFlag.label,
+		-CoFlagWyncEntityTracked.label,
 		]
 	super()
 

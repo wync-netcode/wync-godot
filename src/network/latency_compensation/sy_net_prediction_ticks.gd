@@ -4,12 +4,6 @@ const label: StringName = StringName("SyNetPredictionTicks")
 
 ## * Advances the local game tick and the predicted game tick
 ## NOTE: What if we have different send rates for different entities as a LOD measure?
-
-
-func _ready():
-	# TODO: Define so that it doesn't depend on spawned entities
-	components = [CoNetConfirmedStates.label, CoNetPredictedStates.label, CoFlagNetSelfPredict.label, CoNetBufferedInputs.label]
-	super()
 	
 
 func on_process(_entities, _data, _delta: float):

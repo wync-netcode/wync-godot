@@ -6,11 +6,6 @@ const label: StringName = StringName("SyWyncSendInputs")
 ## * TODO: Let the server deduce which actor to move based on client
 
 
-func _ready():
-	components = []
-	super()
-	
-
 func on_process(_entities, _data, _delta: float):
 
 	var en_client = ECS.get_singleton_entity(self, "EnSingleClient")

@@ -12,12 +12,6 @@ var props: Array[WyncEntityProp]
 # Map<entity_id: int, Array<prop_id>>
 var entity_has_props: Dictionary
 
-# Map<entity_id: int, sim_fun_id>
-var entity_has_integrate_fun: Dictionary
-
-# Array<prop_id: int>
-var props_to_predict: Array[int]
-
 
 ## Server only ==============================
 
@@ -29,6 +23,12 @@ var client_owns_prop: Dictionary
 
 
 ## Client only ==============================
+
+# Map<entity_id: int, sim_fun_id>
+var entity_has_integrate_fun: Dictionary
+
+# Array<prop_id: int>
+var props_to_predict: Array[int]
 
 var my_client_id: int
 

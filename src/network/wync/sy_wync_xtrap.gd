@@ -7,10 +7,6 @@ const label: StringName = StringName("SyWyncXtrap")
 func _ready():
 	components = [
 		CoActor.label,
-		#CoBall.label,
-		#CoFlagNetExtrapolate.label,
-		CoNetConfirmedStates.label,
-		CoNetPredictedStates.label, 
 		CoActorRegisteredFlag.label,
 		CoFlagWyncEntityTracked.label
 	]
@@ -33,7 +29,6 @@ func on_process(entities, _data, delta: float):
 	var target_tick = co_predict_data.target_tick
 	var last_confirmed_tick = 0
 	
-	# Don't affect unwanted entities
 	# reset all extrapolated entities to last confirmed tick
 		
 	for entity: Entity in entities:
@@ -48,7 +43,9 @@ func on_process(entities, _data, delta: float):
 			var prop = wync_ctx.props[prop_id] as WyncEntityProp
 			if prop == null:
 				continue
-			
+			if WyncUtils.prop_is_predicted(wync_ctx, prop_id):
+			#if !prop.predicted:
+				continue
 			
 			var last_confirmed = prop.confirmed_states.get_relative(0) as NetTickData
 
@@ -66,7 +63,8 @@ func on_process(entities, _data, delta: float):
 		# call integration function to sync new transforms with physics server
 				
 		var int_fun = WyncUtils.entity_get_integrate_fun(wync_ctx, co_actor.id)
-		int_fun.call()
+		if int_fun is Callable:
+			int_fun.call()
 	
 	# sync transforms to physics server
 	var space := get_viewport().world_2d.space
@@ -85,6 +83,10 @@ func on_process(entities, _data, delta: float):
 			if not wync_ctx.entity_has_props.has(co_actor.id):
 				continue
 			
+			if !WyncUtils.entity_is_predicted(wync_ctx, co_actor.id):
+				continue
+			
+			# NOTE: Input buffers are different
 			# set input to correct value
 			
 			#wync_set_input_to_tick_value()
@@ -136,7 +138,8 @@ func on_process(entities, _data, delta: float):
 				continue
 			
 			var int_fun = WyncUtils.entity_get_integrate_fun(wync_ctx, co_actor.id)
-			int_fun.call()
+			if int_fun is Callable:
+				int_fun.call()
 		
 			props_update_predicted_states_ticks(wync_ctx, wync_ctx.entity_has_props[co_actor.id], target_tick)
 		
@@ -144,8 +147,6 @@ func on_process(entities, _data, delta: float):
 		RapierPhysicsServer2D.space_step(space, 0)
 		RapierPhysicsServer2D.space_flush_queries(space)
 
-
-#static func props_update_predicted_states_ticks
 
 static func props_update_predicted_states_data(ctx: WyncCtx, props_ids: Array) -> void:
 	

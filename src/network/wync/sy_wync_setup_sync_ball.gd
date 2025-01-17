@@ -6,7 +6,11 @@ const label: StringName = StringName("SyWyncSetupBallSync")
 # This function aims to setup synchronization info for entities
 
 func _ready():
-	components = [CoActor.label, CoBall.label, CoActorRegisteredFlag.label, -CoFlagWyncEntityTracked.label]
+	components = [
+		CoActor.label,
+		CoBall.label,
+		CoActorRegisteredFlag.label,
+		-CoFlagWyncEntityTracked.label]
 	super()
 
 
@@ -28,7 +32,7 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 		co_actor.id,
 		"position",
 		WyncEntityProp.DATA_TYPE.VECTOR2,
-		func(): return co_collider.global_position,
+		func() -> Vector2: return co_collider.global_position,
 		func(pos: Vector2): co_collider.global_position = pos,
 	)
 	var vel_prop_id = WyncUtils.prop_register(
@@ -36,13 +40,13 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 		co_actor.id,
 		"velocity",
 		WyncEntityProp.DATA_TYPE.VECTOR2,
-		func(): return co_collider.velocity,
+		func() -> Vector2: return co_collider.velocity,
 		func(vel: Vector2): co_collider.velocity = vel,
 	)
 	
 	# setup extrapolation
 	
-	if is_client(single_world):
+	if is_client(single_world) && co_actor.id % 2 == 0:
 		var sim_fun_id = WyncUtils.register_function(wync_ctx, SyBallMovement.simulate_movement)
 		if sim_fun_id < 0:
 			Log.err(self, "Couldn't register sim fun")
