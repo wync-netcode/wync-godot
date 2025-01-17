@@ -10,9 +10,9 @@ func _ready():
 	
 func on_process_entity(entity: Entity, _data, delta: float):
 	simulate_movement(entity, delta)
+	recalculate_aim(entity)
 
 
-# do not modify input, it is read only. I'm debugging if the inputs are equal
 static func simulate_movement(entity: Entity, _delta: float) -> void:
 	
 	var co_ball = entity.get_component(CoBall.label) as CoBall
@@ -29,3 +29,12 @@ static func simulate_movement(entity: Entity, _delta: float) -> void:
 			body.velocity.x *= -1
 		if col_normal.y != 0:
 			body.velocity.y *= -1
+
+
+func recalculate_aim(entity: Entity):
+	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+	var physics_fps = Engine.physics_ticks_per_second
+	
+	if (co_ticks.ticks % (physics_fps * 3) == 0):
+		var co_ball = entity.get_component(CoBall.label) as CoBall
+		co_ball.aim_radians = randf() * 2 * PI

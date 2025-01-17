@@ -34,7 +34,6 @@ func on_process(entities, _data, _delta: float):
 		target_time = curr_time - co_predict_data.lerp_ms
 
 		var co_actor = entity.get_component(CoActor.label) as CoActor
-		var co_renderer = entity.get_component(CoActorRenderer.label) as CoActorRenderer
 
 		# is prop interpolable (aka numeric, Vector2)
 
@@ -46,6 +45,7 @@ func on_process(entities, _data, _delta: float):
 		var pos_prop = wync_ctx.props[pos_prop_id]
 		if pos_prop is not WyncEntityProp:
 			continue
+		pos_prop = pos_prop as WyncEntityProp
 
 		# find two snapshots
 
@@ -92,14 +92,13 @@ func on_process(entities, _data, _delta: float):
 			right_timestamp = ClockUtils.get_predicted_tick_local_time_msec(snap_right.tick+2, co_ticks, co_predict_data)
 		
 		if abs(left_timestamp - right_timestamp) < 0.000001:
-			co_renderer.global_position = snap_right.data
+			pos_prop.interpolated_state = snap_right.data
 		else:
 			var left_pos = snap_left.data as Vector2
 			var right_pos = snap_right.data as Vector2
 			var factor = clampf(
 				(float(target_time) - left_timestamp) / (right_timestamp - left_timestamp),
 				0, 1)
-			var new_pos = left_pos.lerp(right_pos, factor)
-			co_renderer.global_position = new_pos
+			pos_prop.interpolated_state = left_pos.lerp(right_pos, factor)
 			
 			#Log.out(self, "leftardiff %s | left: %s | target: %s | right: %s | factor %s ||| target_time_offset %s" % [target_time - left_timestamp, left_timestamp, target_time, right_timestamp, factor, co_predict_data.target_time_offset])

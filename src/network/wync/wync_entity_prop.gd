@@ -14,6 +14,12 @@ enum DATA_TYPE {
 	ANY,
 }
 
+static var INTERPOLABLE_DATA_TYPES: Array[DATA_TYPE] = [
+	DATA_TYPE.INT,
+	DATA_TYPE.FLOAT,
+	DATA_TYPE.VECTOR2,
+]
+
 var name_id: String
 var data_type: DATA_TYPE
 var getter: Callable
@@ -23,8 +29,8 @@ var setter: Callable
 # TODO: Move these elsewhere
 
 var dirty: bool # new state was received from the server
-#var predicted: bool # aka extrapolation / self-prediction
 var interpolated: bool
+var interpolated_state # : any
 
 # Ring <NetTickData>
 var confirmed_states: RingBuffer = RingBuffer.new(10)

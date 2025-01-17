@@ -43,24 +43,40 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 		func() -> Vector2: return co_collider.velocity,
 		func(vel: Vector2): co_collider.velocity = vel,
 	)
+	var aim_prop_id = WyncUtils.prop_register(
+		wync_ctx,
+		co_actor.id,
+		"aim",
+		WyncEntityProp.DATA_TYPE.FLOAT,
+		func() -> float: return co_ball.aim_radians,
+		func(new_aim: float): co_ball.aim_radians = new_aim,
+	)
 	
-	# setup extrapolation
 	
-	if is_client(single_world) && co_actor.id % 2 == 0:
-		var sim_fun_id = WyncUtils.register_function(wync_ctx, SyBallMovement.simulate_movement)
-		if sim_fun_id < 0:
-			Log.err(self, "Couldn't register sim fun")
-		else:
-			WyncUtils.entity_set_sim_fun(wync_ctx, co_actor.id, sim_fun_id)
+	if is_client(single_world):
+		# interpolation
 		
-		var int_fun_id = WyncUtils.register_function(wync_ctx, co_collider.force_update_transform)
-		if int_fun_id < 0:
-			Log.err(self, "Couldn't register integrate fun")
-		else:
-			WyncUtils.entity_set_integration_fun(wync_ctx, co_actor.id, int_fun_id)
+		WyncUtils.prop_set_interpolate(wync_ctx, aim_prop_id)
+		# TODO: INTERPOLATE OTHER PROPS AS WELL!!!!!!
+		
+		# setup extrapolation
+		
+		if co_actor.id % 2 == 0:
+			var sim_fun_id = WyncUtils.register_function(wync_ctx, SyBallMovement.simulate_movement)
+			if sim_fun_id < 0:
+				Log.err(self, "Couldn't register sim fun")
+			else:
+				WyncUtils.entity_set_sim_fun(wync_ctx, co_actor.id, sim_fun_id)
 			
-		WyncUtils.prop_set_predict(wync_ctx, pos_prop_id)
-		WyncUtils.prop_set_predict(wync_ctx, vel_prop_id)
+			var int_fun_id = WyncUtils.register_function(wync_ctx, co_collider.force_update_transform)
+			if int_fun_id < 0:
+				Log.err(self, "Couldn't register integrate fun")
+			else:
+				WyncUtils.entity_set_integration_fun(wync_ctx, co_actor.id, int_fun_id)
+				
+			WyncUtils.prop_set_predict(wync_ctx, pos_prop_id)
+			WyncUtils.prop_set_predict(wync_ctx, vel_prop_id)
+		
 	
 	var flag = CoFlagWyncEntityTracked.new()
 	ECS.entity_add_component_node(entity, flag)
