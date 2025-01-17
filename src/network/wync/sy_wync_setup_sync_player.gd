@@ -54,9 +54,14 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 		func(input: CoActorInput): input.copy_to_instance(co_actor_input),
 	)
 	
-	# setup extrapolation
-	
 	if is_client(single_world):
+		# interpolation
+		
+		WyncUtils.prop_set_interpolate(wync_ctx, pos_prop_id)
+		WyncUtils.prop_set_interpolate(wync_ctx, vel_prop_id)
+	
+		# setup extrapolation
+		
 		var sim_fun_id = WyncUtils.register_function(wync_ctx, SyActorMovement.simulate_movement)
 		if sim_fun_id < 0:
 			Log.err(self, "Couldn't register sim fun")

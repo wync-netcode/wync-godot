@@ -56,8 +56,9 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 	if is_client(single_world):
 		# interpolation
 		
+		WyncUtils.prop_set_interpolate(wync_ctx, pos_prop_id)
+		WyncUtils.prop_set_interpolate(wync_ctx, vel_prop_id)
 		WyncUtils.prop_set_interpolate(wync_ctx, aim_prop_id)
-		# TODO: INTERPOLATE OTHER PROPS AS WELL!!!!!!
 		
 		# setup extrapolation
 		

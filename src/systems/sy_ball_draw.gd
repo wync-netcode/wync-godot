@@ -15,5 +15,6 @@ func on_process_entity(entity: Entity, _data, delta: float):
 	
 	if (co_actor_renderer is Node2D):
 		var node_2d = co_actor_renderer as Node2D
-		node_2d.rotation = lerp_angle(node_2d.rotation, co_ball.aim_radians, 1.5 * delta)
+		node_2d.rotation = co_ball.aim_radians
+		#node_2d.rotation = lerp_angle(node_2d.rotation, co_ball.aim_radians, 1.5 * delta)
 		

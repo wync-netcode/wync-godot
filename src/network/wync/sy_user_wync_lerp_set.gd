@@ -36,10 +36,14 @@ func on_process(entities, _data, _delta: float):
 		if (prop != null
 			&& prop.interpolated_state != null
 			&& co_renderer is Node2D):
-				co_renderer.global_position = prop.interpolated_state
+			co_renderer.global_position = prop.interpolated_state
 				
+		
+		# 1. aim is currently interpolated by Wync
+		# 2. apply this value to the visual Ball
 		prop = WyncUtils.entity_get_prop(wync_ctx, co_actor.id, "aim")
 		if (prop != null
 			&& prop.interpolated_state != null
 			&& co_renderer is Node2D):
-				co_renderer.rotation = prop.interpolated_state
+			co_renderer.rotation = prop.interpolated_state
+		
