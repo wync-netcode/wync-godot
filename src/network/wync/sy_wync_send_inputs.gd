@@ -52,9 +52,13 @@ func on_process(_entities, _data, _delta: float):
 			if input is not CoActorInput:
 				#Log.out(self, "we don't have an input for this tick %s" % [i])
 				continue
-			var input_copy = input.copy()
-			input_copy.tick = i
-			net_inputs.inputs.append(input_copy)
+			
+			# TODO: copy is not a standarized 'duplicate function'
+			var tick_input_wrap = NetPacketInputs.NetTickDataDecorator.new()
+			tick_input_wrap.tick = i
+			tick_input_wrap.data = input.copy()
+			
+			net_inputs.inputs.append(tick_input_wrap)
 			#Log.out(self, "sending inputs move %s (tick_pred %s)" % [input.movement_dir, i])
 
 		net_inputs.amount = net_inputs.inputs.size()

@@ -49,11 +49,11 @@ func on_process(_entities, _data, _delta: float):
 		
 		var input_prop = wync_ctx.props[prop_id] as WyncEntityProp
 		
-		# QUICK DUIMP: save the input in the prop bvefore simulateion
-		#input_prop.setter.call()
+		# save the input in the prop before simulation
+		# TODO: data.copy is not standarized
 		
-		for input: CoActorInput in data.inputs:
-			input_prop.confirmed_states.insert_at(input.tick, input.copy())
+		for input: NetPacketInputs.NetTickDataDecorator in data.inputs:
+			input_prop.confirmed_states.insert_at(input.tick, input.data.copy())
 
 
 	# apply inputs to player
@@ -73,4 +73,4 @@ func on_process(_entities, _data, _delta: float):
 			if not input:
 				continue
 			prop.setter.call(input)
-			Log.out(self, "input is %s,%s" % [input.movement_dir.x, input.movement_dir.y])
+			#Log.out(self, "input is %s,%s" % [input.movement_dir.x, input.movement_dir.y])

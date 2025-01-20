@@ -35,7 +35,7 @@ func on_process(entities, _data, _delta: float):
 		var owned_prop_id = wync_get_owned_prop_input(wync_ctx, co_actor.id)
 		if owned_prop_id == -1:
 			continue
-		Log.out(self, "Input prop id is %s" % owned_prop_id)
+		#Log.out(self, "Input prop id is %s" % owned_prop_id)
 		
 		var co_actor_input = entity.get_component(CoActorInput.label) as CoActorInput
 		wync_tick_set_input(co_predict_data, wync_ctx, owned_prop_id, tick_curr, co_actor_input.copy())
@@ -81,9 +81,6 @@ func wync_tick_set_input(
 		co_predict_data.set_tick_predicted(tick_pred-1, tick_curr)
 	
 	# save input to actual prop
-	
-	# TODO: Create a wrapper/decorator class to add the tick to `any`
-	(input as CoActorInput).tick = tick_curr
 	
 	var input_prop = wync_ctx.props[input_prop_id] as WyncEntityProp
 	if input_prop == null:

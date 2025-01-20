@@ -8,7 +8,6 @@ var shoot: bool
 var reload: bool
 var open_store: bool
 var switch_weapon_to: int = -1
-var tick: int
 
 
 func copy() -> CoActorInput:
@@ -19,7 +18,6 @@ func copy() -> CoActorInput:
 	newi.reload = reload
 	newi.open_store = open_store
 	newi.switch_weapon_to = switch_weapon_to
-	newi.tick = tick
 	return newi
 
 
@@ -30,5 +28,3 @@ func copy_to_instance(ins: CoActorInput) -> void:
 	ins.reload = reload
 	ins.open_store = open_store
 	ins.switch_weapon_to = switch_weapon_to
-	ins.tick = tick
-	
