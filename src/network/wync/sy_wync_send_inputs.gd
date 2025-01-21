@@ -25,6 +25,9 @@ func on_process(_entities, _data, _delta: float):
 	if not wync_ctx.connected:
 		return
 	
+	# NOTE DUMP 06:41PM: Send also the events (as if they were inputs)
+	# And THEN create a NEW system for syncing event DATA, and a new data
+	# structure in WyncCtx to keep track of which data has been synced already
 	for prop_id: int in wync_ctx.client_owns_prop[wync_ctx.my_client_id]:
 		
 		if not WyncUtils.prop_exists(wync_ctx, prop_id):
@@ -34,8 +37,9 @@ func on_process(_entities, _data, _delta: float):
 		if not input_prop:
 			Log.err(self, "not input_prop %s" % prop_id)
 			continue
-		if input_prop.data_type != WyncEntityProp.DATA_TYPE.INPUT:
-			Log.err(self, "prop %s is not data_type.INPUT" % prop_id)
+		if input_prop.data_type not in [WyncEntityProp.DATA_TYPE.INPUT,
+			WyncEntityProp.DATA_TYPE.EVENT]:
+			Log.err(self, "prop %s is not INPUT or EVENT" % prop_id)
 			continue
 		var buffered_inputs = input_prop.confirmed_states
 
@@ -49,15 +53,23 @@ func on_process(_entities, _data, _delta: float):
 				#Log.out(self, "we don't have an input for this tick %s" % [i])
 				continue
 			var input = buffered_inputs.get_at(tick_local)
-			if input is not CoActorInput:
+			if input == null || input is not Object:
 				#Log.out(self, "we don't have an input for this tick %s" % [i])
 				continue
+			input = input as Object
 			
-			# TODO: copy is not a standarized 'duplicate function'
 			var tick_input_wrap = NetPacketInputs.NetTickDataDecorator.new()
 			tick_input_wrap.tick = i
-			tick_input_wrap.data = input.copy()
 			
+			# TODO: copy is not a standarized 'duplicate function'
+			if input.has_method("copy"):
+				tick_input_wrap.data = input.copy()
+			elif input.has_method("duplicate") && input is not Node:
+				tick_input_wrap.data = input.duplicate()
+			else:
+				Log.out(self, "WARNING: input data can't be duplicated %s" % input)
+				tick_input_wrap.data = input
+				
 			net_inputs.inputs.append(tick_input_wrap)
 			#Log.out(self, "sending inputs move %s (tick_pred %s)" % [input.movement_dir, i])
 

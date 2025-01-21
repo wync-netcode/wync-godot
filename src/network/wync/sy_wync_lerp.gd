@@ -92,8 +92,8 @@ func on_process(entities, _data, _delta: float):
 				right_timestamp = snap_right.timestamp
 			else:
 				# TODO: Why a difference of two ticks?
-				left_timestamp = ClockUtils.get_predicted_tick_local_time_msec(snap_left.tick+2, co_ticks, co_predict_data)
-				right_timestamp = ClockUtils.get_predicted_tick_local_time_msec(snap_right.tick+2, co_ticks, co_predict_data)
+				left_timestamp = ClockUtils.get_predicted_tick_local_time_msec(snap_left.tick+1, co_ticks, co_predict_data)
+				right_timestamp = ClockUtils.get_predicted_tick_local_time_msec(snap_right.tick+1, co_ticks, co_predict_data)
 			
 			if abs(left_timestamp - right_timestamp) < 0.000001:
 				prop.interpolated_state = snap_right.data

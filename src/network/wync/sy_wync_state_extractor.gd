@@ -5,12 +5,7 @@ const label: StringName = StringName("SyWyncStateExtractor")
 ## Extracts state from actors
 
 
-func _ready():
-	components = [CoActor.label]
-	super()
-
-
-func on_process(entities, _data, _delta: float):
+func on_process(_entities, _data, _delta: float):
 
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 
@@ -48,6 +43,7 @@ func on_process(entities, _data, _delta: float):
 			var prop = wync_ctx.props[prop_id] as WyncEntityProp
 			
 			# don't extract input values
+			# FIXME: should events be extracted? game event yes, but other player events? Maybe we need an option to what events to share.
 			if prop.data_type == WyncEntityProp.DATA_TYPE.INPUT:
 				continue
 			

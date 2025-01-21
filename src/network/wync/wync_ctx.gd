@@ -12,6 +12,9 @@ var props: Array[WyncEntityProp]
 # Map<entity_id: int, Array<prop_id>>
 var entity_has_props: Dictionary
 
+# Map<event_id: uint, WyncEvent>
+var events: Dictionary
+
 
 ## Server only ==============================
 
@@ -46,3 +49,5 @@ var connected: bool = false
 
 # NOTE: Rename to PRED_INPUT_BUFFER_SIZE
 const INPUT_BUFFER_SIZE = 60 * 12
+
+var event_id_counter: int

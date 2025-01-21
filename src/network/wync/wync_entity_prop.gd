@@ -12,6 +12,7 @@ enum DATA_TYPE {
 	VECTOR2,
 	INPUT, # a.k.a. any
 	ANY,
+	EVENT
 }
 
 static var INTERPOLABLE_DATA_TYPES: Array[DATA_TYPE] = [

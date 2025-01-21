@@ -1,6 +1,6 @@
 class_name SyWyncSetupSyncBall
 extends System
-const label: StringName = StringName("SyWyncSetupBallSync")
+const label: StringName = StringName("SyWyncSetupSyncBall")
 
 
 # This function aims to setup synchronization info for entities

@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://4o33ca5n1fw6"]
+[gd_scene load_steps=16 format=3 uid="uid://4o33ca5n1fw6"]
 
 [ext_resource type="Script" path="res://addons/gs_ecs/entity.gd" id="1_fi820"]
 [ext_resource type="Script" path="res://src/components/co_actor.gd" id="1_ncl83"]
@@ -13,6 +13,7 @@
 [ext_resource type="Script" path="res://src/components/co_weapon_inventory.gd" id="9_pj8os"]
 [ext_resource type="Script" path="res://src/components/co_weapon_held.gd" id="10_poc8g"]
 [ext_resource type="Script" path="res://src/components/co_money.gd" id="12_0dkhu"]
+[ext_resource type="Script" path="res://src/components/co_wync_events.gd" id="14_vilc0"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_rkk3i"]
 size = Vector2(26, 26)
@@ -71,3 +72,6 @@ script = ExtResource("6_il6qs")
 
 [node name="CoMoney" type="Node" parent="CoCollider/Components"]
 script = ExtResource("12_0dkhu")
+
+[node name="CoWyncEvents" type="Node" parent="CoCollider/Components"]
+script = ExtResource("14_vilc0")

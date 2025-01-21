@@ -73,13 +73,73 @@ func draw_block_grid(entity: Entity):
 				fire_rect.position.x += fire_rect.size.x * 0.7
 				fire_rect.size *= 1.0 - 0.7
 				node2d.draw_rect(fire_rect, Color.ORANGE, true)
+			
+			# client interaction
+			if !is_client():
+				continue
+			
+			var mouse = node2d.get_local_mouse_position()
+			#Log.out(self, "mouse pos %s , rect pos %s" % [mouse, block_rect.position])
+			if block_rect.has_point(mouse):
+				var color = Color.WHITE
+				color.a = 0.5
+				node2d.draw_rect(block_rect, color, true)
+				
+				if Input.is_action_just_pressed("p1_mouse1"):
+					color = Color.RED
+					color.a = 0.5
+					node2d.draw_rect(block_rect, color, true)
+					Log.out(self, "EVENT MOUSE CLICK %s" % Vector2i(i,j))
+					
+					generate_click_event(100, null)
 
 
-func on_process_entity(entity: Entity, _data, delta: float):
+func on_process_entity(_entity: Entity, _data, _delta: float):
 	if (self as Node) is Node2D:
 		(self as Node as Node2D).queue_redraw()
 
 
 func is_client() -> bool:
-	var single_client = ECS.get_singleton_component(self, CoClient.label) as CoClient
+	var single_client = ECS.get_singleton_entity(self, "EnSingleClient")
 	return single_client != null
+
+
+func generate_click_event(
+	event_type_id: int,
+	event_data # : any
+	):
+	# NOTE alternative proposal:
+	# from the props I have ownership, which one is of type EVENT?
+	# append the new event to that...
+	
+	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+	#var co_ticks = entity.get_component(CoTicks.label) as CoTick
+	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var wync_ctx = single_wync.ctx as WyncCtx
+	
+	# FIXME: harcoded entity with id 0
+	var player_entity_id = 0
+	
+	# get the player entity that contains my custom events
+	var single_actors = ECS.get_singleton_entity(self, "EnSingleActors")
+	if not single_actors:
+		Log.err(self, "Can't find EnSingleActors")
+		return
+	var co_actors = single_actors.get_component(CoSingleActors.label) as CoSingleActors
+	var player_entity = co_actors.actors[player_entity_id]
+	if not player_entity:
+		Log.err(self, "Can't find player_entity")
+		return
+	
+	# get the CoWyncEvent component
+	var co_wync_events = player_entity.get_component(CoWyncEvents.label) as CoWyncEvents
+	if not co_wync_events:
+		Log.err(self, "Can't find co_wync_events")
+		return
+	
+	# first register the event to Wync
+	var event_id = WyncEventUtils.instantiate_new_event(wync_ctx, event_type_id, 0)
+	
+	# save the event id to component
+	co_wync_events.events.append(event_id)
+	Log.out(self, "ticks(%s) co_wync_events.events %s:%s:%s" % [co_ticks.ticks, co_wync_events, co_wync_events.events.size(), co_wync_events.events])

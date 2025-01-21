@@ -16,50 +16,47 @@ func _ready():
 	super()
 	
 
-func on_process(entities, _data, _delta: float):
-
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
-	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
-	var tick_curr = co_ticks.server_ticks
-	var tick_pred = co_predict_data.target_tick
+func on_process(_entities, _data, _delta: float, node_root: Node = null):
 	
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var node_self = self
+	if node_root != null:
+		node_self = node_root
+	var co_ticks = ECS.get_singleton_component(node_self, CoTicks.label) as CoTicks
+	var co_predict_data = ECS.get_singleton_component(node_self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
+	var tick_curr = co_ticks.server_ticks
+	
+	var single_wync = ECS.get_singleton_component(node_self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
 
 	if not wync_ctx.connected:
 		return
 
-	for entity: Entity in entities:
-
-		var co_actor = entity.get_component(CoActor.label) as CoActor
-		var owned_prop_id = wync_get_owned_prop_input(wync_ctx, co_actor.id)
-		if owned_prop_id == -1:
+	## Buffer state (extract) from props we own, to create a state history
+	
+	for prop_id: int in wync_ctx.client_owns_prop[wync_ctx.my_client_id]:
+		
+		# Log.out(node_self, "client owns prop %s" % prop_id)
+		if not WyncUtils.prop_exists(wync_ctx, prop_id):
+			Log.err(node_self, "prop %s doesn't exists" % prop_id)
 			continue
-		#Log.out(self, "Input prop id is %s" % owned_prop_id)
+		var input_prop = wync_ctx.props[prop_id] as WyncEntityProp
+		if not input_prop:
+			Log.err(node_self, "not input_prop %s" % prop_id)
+			continue
+		if input_prop.data_type not in [
+			WyncEntityProp.DATA_TYPE.INPUT,
+			WyncEntityProp.DATA_TYPE.EVENT]:
+			Log.err(node_self, "prop %s is not INPUT or EVENT" % prop_id)
+			continue
+	
+		# Log.out(node_self, "gonna call getter for prop %s" % prop_id)
+		var new_state = input_prop.getter.call()
+		if new_state == null:
+			Log.out(node_self, "new_state == null :%s" % [new_state])
+			continue
 		
-		var co_actor_input = entity.get_component(CoActorInput.label) as CoActorInput
-		wync_tick_set_input(co_predict_data, wync_ctx, owned_prop_id, tick_curr, co_actor_input.copy())
-		
-		# =================================================
-		# (2) TODO: Send inputs to server
-
-
-# @returns int: prop_id; -1 if nothing was found
-func wync_get_owned_prop_input(wync_ctx: WyncCtx, game_entity_id: int) -> int:
-	
-	if not WyncUtils.is_entity_tracked(wync_ctx, game_entity_id):
-		return -1
-	
-	var input_prop_id = WyncUtils.entity_get_prop_id(wync_ctx, game_entity_id, "input")
-	if input_prop_id < 0:
-		return -1
-	
-	# checking ownership
-	
-	if not (wync_ctx.client_owns_prop[wync_ctx.my_client_id] as Array).has(input_prop_id):
-		return -1
-	
-	return input_prop_id
+		# Log.out(node_self, "Saving event state :%s" % [new_state])
+		wync_tick_set_input(co_predict_data, wync_ctx, prop_id, tick_curr, new_state)
 	
 
 func wync_tick_set_input(

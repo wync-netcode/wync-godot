@@ -23,7 +23,7 @@ func on_process(_entities, _data, _delta: float):
 		return
 
 	# save tick data from packets
-
+	
 	for k in range(co_io.in_packets.size()-1, -1, -1):
 		var pkt = co_io.in_packets[k] as NetPacket
 		var data = pkt.data as WyncPacketResClientInfo

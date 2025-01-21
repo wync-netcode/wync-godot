@@ -10,6 +10,7 @@ func _ready():
 		CoActor.label,
 		CoCollider.label,
 		CoActorInput.label,
+		CoWyncEvents.label,
 		CoActorRegisteredFlag.label,
 		-CoFlagWyncEntityTracked.label,
 		]
@@ -25,6 +26,7 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 	var co_actor = entity.get_component(CoActor.label) as CoActor
 	var co_collider = entity.get_component(CoCollider.label) as CharacterBody2D
 	var co_actor_input = entity.get_component(CoActorInput.label) as CoActorInput
+	var co_wync_events = entity.get_component(CoWyncEvents.label) as CoWyncEvents
 	
 	# NOTE: Register just the ball for now
 	
@@ -53,6 +55,18 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 		func(): return co_actor_input.copy(),
 		func(input: CoActorInput): input.copy_to_instance(co_actor_input),
 	)
+	var events_prop_id = WyncUtils.prop_register(
+		wync_ctx,
+		co_actor.id,
+		"events",
+		WyncEntityProp.DATA_TYPE.EVENT,
+		func():
+			return co_wync_events.events.duplicate(true),
+		func(events: Array):
+			co_wync_events.events.clear()
+			# NOTE: can't check cast like this `if events is not Array[int]:`
+			co_wync_events.events.append_array(events),
+	)
 	
 	if is_client(single_world):
 		# interpolation
@@ -77,6 +91,7 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 		WyncUtils.prop_set_predict(wync_ctx, pos_prop_id)
 		WyncUtils.prop_set_predict(wync_ctx, vel_prop_id)
 		WyncUtils.prop_set_predict(wync_ctx, input_prop_id)
+		WyncUtils.prop_set_predict(wync_ctx, events_prop_id)
 
 		
 	var flag = CoFlagWyncEntityTracked.new()

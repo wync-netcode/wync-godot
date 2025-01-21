@@ -65,7 +65,8 @@ func on_process(_entities, _data, _delta: float):
 			var prop = wync_ctx.props[prop_id] as WyncEntityProp
 			if not prop:
 				continue
-			if prop.data_type != WyncEntityProp.DATA_TYPE.INPUT:
+			if (prop.data_type != WyncEntityProp.DATA_TYPE.INPUT &&
+				prop.data_type != WyncEntityProp.DATA_TYPE.EVENT):
 				continue
 		
 			# FIXME: check the tick with a wrapper/decorator class for inputs

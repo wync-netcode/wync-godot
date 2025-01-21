@@ -6,13 +6,11 @@ const label: StringName = StringName("SyWyncConnectRes")
 
 
 func _ready():
-	components = [
-		CoSingleWyncContext.label
-	]
+	components = [ CoSingleWyncContext.label ]
 	super()
 
 
-func on_process(entities, _data, _delta: float):
+func on_process(_entities, _data, _delta: float):
 	var single_server = ECS.get_singleton_entity(self, "EnSingleServer")
 	if not single_server:
 		Log.err(self, "No single_client")
@@ -56,17 +54,29 @@ func on_process(entities, _data, _delta: float):
 		
 		# NOTE: Maybe move this elsewhere, the client could ask this any time
 		# FIXME Harcoded: client 0 -> entity 0 (player)
-		
-		var prop_id = WyncUtils.entity_get_prop_id(wync_ctx, 0, "input")
-		packet_data = WyncPacketResClientInfo.new()
-		packet_data.entity_id = 0
-		packet_data.prop_id = prop_id
-		
-		WyncUtils.prop_set_client_owner(wync_ctx, prop_id, wync_client_id)
-		
-		packet = NetPacket.new()
+		packet = make_client_info_packet(wync_ctx, wync_client_id, 0, "input")
 		packet.to_peer = pkt.from_peer
-		packet.data = packet_data
 		co_io.out_packets.append(packet)
 		
-		Log.out(self, "assigned (entity %s) prop %s to client %s" % [packet_data.entity_id, prop_id, pkt.from_peer])
+		packet = make_client_info_packet(wync_ctx, wync_client_id, 0, "events")
+		packet.to_peer = pkt.from_peer
+		co_io.out_packets.append(packet)
+		
+
+func make_client_info_packet(
+	wync_ctx: WyncCtx,
+	wync_client_id: int,
+	entity_id: int,
+	prop_name: String) -> NetPacket:
+	
+	var prop_id = WyncUtils.entity_get_prop_id(wync_ctx, entity_id, prop_name)
+	var packet_data = WyncPacketResClientInfo.new()
+	packet_data.entity_id = entity_id
+	packet_data.prop_id = prop_id
+	
+	WyncUtils.prop_set_client_owner(wync_ctx, prop_id, wync_client_id)
+	Log.out(self, "assigned (entity %s: prop %s) to client %s" % [packet_data.entity_id, prop_id, wync_client_id])
+	
+	var packet = NetPacket.new()
+	packet.data = packet_data
+	return packet

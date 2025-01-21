@@ -3,7 +3,11 @@ class_name SyPlayerInput
 const label: StringName = StringName("SyPlayerInput")
 
 func _ready():
-	components = [CoPlayerInput.label, CoActorInput.label]
+	components = [
+		CoActorInput.label,
+		CoPlayerInput.label,
+		CoWyncEvents.label,
+	]
 	super()
 	
 func on_process_entity(entity : Entity, _data, _delta: float):
@@ -23,5 +27,10 @@ func on_process_entity(entity : Entity, _data, _delta: float):
 	elif Input.is_action_pressed("p1_weapon3"): input.switch_weapon_to = 2
 	elif Input.is_action_pressed("p1_weapon4"): input.switch_weapon_to = 3
 	elif Input.is_action_pressed("p1_weapon5"): input.switch_weapon_to = 4
-
 	# print(input.shoot, input.reload, input.open_store, input.movement_dir, input.aim)
+	
+	# TODO: Maybe move this elsewhere
+	# Cleaning events from previous tick
+	
+	var co_wync_events = entity.get_component(CoWyncEvents.label) as CoWyncEvents
+	co_wync_events.events.clear()

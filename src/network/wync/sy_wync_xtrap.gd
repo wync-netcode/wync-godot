@@ -25,7 +25,6 @@ func on_process(entities, _data, delta: float):
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
 
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 	var target_tick = co_predict_data.target_tick
 	var last_confirmed_tick = 0
 	
@@ -88,20 +87,28 @@ func on_process(entities, _data, delta: float):
 			
 			# NOTE: Input buffers are different
 			# set input to correct value
+			# TODO: merge input and output + make it work regardless of name
+			# + identify which I own and which belong to my foes'
 			
-			#wync_set_input_to_tick_value()
 			var input_prop = WyncUtils.entity_get_prop(wync_ctx, co_actor.id, "input")
 			if input_prop != null:
 				if input_prop.data_type == WyncEntityProp.DATA_TYPE.INPUT:
 					var local_tick = co_predict_data.get_tick_predicted(tick)
-					if local_tick == null:
+					if local_tick == null || local_tick is not int:
 						continue
 					var input_snap = input_prop.confirmed_states.get_at(local_tick)
-					input_prop.setter.call(input_snap)
-					#print(input_snap)
-					#print(input_snap.aim)
-					#print(1)
-					#if las
+					if input_snap != null:
+						input_prop.setter.call(input_snap)
+
+			input_prop = WyncUtils.entity_get_prop(wync_ctx, co_actor.id, "events")
+			if input_prop != null:
+				if input_prop.data_type == WyncEntityProp.DATA_TYPE.EVENT:
+					var local_tick = co_predict_data.get_tick_predicted(tick)
+					if local_tick == null || local_tick is not int:
+						continue
+					var input_snap = input_prop.confirmed_states.get_at(local_tick)
+					if input_snap != null:
+						input_prop.setter.call(input_snap)
 
 			# get simulation function
 				
