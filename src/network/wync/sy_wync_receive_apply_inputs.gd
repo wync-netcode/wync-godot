@@ -76,7 +76,7 @@ func on_process(_entities, _data, _delta: float):
 		
 			# FIXME: check the tick with a wrapper/decorator class for inputs
 			var input = prop.confirmed_states.get_at(co_ticks.ticks)
-			if not input:
+			if input == null:
 				continue
 			prop.setter.call(input)
 			#Log.out(self, "input is %s,%s" % [input.movement_dir.x, input.movement_dir.y])

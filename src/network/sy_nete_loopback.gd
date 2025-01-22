@@ -76,6 +76,6 @@ func on_process_entity(entity: Entity, _data, delta: float):
 
 		#Log.out(self, "consume | received 1 packet, size %s curr_time %s deliver_time %s" % [buffer.in_packets.size(), curr_time, pkt.deliver_time])
 		amount += 1
-		if buffer.in_packets.size() >= 2:
-			print("break")
+		#if buffer.in_packets.size() >= 2:
+		#	print("break")
 		

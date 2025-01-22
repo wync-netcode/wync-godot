@@ -142,4 +142,6 @@ func generate_click_event(
 	
 	# save the event id to component
 	co_wync_events.events.append(event_id)
-	Log.out(self, "ticks(%s) co_wync_events.events %s:%s:%s" % [co_ticks.ticks, co_wync_events, co_wync_events.events.size(), co_wync_events.events])
+	
+	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
+	Log.out(self, "ticks(%s|%s) co_wync_events.events %s:%s:%s" % [co_ticks.ticks, co_predict_data.target_tick, co_wync_events, co_wync_events.events.size(), co_wync_events.events])
