@@ -233,3 +233,18 @@ static func prop_set_client_owner(ctx: WyncCtx, prop_id: int, client_id: int) ->
 		return false
 	ctx.client_owns_prop[client_id].append(prop_id)
 	return true
+
+
+# Miscellanious
+# ================================================================
+# TODO: copy is not a standarized 'duplicate function'
+
+static func duplicate_any(any): #-> Optional<any>
+	if any is Object:
+		if any.has_method("copy"):
+			return any.copy()
+		elif any.has_method("duplicate") && any is not Node:
+			return any.duplicate()
+	elif any is Array:
+		return any.duplicate(true)
+	return null

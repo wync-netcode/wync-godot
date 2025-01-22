@@ -53,11 +53,16 @@ func on_process(_entities, _data, _delta: float):
 		# TODO: data.copy is not standarized
 		
 		for input: NetPacketInputs.NetTickDataDecorator in data.inputs:
-			input_prop.confirmed_states.insert_at(input.tick, input.data.copy())
+			var copy = WyncUtils.duplicate_any(input.data)
+			if copy == null:
+				Log.out(self, "WARNING: input data can't be duplicated %s" % [input.data])
+			var to_insert = copy if copy != null else input.data
+			
+			input_prop.confirmed_states.insert_at(input.tick, to_insert)
 
-
-	# apply inputs to player
-
+	# apply inputs / events to props
+	# TODO: Better to separate receive/apply logic
+		
 	for client_id in range(wync_ctx.clients.size()):
 		for prop_id in wync_ctx.client_owns_prop[client_id]:
 			if not WyncUtils.prop_exists(wync_ctx, prop_id):

@@ -44,6 +44,7 @@ func on_process(_entities, _data, _delta: float):
 			
 			# don't extract input values
 			# FIXME: should events be extracted? game event yes, but other player events? Maybe we need an option to what events to share.
+			# NOTE: what about a setting like: NEVER, TO_ALL, TO_ALL_EXCEPT_OWNER, ONLY_TO_SERVER
 			if prop.data_type in [WyncEntityProp.DATA_TYPE.INPUT,
 				WyncEntityProp.DATA_TYPE.EVENT]:
 				continue
