@@ -1,6 +1,7 @@
 class_name ClockUtils
 
 
+# NOTE: Maybe rename to get_local_time_msec
 static func time_get_ticks_msec(co_ticks: CoTicks) -> int:
 	return Time.get_ticks_msec() + co_ticks.time_ms_offset
 
@@ -22,5 +23,10 @@ static func server_time_to_local_time(co_predict_data: CoSingleNetPredictionData
 	return server_time - co_predict_data.clock_offset_mean
 """
 
-static func get_net_ticks(co_ticks: CoTicks, co_predict_data: CoSingleNetPredictionData):
+static func get_net_ticks(co_ticks: CoTicks):
 	return co_ticks.ticks - co_ticks.server_ticks_offset
+
+
+static func get_tick_local_time_msec(co_predict_data: CoSingleNetPredictionData, co_ticks: CoTicks, ticks: int):
+	var frame = 1000.0 / Engine.physics_ticks_per_second
+	return co_predict_data.current_tick_timestamp + (ticks - co_ticks.ticks) * frame

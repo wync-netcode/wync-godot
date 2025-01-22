@@ -115,19 +115,21 @@ static func is_entity_tracked(ctx: WyncCtx, entity_id: int) -> bool:
 
 
 ## @returns tuple[NetTickData, NetTickData]
-static func find_closest_two_snapshots_from_prop_id(ctx: WyncCtx, target_time: int, prop_id: int) -> Array:
+static func find_closest_two_snapshots_from_prop_id(ctx: WyncCtx, target_time: int, prop_id: int, co_ticks: CoTicks, co_predict_data: CoSingleNetPredictionData) -> Array:
 	
 	if prop_id > ctx.props.size() -1:
 		return []
 	
 	return find_closest_two_snapshots_from_prop(
 		target_time,
-		ctx.props[prop_id] as WyncEntityProp
+		ctx.props[prop_id] as WyncEntityProp,
+		co_ticks,
+		co_predict_data
 	)
 
 
 ## @returns tuple[NetTickData, NetTickData]
-static func find_closest_two_snapshots_from_prop(target_time: int, prop: WyncEntityProp) -> Array:
+static func find_closest_two_snapshots_from_prop(target_time: int, prop: WyncEntityProp, co_ticks: CoTicks, co_predict_data: CoSingleNetPredictionData) -> Array:
 
 	var ring = prop.confirmed_states
 	
@@ -138,12 +140,11 @@ static func find_closest_two_snapshots_from_prop(target_time: int, prop: WyncEnt
 		var snapshot = ring.get_relative(-i) as NetTickData
 		if not snapshot:
 			break
-		var snapshot_timestamp = snapshot.timestamp
-		#Log.out(ctx, "Comparing ticks %s(%s) tar:%s" % [snapshot_timestamp, snapshot.tick, target_time])
+		var snapshot_timestamp = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, snapshot.arrived_at_tick)
+
 		if snapshot_timestamp > target_time:
 			snap_right = snapshot
 		elif snap_right != null && snapshot_timestamp < target_time:
-			#found_snapshots = true
 			snap_left = snapshot
 			break
 	

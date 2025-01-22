@@ -70,7 +70,7 @@ func on_process(entities, _data, _delta: float):
 			
 			if not found_snapshots:
 				target_time = curr_time - co_predict_data.lerp_ms
-				var snaps = WyncUtils.find_closest_two_snapshots_from_prop(target_time, prop)
+				var snaps = WyncUtils.find_closest_two_snapshots_from_prop(target_time, prop, co_ticks, co_predict_data)
 
 				if snaps.size() == 2:
 					snap_left = snaps[0] as NetTickData
@@ -88,8 +88,8 @@ func on_process(entities, _data, _delta: float):
 			var right_timestamp = 0
 
 			if using_confirmed_state:
-				left_timestamp = snap_left.timestamp
-				right_timestamp = snap_right.timestamp
+				left_timestamp = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, snap_left.arrived_at_tick)
+				right_timestamp = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, snap_right.arrived_at_tick)
 			else:
 				# TODO: Why a difference of two ticks?
 				left_timestamp = ClockUtils.get_predicted_tick_local_time_msec(snap_left.tick+1, co_ticks, co_predict_data)
