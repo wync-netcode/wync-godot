@@ -85,13 +85,18 @@ func draw_block_grid(entity: Entity):
 				color.a = 0.5
 				node2d.draw_rect(block_rect, color, true)
 				
+				var event = GameInfo.EVENT_NONE
 				if Input.is_action_just_pressed("p1_mouse1"):
+					event = GameInfo.EVENT_PLAYER_BLOCK_BREAK
+				elif Input.is_action_just_pressed("p1_mouse2"):
+					event = GameInfo.EVENT_PLAYER_BLOCK_PLACE
+				if event != GameInfo.EVENT_NONE:
 					color = Color.RED
 					color.a = 0.5
 					node2d.draw_rect(block_rect, color, true)
 					Log.out(self, "EVENT MOUSE CLICK %s" % Vector2i(i,j))
 					
-					generate_click_event(100, Vector2i(i,j))
+					generate_click_event(event, Vector2i(i,j))
 
 
 func on_process_entity(_entity: Entity, _data, _delta: float):

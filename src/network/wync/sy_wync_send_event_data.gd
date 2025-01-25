@@ -21,6 +21,7 @@ func on_process(_entities, _data, _delta: float):
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
 	if not wync_ctx.connected:
+		Log.err(self, "Not connected")
 		return
 	
 	var event_amount = wync_ctx.events_to_sync_this_tick.keys().size()
@@ -48,6 +49,7 @@ func on_process(_entities, _data, _delta: float):
 		
 		var event_data = WyncPktEventData.EventData.new()
 		event_data.event_id = event_id
+		event_data.event_type_id = wync_event.event_type_id
 		event_data.arg_count = wync_event.arg_count
 		event_data.arg_data_type = wync_event.arg_data_type.duplicate(true)
 		event_data.arg_data.resize(event_data.arg_count)
@@ -66,3 +68,4 @@ func on_process(_entities, _data, _delta: float):
 	pkt.to_peer = co_client.server_peer
 	pkt.data = data
 	co_io_packets.out_packets.append(pkt)
+	Log.out(self, "sent")

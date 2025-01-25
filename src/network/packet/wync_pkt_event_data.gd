@@ -19,6 +19,7 @@ events: Array[EventData] [
 
 class EventData:
 	var event_id: int
+	var event_type_id: int
 	var arg_count: int
 	var arg_data_type: Array[int]
 	var arg_data: Array # : Array[any]

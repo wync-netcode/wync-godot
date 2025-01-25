@@ -12,6 +12,7 @@ var props: Array[WyncEntityProp]
 # Map<entity_id: int, Array<prop_id>>
 var entity_has_props: Dictionary
 
+# TODO: Separate generated events from CACHED events
 # Map<event_id: uint, WyncEvent>
 var events: Dictionary
 

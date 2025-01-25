@@ -38,10 +38,10 @@ func on_process(_entities, _data, _delta: float):
 			
 			var wync_event = WyncEvent.new()
 			wync_event.event_id = event.event_id
+			wync_event.event_type_id = event.event_type_id
 			wync_event.arg_count = event.arg_count
 			wync_event.arg_data_type = event.arg_data_type.duplicate(true)
 			wync_event.arg_data = event.arg_data # std::move(std::unique_pointer)
 			wync_ctx.events[wync_event.event_id] = wync_event
 		
-			# WARNING: wync_ctx.events doesn't use event_type_id
 			# NOTE: what if we already have this event data? Maybe it's better to receive it anyway?

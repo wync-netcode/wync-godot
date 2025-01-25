@@ -129,6 +129,7 @@ position = Vector2(114, 414)
 
 [node name="EnBlockGrid" parent="worlds/WorldServer/Entities" instance=ExtResource("17_y8ubi")]
 position = Vector2(358, 28)
+singleton = true
 
 [node name="SetupSystems" type="Node" parent="worlds/WorldServer"]
 
@@ -282,6 +283,7 @@ script = ExtResource("39_x655r")
 
 [node name="EnBlockGrid" parent="worlds/WorldClient1/Entities" instance=ExtResource("17_y8ubi")]
 position = Vector2(358, 28)
+singleton = true
 
 [node name="GroupPhysics" type="Node" parent="worlds/WorldClient1"]
 script = ExtResource("32_wj45u")
