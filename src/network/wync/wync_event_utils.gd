@@ -59,7 +59,7 @@ static func event_add_arg(
 	if event is not WyncEvent:
 		return 1
 	event = event as WyncEvent
-	if event.arg_count >= arg_id:
+	if arg_id >= event.arg_count:
 		return 2
 	event.arg_data_type[arg_id] = arg_data_type
 	event.arg_data[arg_id] = arg_data

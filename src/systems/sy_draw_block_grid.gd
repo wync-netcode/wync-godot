@@ -91,7 +91,7 @@ func draw_block_grid(entity: Entity):
 					node2d.draw_rect(block_rect, color, true)
 					Log.out(self, "EVENT MOUSE CLICK %s" % Vector2i(i,j))
 					
-					generate_click_event(100, null)
+					generate_click_event(100, Vector2i(i,j))
 
 
 func on_process_entity(_entity: Entity, _data, _delta: float):
@@ -108,12 +108,13 @@ func generate_click_event(
 	event_type_id: int,
 	event_data # : any
 	):
-	# NOTE alternative proposal:
+	# NOTE alternative approach:
 	# from the props I have ownership, which one is of type EVENT?
 	# append the new event to that...
+	# NOTE current approach:
+	# Feed event into my prop array of events
 	
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
-	#var co_ticks = entity.get_component(CoTicks.label) as CoTick
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
 	
@@ -138,7 +139,13 @@ func generate_click_event(
 		return
 	
 	# first register the event to Wync
-	var event_id = WyncEventUtils.instantiate_new_event(wync_ctx, event_type_id, 0)
+	var event_id = WyncEventUtils.instantiate_new_event(wync_ctx, event_type_id, 1)
+	WyncEventUtils.event_add_arg(wync_ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, event_data)
+	
+	var _event = wync_ctx.events[event_id] as WyncEvent
+	if _event:
+		Log.out(self, "TESTING event hash: event_data %s arg_data %s" % [event_data, _event.arg_data])
+		Log.out(self, "event %s hash %s" % [_event, HashUtils.hash_any(_event.arg_data)])
 	
 	# save the event id to component
 	co_wync_events.events.append(event_id)

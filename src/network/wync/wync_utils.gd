@@ -245,6 +245,33 @@ static func duplicate_any(any): #-> Optional<any>
 			return any.copy()
 		elif any.has_method("duplicate") && any is not Node:
 			return any.duplicate()
-	elif any is Array:
+	elif typeof(any) in [
+		TYPE_ARRAY,
+		TYPE_DICTIONARY
+	]:
 		return any.duplicate(true)
+	elif typeof(any) in [
+		TYPE_BOOL,
+		TYPE_INT,
+		TYPE_FLOAT,
+		TYPE_STRING,
+		TYPE_VECTOR2,
+		TYPE_VECTOR2I,
+		TYPE_RECT2,
+		TYPE_RECT2I,
+		TYPE_VECTOR3,
+		TYPE_VECTOR3I,
+		TYPE_TRANSFORM2D,
+		TYPE_VECTOR4,
+		TYPE_VECTOR4I,
+		TYPE_PLANE,
+		TYPE_QUATERNION,
+		TYPE_AABB,
+		TYPE_BASIS,
+		TYPE_TRANSFORM3D,
+		TYPE_PROJECTION,
+		TYPE_COLOR,
+		TYPE_STRING_NAME
+	]:
+		return any
 	return null

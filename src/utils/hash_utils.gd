@@ -1,0 +1,17 @@
+class_name HashUtils
+
+
+static func hash_any(any) -> int:
+	if any is Object:
+		return hash(object_to_dictionary(any))
+	return hash(any)
+
+
+static func object_to_dictionary(object: Object) -> Dictionary:
+	var dict = {}
+	var property_list = object.get_property_list()
+	for property in property_list:
+		if property.usage != PROPERTY_USAGE_SCRIPT_VARIABLE:
+			continue
+		dict[property.name] = object.get(property.name)
+	return dict

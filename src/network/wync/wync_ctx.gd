@@ -15,6 +15,9 @@ var entity_has_props: Dictionary
 # Map<event_id: uint, WyncEvent>
 var events: Dictionary
 
+# Set[event_id]
+var events_to_sync_this_tick: Dictionary
+
 
 ## Server only ==============================
 

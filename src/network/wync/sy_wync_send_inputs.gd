@@ -25,6 +25,9 @@ func on_process(_entities, _data, _delta: float):
 	if not wync_ctx.connected:
 		return
 	
+	# reset events_id to sync
+	wync_ctx.events_to_sync_this_tick.clear()
+	
 	for prop_id: int in wync_ctx.client_owns_prop[wync_ctx.my_client_id]:
 		
 		if not WyncUtils.prop_exists(wync_ctx, prop_id):
@@ -59,10 +62,18 @@ func on_process(_entities, _data, _delta: float):
 			
 			var copy = WyncUtils.duplicate_any(input)
 			if copy == null:
-				Log.out(self, "WARNING: input data can't be duplicated %s" % [input])
+				Log.out(self, "WARNING: input data couldn't be duplicated %s" % [input])
 			tick_input_wrap.data = copy if copy != null else input
 				
 			net_inputs.inputs.append(tick_input_wrap)
+			
+			# compile events ids
+			if (input_prop.data_type == WyncEntityProp.DATA_TYPE.EVENT &&
+				input is Array):
+				input = input as Array
+				for event_id in input:
+					wync_ctx.events_to_sync_this_tick[event_id] = 0
+				
 
 		net_inputs.amount = net_inputs.inputs.size()
 		net_inputs.prop_id = prop_id
