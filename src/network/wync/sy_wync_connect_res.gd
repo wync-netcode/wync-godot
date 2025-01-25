@@ -17,7 +17,7 @@ func on_process(_entities, _data, _delta: float):
 		return
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
-	if wync_ctx.connected:
+	if not wync_ctx.connected:
 		return
 	var co_io = single_server.get_component(CoIOPackets.label) as CoIOPackets
 	
