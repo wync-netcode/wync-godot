@@ -27,23 +27,35 @@ func on_process(_entities, _data, _delta: float):
 	var event_amount = wync_ctx.events_to_sync_this_tick.keys().size()
 	if event_amount <= 0:
 		return
-	Log.out(self, "Event count to sync %s" % event_amount)
+	#Log.out(self, "Event count to sync %s" % event_amount)
 	
 	var data = WyncPktEventData.new()
-	data.events.resize(event_amount)
 	
 	var keys = wync_ctx.events_to_sync_this_tick.keys()
 	for i in range(event_amount):
 		var event_id = keys[i]
-		Log.out(self, "event_id %s" % event_id)
+		#Log.out(self, "event_id %s" % event_id)
 		
-		# get event
+		# get event data
 		
 		if not wync_ctx.events.has(event_id):
 			Log.err(self, "couldn't find event_id %s" % event_id)
 			continue
 		
 		var wync_event = wync_ctx.events[event_id] as WyncEvent
+		
+		# check if server already has it
+		var event_hash = HashUtils.hash_any(wync_event)
+		var is_event_cached = wync_ctx.events_hash_to_id.has_item_hash(event_hash)
+		if (is_event_cached):
+			var cached_event_id = wync_ctx.events_hash_to_id.get_item_by_hash(event_hash)
+			if (cached_event_id != null):
+				var server_has_it = wync_ctx.events_sent.has_item_hash(cached_event_id)
+				if (server_has_it):
+					continue
+		
+		# server doesn't have it
+		wync_ctx.events_sent.push_head_hash_and_item(event_id, true)
 		
 		# package it
 		
@@ -59,9 +71,12 @@ func on_process(_entities, _data, _delta: float):
 			Log.out(self, "%s" % [wync_event.arg_data[j]])
 			Log.out(self, "%s" % [event_data.arg_data[j]])
 		
-		data.events[i] = event_data
+		data.events.append(event_data)
 		Log.out(self, "%s" % HashUtils.object_to_dictionary(event_data))
-		
+	
+	if (data.events.size() == 0):
+		return
+	
 	# queue
 
 	var pkt = NetPacket.new()

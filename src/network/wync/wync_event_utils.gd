@@ -8,7 +8,7 @@ static func _get_new_event_id(ctx: WyncCtx) -> int:
 	var peer_id = ctx.my_client_id
 	
 	"""
-	# alternative option:
+	# alternative approach:
 	# 32 24 16 08
 	# X  X  X  Y
 	# X = event_id, Y = peer_id
@@ -36,17 +36,17 @@ static func instantiate_new_event(
 	arg_count: int
 	) -> int:
 		
-	var id = _get_new_event_id(ctx)
+	var event_id = _get_new_event_id(ctx)
 	var event = WyncEvent.new()
-	event.event_id = id
 	event.event_type_id = event_type_id
 	event.arg_count = arg_count
 	event.arg_data.resize(arg_count)
 	event.arg_data_type.resize(arg_count)
-	ctx.events[id] = event
-	return id
+	ctx.events[event_id] = event
+	return event_id
 
 
+## @returns int. 0 -> ok, (int > 0) -> error
 static func event_add_arg(
 		ctx: WyncCtx,
 		event_id: int,
@@ -66,9 +66,35 @@ static func event_add_arg(
 	return 0
 
 
+## @returns int. (-1) -> error, (int > 0) -> event id
+static func event_wrap_up(
+		ctx: WyncCtx,
+		event_id: int,
+	) -> int:
+		
+	var event = ctx.events[event_id]
+	if event is not WyncEvent:
+		return -1
+	event = event as WyncEvent
+	
+	var event_hash = HashUtils.hash_any(event)
+	
+	# this event is a duplicate
+	if ctx.events_hash_to_id.has_item_hash(event_hash):
+		ctx.events.erase(event_id)
+		var cached_event_id = ctx.events_hash_to_id.get_item_by_hash(event_hash)
+		print("WyncCtx: EventData: this event is a duplicate")
+		return cached_event_id
+	
+	# not a duplicate -> cache it
+	ctx.events_hash_to_id.push_head_hash_and_item(event_hash, event_id)
+	return event_id
+
+
 # FIXME: This func isn't being used, despite being important from optimization
 # Currently events are being added by extraction
 
+"""
 static func add_event_to_prop_tick(
 		ctx: WyncCtx,
 		event_id: int,
@@ -77,15 +103,13 @@ static func add_event_to_prop_tick(
 	) -> int:
 	
 	# TODO: Where to define if this event can be duplicated?
-	"""
-	var tick_pred = co_predict_data.target_tick
+	#var tick_pred = co_predict_data.target_tick
 	# save tick relationship
-	co_predict_data.set_tick_predicted(tick_pred, tick_curr)
+	#co_predict_data.set_tick_predicted(tick_pred, tick_curr)
 	# Compensate for UP smooth tick_offset transition
 	# check if previous input is missing -> then duplicate
-	if not co_predict_data.get_tick_predicted(tick_pred-1):
-		co_predict_data.set_tick_predicted(tick_pred-1, tick_curr)
-	"""
+	#if not co_predict_data.get_tick_predicted(tick_pred-1):
+		#co_predict_data.set_tick_predicted(tick_pred-1, tick_curr)
 	
 	# save input to actual prop
 	
@@ -110,7 +134,7 @@ static func add_event_to_prop_tick(
 	
 	(data_wrap.data as Array).append(event_id)
 	return 0
-
+"""
 """
 instantiate_new_event(event_type_id) -> event_id
 

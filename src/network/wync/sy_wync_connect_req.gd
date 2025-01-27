@@ -12,7 +12,7 @@ func _ready():
 	super()
 
 
-func on_process(entities, _data, _delta: float):
+func on_process(_entities, _data, _delta: float):
 	var single_client = ECS.get_singleton_entity(self, "EnSingleClient")
 	if not single_client:
 		Log.err(self, "No single_client")
@@ -48,6 +48,9 @@ func on_process(entities, _data, _delta: float):
 		if not data.approved:
 			Log.err(self, "Connection DENIED for peer %s" % [co_io.peer_id])
 			continue
+			
+		# setup client stuff
+		# NOTE: Move this elsewhere?
 			
 		wync_ctx.connected = true
 		wync_ctx.my_client_id = data.wync_client_id

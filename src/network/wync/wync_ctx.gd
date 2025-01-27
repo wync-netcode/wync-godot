@@ -55,3 +55,11 @@ var connected: bool = false
 const INPUT_BUFFER_SIZE = 60 * 12
 
 var event_id_counter: int
+
+const MAX_AMOUNT_CACHE_EVENTS = 2
+
+# FIFOMap <event_data_hash: int, event_id: int>
+var events_hash_to_id: FIFOMap = FIFOMap.new()
+
+# Set <event_id: int>
+var events_sent: FIFOMap = FIFOMap.new()

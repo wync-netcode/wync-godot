@@ -146,6 +146,10 @@ func generate_click_event(
 	# first register the event to Wync
 	var event_id = WyncEventUtils.instantiate_new_event(wync_ctx, event_type_id, 1)
 	WyncEventUtils.event_add_arg(wync_ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, event_data)
+	event_id = WyncEventUtils.event_wrap_up(wync_ctx, event_id)
+	if (event_id < 0):
+		Log.err(self, "Error WyncEventUtils.event_wrap_up(wync_ctx, event_id)")
+		return
 	
 	var _event = wync_ctx.events[event_id] as WyncEvent
 	if _event:

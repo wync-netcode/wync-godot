@@ -17,6 +17,8 @@ events: Array[EventData] [
 ]
 """
 
+# NOTE: EventData is different from WyncEvent in that this one is sent
+# over the network, so it has an extra property: event_id: int
 class EventData:
 	var event_id: int
 	var event_type_id: int
