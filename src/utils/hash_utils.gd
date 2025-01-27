@@ -1,6 +1,9 @@
 class_name HashUtils
 
 
+## When native @GlobalScope.hash hashes Objects it doesn't have into
+## account most of it's data (See Variant.cpp). So to reduce colisions we
+## convert Objects to Dictionaries first before hashing
 static func hash_any(any) -> int:
 	if any is Object:
 		return hash(object_to_dictionary(any))
