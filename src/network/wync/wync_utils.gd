@@ -205,8 +205,9 @@ static func prop_exists(ctx: WyncCtx, prop_id: int) -> bool:
 
 
 static func prop_set_client_owner(ctx: WyncCtx, prop_id: int, client_id: int) -> bool:
-	if not prop_exists(ctx, prop_id):
-		return false
+	# NOTE: maybe don't check because this prop could be synced later
+	#if not prop_exists(ctx, prop_id):
+		#return false
 	ctx.client_owns_prop[client_id].append(prop_id)
 	return true
 
@@ -214,32 +215,41 @@ static func prop_set_client_owner(ctx: WyncCtx, prop_id: int, client_id: int) ->
 # Setup functions
 # ================================================================
 
+static func server_setup(ctx: WyncCtx) -> int:
+	# peer id 0 reserved for server
+	ctx.my_peer_id = 0
+	ctx.peers.resize(1)
+	ctx.peers[ctx.my_peer_id] = -1
+	ctx.connected = true
+	return 0
+	
 
-## @argument client_data (optional): store a custom int if needed. Use it to save an external identifier.
+## Server side function
+## @argument peer_data (optional): store a custom int if needed. Use it to save an external identifier. This is usually the transport's peer_id
  
-static func client_register(ctx: WyncCtx, client_data: int = -1) -> int:
-	var client_id = ctx.clients.size()
-	ctx.clients.append(client_data)
-	ctx.client_owns_prop[client_id] = []
-	return client_id
+static func peer_register(ctx: WyncCtx, peer_data: int = -1) -> int:
+	var peer_id = ctx.peers.size()
+	ctx.peers.append(peer_data)
+	ctx.client_owns_prop[peer_id] = []
+	return peer_id
 
+## Client side function
 
-static func client_setup_my_client(ctx: WyncCtx, client_id: int) -> bool:
-	ctx.my_client_id = client_id
-	ctx.client_owns_prop[client_id] = []
+static func client_setup_my_client(ctx: WyncCtx, peer_id: int) -> bool:
+	ctx.my_peer_id = peer_id
+	ctx.client_owns_prop[peer_id] = []
 
 	ctx.events_hash_to_id.init(WyncCtx.MAX_AMOUNT_CACHE_EVENTS)
 	ctx.events_sent.init(WyncCtx.MAX_AMOUNT_CACHE_EVENTS)
 	return true
 
 
-## @returns int: client_id if found; -1 if not found
-static func is_client_registered(ctx: WyncCtx, client_data: int) -> int:
-	#return client_id >= 0 && client_id < ctx.clients.size()
-	for client_id: int in range(ctx.clients.size()):
-		var i_client_data = ctx.clients[client_id]
-		if i_client_data == client_data:
-			return client_id
+## @returns int: peer_id if found; -1 if not found
+static func is_peer_registered(ctx: WyncCtx, peer_data: int) -> int:
+	for peer_id: int in range(ctx.peers.size()):
+		var i_peer_data = ctx.peers[peer_id]
+		if i_peer_data == peer_data:
+			return peer_id
 	return -1
 
 
@@ -284,3 +294,7 @@ static func duplicate_any(any): #-> Optional<any>
 	]:
 		return any
 	return null
+
+
+static func is_client(ctx: WyncCtx) -> bool:
+	return ctx.my_peer_id > 0

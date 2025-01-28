@@ -19,7 +19,7 @@ func on_process(_entities, _data, _delta: float):
 	var co_io = en_client.get_component(CoIOPackets.label) as CoIOPackets
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
-	if not wync_ctx.connected || wync_ctx.my_client_id < 0:
+	if not wync_ctx.connected || wync_ctx.my_peer_id < 0:
 		return
 
 	# save tick data from packets
@@ -35,10 +35,11 @@ func on_process(_entities, _data, _delta: float):
 		
 		# check if entity id exists
 		# NOTE: is this check enough?
-		if not WyncUtils.is_entity_tracked(wync_ctx, data.entity_id):
-			Log.out(self, "Entity %s isn't tracked" % data.entity_id)
-			continue
+		# NOTE: maybe there's no need to check, because these props can be sync later
+		#if not WyncUtils.is_entity_tracked(wync_ctx, data.entity_id):
+			#Log.out(self, "Entity %s isn't tracked" % data.entity_id)
+			#continue
 		
 		# set prop ownership
-		WyncUtils.prop_set_client_owner(wync_ctx, data.prop_id, wync_ctx.my_client_id)
-		Log.out(self, "Prop %s ownership given to client %s" % [data.prop_id, wync_ctx.my_client_id])
+		WyncUtils.prop_set_client_owner(wync_ctx, data.prop_id, wync_ctx.my_peer_id)
+		Log.out(self, "Prop %s ownership given to client %s" % [data.prop_id, wync_ctx.my_peer_id])

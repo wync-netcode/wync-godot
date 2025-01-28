@@ -75,7 +75,7 @@ func draw_block_grid(entity: Entity):
 				node2d.draw_rect(fire_rect, Color.ORANGE, true)
 			
 			# client interaction
-			if !is_client():
+			if !is_client_application():
 				continue
 			
 			var mouse = node2d.get_local_mouse_position()
@@ -104,7 +104,7 @@ func on_process_entity(_entity: Entity, _data, _delta: float):
 		(self as Node as Node2D).queue_redraw()
 
 
-func is_client() -> bool:
+func is_client_application() -> bool:
 	var single_client = ECS.get_singleton_entity(self, "EnSingleClient")
 	return single_client != null
 

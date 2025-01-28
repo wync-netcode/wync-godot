@@ -35,11 +35,11 @@ func on_process(_entities, _data, _delta: float):
 		# NOTE: the criteria to determine wether a client has a valid prop ownership could be user defined
 		# NOTE: wync setup must be ran only once per client
 		
-		var wync_client_id = WyncUtils.is_client_registered(wync_ctx, pkt.from_peer)
+		var wync_client_id = WyncUtils.is_peer_registered(wync_ctx, pkt.from_peer)
 		if wync_client_id != -1:
 			Log.out(self, "Client %s already setup in Wync as %s" % [pkt.from_peer, wync_client_id])
 			continue
-		wync_client_id = WyncUtils.client_register(wync_ctx, pkt.from_peer)
+		wync_client_id = WyncUtils.peer_register(wync_ctx, pkt.from_peer)
 		
 		# send confirmation
 		

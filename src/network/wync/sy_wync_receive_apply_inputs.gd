@@ -30,7 +30,7 @@ func on_process(_entities, _data, _delta: float):
 			continue
 
 		# client and prop exists
-		var client_id = WyncUtils.is_client_registered(wync_ctx, pkt.from_peer)
+		var client_id = WyncUtils.is_peer_registered(wync_ctx, pkt.from_peer)
 		if client_id < 0:
 			Log.err(self, "client %s is not registered" % client_id)
 			continue
@@ -63,7 +63,7 @@ func on_process(_entities, _data, _delta: float):
 	# apply inputs / events to props
 	# TODO: Better to separate receive/apply logic
 		
-	for client_id in range(wync_ctx.clients.size()):
+	for client_id in range(1, wync_ctx.peers.size()):
 		for prop_id in wync_ctx.client_owns_prop[client_id]:
 			if not WyncUtils.prop_exists(wync_ctx, prop_id):
 				continue

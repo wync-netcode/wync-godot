@@ -13,22 +13,22 @@ func on_process(_entities, _data, _delta: float):
 		Log.err(self, "Couldn't find singleton EnSingleClient")
 		return
 	var co_client = en_client.get_component(CoClient.label) as CoClient
-	var co_io_packets = en_client.get_component(CoIOPackets.label) as CoIOPackets
 	if co_client.server_peer < 0:
 		Log.err(self, "No server peer")
 		return
+	var co_io_packets = en_client.get_component(CoIOPackets.label) as CoIOPackets
 	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
 	var tick_pred = co_predict_data.target_tick
 	
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
-	if not wync_ctx.connected:
+	if !wync_ctx.connected:
 		return
 	
 	# reset events_id to sync
 	wync_ctx.events_to_sync_this_tick.clear()
 	
-	for prop_id: int in wync_ctx.client_owns_prop[wync_ctx.my_client_id]:
+	for prop_id: int in wync_ctx.client_owns_prop[wync_ctx.my_peer_id]:
 		
 		if not WyncUtils.prop_exists(wync_ctx, prop_id):
 			Log.err(self, "prop %s doesn't exists" % prop_id)

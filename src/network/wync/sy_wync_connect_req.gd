@@ -53,7 +53,7 @@ func on_process(_entities, _data, _delta: float):
 		# NOTE: Move this elsewhere?
 			
 		wync_ctx.connected = true
-		wync_ctx.my_client_id = data.wync_client_id
+		wync_ctx.my_peer_id = data.wync_client_id
 		WyncUtils.client_setup_my_client(wync_ctx, data.wync_client_id)
 
 		Log.out(self, "client wync %s connected" % [co_io.peer_id])

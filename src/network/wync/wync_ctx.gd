@@ -22,8 +22,9 @@ var events_to_sync_this_tick: Dictionary
 
 ## Server only ==============================
 
-# Array<clients_id: int> # NOTE: Should be Ring
-var clients: Array[int]
+# peer[0] = -1: it's reserved for the server
+# Array<client_id: int> # NOTE: Should be Ring
+var peers: Array[int]
 
 # Map<client_id: int, prop_id: Array[int]>
 var client_owns_prop: Dictionary
@@ -37,7 +38,7 @@ var entity_has_integrate_fun: Dictionary
 # Array<prop_id: int>
 var props_to_predict: Array[int]
 
-var my_client_id: int
+var my_peer_id: int = -1
 
 # Array<sim_fun_id: int, Callable>
 # stores:

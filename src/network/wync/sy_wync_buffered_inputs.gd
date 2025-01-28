@@ -33,7 +33,7 @@ func on_process(_entities, _data, _delta: float, node_root: Node = null):
 
 	## Buffer state (extract) from props we own, to create a state history
 	
-	for prop_id: int in wync_ctx.client_owns_prop[wync_ctx.my_client_id]:
+	for prop_id: int in wync_ctx.client_owns_prop[wync_ctx.my_peer_id]:
 		
 		# Log.out(node_self, "client owns prop %s" % prop_id)
 		if not WyncUtils.prop_exists(wync_ctx, prop_id):

@@ -5,7 +5,7 @@ class_name WyncEventUtils
 # TODO: write tests for this
 static func _get_new_event_id(ctx: WyncCtx) -> int:
 	# get my peer id (1 byte, 255 max)
-	var peer_id = ctx.my_client_id
+	var peer_id = ctx.my_peer_id
 	
 	"""
 	# alternative approach:

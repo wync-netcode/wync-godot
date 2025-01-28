@@ -16,9 +16,10 @@ func _ready():
 
 func on_process_entity(entity: Entity, _data, _delta: float):
 	
-	var single_world = ECS.get_singleton_component(self, CoSingleWorld.label) as CoSingleWorld
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
+	if !wync_ctx.connected:
+		return
 	
 	var co_actor = entity.get_component(CoActor.label) as CoActor
 	var co_ball = entity.get_component(CoBall.label) as CoBall
@@ -53,7 +54,7 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 	)
 	
 	
-	if is_client(single_world):
+	if WyncUtils.is_client(wync_ctx):
 		# interpolation
 		
 		WyncUtils.prop_set_interpolate(wync_ctx, pos_prop_id)
@@ -82,7 +83,3 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 	var flag = CoFlagWyncEntityTracked.new()
 	ECS.entity_add_component_node(entity, flag)
 	Log.out(self, "wync: Registered entity %s with id %s" % [entity, co_actor.id])
-	
-
-func is_client(single_world: CoSingleWorld) -> bool:
-	return single_world.world_id != 0
