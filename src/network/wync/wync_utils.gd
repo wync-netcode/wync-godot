@@ -6,7 +6,7 @@ class_name WyncUtils
 
 
 static func track_entity(ctx: WyncCtx, entity_id: int):
-	ctx.tracked_entities.append(entity_id)
+	ctx.tracked_entities[entity_id] = true
 	ctx.entity_has_props[entity_id] = []
 
 

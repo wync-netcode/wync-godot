@@ -3,8 +3,8 @@ class_name WyncCtx
 
 ## Server & Client ==============================
 
-# Array<entity_id: int>
-var tracked_entities: Array[int]
+# Map<entity_id: int, unused_bool: bool>
+var tracked_entities: Dictionary
 
 # Array<prop_id: int, WyncEntityProp>
 var props: Array[WyncEntityProp]
