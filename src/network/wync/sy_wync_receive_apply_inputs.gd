@@ -10,15 +10,16 @@ func _ready():
 	super()
 	
 
-func on_process(_entities, _data, _delta: float):
-
-	var en_server = ECS.get_singleton_entity(self, "EnSingleServer")
+func on_process(_entities, _data, _delta: float, node_root: Node = null):
+	
+	var node_self = self if node_root == null else node_root
+	var en_server = ECS.get_singleton_entity(node_self, "EnSingleServer")
 	if not en_server:
-		Log.err(self, "Couldn't find singleton EnSingleServer")
+		Log.err(node_self, "Couldn't find singleton EnSingleServer")
 		return
 	var co_io = en_server.get_component(CoIOPackets.label) as CoIOPackets
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var co_ticks = ECS.get_singleton_component(node_self, CoTicks.label) as CoTicks
+	var single_wync = ECS.get_singleton_component(node_self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
 
 	# save all inputs to props
@@ -32,11 +33,11 @@ func on_process(_entities, _data, _delta: float):
 		# client and prop exists
 		var client_id = WyncUtils.is_peer_registered(wync_ctx, pkt.from_peer)
 		if client_id < 0:
-			Log.err(self, "client %s is not registered" % client_id)
+			Log.err(node_self, "client %s is not registered" % client_id)
 			continue
 		var prop_id = data.prop_id
 		if not WyncUtils.prop_exists(wync_ctx, prop_id):
-			Log.err(self, "prop %s doesn't exists" % prop_id)
+			Log.err(node_self, "prop %s doesn't exists" % prop_id)
 			continue
 		
 		# check client has ownership over this prop
@@ -55,7 +56,7 @@ func on_process(_entities, _data, _delta: float):
 		for input: NetPacketInputs.NetTickDataDecorator in data.inputs:
 			var copy = WyncUtils.duplicate_any(input.data)
 			if copy == null:
-				Log.out(self, "WARNING: input data can't be duplicated %s" % [input.data])
+				Log.out(node_self, "WARNING: input data can't be duplicated %s" % [input.data])
 			var to_insert = copy if copy != null else input.data
 			
 			input_prop.confirmed_states.insert_at(input.tick, to_insert)

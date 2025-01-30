@@ -74,6 +74,17 @@ static func prop_is_interpolated(ctx: WyncCtx, prop_id: int) -> bool:
 	var prop = ctx.props[prop_id] as WyncEntityProp
 	return prop.interpolated
 
+static func prop_set_push_to_global_event(ctx: WyncCtx, prop_id: int, channel: int) -> int:
+	if prop_id > ctx.props.size() -1:
+		return 1
+	var prop = ctx.props[prop_id] as WyncEntityProp
+	prop.push_to_global_event = true
+	prop.global_event_channel = channel
+	return 0
+
+# DUMP: create the new INTERNAL service to push all GLOBAL_EVENTS,
+# also, maybe cache them in WyncCtx, push the events.
+
 
 ## @returns Optional<WyncEntityProp>
 static func entity_get_prop(ctx: WyncCtx, entity_id: int, prop_name_id: StringName) -> WyncEntityProp:
@@ -221,6 +232,7 @@ static func server_setup(ctx: WyncCtx) -> int:
 	ctx.peers.resize(1)
 	ctx.peers[ctx.my_peer_id] = -1
 	ctx.connected = true
+	WyncUtils.setup_global_events(ctx)
 	return 0
 	
 
@@ -241,6 +253,7 @@ static func client_setup_my_client(ctx: WyncCtx, peer_id: int) -> bool:
 
 	ctx.events_hash_to_id.init(WyncCtx.MAX_AMOUNT_CACHE_EVENTS)
 	ctx.events_sent.init(WyncCtx.MAX_AMOUNT_CACHE_EVENTS)
+	WyncUtils.setup_global_events(ctx)
 	return true
 
 
@@ -253,10 +266,59 @@ static func is_peer_registered(ctx: WyncCtx, peer_data: int) -> int:
 	return -1
 
 
+static func setup_global_events(ctx: WyncCtx) -> int:
+	ctx.global_events_channel.resize(WyncCtx.MAX_GLOBAL_EVENT_CHANNELS)
+	print("GlobalEvent | %s" % [ctx.global_events_channel])
+
+	var entity_id = WyncCtx.ENTITY_ID_GLOBAL_EVENTS
+	WyncUtils.track_entity(ctx, entity_id)
+
+	var prop_channel_0 = WyncUtils.prop_register(
+		ctx,
+		entity_id,
+		"channel_0",
+		WyncEntityProp.DATA_TYPE.EVENT,
+		func(): return [],
+		func(input: Array):
+			ctx.global_events_channel[0].clear()
+			ctx.global_events_channel[0].append_array(input),
+	)
+	if (WyncUtils.is_client(ctx)):
+		WyncUtils.prop_set_predict(ctx, prop_channel_0)
+
+	return 0
+
+
+# Loop functions: Functions or 'systems' that are intented to run on the game loops
+# ================================================================
+
+## extract events from props DATA_TYPE.EVENT global
+## and inserts/duplicates them into the ctx.global_events_channel
+
+static func system_publish_global_events(ctx: WyncCtx, tick: int) -> void:
+	
+	# TODO: optimize with caching maybe
+	for prop: WyncEntityProp in ctx.props:
+		if not prop:
+			continue
+		if (!prop.push_to_global_event):
+			continue
+		if (prop.global_event_channel < 0):
+			continue
+		if (prop.data_type != WyncEntityProp.DATA_TYPE.EVENT):
+			continue
+
+		var input = prop.confirmed_states.get_at(tick)
+		if input == null:
+			continue
+		if input is not Array:
+			continue
+		input = input as Array
+		ctx.global_events_channel[prop.global_event_channel].append_array(input)
+
 
 # Miscellanious
 # ================================================================
-# TODO: copy is not a standarized 'duplicate function'
 
 static func duplicate_any(any): #-> Optional<any>
 	if any is Object:

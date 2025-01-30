@@ -38,10 +38,12 @@ static func instantiate_new_event(
 		
 	var event_id = _get_new_event_id(ctx)
 	var event = WyncEvent.new()
-	event.event_type_id = event_type_id
-	event.arg_count = arg_count
-	event.arg_data.resize(arg_count)
-	event.arg_data_type.resize(arg_count)
+	event.data = WyncEvent.EventData.new()
+	event.data.event_type_id = event_type_id
+	event.data.arg_count = arg_count
+	event.data.arg_data.resize(arg_count)
+	event.data.arg_data_type.resize(arg_count)
+
 	ctx.events[event_id] = event
 	return event_id
 
@@ -59,10 +61,10 @@ static func event_add_arg(
 	if event is not WyncEvent:
 		return 1
 	event = event as WyncEvent
-	if arg_id >= event.arg_count:
+	if arg_id >= event.data.arg_count:
 		return 2
-	event.arg_data_type[arg_id] = arg_data_type
-	event.arg_data[arg_id] = arg_data
+	event.data.arg_data_type[arg_id] = arg_data_type
+	event.data.arg_data[arg_id] = arg_data
 	return 0
 
 
@@ -77,7 +79,7 @@ static func event_wrap_up(
 		return -1
 	event = event as WyncEvent
 	
-	var event_hash = HashUtils.hash_any(event)
+	var event_hash = HashUtils.hash_any(event.data)
 	
 	# this event is a duplicate
 	if ctx.events_hash_to_id.has_item_hash(event_hash):
@@ -89,6 +91,47 @@ static func event_wrap_up(
 	# not a duplicate -> cache it
 	ctx.events_hash_to_id.push_head_hash_and_item(event_hash, event_id)
 	return event_id
+
+
+## Call this function whenever creating a global event
+# TODO: Save client_id of origin or entity_id of origin somewhere
+
+# static func prop_global_event_publish
+static func global_event_publish_on_demand \
+	(ctx: WyncCtx, prop_id: int, event_id: int) -> int:
+	if (not WyncUtils.prop_exists(ctx, prop_id)):
+		return 1
+	var prop = ctx.props[prop_id] as WyncEntityProp
+	if (prop == null):
+		return 2
+	if (!prop.push_to_global_event):
+		return 3
+	if (prop.data_type != WyncEntityProp.DATA_TYPE.EVENT):
+		return 4
+	var channel = prop.global_event_channel
+	if (channel < 0):
+		return 5
+
+	# no need to check event_id here, we check it when consuming
+	ctx.global_events_channel[channel].append(event_id)
+	# event.prop_id = prop_id
+	return 0
+
+
+
+static func global_event_consume(ctx: WyncCtx, channel_id: int, event_id: int) -> int:
+	if channel_id < 0 || channel_id >= ctx.MAX_GLOBAL_EVENT_CHANNELS:
+		return 1
+	
+	if not ctx.global_events_channel[channel_id].has(event_id):
+		return 2
+	
+	ctx.global_events_channel[channel_id].erase(event_id)
+	return 0
+	
+	# NOTE: What about the duplicated state
+	# on the user's event container?
+	#return 0 if ctx.events.erase(event_id) else 1
 
 
 # FIXME: This func isn't being used, despite being important from optimization

@@ -37,3 +37,7 @@ var confirmed_states: RingBuffer = RingBuffer.new(10)
 
 var pred_curr: NetTickData = NetTickData.new()
 var pred_prev: NetTickData = NetTickData.new()
+
+# global events
+var push_to_global_event: bool = false
+var global_event_channel: int = 0

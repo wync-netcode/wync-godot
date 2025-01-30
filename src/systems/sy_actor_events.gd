@@ -12,10 +12,12 @@ func _ready():
 
 
 func on_process(entities: Array, _data, _delta: float):
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+
 	var co_single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = co_single_wync.ctx
 	
+	"""
+	# TODO: Put this in another place for local events
 	for entity: Entity in entities:
 		
 		var co_actor = entity.get_component(CoActor.label) as CoActor
@@ -31,25 +33,45 @@ func on_process(entities: Array, _data, _delta: float):
 				Log.err(self, "NO EVENT DATA for event id %s" % event_id)
 				continue
 			var event_data = wync_ctx.events[event_id] as WyncEvent
-			
 			Log.out(self, "event_id %s event_type_id %s" % [event_id, event_data.event_type_id])
+			handle_events(event_data)
+	"""
+	
+	# as the grid: poll events from the channel 0 and execute them
+
+	var channel_id = 0
+	for event_id in wync_ctx.global_events_channel[channel_id]:
+
+		if not wync_ctx.events.has(event_id):
+			continue
+		var event = wync_ctx.events[event_id]
+		if event is not WyncEvent:
+			continue
+		event = event as WyncEvent
+
+		# handle it
+
+		handle_events(event.data)
+		WyncEventUtils.global_event_consume(wync_ctx, channel_id, event_id)
+
 			
-			match event_data.event_type_id:
-				GameInfo.EVENT_PLAYER_BLOCK_BREAK:
-					handle_event_player_block_break(event_data)
-				GameInfo.EVENT_PLAYER_BLOCK_PLACE:
-					handle_event_player_block_place(event_data)
-				_:
-					Log.err(self, "event_type_id not recognized %s" % event_data.event_type_id)
+func handle_events(event_data: WyncEvent.EventData):
+	match event_data.event_type_id:
+		GameInfo.EVENT_PLAYER_BLOCK_BREAK:
+			handle_event_player_block_break(event_data)
+		GameInfo.EVENT_PLAYER_BLOCK_PLACE:
+			handle_event_player_block_place(event_data)
+		_:
+			Log.err(self, "event_type_id not recognized %s" % event_data.event_type_id)
 
 
-func handle_event_player_block_break(event: WyncEvent):
+func handle_event_player_block_break(event: WyncEvent.EventData):
 	var block_pos = event.arg_data[0] as Vector2i
 	grid_block_break(block_pos)
 	# NOTE: this could use more safety
 
 
-func handle_event_player_block_place(event: WyncEvent):
+func handle_event_player_block_place(event: WyncEvent.EventData):
 	var block_pos = event.arg_data[0] as Vector2i
 	grid_block_place(block_pos)
 	

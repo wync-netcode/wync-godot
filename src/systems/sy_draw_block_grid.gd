@@ -153,8 +153,8 @@ func generate_click_event(
 	
 	var _event = wync_ctx.events[event_id] as WyncEvent
 	if _event:
-		Log.out(self, "TESTING event hash: event_data %s arg_data %s" % [event_data, _event.arg_data])
-		Log.out(self, "event %s hash %s" % [_event, HashUtils.hash_any(_event.arg_data)])
+		Log.out(self, "TESTING event hash: event_data %s arg_data %s" % [event_data, _event.data.arg_data])
+		Log.out(self, "event %s hash %s" % [_event, HashUtils.hash_any(_event.data.arg_data)])
 	
 	# save the event id to component
 	co_wync_events.events.append(event_id)

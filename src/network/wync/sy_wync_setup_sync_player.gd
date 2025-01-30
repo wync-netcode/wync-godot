@@ -68,7 +68,9 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 			# NOTE: can't check cast like this `if events is not Array[int]:`
 			co_wync_events.events.append_array(events),
 	)
-	
+	co_wync_events.prop_id = events_prop_id
+	WyncUtils.prop_set_push_to_global_event(wync_ctx, events_prop_id, 0)
+
 	if WyncUtils.is_client(wync_ctx):
 		# interpolation
 		
@@ -93,6 +95,7 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 		WyncUtils.prop_set_predict(wync_ctx, vel_prop_id)
 		WyncUtils.prop_set_predict(wync_ctx, input_prop_id)
 		WyncUtils.prop_set_predict(wync_ctx, events_prop_id)
+
 
 		
 	var flag = CoFlagWyncEntityTracked.new()

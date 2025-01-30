@@ -6,20 +6,21 @@ const label: StringName = StringName("SyWyncReceiveEventData")
 ## * TODO: Let the server deduce which actor to move based on client
 
 
-func on_process(_entities, _data, _delta: float):
-
-	var en_peer = ECS.get_singleton_entity(self, "EnSingleClient")
+func on_process(_entities, _data, _delta: float, node_root: Node = null):
+	
+	var node_self = self if node_root == null else node_root
+	var en_peer = ECS.get_singleton_entity(node_self, "EnSingleClient")
 	if not en_peer:
-		en_peer = ECS.get_singleton_entity(self, "EnSingleServer")
+		en_peer = ECS.get_singleton_entity(node_self, "EnSingleServer")
 	if not en_peer:
-		Log.err(self, "Couldn't find singleton EnSingleClient or EnSingleServer")
+		Log.err(node_self, "Couldn't find singleton EnSingleClient or EnSingleServer")
 		return
 	var co_io = en_peer.get_component(CoIOPackets.label) as CoIOPackets
 
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var single_wync = ECS.get_singleton_component(node_self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
 	if not wync_ctx.connected:
-		Log.err(self, "Not connected")
+		Log.err(node_self, "Not connected")
 		return
 
 	# save event data from packets
@@ -31,16 +32,16 @@ func on_process(_entities, _data, _delta: float):
 			continue
 		
 		# consume
-		Log.out(self, "Consume WyncPktEventData")
+		Log.out(node_self, "Consume WyncPktEventData")
 		co_io.in_packets.remove_at(k)
 
 		for event: WyncPktEventData.EventData in data.events:
 			
 			var wync_event = WyncEvent.new()
-			wync_event.event_type_id = event.event_type_id
-			wync_event.arg_count = event.arg_count
-			wync_event.arg_data_type = event.arg_data_type.duplicate(true)
-			wync_event.arg_data = event.arg_data # std::move(std::unique_pointer)
+			wync_event.data.event_type_id = event.event_type_id
+			wync_event.data.arg_count = event.arg_count
+			wync_event.data.arg_data_type = event.arg_data_type.duplicate(true)
+			wync_event.data.arg_data = event.arg_data # std::move(std::unique_pointer)
 			wync_ctx.events[event.event_id] = wync_event
 		
 			# NOTE: what if we already have this event data? Maybe it's better to receive it anyway?

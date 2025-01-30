@@ -42,7 +42,7 @@ func on_process(_entities, _data, _delta: float):
 			Log.err(self, "couldn't find event_id %s" % event_id)
 			continue
 		
-		var wync_event = wync_ctx.events[event_id] as WyncEvent
+		var wync_event = (wync_ctx.events[event_id] as WyncEvent).data
 		
 		# check if server already has it
 		var event_hash = HashUtils.hash_any(wync_event)

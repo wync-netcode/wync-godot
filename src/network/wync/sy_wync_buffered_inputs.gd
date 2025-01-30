@@ -18,9 +18,7 @@ func _ready():
 
 func on_process(_entities, _data, _delta: float, node_root: Node = null):
 	
-	var node_self = self
-	if node_root != null:
-		node_self = node_root
+	var node_self = self if node_root == null else node_root
 	var co_ticks = ECS.get_singleton_component(node_self, CoTicks.label) as CoTicks
 	var co_predict_data = ECS.get_singleton_component(node_self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
 	var tick_curr = co_ticks.server_ticks

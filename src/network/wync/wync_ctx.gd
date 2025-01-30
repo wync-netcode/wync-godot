@@ -3,6 +3,9 @@ class_name WyncCtx
 
 ## Server & Client ==============================
 
+const ENTITY_ID_GLOBAL_EVENTS = 777
+const MAX_GLOBAL_EVENT_CHANNELS = 1
+
 # Map<entity_id: int, unused_bool: bool>
 var tracked_entities: Dictionary
 
@@ -18,6 +21,15 @@ var events: Dictionary
 
 # Set[event_id]
 var events_to_sync_this_tick: Dictionary
+
+# Array<channel_id: int, Array<event_id>>
+# Array[Array[int]]
+# global_events_channel_in_order
+var global_events_channel: Array[Array] 
+
+# this solves deterministicly knowing where an event came from
+# > What about just storing this metadata in the event wrapper?
+var entities_that_published_global_events_this_tick: Array[int]
 
 
 ## Server only ==============================
