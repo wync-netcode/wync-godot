@@ -13,6 +13,7 @@ func _ready():
 
 func on_process(entities: Array, _data, _delta: float):
 
+	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 	var co_single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = co_single_wync.ctx
 	
@@ -38,9 +39,12 @@ func on_process(entities: Array, _data, _delta: float):
 	"""
 	
 	# as the grid: poll events from the channel 0 and execute them
+	# NOTE: add iteration limit to avoid infinite _event loop_
 
 	var channel_id = 0
-	for event_id in wync_ctx.global_events_channel[channel_id]:
+	while (wync_ctx.global_events_channel[channel_id].size()):
+		var event_id = wync_ctx.global_events_channel[channel_id][0]
+		# Log.out(self, "%s | event_id %s" % [co_ticks.ticks, event_id])
 
 		if not wync_ctx.events.has(event_id):
 			continue
@@ -74,6 +78,19 @@ func handle_event_player_block_break(event: WyncEvent.EventData):
 func handle_event_player_block_place(event: WyncEvent.EventData):
 	var block_pos = event.arg_data[0] as Vector2i
 	grid_block_place(block_pos)
+
+	## this event generates a secondary event BLOCK_BREAK breaking the block on the left
+	block_pos.x -= 1
+	if block_pos.x < 0:
+		return
+
+	var co_single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var wync_ctx = co_single_wync.ctx
+
+	var event_id = WyncEventUtils.instantiate_new_event(wync_ctx, GameInfo.EVENT_PLAYER_BLOCK_BREAK, 1)
+	WyncEventUtils.event_add_arg(wync_ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
+	event_id = WyncEventUtils.event_wrap_up(wync_ctx, event_id)
+	WyncEventUtils.global_event_publish_on_demand_by_channel(wync_ctx, 0, event_id)
 	
 	
 func grid_block_break(block_pos: Vector2i):

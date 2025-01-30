@@ -109,12 +109,21 @@ static func global_event_publish_on_demand \
 	if (prop.data_type != WyncEntityProp.DATA_TYPE.EVENT):
 		return 4
 	var channel = prop.global_event_channel
-	if (channel < 0):
+	if (channel < 0 || channel > ctx.MAX_GLOBAL_EVENT_CHANNELS):
 		return 5
 
 	# no need to check event_id here, we check it when consuming
 	ctx.global_events_channel[channel].append(event_id)
 	# event.prop_id = prop_id
+	return 0
+
+
+static func global_event_publish_on_demand_by_channel \
+	(ctx: WyncCtx, channel: int, event_id: int) -> int:
+	if (channel < 0 || channel > ctx.MAX_GLOBAL_EVENT_CHANNELS):
+		return 5
+	
+	ctx.global_events_channel[channel].append(event_id)
 	return 0
 
 
