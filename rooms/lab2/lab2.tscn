@@ -179,36 +179,36 @@ script = ExtResource("16_5f1s6")
 [node name="SyDrawBlockGridNode2D" type="Node2D" parent="worlds/WorldServer/GroupPhysics/SystemsGameplay"]
 script = ExtResource("31_vohxg")
 
-[node name="SystemsNetwork" type="Node" parent="worlds/WorldServer/GroupPhysics"]
+[node name="SystemsSetup" type="Node" parent="worlds/WorldServer/GroupPhysics"]
 
-[node name="SyActorRegister" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
+[node name="SyActorRegister" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsSetup"]
 script = ExtResource("19_rcs17")
 
-[node name="SyTransportLoopbackPeerRegister" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
+[node name="SyTransportLoopbackPeerRegister" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsSetup"]
 script = ExtResource("17_320aq")
 
-[node name="SyNetClockServer" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
-script = ExtResource("29_a0he2")
-
-[node name="SyNeteLoopbackConnectRes" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsNetwork"]
+[node name="SyNeteLoopbackConnectRes" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsSetup"]
 script = ExtResource("37_0dn44")
 
-[node name="SystemsWync" type="Node" parent="worlds/WorldServer/GroupPhysics"]
-
-[node name="SyWyncSetupSyncBall" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsWync"]
+[node name="SyWyncSetupSyncBall" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsSetup"]
 script = ExtResource("49_4ofub")
 
-[node name="SyWyncSetupSyncPlayer" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsWync"]
+[node name="SyWyncSetupSyncPlayer" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsSetup"]
 script = ExtResource("35_m1lky")
 
-[node name="SyWyncSetupSyncBlockGrid" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsWync"]
+[node name="SyWyncSetupSyncBlockGrid" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsSetup"]
 script = ExtResource("38_g8ek6")
 
-[node name="SyWyncStateExtractor" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsWync"]
-script = ExtResource("34_bmka7")
-
-[node name="SyWyncConnectRes" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsWync"]
+[node name="SyWyncConnectRes" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsSetup"]
 script = ExtResource("38_kvckb")
+
+[node name="SystemsAfterLoop" type="Node" parent="worlds/WorldServer/GroupPhysics"]
+
+[node name="SyNetClockServer" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsAfterLoop"]
+script = ExtResource("29_a0he2")
+
+[node name="SyWyncStateExtractor" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsAfterLoop"]
+script = ExtResource("34_bmka7")
 
 [node name="SyNeteCleanup" type="Node" parent="worlds/WorldServer/GroupPhysics"]
 script = ExtResource("40_dopds")
@@ -296,67 +296,49 @@ script = ExtResource("18_oeqdo")
 [node name="SyWyncTickStartAfter" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 script = ExtResource("22_smcj4")
 
-[node name="SystemsGameplay" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
+[node name="SystemsProduceInputs" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 
-[node name="SyPlayerInput" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsGameplay"]
+[node name="SyPlayerInput" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsProduceInputs"]
 script = ExtResource("10_47ome")
 
-[node name="SyActorMovement" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsGameplay"]
-script = ExtResource("11_1eesg")
-ENABLED = false
-
-[node name="SyShootWeapon" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsGameplay"]
-script = ExtResource("12_dhgio")
-ENABLED = false
-
-[node name="SyReloadWeapon" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsGameplay"]
-script = ExtResource("13_5ywtb")
-ENABLED = false
-
-[node name="SySwitchWeapon" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsGameplay"]
-script = ExtResource("14_4qbu2")
-ENABLED = false
-
-[node name="SyHealth" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsGameplay"]
-script = ExtResource("15_uanrs")
-ENABLED = false
-
-[node name="SyProjectileMovement" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsGameplay"]
-script = ExtResource("16_5f1s6")
-ENABLED = false
-
-[node name="SyDrawBlockGrid" type="Node2D" parent="worlds/WorldClient1/GroupPhysics/SystemsGameplay"]
+[node name="SyDrawBlockGrid" type="Node2D" parent="worlds/WorldClient1/GroupPhysics/SystemsProduceInputs"]
 script = ExtResource("31_vohxg")
 
-[node name="SystemsNetwork" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
+[node name="SystemsSetup" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 
-[node name="SyActorRegister" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
+[node name="SyActorRegister" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsSetup"]
 script = ExtResource("19_rcs17")
 
-[node name="SyNetLatencyStable" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
-script = ExtResource("38_vuulq")
-
-[node name="SyNetPredictionTicks" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
-script = ExtResource("40_ailwx")
-
-[node name="SyNeteTransportLoopbackPeerRegister" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
+[node name="SyNeteTransportLoopbackPeerRegister" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsSetup"]
 script = ExtResource("17_320aq")
 
-[node name="SyNeteLoopbackConnectReq" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsNetwork"]
+[node name="SyNeteLoopbackConnectReq" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsSetup"]
 script = ExtResource("19_56q07")
+
+[node name="SyWyncSetupSyncBall" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsSetup"]
+script = ExtResource("49_4ofub")
+
+[node name="SyWyncSetupSyncPlayer" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsSetup"]
+script = ExtResource("35_m1lky")
+
+[node name="SyWyncSetupSyncBlockGrid" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsSetup"]
+script = ExtResource("38_g8ek6")
+
+[node name="SyWyncConnectReq" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsSetup"]
+script = ExtResource("58_gjl0a")
+
+[node name="SyWyncReceiveClientInfo" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsSetup"]
+script = ExtResource("55_wsisn")
 
 [node name="SystemsWync" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 
-[node name="SyWyncSetupSyncBall" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
-script = ExtResource("49_4ofub")
+[node name="SyNetLatencyStable" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
+script = ExtResource("38_vuulq")
 
-[node name="SyWyncSetupSyncPlayer" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
-script = ExtResource("35_m1lky")
+[node name="SyNetPredictionTicks" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
+script = ExtResource("40_ailwx")
 
-[node name="SyWyncSetupSyncBlockGrid" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
-script = ExtResource("38_g8ek6")
-
-[node name="SyWyncBufferedInputs" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
+[node name="SyWyncBufferedInputs(POLL)" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
 script = ExtResource("50_jvul8")
 
 [node name="SyWyncSaveConfirmedStates" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
@@ -367,12 +349,6 @@ script = ExtResource("56_x35pt")
 
 [node name="SyWyncXtrap" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
 script = ExtResource("53_qmyp1")
-
-[node name="SyWyncConnectReq" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
-script = ExtResource("58_gjl0a")
-
-[node name="SyWyncReceiveClientInfo" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
-script = ExtResource("55_wsisn")
 
 [node name="SyWyncSendInputs" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
 script = ExtResource("56_1fh53")

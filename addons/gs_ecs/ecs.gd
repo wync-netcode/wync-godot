@@ -591,24 +591,7 @@ func _add_system_entities(world_id, system_name):
 		if not world_entities[world_id][entity_id].enabled:
 			continue
 
-		var has_all_components = true
-		for component_int in system_components[system_name]:
-			var comp_id = abs(component_int)
-
-			if component_int < 0:
-				if (has_component(comp_id)):
-					if component_entities[comp_id].has(entity_id):
-						has_all_components = false
-						break
-				continue
-
-			if not has_component(comp_id):
-				has_all_components = false
-				break
-
-			if not component_entities[comp_id].has(entity_id):
-				has_all_components = false
-				break
+		var has_all_components = entity_has_system_components(entity_id, system_name)
 
 		if has_all_components:
 			_entities.append(world_entities[world_id][entity_id])
@@ -616,6 +599,25 @@ func _add_system_entities(world_id, system_name):
 
 	#system_entities[system_name] = _entities
 	world_system_entities[world_id][system_name] = _entities
+
+
+func entity_has_system_components(entity_id: int, system_label: StringName) -> bool:
+	for component_int in system_components[system_label]:
+		var comp_id = abs(component_int)
+
+		if component_int < 0:
+			if (has_component(comp_id)):
+				if component_entities[comp_id].has(entity_id):
+					return false
+			continue
+
+		if not has_component(comp_id):
+			return false
+
+		if not component_entities[comp_id].has(entity_id):
+			return false
+		
+	return true
 
 
 # do some cleanup

@@ -7,6 +7,8 @@ const label: StringName = StringName("SyWyncBufferedInputs")
 ## * Si ya existe no lo reemplaces
 ## * Solo puedes guardar ticks que sean mayores al último guardado?
 
+## TODO: Handle special cases for events: non-repeat on tick (set data struct)
+
 func _ready():
 	components = [
 		CoActorInput.label,

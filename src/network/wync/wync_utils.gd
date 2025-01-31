@@ -278,8 +278,8 @@ static func setup_global_events(ctx: WyncCtx) -> int:
 		entity_id,
 		"channel_0",
 		WyncEntityProp.DATA_TYPE.EVENT,
-		func(): return [],
-		func(input: Array):
+		func(): return [], # getter
+		func(input: Array): # setter
 			ctx.global_events_channel[0].clear()
 			ctx.global_events_channel[0].append_array(input),
 	)

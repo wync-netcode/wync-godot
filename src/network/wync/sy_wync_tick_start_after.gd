@@ -24,7 +24,7 @@ func on_process(_entities, _data, _delta: float):
 		# feed props DATA_TYPE.EVENT
 		sy_wync_receive_apply_inputs.on_process([], null, _delta, self)
 
-		# extract events from props DATA_TYPE.EVENT global
-		# TODO: global events can be generated during _process loop...
+		# extract events from global event props
+		# TODO: global events can be generated during _process loop only in clients machine...
 		WyncUtils.system_publish_global_events(wync_ctx, co_ticks.ticks)
 	

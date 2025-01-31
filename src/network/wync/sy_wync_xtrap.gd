@@ -2,7 +2,7 @@ class_name SyWyncXtrap
 extends System
 const label: StringName = StringName("SyWyncXtrap")
 
-## Extrapolates the position
+## Extrapolates / Predicts the position
 
 func _ready():
 	components = [
@@ -28,100 +28,76 @@ func on_process(entities, _data, delta: float):
 	var target_tick = co_predict_data.target_tick
 	var last_confirmed_tick = 0
 	
-	# reset all extrapolated entities to last confirmed tick
-		
-	for entity: Entity in entities:
-		
-		var co_actor = entity.get_component(CoActor.label) as CoActor
-		
-		if not wync_ctx.entity_has_props.has(co_actor.id):
-			continue
-		
-		for prop_id: int in wync_ctx.entity_has_props[co_actor.id]:
-			
-			var prop = wync_ctx.props[prop_id] as WyncEntityProp
-			if prop == null:
-				continue
-			if WyncUtils.prop_is_predicted(wync_ctx, prop_id):
-			#if !prop.predicted:
-				continue
-			
-			var last_confirmed = prop.confirmed_states.get_relative(0) as NetTickData
+	# calculate last confirmed tick
+	# FIXME: using last_confirmed_tick is UB
 
-			
-			if last_confirmed == null:
-				continue
-			if last_confirmed.data == null:
-				continue
-			
-			
-			prop.setter.call(last_confirmed.data)
-			
-			last_confirmed_tick = max(last_confirmed_tick, last_confirmed.tick)
-		
-		# call integration function to sync new transforms with physics server
-				
-		var int_fun = WyncUtils.entity_get_integrate_fun(wync_ctx, co_actor.id)
-		if int_fun is Callable:
-			int_fun.call()
+	for prop: WyncEntityProp in wync_ctx.props:
+	
+		if prop == null:
+			continue
+		var last_confirmed = prop.confirmed_states.get_relative(0)
+		if last_confirmed is not NetTickData:
+			continue
+		last_confirmed = last_confirmed as NetTickData
+		if last_confirmed == null:
+			continue
+		if last_confirmed.data == null:
+			continue
+		last_confirmed_tick = max(last_confirmed_tick, last_confirmed.tick)
 	
 	# sync transforms to physics server
+	
 	var space := get_viewport().world_2d.space
 	RapierPhysicsServer2D.space_step(space, 0)
 	RapierPhysicsServer2D.space_flush_queries(space)
 
-	# predict them back
+	# prediction loop
 	
 	#Log.out(self, "Predicting back entities here")
 	
 	for tick in range(last_confirmed_tick +1, target_tick +1):
 		
-		for entity: Entity in entities:
+		# set events inputs to corresponding value depending on tick
+		# ALL INPUT/EVENT PROPS, no excepcion for now
+		# TODO: identify which I own and which belong to my foes'
+		
+		var local_tick = co_predict_data.get_tick_predicted(tick)
+		if local_tick == null || local_tick is not int:
+			continue
+		
+		for prop_id: int in range(wync_ctx.props.size()):
 			
-			var co_actor = entity.get_component(CoActor.label) as CoActor
-			if not wync_ctx.entity_has_props.has(co_actor.id):
+			var prop = wync_ctx.props[prop_id] as WyncEntityProp
+			if prop == null:
 				continue
-			
-			if !WyncUtils.entity_is_predicted(wync_ctx, co_actor.id):
+			if not WyncUtils.prop_is_predicted(wync_ctx, prop_id):
 				continue
-			
-			# NOTE: Input buffers are different
-			# set input to correct value
-			# TODO: merge input and output + make it work regardless of name
-			# + identify which I own and which belong to my foes'
-			
-			var input_prop = WyncUtils.entity_get_prop(wync_ctx, co_actor.id, "input")
-			if input_prop != null:
-				if input_prop.data_type == WyncEntityProp.DATA_TYPE.INPUT:
-					var local_tick = co_predict_data.get_tick_predicted(tick)
-					if local_tick == null || local_tick is not int:
-						continue
-					var input_snap = input_prop.confirmed_states.get_at(local_tick)
-					if input_snap != null:
-						input_prop.setter.call(input_snap)
-
-			input_prop = WyncUtils.entity_get_prop(wync_ctx, co_actor.id, "events")
-			if input_prop != null:
-				if input_prop.data_type == WyncEntityProp.DATA_TYPE.EVENT:
-					var local_tick = co_predict_data.get_tick_predicted(tick)
-					if local_tick == null || local_tick is not int:
-						continue
-					var input_snap = input_prop.confirmed_states.get_at(local_tick)
-					if input_snap != null:
-						input_prop.setter.call(input_snap)
-
-			# get simulation function
-				
-			var sim_fun = WyncUtils.entity_get_sim_fun(wync_ctx, co_actor.id)
-			if sim_fun is not Callable: 
-				# NOTE: no need to check this, all these props should have it, make sure to secure data integrity
+			if prop.data_type not in [WyncEntityProp.DATA_TYPE.INPUT]:
+			# [WyncEntityProp.DATA_TYPE.EVENT]:
 				continue
 		
-			# predict ticks
-
-			sim_fun.call(entity, delta)
-			#Log.out(self, "simulating entity %s" % co_actor.id)
+			var input_snap = prop.confirmed_states.get_at(local_tick)
+			if input_snap == null:
+				continue
 			
+			prop.setter.call(input_snap)
+			# INPUT/EVENTs don't need integration functions
+
+		
+		for entity: Entity in entities:
+		
+			var co_actor = entity.get_component(CoActor.label) as CoActor
+			if !WyncUtils.entity_is_predicted(wync_ctx, co_actor.id):
+				continue
+				
+			# Prediction / Extrapolation:
+			# Run user provided simulation functions
+			
+			if ECS.entity_has_system_components(entity.id, SyActorMovement.label):
+				SyActorMovement.simulate_movement(entity, delta)
+			if ECS.entity_has_system_components(entity.id, SyBallMovement.label):
+				SyBallMovement.simulate_movement(entity, delta)
+
 			# store predicted states
 			# (run on last two iterations)
 			
@@ -136,13 +112,7 @@ func on_process(entities, _data, delta: float):
 				if tick == target_tick || tick == last_confirmed_tick +1:
 					DebugPlayerTrail.spawn(self, prop_position.getter.call(), progress)
 
-		# update store predicted state metadata
-		
-		for entity: Entity in entities:
-			
-			var co_actor = entity.get_component(CoActor.label) as CoActor
-			if not wync_ctx.entity_has_props.has(co_actor.id):
-				continue
+			# update store predicted state metadata
 			
 			var int_fun = WyncUtils.entity_get_integrate_fun(wync_ctx, co_actor.id)
 			if int_fun is Callable:

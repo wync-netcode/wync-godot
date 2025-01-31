@@ -58,6 +58,7 @@ var my_peer_id: int = -1
 # (2) integrate functions: syncs entity transform with physic server 
 var simulation_functions: Array[Callable]
 
+# DEPRECATED
 # Map<entity_id: int, sim_fun_id>
 var entity_has_simulation_fun: Dictionary
 
