@@ -100,7 +100,7 @@ func on_process(entities, _data, delta: float):
 
 		# Prediction functions that do their own looping
 		
-		SyActorEvents.simulate_events(self)
+		SyActorEvents.client_simulate_events(self)
 		
 		# bookkeeping
 

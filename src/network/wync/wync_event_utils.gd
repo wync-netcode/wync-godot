@@ -119,7 +119,7 @@ static func global_event_publish_on_demand \
 	return 0"""
 
 
-static func global_event_publish_on_demand_by_channel \
+static func publish_global_event_as_client \
 	(ctx: WyncCtx, channel: int, event_id: int) -> int:
 	if (channel < 0 || channel > ctx.max_channels):
 		return 5
@@ -129,15 +129,24 @@ static func global_event_publish_on_demand_by_channel \
 	return 0
 
 
+static func publish_globa_event_as_server \
+	(ctx: WyncCtx, channel: int, event_id: int) -> int:
+	if (channel < 0 || channel > ctx.max_channels):
+		return 5
+	
+	ctx.peer_has_channel_has_events[0][channel].append(event_id)
+	return 0
 
-static func global_event_consume(ctx: WyncCtx, channel_id: int, event_id: int) -> int:
+
+static func global_event_consume \
+	(ctx: WyncCtx, peer_id: int, channel_id: int, event_id: int) -> int:
 	if channel_id < 0 || channel_id >= ctx.max_channels:
 		return 1
 	
-	if not ctx.global_events_channel[channel_id].has(event_id):
+	if not ctx.peer_has_channel_has_events[peer_id][channel_id].has(event_id):
 		return 2
 	
-	ctx.global_events_channel[channel_id].erase(event_id)
+	ctx.peer_has_channel_has_events[peer_id][channel_id].erase(event_id)
 	return 0
 	
 	# NOTE: What about the duplicated state

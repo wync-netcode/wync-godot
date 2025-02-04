@@ -14,7 +14,7 @@ func _ready():
 func on_process(_entities: Array, _data, _delta: float, node_ctx: Node = null):
 	
 	node_ctx = self if node_ctx == null else node_ctx
-	server_simulate_clients_events(node_ctx)
+	server_simulate_events(node_ctx)
 	
 	"""
 	# TODO: Put this in another place for entity-local events
@@ -37,41 +37,47 @@ func on_process(_entities: Array, _data, _delta: float, node_ctx: Node = null):
 			handle_events(event_data)
 	"""
 
-static func server_simulate_clients_events(node_ctx: Node = null):
+static func server_simulate_events(node_ctx: Node = null):
 	var co_single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = co_single_wync.ctx
 	var channel_id = 0
 
+	# Handle clients' events
 	for wync_peer_id in range(1, wync_ctx.peers.size()):
-		var event_list: Array = wync_ctx.peer_has_channel_has_events[wync_peer_id][channel_id]
+		run_client_events(node_ctx, wync_ctx, wync_peer_id)
 		
-		for i in range(event_list.size() -1, -1, -1):
-			var event_id = event_list[i]
-			if not wync_ctx.events.has(event_id):
-				continue
-			var event = wync_ctx.events[event_id]
-			if event is not WyncEvent:
-				continue
-			event = event as WyncEvent
-
-			# handle it
-			handle_events(node_ctx, event.data)
-			
-		event_list.clear()
+	# Handle server events
+	run_server_events(node_ctx, wync_ctx)
 
 
-static func simulate_events(node_ctx: Node = null):
+static func client_simulate_events(node_ctx: Node = null):
 	var co_single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = co_single_wync.ctx
+	
+	# Predict handling my own events
+	run_client_events(node_ctx, wync_ctx, wync_ctx.my_peer_id)
+	
+	# Predict handling server events
+	run_server_events(node_ctx, wync_ctx)
 	
 	# as the grid: poll events from the channel 0 and execute them
 	# NOTE: add iteration limit to avoid infinite _event loop_
 
 	# NOTE: on client: iterate through MY events
 	# on server: iterate through EVERY CLIENT'S events
+	
+	# NOTE: If we consume global events they might never be recorded... Or maybe they
+	# can be recorded the moment they are submitted...
+	#WyncEventUtils.global_event_consume(wync_ctx, channel_id, event_id)
+	
+	# NOTE: events that generate other events can accumulate forever if not cleaned
 
+
+static func run_client_events(node_ctx: Node, wync_ctx: WyncCtx, client_wync_peer_id: int):
+	# Handle server events
+	
 	var channel_id = 0
-	var event_list: Array = wync_ctx.peer_has_channel_has_events[wync_ctx.my_peer_id][channel_id]
+	var event_list: Array = wync_ctx.peer_has_channel_has_events[client_wync_peer_id][channel_id]
 	for i in range(event_list.size() -1, -1, -1):
 		var event_id = event_list[i]
 		if not wync_ctx.events.has(event_id):
@@ -82,16 +88,31 @@ static func simulate_events(node_ctx: Node = null):
 		event = event as WyncEvent
 
 		# handle it
-
 		handle_events(node_ctx, event.data)
 		
-		# NOTE: If we consume global events they might never be recorded... Or maybe they
-		# can be recorded the moment they are submitted...
-		#WyncEventUtils.global_event_consume(wync_ctx, channel_id, event_id)
-	
-	# NOTE: events that generate other events can accumulate forever if not cleaned
 	event_list.clear()
+
+
+static func run_server_events(node_ctx: Node, wync_ctx: WyncCtx):
+	# Handle server events
 	
+	var channel_id = 0
+	var server_wync_peer_id = 0
+	var event_list: Array = wync_ctx.peer_has_channel_has_events[server_wync_peer_id][channel_id]
+	while(event_list.size() > 0):
+		var event_id = event_list[event_list.size() -1]
+		if not wync_ctx.events.has(event_id):
+			continue
+		var event = wync_ctx.events[event_id]
+		if event is not WyncEvent:
+			WyncEventUtils.global_event_consume(wync_ctx, server_wync_peer_id, channel_id, event_id)
+			continue
+		event = event as WyncEvent
+
+		# handle it
+		handle_events(node_ctx, event.data)
+		WyncEventUtils.global_event_consume(wync_ctx, server_wync_peer_id, channel_id, event_id)
+
 
 static func handle_events(node_ctx: Node, event_data: WyncEvent.EventData):
 	match event_data.event_type_id:
@@ -113,7 +134,6 @@ static func handle_event_player_block_place(node_ctx: Node, event: WyncEvent.Eve
 	var block_pos = event.arg_data[0] as Vector2i
 	grid_block_place(node_ctx, block_pos)
 
-	"""
 	# NOTE: This event is a predicition of a Server Global event, so it has to be submitted
 	# as a client-side PREDICTION for peer_id 0 
 	
@@ -128,7 +148,10 @@ static func handle_event_player_block_place(node_ctx: Node, event: WyncEvent.Eve
 	var event_id = WyncEventUtils.instantiate_new_event(wync_ctx, GameInfo.EVENT_PLAYER_BLOCK_BREAK, 1)
 	WyncEventUtils.event_add_arg(wync_ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
 	event_id = WyncEventUtils.event_wrap_up(wync_ctx, event_id)
-	WyncEventUtils.global_event_publish_on_demand_by_channel(wync_ctx, 0, event_id)"""
+	
+	# Out of the two ways to predict 'event generated events' here we're chosing _Option number 2_:
+	# Generate new events as a prediction of the server's actions.
+	WyncEventUtils.publish_globa_event_as_server(wync_ctx, 0, event_id)
 	
 	
 static func grid_block_break(node_ctx: Node, block_pos: Vector2i):
@@ -161,5 +184,3 @@ static func grid_block_place(node_ctx: Node, block_pos: Vector2i):
 	
 	var block_data = co_block_grid.blocks[block_pos.x][block_pos.y] as CoBlockGrid.BlockData
 	block_data.id = CoBlockGrid.BLOCK.STONE
-	
-	

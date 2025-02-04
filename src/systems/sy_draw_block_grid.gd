@@ -163,7 +163,7 @@ func generate_click_event(
 	# now that we're commiting to this event, let's publish it
 	#WyncEventUtils.global_event_publish_on_demand(
 	#	wync_ctx, co_wync_events.prop_id, event_id)
-	WyncEventUtils.global_event_publish_on_demand_by_channel(
+	WyncEventUtils.publish_global_event_as_client(
 		wync_ctx, 0, event_id
 	)
 	

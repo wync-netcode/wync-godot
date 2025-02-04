@@ -18,7 +18,6 @@ func on_process(_entities, _data, _delta: float):
 	
 	# server tick start
 	else:
-		var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 		sy_wync_receive_event_data.on_process([], null, _delta, self)
 
 		# feed props DATA_TYPE.EVENT
@@ -26,5 +25,6 @@ func on_process(_entities, _data, _delta: float):
 
 		# extract events from global event props
 		# TODO: global events can be generated during _process loop only in clients machine...
-		WyncUtils.system_publish_global_events(wync_ctx, co_ticks.ticks)
+		# DEPRECATED
+		# WyncUtils.system_publish_global_events(wync_ctx, co_ticks.ticks)
 	
