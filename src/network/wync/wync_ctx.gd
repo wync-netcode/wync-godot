@@ -4,7 +4,8 @@ class_name WyncCtx
 ## Server & Client ==============================
 
 const ENTITY_ID_GLOBAL_EVENTS = 777
-const MAX_GLOBAL_EVENT_CHANNELS = 1
+var max_peers = 24
+var max_channels = 12
 
 # Map<entity_id: int, unused_bool: bool>
 var tracked_entities: Dictionary
@@ -25,11 +26,18 @@ var events_to_sync_this_tick: Dictionary
 # Array<channel_id: int, Array<event_id>>
 # Array[Array[int]]
 # global_events_channel_in_order
-var global_events_channel: Array[Array] 
+# var global_events_channel: Array[Array]
 
+# 24 clients, 12 channels, unlimited event ids
+# Array[24 clients]< Array[12 channels] < Dictionary <int, unused_bool> > >
+# events can be Dictionary (non-repeating set) or Array (allows duplicates)
+# Array[Array[Array[int]]]
+var peer_has_channel_has_events: Array[Array]
+
+# premature optimization?
 # this solves deterministicly knowing where an event came from
 # > What about just storing this metadata in the event wrapper?
-var entities_that_published_global_events_this_tick: Array[int]
+# var entities_that_published_global_events_this_tick: Array[int]
 
 
 ## Server only ==============================
@@ -77,3 +85,12 @@ var events_hash_to_id: FIFOMap = FIFOMap.new()
 
 # Set <event_id: int>
 var events_sent: FIFOMap = FIFOMap.new()
+
+# TODO: Move to WyncUtils
+func _init() -> void:
+	peer_has_channel_has_events.resize(max_peers)
+	for peer_i in range(max_peers):
+		peer_has_channel_has_events[peer_i] = []
+		peer_has_channel_has_events[peer_i].resize(max_channels)
+		for channel_i in range(max_channels):
+			peer_has_channel_has_events[peer_i][channel_i] = []

@@ -158,6 +158,14 @@ func generate_click_event(
 	
 	# save the event id to component
 	co_wync_events.events.append(event_id)
+
+	# TODO: After using Global Events per tick
+	# now that we're commiting to this event, let's publish it
+	#WyncEventUtils.global_event_publish_on_demand(
+	#	wync_ctx, co_wync_events.prop_id, event_id)
+	WyncEventUtils.global_event_publish_on_demand_by_channel(
+		wync_ctx, 0, event_id
+	)
 	
 	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
 	Log.out(self, "ticks(%s|%s) co_wync_events.events %s:%s:%s" % [co_ticks.ticks, co_predict_data.target_tick, co_wync_events, co_wync_events.events.size(), co_wync_events.events])

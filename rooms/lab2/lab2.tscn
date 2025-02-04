@@ -296,14 +296,6 @@ script = ExtResource("18_oeqdo")
 [node name="SyWyncTickStartAfter" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 script = ExtResource("22_smcj4")
 
-[node name="SystemsProduceInputs" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
-
-[node name="SyPlayerInput" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsProduceInputs"]
-script = ExtResource("10_47ome")
-
-[node name="SyDrawBlockGrid" type="Node2D" parent="worlds/WorldClient1/GroupPhysics/SystemsProduceInputs"]
-script = ExtResource("31_vohxg")
-
 [node name="SystemsSetup" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 
 [node name="SyActorRegister" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsSetup"]
@@ -329,6 +321,14 @@ script = ExtResource("58_gjl0a")
 
 [node name="SyWyncReceiveClientInfo" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsSetup"]
 script = ExtResource("55_wsisn")
+
+[node name="SystemsProduceInputs" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
+
+[node name="SyPlayerInput" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsProduceInputs"]
+script = ExtResource("10_47ome")
+
+[node name="SyDrawBlockGrid" type="Node2D" parent="worlds/WorldClient1/GroupPhysics/SystemsProduceInputs"]
+script = ExtResource("31_vohxg")
 
 [node name="SystemsWync" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 

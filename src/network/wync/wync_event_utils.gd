@@ -97,6 +97,7 @@ static func event_wrap_up(
 # TODO: Save client_id of origin or entity_id of origin somewhere
 
 # static func prop_global_event_publish
+"""
 static func global_event_publish_on_demand \
 	(ctx: WyncCtx, prop_id: int, event_id: int) -> int:
 	if (not WyncUtils.prop_exists(ctx, prop_id)):
@@ -109,27 +110,28 @@ static func global_event_publish_on_demand \
 	if (prop.data_type != WyncEntityProp.DATA_TYPE.EVENT):
 		return 4
 	var channel = prop.global_event_channel
-	if (channel < 0 || channel > ctx.MAX_GLOBAL_EVENT_CHANNELS):
+	if (channel < 0 || channel > ctx.max_channels):
 		return 5
 
 	# no need to check event_id here, we check it when consuming
 	ctx.global_events_channel[channel].append(event_id)
 	# event.prop_id = prop_id
-	return 0
+	return 0"""
 
 
 static func global_event_publish_on_demand_by_channel \
 	(ctx: WyncCtx, channel: int, event_id: int) -> int:
-	if (channel < 0 || channel > ctx.MAX_GLOBAL_EVENT_CHANNELS):
+	if (channel < 0 || channel > ctx.max_channels):
 		return 5
 	
-	ctx.global_events_channel[channel].append(event_id)
+	# TODO: improve safety
+	ctx.peer_has_channel_has_events[ctx.my_peer_id][channel].append(event_id)
 	return 0
 
 
 
 static func global_event_consume(ctx: WyncCtx, channel_id: int, event_id: int) -> int:
-	if channel_id < 0 || channel_id >= ctx.MAX_GLOBAL_EVENT_CHANNELS:
+	if channel_id < 0 || channel_id >= ctx.max_channels:
 		return 1
 	
 	if not ctx.global_events_channel[channel_id].has(event_id):

@@ -69,7 +69,6 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 			co_wync_events.events.append_array(events),
 	)
 	co_wync_events.prop_id = events_prop_id
-	WyncUtils.prop_set_push_to_global_event(wync_ctx, events_prop_id, 0)
 
 	if WyncUtils.is_client(wync_ctx):
 		# interpolation

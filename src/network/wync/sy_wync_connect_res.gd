@@ -62,6 +62,17 @@ func on_process(_entities, _data, _delta: float):
 		packet.to_peer = pkt.from_peer
 		co_io.out_packets.append(packet)
 		
+		# let client own it's global events
+		# NOTE: Maybe move this where all channels are defined
+		var global_events_entity_id = WyncCtx.ENTITY_ID_GLOBAL_EVENTS + wync_client_id
+		if WyncUtils.is_entity_tracked(wync_ctx, global_events_entity_id):
+			packet = make_client_info_packet(wync_ctx, wync_client_id, global_events_entity_id, "channel_0")
+			packet.to_peer = pkt.from_peer
+			co_io.out_packets.append(packet)
+		
+		else:
+			Log.err(self, "Global Event Entity (id %s) for peer_id %s NOT FOUND" % [global_events_entity_id, wync_client_id])
+		
 
 func make_client_info_packet(
 	wync_ctx: WyncCtx,

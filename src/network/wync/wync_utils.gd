@@ -74,13 +74,14 @@ static func prop_is_interpolated(ctx: WyncCtx, prop_id: int) -> bool:
 	var prop = ctx.props[prop_id] as WyncEntityProp
 	return prop.interpolated
 
+"""
 static func prop_set_push_to_global_event(ctx: WyncCtx, prop_id: int, channel: int) -> int:
 	if prop_id > ctx.props.size() -1:
 		return 1
 	var prop = ctx.props[prop_id] as WyncEntityProp
 	prop.push_to_global_event = true
 	prop.global_event_channel = channel
-	return 0
+	return 0"""
 
 # DUMP: create the new INTERNAL service to push all GLOBAL_EVENTS,
 # also, maybe cache them in WyncCtx, push the events.
@@ -226,15 +227,6 @@ static func prop_set_client_owner(ctx: WyncCtx, prop_id: int, client_id: int) ->
 # Setup functions
 # ================================================================
 
-static func server_setup(ctx: WyncCtx) -> int:
-	# peer id 0 reserved for server
-	ctx.my_peer_id = 0
-	ctx.peers.resize(1)
-	ctx.peers[ctx.my_peer_id] = -1
-	ctx.connected = true
-	WyncUtils.setup_global_events(ctx)
-	return 0
-	
 
 ## Server side function
 ## @argument peer_data (optional): store a custom int if needed. Use it to save an external identifier. This is usually the transport's peer_id
@@ -245,6 +237,21 @@ static func peer_register(ctx: WyncCtx, peer_data: int = -1) -> int:
 	ctx.client_owns_prop[peer_id] = []
 	return peer_id
 
+
+static func server_setup(ctx: WyncCtx) -> int:
+	# peer id 0 reserved for server
+	ctx.my_peer_id = 0
+	ctx.peers.resize(1)
+	ctx.peers[ctx.my_peer_id] = -1
+	ctx.connected = true
+
+	# setup peer channels
+	WyncUtils.setup_peer_global_events(ctx, ctx.my_peer_id)
+	for i in range(1, 2):
+		WyncUtils.setup_peer_global_events(ctx, i)
+	return 0
+	
+
 ## Client side function
 
 static func client_setup_my_client(ctx: WyncCtx, peer_id: int) -> bool:
@@ -253,7 +260,11 @@ static func client_setup_my_client(ctx: WyncCtx, peer_id: int) -> bool:
 
 	ctx.events_hash_to_id.init(WyncCtx.MAX_AMOUNT_CACHE_EVENTS)
 	ctx.events_sent.init(WyncCtx.MAX_AMOUNT_CACHE_EVENTS)
-	WyncUtils.setup_global_events(ctx)
+	
+	# setup server global events
+	WyncUtils.setup_peer_global_events(ctx, 0)
+	# setup own global events
+	WyncUtils.setup_peer_global_events(ctx, ctx.my_peer_id)
 	return true
 
 
@@ -265,14 +276,13 @@ static func is_peer_registered(ctx: WyncCtx, peer_data: int) -> int:
 			return peer_id
 	return -1
 
-
-static func setup_global_events(ctx: WyncCtx) -> int:
+"""
+static func setup_general_global_events(ctx: WyncCtx) -> int:
 	ctx.global_events_channel.resize(WyncCtx.MAX_GLOBAL_EVENT_CHANNELS)
 	print("GlobalEvent | %s" % [ctx.global_events_channel])
 
 	var entity_id = WyncCtx.ENTITY_ID_GLOBAL_EVENTS
 	WyncUtils.track_entity(ctx, entity_id)
-
 	var prop_channel_0 = WyncUtils.prop_register(
 		ctx,
 		entity_id,
@@ -286,6 +296,34 @@ static func setup_global_events(ctx: WyncCtx) -> int:
 	if (WyncUtils.is_client(ctx)):
 		WyncUtils.prop_set_predict(ctx, prop_channel_0)
 
+	return 0"""
+
+
+# run on both server & client to set up peer channel
+# NOTE: Maybe it's better to initialize all client channels from the start
+static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
+	if (!ctx.connected):
+		printerr("WyncUtils setup_client_global_events | not connected")
+		return 1
+	
+	var entity_id = WyncCtx.ENTITY_ID_GLOBAL_EVENTS + peer_id
+	WyncUtils.track_entity(ctx, entity_id)
+	var channel_id = 0
+	var prop_channel = WyncUtils.prop_register(
+		ctx,
+		entity_id,
+		"channel_%d" % [channel_id],
+		WyncEntityProp.DATA_TYPE.EVENT,
+		func() -> Array: # getter
+			return ctx.peer_has_channel_has_events[peer_id][channel_id].duplicate(true),
+		func(input: Array): # setter
+			var event_array = ctx.peer_has_channel_has_events[peer_id][channel_id] as Array
+			event_array.clear()
+			event_array.append_array(input),
+	)
+	if (WyncUtils.is_client(ctx) && peer_id == ctx.my_peer_id):
+		WyncUtils.prop_set_predict(ctx, prop_channel)
+
 	return 0
 
 
@@ -295,8 +333,9 @@ static func setup_global_events(ctx: WyncCtx) -> int:
 ## extract events from props DATA_TYPE.EVENT global
 ## and inserts/duplicates them into the ctx.global_events_channel
 
+"""
 static func system_publish_global_events(ctx: WyncCtx, tick: int) -> void:
-	
+	return
 	# TODO: optimize with caching maybe
 	for prop: WyncEntityProp in ctx.props:
 		if not prop:
@@ -313,8 +352,10 @@ static func system_publish_global_events(ctx: WyncCtx, tick: int) -> void:
 			continue
 		if input is not Array:
 			continue
-		input = input as Array
-		ctx.global_events_channel[prop.global_event_channel].append_array(input)
+		input = input as Array"""
+		
+		# FIXME
+#ctx.global_events_channel[prop.global_event_channel].append_array(input)
 
 
 # Miscellanious
@@ -358,5 +399,7 @@ static func duplicate_any(any): #-> Optional<any>
 	return null
 
 
-static func is_client(ctx: WyncCtx) -> bool:
+static func is_client(ctx: WyncCtx, peer_id: int = -1) -> bool:
+	if peer_id >= 0:
+		return peer_id > 0
 	return ctx.my_peer_id > 0

@@ -22,13 +22,8 @@ func on_process(entities, _data, _delta: float):
 		Log.err(self, "Couldn't find singleton CoTransportLoopback")
 		return
 	
-	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
-	
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
-
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
-	var target_tick = co_predict_data.target_tick
 	
 	# Reset all extrapolated entities to last confirmed tick
 	# Don't affect predicted entities?
@@ -49,6 +44,7 @@ func on_process(entities, _data, _delta: float):
 		if last_confirmed.data == null:
 			continue
 		
+		# TODO: check type before applying (shouldn't be necessary if we ensure we're filling the correct data)
 		prop.setter.call(last_confirmed.data)
 	
 	# call integration function to sync new transforms with physics server

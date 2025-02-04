@@ -72,8 +72,8 @@ func on_process(entities, _data, delta: float):
 				continue
 			if not WyncUtils.prop_is_predicted(wync_ctx, prop_id):
 				continue
-			if prop.data_type not in [WyncEntityProp.DATA_TYPE.INPUT]:
-			# [WyncEntityProp.DATA_TYPE.EVENT]:
+			if prop.data_type not in [WyncEntityProp.DATA_TYPE.INPUT,
+				WyncEntityProp.DATA_TYPE.EVENT]:
 				continue
 		
 			var input_snap = prop.confirmed_states.get_at(local_tick)
@@ -82,22 +82,34 @@ func on_process(entities, _data, delta: float):
 			
 			prop.setter.call(input_snap)
 			# INPUT/EVENTs don't need integration functions
-
+		
+		# Prediction / Extrapolation:
+		# Run user provided simulation functions
+		# TODO: Better way to receive simulate functions?
 		
 		for entity: Entity in entities:
 		
 			var co_actor = entity.get_component(CoActor.label) as CoActor
 			if !WyncUtils.entity_is_predicted(wync_ctx, co_actor.id):
 				continue
-				
-			# Prediction / Extrapolation:
-			# Run user provided simulation functions
 			
 			if ECS.entity_has_system_components(entity.id, SyActorMovement.label):
 				SyActorMovement.simulate_movement(entity, delta)
 			if ECS.entity_has_system_components(entity.id, SyBallMovement.label):
 				SyBallMovement.simulate_movement(entity, delta)
 
+		# Prediction functions that do their own looping
+		
+		SyActorEvents.simulate_events(self)
+		
+		# bookkeeping
+
+		for entity: Entity in entities:
+		
+			var co_actor = entity.get_component(CoActor.label) as CoActor
+			if !WyncUtils.entity_is_predicted(wync_ctx, co_actor.id):
+				continue
+			
 			# store predicted states
 			# (run on last two iterations)
 			

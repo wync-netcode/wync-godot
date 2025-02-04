@@ -11,14 +11,13 @@ func _ready():
 	super()
 
 
-func on_process(entities: Array, _data, _delta: float):
-
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
-	var co_single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = co_single_wync.ctx
+func on_process(_entities: Array, _data, _delta: float, node_ctx: Node = null):
+	
+	node_ctx = self if node_ctx == null else node_ctx
+	server_simulate_clients_events(node_ctx)
 	
 	"""
-	# TODO: Put this in another place for local events
+	# TODO: Put this in another place for entity-local events
 	for entity: Entity in entities:
 		
 		var co_actor = entity.get_component(CoActor.label) as CoActor
@@ -37,15 +36,44 @@ func on_process(entities: Array, _data, _delta: float):
 			Log.out(self, "event_id %s event_type_id %s" % [event_id, event_data.event_type_id])
 			handle_events(event_data)
 	"""
+
+static func server_simulate_clients_events(node_ctx: Node = null):
+	var co_single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
+	var wync_ctx = co_single_wync.ctx
+	var channel_id = 0
+
+	for wync_peer_id in range(1, wync_ctx.peers.size()):
+		var event_list: Array = wync_ctx.peer_has_channel_has_events[wync_peer_id][channel_id]
+		
+		for i in range(event_list.size() -1, -1, -1):
+			var event_id = event_list[i]
+			if not wync_ctx.events.has(event_id):
+				continue
+			var event = wync_ctx.events[event_id]
+			if event is not WyncEvent:
+				continue
+			event = event as WyncEvent
+
+			# handle it
+			handle_events(node_ctx, event.data)
+			
+		event_list.clear()
+
+
+static func simulate_events(node_ctx: Node = null):
+	var co_single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
+	var wync_ctx = co_single_wync.ctx
 	
 	# as the grid: poll events from the channel 0 and execute them
 	# NOTE: add iteration limit to avoid infinite _event loop_
 
-	var channel_id = 0
-	while (wync_ctx.global_events_channel[channel_id].size()):
-		var event_id = wync_ctx.global_events_channel[channel_id][0]
-		# Log.out(self, "%s | event_id %s" % [co_ticks.ticks, event_id])
+	# NOTE: on client: iterate through MY events
+	# on server: iterate through EVERY CLIENT'S events
 
+	var channel_id = 0
+	var event_list: Array = wync_ctx.peer_has_channel_has_events[wync_ctx.my_peer_id][channel_id]
+	for i in range(event_list.size() -1, -1, -1):
+		var event_id = event_list[i]
 		if not wync_ctx.events.has(event_id):
 			continue
 		var event = wync_ctx.events[event_id]
@@ -55,70 +83,80 @@ func on_process(entities: Array, _data, _delta: float):
 
 		# handle it
 
-		handle_events(event.data)
-		WyncEventUtils.global_event_consume(wync_ctx, channel_id, event_id)
+		handle_events(node_ctx, event.data)
+		
+		# NOTE: If we consume global events they might never be recorded... Or maybe they
+		# can be recorded the moment they are submitted...
+		#WyncEventUtils.global_event_consume(wync_ctx, channel_id, event_id)
+	
+	# NOTE: events that generate other events can accumulate forever if not cleaned
+	event_list.clear()
+	
 
-			
-func handle_events(event_data: WyncEvent.EventData):
+static func handle_events(node_ctx: Node, event_data: WyncEvent.EventData):
 	match event_data.event_type_id:
 		GameInfo.EVENT_PLAYER_BLOCK_BREAK:
-			handle_event_player_block_break(event_data)
+			handle_event_player_block_break(node_ctx, event_data)
 		GameInfo.EVENT_PLAYER_BLOCK_PLACE:
-			handle_event_player_block_place(event_data)
+			handle_event_player_block_place(node_ctx, event_data)
 		_:
-			Log.err(self, "event_type_id not recognized %s" % event_data.event_type_id)
+			Log.err(node_ctx, "event_type_id not recognized %s" % event_data.event_type_id)
 
 
-func handle_event_player_block_break(event: WyncEvent.EventData):
+static func handle_event_player_block_break(node_ctx: Node, event: WyncEvent.EventData):
 	var block_pos = event.arg_data[0] as Vector2i
-	grid_block_break(block_pos)
+	grid_block_break(node_ctx, block_pos)
 	# NOTE: this could use more safety
 
 
-func handle_event_player_block_place(event: WyncEvent.EventData):
+static func handle_event_player_block_place(node_ctx: Node, event: WyncEvent.EventData):
 	var block_pos = event.arg_data[0] as Vector2i
-	grid_block_place(block_pos)
+	grid_block_place(node_ctx, block_pos)
 
+	"""
+	# NOTE: This event is a predicition of a Server Global event, so it has to be submitted
+	# as a client-side PREDICTION for peer_id 0 
+	
 	## this event generates a secondary event BLOCK_BREAK breaking the block on the left
 	block_pos.x -= 1
 	if block_pos.x < 0:
 		return
 
-	var co_single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var co_single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = co_single_wync.ctx
 
 	var event_id = WyncEventUtils.instantiate_new_event(wync_ctx, GameInfo.EVENT_PLAYER_BLOCK_BREAK, 1)
 	WyncEventUtils.event_add_arg(wync_ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
 	event_id = WyncEventUtils.event_wrap_up(wync_ctx, event_id)
-	WyncEventUtils.global_event_publish_on_demand_by_channel(wync_ctx, 0, event_id)
+	WyncEventUtils.global_event_publish_on_demand_by_channel(wync_ctx, 0, event_id)"""
 	
 	
-func grid_block_break(block_pos: Vector2i):
-	var en_block_grid = ECS.get_singleton_entity(self, "EnBlockGrid")
+static func grid_block_break(node_ctx: Node, block_pos: Vector2i):
+	var en_block_grid = ECS.get_singleton_entity(node_ctx, "EnBlockGrid")
 	if not en_block_grid:
-		Log.err(self, "coulnd't get singleton EnBlockGrid")
+		Log.err(node_ctx, "coulnd't get singleton EnBlockGrid")
 		return
 	var co_block_grid = en_block_grid.get_component(CoBlockGrid.label) as CoBlockGrid
 	
 	if not (MathUtils.is_between_int(block_pos.x, 0, co_block_grid.LENGTH -1)
 	&& MathUtils.is_between_int(block_pos.y, 0, co_block_grid.LENGTH -1)):
-		Log.err(self, "block_pos %s is invalid" % [block_pos])
+		Log.err(node_ctx, "block_pos %s is invalid" % [block_pos])
 		return
 	
 	var block_data = co_block_grid.blocks[block_pos.x][block_pos.y] as CoBlockGrid.BlockData
 	block_data.id = CoBlockGrid.BLOCK.AIR
 
 
-func grid_block_place(block_pos: Vector2i):
-	var en_block_grid = ECS.get_singleton_entity(self, "EnBlockGrid")
+static func grid_block_place(node_ctx: Node, block_pos: Vector2i):
+	var en_block_grid = ECS.get_singleton_entity(node_ctx, "EnBlockGrid")
 	if not en_block_grid:
-		Log.err(self, "coulnd't get singleton EnBlockGrid")
+		Log.err(node_ctx, "coulnd't get singleton EnBlockGrid")
 		return
 	var co_block_grid = en_block_grid.get_component(CoBlockGrid.label) as CoBlockGrid
 	
 	if not (MathUtils.is_between_int(block_pos.x, 0, co_block_grid.LENGTH -1)
 	&& MathUtils.is_between_int(block_pos.y, 0, co_block_grid.LENGTH -1)):
-		Log.err(self, "block_pos %s is invalid" % [block_pos])
+		Log.err(node_ctx, "block_pos %s is invalid" % [block_pos])
 		return
 	
 	var block_data = co_block_grid.blocks[block_pos.x][block_pos.y] as CoBlockGrid.BlockData
