@@ -95,6 +95,7 @@ func on_process(entities, _data, delta: float):
 			
 			if ECS.entity_has_system_components(entity.id, SyActorMovement.label):
 				SyActorMovement.simulate_movement(entity, delta)
+				SyActorMovement.simulate_particle_on_start_moving(entity, delta, tick)
 			if ECS.entity_has_system_components(entity.id, SyBallMovement.label):
 				SyBallMovement.simulate_movement(entity, delta)
 

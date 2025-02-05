@@ -2,6 +2,7 @@ extends Component
 class_name CoActorInput
 static var label = ECS.add_component()
 
+var movement_dir_prev: Vector2
 var movement_dir: Vector2
 var aim: Vector2
 var shoot: bool
@@ -12,6 +13,7 @@ var switch_weapon_to: int = -1
 
 func copy() -> CoActorInput:
 	var newi = CoActorInput.new()
+	newi.movement_dir_prev = movement_dir_prev
 	newi.movement_dir = movement_dir
 	newi.aim = aim
 	newi.shoot = shoot
@@ -22,6 +24,7 @@ func copy() -> CoActorInput:
 
 
 func copy_to_instance(ins: CoActorInput) -> void:
+	ins.movement_dir_prev = movement_dir_prev
 	ins.movement_dir = movement_dir
 	ins.aim = aim
 	ins.shoot = shoot

@@ -13,6 +13,7 @@ func _ready():
 func on_process_entity(entity : Entity, _data, _delta: float):
 	var input = entity.get_component(CoActorInput.label) as CoActorInput
 
+	input.movement_dir_prev = input.movement_dir
 	input.movement_dir = Vector2(
 		int(Input.is_action_pressed("p1_right")) - int(Input.is_action_pressed("p1_left")),
 		int(Input.is_action_pressed("p1_down")) - int(Input.is_action_pressed("p1_up")),

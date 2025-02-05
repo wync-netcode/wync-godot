@@ -2,6 +2,7 @@ class_name SyActorMovement
 extends System
 const label: StringName = StringName("SyActorMovement")
 
+static var scene_debug_particle: PackedScene = preload("res://src/utils/debug/debug_particle.tscn")
 
 func _ready():
 	components = [CoActor.label, CoCollider.label, CoActorInput.label]
@@ -9,6 +10,7 @@ func _ready():
 
 	
 func on_process_entity(entity: Entity, _data, delta: float):
+	simulate_particle_on_start_moving(entity, delta, 0)
 	simulate_movement(entity, delta)
 
 
@@ -65,4 +67,28 @@ static func simulate_movement(entity: Entity, delta: float) -> void:
 
 
 	pass
+
+
+static func simulate_particle_on_start_moving(entity: Entity, delta: float, predicted_tick: int) -> void:
+	var single_wync = ECS.get_singleton_component(entity, CoSingleWyncContext.label) as CoSingleWyncContext
+	var wync_ctx = single_wync.ctx as WyncCtx
 	
+	var input = entity.get_component(CoActorInput.label) as CoActorInput
+	var collider = entity.get_component(CoCollider.label) as CoCollider
+	var body = collider as Node as CharacterBody2D
+	
+	if input.movement_dir_prev == Vector2.ZERO && input.movement_dir != Vector2.ZERO:
+		
+		# Demonstrates how to execute a visual effect only once even though we're
+		# resimulating this tick multiple times for extrapolation/self-prediction
+		if WyncUtils.is_client(wync_ctx, wync_ctx.my_peer_id):
+			var action_id = "visual_effects"
+			if WyncEventUtils.action_already_ran_on_tick(wync_ctx, predicted_tick, action_id):
+				return
+			WyncEventUtils.action_mark_as_ran_on_tick(wync_ctx, predicted_tick, action_id)
+		
+		var newi = scene_debug_particle.instantiate()
+		var is_client = WyncUtils.is_client(wync_ctx)
+		newi.color = Color.RED if is_client else Color.BLUE
+		entity.get_tree().root.add_child(newi)
+		newi.global_position = body.global_position
