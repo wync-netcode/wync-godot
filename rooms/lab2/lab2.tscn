@@ -1,4 +1,4 @@
-[gd_scene load_steps=64 format=3 uid="uid://b8oeiuufqe32c"]
+[gd_scene load_steps=65 format=3 uid="uid://b8oeiuufqe32c"]
 
 [ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_1ps8v"]
 [ext_resource type="Script" path="res://data/StaticData.gd" id="2_2epi3"]
@@ -51,6 +51,7 @@
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_prediction_ticks.gd" id="40_ailwx"]
 [ext_resource type="Script" path="res://src/network/sy_nete_cleanup.gd" id="40_dopds"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_clock_client.gd" id="45_6w0w5"]
+[ext_resource type="PackedScene" uid="uid://bwtt1max8vr1w" path="res://src/entities/en_chatbox.tscn" id="46_g7a7n"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_tick_start_before.gd" id="47_ybb08"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_setup_sync_ball.gd" id="49_4ofub"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_lerp.gd" id="49_dsdhr"]
@@ -254,6 +255,10 @@ singleton = true
 script = ExtResource("13_ckh8x")
 singleton = true
 
+[node name="CanvasLayer" type="CanvasLayer" parent="worlds/WorldClient1/Singletons"]
+
+[node name="EnChatbox" parent="worlds/WorldClient1/Singletons/CanvasLayer" instance=ExtResource("46_g7a7n")]
+
 [node name="Entities" type="Node" parent="worlds/WorldClient1"]
 
 [node name="EnPlayer2" parent="worlds/WorldClient1/Entities" instance=ExtResource("23_ewwho")]
@@ -377,4 +382,5 @@ script = ExtResource("61_cqch1")
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
 [node name="ui" parent="CanvasLayer" instance=ExtResource("26_sokx8")]
+mouse_filter = 2
 metadata/_edit_lock_ = true
