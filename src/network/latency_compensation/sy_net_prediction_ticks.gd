@@ -50,3 +50,13 @@ func on_process(_entities, _data, _delta: float):
 	co_predict_data.current_tick_timestamp = curr_time
 	
 	#Log.out(self, "ticks local %s | net %s %s %s" % [co_ticks.ticks, co_ticks.server_ticks, co_predict_data.target_tick, co_ticks.ticks + co_ticks.server_ticks_offset])
+	
+	# ==============================================================
+	# Setup the next tick-action-history
+	# Run before any prediction takes places on the current tick
+	# NOTE: This could be moved elsewhere
+	
+	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var wync_ctx = single_wync.ctx as WyncCtx
+	
+	WyncEventUtils.action_tick_history_reset(wync_ctx, co_predict_data.target_tick)

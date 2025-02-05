@@ -154,6 +154,36 @@ static func global_event_consume \
 	#return 0 if ctx.events.erase(event_id) else 1
 
 
+static func action_already_ran_on_tick(ctx: WyncCtx, predicted_tick: int, action_id: String) -> bool:
+	var action_set = ctx.tick_action_history.get_at(predicted_tick)
+	if action_set is not Dictionary:
+		return false
+	action_set = action_set as Dictionary
+	return action_set.has(action_id)
+
+
+static func action_mark_as_ran_on_tick(ctx: WyncCtx, predicted_tick: int, action_id: String) -> int:
+	var action_set = ctx.tick_action_history.get_at(predicted_tick)
+	# This error should never happen as long as we initialize it correctly
+	# However, the user might provide any 'tick' which would result in
+	# confusing results
+	if action_set is not Dictionary:
+		return 1
+	action_set = action_set as Dictionary
+	action_set[action_id] = true
+	return 0
+
+
+# run once each game tick
+static func action_tick_history_reset(ctx: WyncCtx, predicted_tick: int) -> int:
+	var action_set = ctx.tick_action_history.get_at(predicted_tick)
+	if action_set is not Dictionary:
+		return 1
+	action_set = action_set as Dictionary
+	action_set.clear()
+	return 0
+
+
 # FIXME: This func isn't being used, despite being important from optimization
 # Currently events are being added by extraction
 

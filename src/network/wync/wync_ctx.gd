@@ -86,6 +86,16 @@ var events_hash_to_id: FIFOMap = FIFOMap.new()
 # Set <event_id: int>
 var events_sent: FIFOMap = FIFOMap.new()
 
+# This size should be the maximum amount of 'tick_offset' for prediction
+var tick_action_history_size: int = 20
+
+# did action already ran on tick?
+# Ring < predicted_tick: int, Set <action_id: String> >
+# RingBuffer < tick: int, Dictionary <action_id: String, unused_bool: bool> >
+# RingBuffer [ Dictionary ]
+var tick_action_history: RingBuffer = RingBuffer.new(tick_action_history_size)
+
+
 # TODO: Move to WyncUtils
 func _init() -> void:
 	peer_has_channel_has_events.resize(max_peers)
@@ -94,3 +104,6 @@ func _init() -> void:
 		peer_has_channel_has_events[peer_i].resize(max_channels)
 		for channel_i in range(max_channels):
 			peer_has_channel_has_events[peer_i][channel_i] = []
+	
+	for i in range(tick_action_history_size):
+		tick_action_history.insert_at(i, {} as Dictionary)
