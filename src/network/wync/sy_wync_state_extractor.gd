@@ -24,8 +24,12 @@ func on_process(_entities, _data, _delta: float):
 	
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
+	
+	# extract data
+	
+	extract_data_to_tick(wync_ctx, co_ticks.ticks)
 
-	# extract actors positional data
+	# build packet
 
 	var packet = WyncPktPropSnap.new()
 	packet.tick = co_ticks.ticks
@@ -49,10 +53,14 @@ func on_process(_entities, _data, _delta: float):
 				WyncEntityProp.DATA_TYPE.EVENT]:
 				continue
 			
-			var prop_snap = WyncPktPropSnap.PropSnap.new()
+			# ===========================================================
+			# Save state history per tick
 			
+			var state = prop.confirmed_states.get_at(co_ticks.ticks)
+			
+			var prop_snap = WyncPktPropSnap.PropSnap.new()
 			prop_snap.prop_id = prop_id
-			prop_snap.prop_value = prop.getter.call()
+			prop_snap.prop_value = WyncUtils.duplicate_any(state)
 			entity_snap.props.append(prop_snap)
 			
 			#Log.out(self, "wync: Found prop %s" % prop.name_id)
@@ -67,3 +75,27 @@ func on_process(_entities, _data, _delta: float):
 		pkt.to_peer = peer.peer_id
 		pkt.data = packet.duplicate()
 		co_io_packets.out_packets.append(pkt)
+
+
+static func extract_data_to_tick(wync_ctx: WyncCtx, save_on_tick: int = -1):
+	
+	for entity_id_key in wync_ctx.entity_has_props.keys():
+		var prop_ids_array = wync_ctx.entity_has_props[entity_id_key] as Array
+		if not prop_ids_array.size():
+			continue
+		
+		for prop_id in prop_ids_array:
+			
+			var prop = wync_ctx.props[prop_id] as WyncEntityProp
+			
+			# don't extract input values
+			# FIXME: should events be extracted? game event yes, but other player events? Maybe we need an option to what events to share.
+			# NOTE: what about a setting like: NEVER, TO_ALL, TO_ALL_EXCEPT_OWNER, ONLY_TO_SERVER
+			if prop.data_type in [WyncEntityProp.DATA_TYPE.INPUT,
+				WyncEntityProp.DATA_TYPE.EVENT]:
+				continue
+			
+			# ===========================================================
+			# Save state history per tick
+			
+			prop.confirmed_states.insert_at(save_on_tick, prop.getter.call())
