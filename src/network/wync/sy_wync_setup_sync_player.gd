@@ -56,6 +56,9 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 		func(): return co_actor_input.copy(),
 		func(input: CoActorInput): input.copy_to_instance(co_actor_input),
 	)
+	
+	# We're gonna be using this prop to store "shoot" events for TimeWarping
+	# or subtick precision
 	var events_prop_id = WyncUtils.prop_register(
 		wync_ctx,
 		co_actor.id,
@@ -94,7 +97,12 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 		WyncUtils.prop_set_predict(wync_ctx, vel_prop_id)
 		WyncUtils.prop_set_predict(wync_ctx, input_prop_id)
 		WyncUtils.prop_set_predict(wync_ctx, events_prop_id)
-
+	
+	# it is server
+	else:
+		
+		# time warp
+		WyncUtils.prop_set_timewarpable(wync_ctx, pos_prop_id) 
 
 		
 	var flag = CoFlagWyncEntityTracked.new()

@@ -78,6 +78,12 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 				
 			WyncUtils.prop_set_predict(wync_ctx, pos_prop_id)
 			WyncUtils.prop_set_predict(wync_ctx, vel_prop_id)
+	
+	# it is server
+	else:
+		
+		# time warp
+		WyncUtils.prop_set_timewarpable(wync_ctx, pos_prop_id) 
 		
 	
 	var flag = CoFlagWyncEntityTracked.new()

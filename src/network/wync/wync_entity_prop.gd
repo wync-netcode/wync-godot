@@ -32,7 +32,12 @@ var dirty: bool # new state was received from the server
 var interpolated: bool
 var interpolated_state # : any
 
+# (server-side) the server will keep a history of state
+var timewarpable: bool
+
+# TODO: Make this value configurable on WyncCtx
 # Ring <NetTickData>
+# NOTE: For the client this might be NetTickData, for the server it isn't
 var confirmed_states: RingBuffer = RingBuffer.new(10)
 
 var pred_curr: NetTickData = NetTickData.new()

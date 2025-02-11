@@ -74,6 +74,20 @@ static func prop_is_interpolated(ctx: WyncCtx, prop_id: int) -> bool:
 	var prop = ctx.props[prop_id] as WyncEntityProp
 	return prop.interpolated
 
+static func prop_set_timewarpable(ctx: WyncCtx, prop_id: int) -> bool:
+	if prop_id > ctx.props.size() -1:
+		return false
+	var prop = ctx.props[prop_id] as WyncEntityProp
+	prop.timewarpable = true
+	prop.confirmed_states = RingBuffer.new(ctx.max_tick_history)
+	return true
+
+static func prop_is_timewarpable(ctx: WyncCtx, prop_id: int) -> bool:
+	if prop_id > ctx.props.size() -1:
+		return false
+	var prop = ctx.props[prop_id] as WyncEntityProp
+	return prop.timewarpable
+
 """
 static func prop_set_push_to_global_event(ctx: WyncCtx, prop_id: int, channel: int) -> int:
 	if prop_id > ctx.props.size() -1:
@@ -216,6 +230,29 @@ static func prop_exists(ctx: WyncCtx, prop_id: int) -> bool:
 	return true
 
 
+## @returns Optional<WyncEntityProp>
+static func get_prop(ctx: WyncCtx, prop_id: int) -> WyncEntityProp:
+	if prop_id < 0 || prop_id > ctx.props.size() -1:
+		return null
+	var prop = ctx.props[prop_id]
+	if prop is not WyncEntityProp:
+		return null
+	return prop
+
+
+## @returns int:
+## * -1 if it belongs to noone (defaults to server)
+## * can't return 0
+## * returns > 0 (peer_id) if it belongs to a client
+static func prop_get_peer_owner(ctx: WyncCtx, prop_id: int) -> int:
+	for peer_id in range(1, ctx.max_peers):
+		if not ctx.client_owns_prop.has(peer_id):
+			continue
+		if (ctx.client_owns_prop[peer_id] as Array).has(prop_id):
+			return peer_id
+	return -1
+
+
 static func prop_set_client_owner(ctx: WyncCtx, prop_id: int, client_id: int) -> bool:
 	# NOTE: maybe don't check because this prop could be synced later
 	#if not prop_exists(ctx, prop_id):
@@ -235,6 +272,9 @@ static func peer_register(ctx: WyncCtx, peer_data: int = -1) -> int:
 	var peer_id = ctx.peers.size()
 	ctx.peers.append(peer_data)
 	ctx.client_owns_prop[peer_id] = []
+	
+	if !is_client(ctx):
+		ctx.client_has_info[peer_id] = WyncClientInfo.new()
 	return peer_id
 
 
@@ -361,6 +401,12 @@ static func system_publish_global_events(ctx: WyncCtx, tick: int) -> void:
 # Miscellanious
 # ================================================================
 
+static func is_client(ctx: WyncCtx, peer_id: int = -1) -> bool:
+	if peer_id >= 0:
+		return peer_id > 0
+	return ctx.my_peer_id > 0
+
+
 static func duplicate_any(any): #-> Optional<any>
 	if any is Object:
 		if any.has_method("copy"):
@@ -399,7 +445,5 @@ static func duplicate_any(any): #-> Optional<any>
 	return null
 
 
-static func is_client(ctx: WyncCtx, peer_id: int = -1) -> bool:
-	if peer_id >= 0:
-		return peer_id > 0
-	return ctx.my_peer_id > 0
+static func lerp_any(left: Variant, right: Variant, weight: float):
+	return lerp(left, right, weight)
