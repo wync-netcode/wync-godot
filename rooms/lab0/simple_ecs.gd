@@ -88,6 +88,20 @@ func _ready() -> void:
 	held_weapon = world_client_1.get_node("Entities/EnPlayer2").get_component("coweaponheld") as CoWeaponHeld
 	held_weapon.weapon_id = w.weapon_id
 	"""
+	# give players weapons
+	
+	for world in worlds:
+		var player_entity = world.get_node("Entities/EnPlayer") as Entity
+		var inventory = player_entity.get_component(CoWeaponInventory.label) as CoWeaponInventory
+	
+		var w = CoWeaponStored.new()
+		w.weapon_id = StaticData.WEAPON.PISTOL
+		w.bullets_total_left = 300
+		w.bullets_magazine_left = 10000
+		inventory.inventory.append(w)
+		
+		var held_weapon = player_entity.get_component(CoWeaponHeld.label) as CoWeaponHeld
+		held_weapon.weapon_id = w.weapon_id
 
 
 func _process(delta: float) -> void:

@@ -3,7 +3,7 @@ class_name SyUserWyncLerpSet
 const label: StringName = StringName("SyUserWyncLerpSet")
 
 
-## This system manually sets the interpolated position to the visual
+## This system manually sets the interpolated position / rotation to the visual
 ## component
 
 func _ready():
@@ -37,6 +37,8 @@ func on_process(entities, _data, _delta: float):
 			&& prop.interpolated_state != null
 			&& co_renderer is Node2D):
 			co_renderer.global_position = prop.interpolated_state
+			
+			DebugPlayerTrail.spawn(self, co_renderer.global_position, 0.5, 0, true)
 				
 		
 		# 1. aim is currently interpolated by Wync
