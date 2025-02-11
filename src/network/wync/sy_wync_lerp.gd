@@ -19,12 +19,16 @@ func on_process(entities, _data, _delta: float):
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
 
-	var curr_time = ClockUtils.time_get_ticks_msec(co_ticks)
+	# TODO: Move this elsewhere
+	co_ticks.lerp_delta_accumulator_ms += int(_delta * 1000)
+	var curr_tick_time = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, co_ticks.ticks)
+	var curr_time = curr_tick_time + co_ticks.lerp_delta_accumulator_ms
 	var physics_fps = Engine.physics_ticks_per_second
+
+	#Log.out(self, "%s curr_time %s | %s | %s | %s" % [co_ticks.ticks, curr_time, curr_tick_time + co_ticks.lerp_delta_accumulator_ms, co_ticks.lerp_delta_accumulator_ms, curr_time - (curr_tick_time + co_ticks.lerp_delta_accumulator_ms) ])
+	
 	
 	# define target time to render
-	var frame = (1000.0 / physics_fps)
-	var pkt_inter_arrival_time = ((1000.0 / physics_fps) * 10) # NOTE: This will be important later
 	var target_time = curr_time - co_predict_data.lerp_ms
 
 
@@ -90,6 +94,10 @@ func on_process(entities, _data, _delta: float):
 			if using_confirmed_state:
 				left_timestamp = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, snap_left.arrived_at_tick)
 				right_timestamp = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, snap_right.arrived_at_tick)
+				
+				# TODO: Make this calculation elsewhere
+				co_ticks.last_tick_rendered_left = max(co_ticks.last_tick_rendered_left, snap_left.server_tick)
+				#Log.out(self, "last (right) tick is %d | %d" % [snap_left.arrived_at_tick, snap_right.arrived_at_tick])
 			else:
 				# TODO: Why a difference of two ticks?
 				left_timestamp = ClockUtils.get_predicted_tick_local_time_msec(snap_left.server_tick+1, co_ticks, co_predict_data)
