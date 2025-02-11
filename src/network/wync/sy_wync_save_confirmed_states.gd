@@ -49,8 +49,9 @@ func on_process(_entities, _data, _delta: float):
 				if not local_prop:
 					continue
 				
+				# NOTE: This is giving us problems in getting exactly the data for a specific server tick
 				var tick_data = NetTickData.new()
-				tick_data.tick = data.tick
+				tick_data.server_tick = data.tick
 				tick_data.arrived_at_tick = co_ticks.ticks
 				tick_data.data = prop.prop_value
 				local_prop.confirmed_states.push(tick_data)

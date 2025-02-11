@@ -21,10 +21,13 @@ static func local_time_to_server_time(co_predict_data: CoSingleNetPredictionData
 
 static func server_time_to_local_time(co_predict_data: CoSingleNetPredictionData, server_time: int) -> int:
 	return server_time - co_predict_data.clock_offset_mean
+
+static func get_net_ticks(co_ticks: CoTicks) -> int:
+	return co_ticks.ticks + co_ticks.server_ticks_offset
 """
 
-static func get_net_ticks(co_ticks: CoTicks):
-	return co_ticks.ticks - co_ticks.server_ticks_offset
+static func convert_local_ticks_to_server_ticks(co_ticks: CoTicks, ticks: int) -> int:
+	return ticks + co_ticks.server_ticks_offset
 
 
 static func get_tick_local_time_msec(co_predict_data: CoSingleNetPredictionData, co_ticks: CoTicks, ticks: int):

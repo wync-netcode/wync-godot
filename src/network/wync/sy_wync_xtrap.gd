@@ -43,7 +43,7 @@ func on_process(entities, _data, delta: float):
 			continue
 		if last_confirmed.data == null:
 			continue
-		last_confirmed_tick = max(last_confirmed_tick, last_confirmed.tick)
+		last_confirmed_tick = max(last_confirmed_tick, last_confirmed.server_tick)
 	
 	# sync transforms to physics server
 	
@@ -176,5 +176,5 @@ static func props_update_predicted_states_ticks(ctx: WyncCtx, props_ids: Array, 
 
 		# update store predicted state metadata
 		
-		pred_prev.tick = target_tick -1
-		pred_curr.tick = target_tick
+		pred_prev.server_tick = target_tick -1
+		pred_curr.server_tick = target_tick
