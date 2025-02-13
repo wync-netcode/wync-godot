@@ -36,12 +36,26 @@ var interpolated_state # : any
 var timewarpable: bool
 
 # TODO: Make this value configurable on WyncCtx
-# Ring <NetTickData>
-# NOTE: For the client this might be NetTickData, for the server it isn't
+# Ring <tick: id, data: Variant>
 var confirmed_states: RingBuffer = RingBuffer.new(10)
 
+## Last-In-First-Out (LIFO)
+## LIFO Queue <arrival_order: int, server_tick: int>
+var last_ticks_received: RingBuffer = RingBuffer.new(10)
+
+## this server tick was received at this tick (used for lerping)
+## LIFO Queue <server_tick: int, local_tick: int>
+var arrived_at_tick: RingBuffer = RingBuffer.new(10)
+
+## store predicted state
 var pred_curr: NetTickData = NetTickData.new()
 var pred_prev: NetTickData = NetTickData.new()
+
+# UNUSED
+# Precalculate which ticks we're gonna be interpolating between
+# int: keys to 'confirmed_state'
+var lerp_right: int
+var lerp_left: int
 
 # DEPRECATED: Now global events aren't tied to a regular entity
 # but insted they're tied to the singleton Client entity that is 

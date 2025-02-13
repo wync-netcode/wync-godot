@@ -10,6 +10,8 @@ const label: StringName = StringName("SyWyncLerpPast")
 
 # TODO: Lots of unoptimizations
 
+"""
+
 
 func _ready():
 	components = [
@@ -82,3 +84,4 @@ func on_process(entities, _data, _delta: float):
 			co_renderer.global_position = new_pos
 			
 			#Log.out(self, "leftardiff %s | left: %s | target: %s | right: %s | factor %s" % [target_time - left_timestamp, left_timestamp, target_time, right_timestamp, factor])
+"""

@@ -27,28 +27,65 @@ func on_process(entities, _data, _delta: float):
 	
 	# Reset all extrapolated entities to last confirmed tick
 	# Don't affect predicted entities?
+	# TODO: store props in HashMap instead of Array
 	
-	for prop: WyncEntityProp in wync_ctx.props:
-		
+	var prop_id_list: Array[int] = []
+	for prop_id: int in wync_ctx.props.size():
+		var prop = WyncUtils.get_prop(wync_ctx, prop_id)
 		if prop == null:
 			continue
+		prop = prop as WyncEntityProp
 		if !prop.dirty:
 			continue
 		prop.dirty = false
-		# TODO: This also affects predicted props
+		prop_id_list.append(prop_id)
 		
-		var last_confirmed = prop.confirmed_states.get_relative(0) as NetTickData
-		
-		if last_confirmed == null:
-			continue
-		if last_confirmed.data == null:
-			continue
-		
-		# TODO: check type before applying (shouldn't be necessary if we ensure we're filling the correct data)
-		prop.setter.call(last_confirmed.data)
+	reset_all_state_to_confirmed_tick_relative(wync_ctx, prop_id_list, 0)
 	
 	# call integration function to sync new transforms with physics server
 	
+	integrate_state(wync_ctx, entities)
+
+
+static func reset_all_state_to_confirmed_tick(wync_ctx: WyncCtx, prop_ids: Array[int], tick: int):
+	
+	for prop_id: int in prop_ids:
+		var prop = WyncUtils.get_prop(wync_ctx, prop_id)
+		if prop == null:
+			continue 
+		prop = prop as WyncEntityProp
+		
+		var last_confirmed = prop.confirmed_states.get_at(tick)
+		if last_confirmed == null:
+			continue
+		
+		prop.setter.call(last_confirmed.data)
+
+
+static func reset_all_state_to_confirmed_tick_relative(wync_ctx: WyncCtx, prop_ids: Array[int], tick: int):
+	
+	for prop_id: int in prop_ids:
+		var prop = WyncUtils.get_prop(wync_ctx, prop_id)
+		if prop == null:
+			continue 
+		prop = prop as WyncEntityProp
+		
+		var last_confirmed_tick = prop.last_ticks_received.get_relative(tick) as int
+		var last_confirmed = prop.confirmed_states.get_at(last_confirmed_tick)
+		if last_confirmed == null:
+			continue
+		
+		# TODO: check type before applying (shouldn't be necessary if we ensure we're filling the correct data)
+		# Log.out(wync_ctx, "LatestValue | setted prop_name_id %s" % [prop.name_id])
+		prop.setter.call(last_confirmed)
+
+
+static func integrate_state(wync_ctx: WyncCtx, entities: Array):
+	
+	# iterate all entities
+	# check if they have a prop that was affected?
+	# run entity integration function
+
 	for entity: Entity in entities:
 		
 		var co_actor = entity.get_component(CoActor.label) as CoActor

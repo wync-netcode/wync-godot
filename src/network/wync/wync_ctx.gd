@@ -57,6 +57,9 @@ var client_has_info: Array
 
 ## Client only ==============================
 
+# last tick received from the server
+var last_tick_received: int
+
 # Map<entity_id: int, sim_fun_id>
 var entity_has_integrate_fun: Dictionary
 

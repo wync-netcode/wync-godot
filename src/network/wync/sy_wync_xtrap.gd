@@ -26,34 +26,18 @@ func on_process(entities, _data, delta: float):
 	var wync_ctx = single_wync.ctx as WyncCtx
 
 	var target_tick = co_predict_data.target_tick
-	var last_confirmed_tick = 0
 	
-	# calculate last confirmed tick
-	# FIXME: using last_confirmed_tick is UB
-
-	for prop: WyncEntityProp in wync_ctx.props:
-	
-		if prop == null:
-			continue
-		var last_confirmed = prop.confirmed_states.get_relative(0)
-		if last_confirmed is not NetTickData:
-			continue
-		last_confirmed = last_confirmed as NetTickData
-		if last_confirmed == null:
-			continue
-		if last_confirmed.data == null:
-			continue
-		last_confirmed_tick = max(last_confirmed_tick, last_confirmed.server_tick)
-	
-	# sync transforms to physics server
+	# get physics space to later sync transforms to physics server
 	
 	var space := get_viewport().world_2d.space
-	RapierPhysicsServer2D.space_step(space, 0)
-	RapierPhysicsServer2D.space_flush_queries(space)
 
 	# prediction loop
+	# FIXME: using last_confirmed_tick is UB
+	# FIXME: not all props will have the same 'last_confirmed_tick'
 	
-	#Log.out(self, "Predicting back entities here")
+	var last_confirmed_tick = wync_ctx.last_tick_received
+	if last_confirmed_tick == 0:
+		return
 	
 	for tick in range(last_confirmed_tick +1, target_tick +1):
 		
@@ -76,6 +60,7 @@ func on_process(entities, _data, delta: float):
 				WyncEntityProp.DATA_TYPE.EVENT]:
 				continue
 		
+			# using local_tick for predicted states INPUT,EVENT
 			var input_snap = prop.confirmed_states.get_at(local_tick)
 			if input_snap == null:
 				continue
@@ -171,10 +156,7 @@ static func props_update_predicted_states_ticks(ctx: WyncCtx, props_ids: Array, 
 		if prop == null:
 			continue
 
-		var pred_curr = prop.pred_curr
-		var pred_prev = prop.pred_prev
-
 		# update store predicted state metadata
 		
-		pred_prev.server_tick = target_tick -1
-		pred_curr.server_tick = target_tick
+		prop.pred_prev.server_tick = target_tick -1
+		prop.pred_curr.server_tick = target_tick

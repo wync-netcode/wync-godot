@@ -140,14 +140,15 @@ static func is_entity_tracked(ctx: WyncCtx, entity_id: int) -> bool:
 # Interpolation / Extrapolation / Prediction functions
 # ================================================================
 
-
-## @returns tuple[NetTickData, NetTickData]
+## @returns tuple[int, int]. tick left, tick right
 static func find_closest_two_snapshots_from_prop_id(ctx: WyncCtx, target_time: int, prop_id: int, co_ticks: CoTicks, co_predict_data: CoSingleNetPredictionData) -> Array:
 	
-	if prop_id > ctx.props.size() -1:
+	var prop = WyncUtils.get_prop(ctx, prop_id)
+	if prop == null:
 		return []
 	
 	return find_closest_two_snapshots_from_prop(
+		ctx,
 		target_time,
 		ctx.props[prop_id] as WyncEntityProp,
 		co_ticks,
@@ -155,27 +156,38 @@ static func find_closest_two_snapshots_from_prop_id(ctx: WyncCtx, target_time: i
 	)
 
 
-## @returns tuple[NetTickData, NetTickData]
-static func find_closest_two_snapshots_from_prop(target_time: int, prop: WyncEntityProp, co_ticks: CoTicks, co_predict_data: CoSingleNetPredictionData) -> Array:
+## @returns tuple[int, int]. tick left, tick right
+static func find_closest_two_snapshots_from_prop(_ctx: WyncCtx, target_time: int, prop: WyncEntityProp, co_ticks: CoTicks, co_predict_data: CoSingleNetPredictionData) -> Array:
+	
+	var snap_left = -1
+	var snap_right = -1
+	
+	for i in range(prop.last_ticks_received.size):
+		var server_tick = prop.last_ticks_received.get_relative(-i)
+		if server_tick is not int:
+			continue
 
-	var ring = prop.confirmed_states
-	
-	var snap_left: NetTickData = null
-	var snap_right: NetTickData = null
-	
-	for i in range(ring.size):
-		var snapshot = ring.get_relative(-i) as NetTickData
-		if not snapshot:
-			break
-		var snapshot_timestamp = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, snapshot.arrived_at_tick)
+		# get snapshot from received ticks
+		# NOTE: This block shouldn't necessary
+		# TODO: before storing check the data is healthy
+		#var data = prop.confirmed_states.get_at(server_tick)
+		#if data == null:
+			#continue
+
+		# get local tick
+		var arrived_at_tick = prop.arrived_at_tick.get_at(server_tick)
+		if arrived_at_tick is not int:
+			continue
+
+		var snapshot_timestamp = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, arrived_at_tick)
 
 		if snapshot_timestamp > target_time:
-			snap_right = snapshot
-		elif snap_right != null && snapshot_timestamp < target_time:
-			snap_left = snapshot
+			snap_right = server_tick
+		elif snap_right != -1 && snapshot_timestamp < target_time:
+			snap_left = server_tick
 			break
 	
-	if snap_left == null:
+	if snap_left == -1:
 		return []
 	
 	return [snap_left, snap_right]
@@ -411,6 +423,8 @@ static func duplicate_any(any): #-> Optional<any>
 	if any is Object:
 		if any.has_method("copy"):
 			return any.copy()
+		if any.has_method("make_duplicate"):
+			return any.make_duplicate()
 		elif any.has_method("duplicate") && any is not Node:
 			return any.duplicate()
 	elif typeof(any) in [
