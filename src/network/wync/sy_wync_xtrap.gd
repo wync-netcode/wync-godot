@@ -28,8 +28,11 @@ func on_process(entities, _data, delta: float):
 	var target_tick = co_predict_data.target_tick
 	
 	# get physics space to later sync transforms to physics server
+	# sync physics after 'SyWyncLatestValue'
 	
 	var space := get_viewport().world_2d.space
+	RapierPhysicsServer2D.space_step(space, 0)
+	RapierPhysicsServer2D.space_flush_queries(space)
 
 	# prediction loop
 	# FIXME: using last_confirmed_tick is UB
