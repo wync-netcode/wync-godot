@@ -16,7 +16,6 @@ func _ready():
 	
 
 func on_process(_entities, _data, _delta: float):
-
 	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
@@ -24,6 +23,12 @@ func on_process(_entities, _data, _delta: float):
 
 	# TODO: Move this elsewhere
 	co_ticks.lerp_delta_accumulator_ms += int(_delta * 1000)
+
+	interpolate_all(wync_ctx, co_ticks, co_predict_data)
+
+
+## interpolates confirmed states and predicted states
+static func interpolate_all(wync_ctx: WyncCtx, co_ticks: CoTicks, co_predict_data: CoSingleNetPredictionData):
 
 	var curr_tick_time = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, co_ticks.ticks)
 	var curr_time = curr_tick_time + co_ticks.lerp_delta_accumulator_ms
@@ -85,5 +90,56 @@ func on_process(_entities, _data, _delta: float):
 					var right = right_value as Vector2
 					prop.interpolated_state = lerp(left, right, factor)
 				_:
-					Log.out(self, "W: data type not interpolable")
+					Log.out(wync_ctx, "Lerp | W: data type not interpolable")
 					pass
+
+
+## @argument tick_left: int. Base tick to restore state from
+static func confirmed_states_set_to_tick_interpolated (
+	wync_ctx: WyncCtx, prop_ids: Array[int], tick_left: int, lerp_delta: float,
+	co_ticks: CoTicks
+	):
+
+	if (tick_left >= co_ticks.ticks):
+		return
+
+	# then interpolate them 
+
+	var left_value: Variant
+	var right_value: Variant
+
+	for prop_id: int in prop_ids:
+		var prop = WyncUtils.get_prop(wync_ctx, prop_id)
+		if prop == null:
+			continue
+		prop = prop as WyncEntityProp
+
+		left_value = prop.confirmed_states.get_at(tick_left)
+		right_value = prop.confirmed_states.get_at(tick_left +1)
+		if left_value == null || right_value == null:
+			continue
+
+		var lerped_state = WyncUtils.lerp_any(left_value, right_value, lerp_delta)
+		Log.out(wync_ctx, "EVENT | curr_tick %s, event_tick %s | prop(%s)(%s) lerp_delta %s" % [co_ticks.ticks, tick_left, prop_id, prop.name_id, lerp_delta])
+		prop.interpolated_state = lerped_state
+		prop.setter.call(lerped_state)
+
+
+static func confirmed_states_set_to_tick (
+	wync_ctx: WyncCtx, prop_ids: Array[int], tick: int,
+	co_ticks: CoTicks
+	):
+
+	if (tick > co_ticks.ticks):
+		return
+
+	for prop_id: int in prop_ids:
+		var prop = WyncUtils.get_prop(wync_ctx, prop_id)
+		if prop == null:
+			continue
+		prop = prop as WyncEntityProp
+
+		var tick_value = prop.confirmed_states.get_at(tick)
+		if tick_value == null:
+			continue
+		prop.setter.call(tick_value)

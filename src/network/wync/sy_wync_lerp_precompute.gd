@@ -65,6 +65,10 @@ func precompute_lerping_prop_confirmed_states(
 	prop.lerp_left_local_tick = prop.arrived_at_tick.get_at(prop.lerp_left_confirmed_state_tick)
 	prop.lerp_right_local_tick = prop.arrived_at_tick.get_at(prop.lerp_right_confirmed_state_tick)
 
+	# TODO: Move this elsewhere
+	# NOTE: might want to limit how much it grows
+	co_ticks.last_tick_rendered_left = max(co_ticks.last_tick_rendered_left, prop.lerp_left_confirmed_state_tick)
+
 
 func precompute_lerping_prop_predicted(
 		wync_ctx: WyncCtx, prop_id: int,

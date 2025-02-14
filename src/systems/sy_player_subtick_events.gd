@@ -60,50 +60,46 @@ static func debug_show_timewarpable_lerped_positions(node_ctx: Node, wync_ctx: W
 	
 	var curr_tick_time = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, co_ticks.ticks)
 	var curr_time = curr_tick_time + co_ticks.lerp_delta_accumulator_ms
+	var target_time_conf = curr_time - co_predict_data.lerp_ms
 	
-	var snap_left_tick: int = 0
-	var snap_right_tick: int = 0
-	var snap_left: Variant = null
-	var snap_right: Variant = null
+	var left_timestamp_ms: int
+	var right_timestamp_ms: int
+	var left_value: Variant
+	var right_value: Variant
+	var interpolated_value: Variant
 	var prop = WyncUtils.entity_get_prop(wync_ctx, entity_id, "position")
-	var target_time = curr_time - co_predict_data.lerp_ms
-	var snaps = WyncUtils.find_closest_two_snapshots_from_prop(wync_ctx, target_time, prop, co_ticks, co_predict_data)
 
-	if snaps.size() == 2:
-		snap_left_tick = snaps[0]
-		snap_right_tick = snaps[1]
-		snap_left = prop.confirmed_states.get_at(snap_left_tick)
-		snap_right = prop.confirmed_states.get_at(snap_right_tick)
-	else:
+
+	# NOTE: opportunity to optimize this by not recalculating this each loop
+
+	left_timestamp_ms = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, prop.lerp_left_local_tick)
+	right_timestamp_ms = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, prop.lerp_right_local_tick)
+
+	left_value = prop.confirmed_states.get_at(prop.lerp_left_confirmed_state_tick)
+	right_value = prop.confirmed_states.get_at(prop.lerp_right_confirmed_state_tick)
+	if left_value == null:
 		return
-	
-	var left_arrived_at_tick = prop.arrived_at_tick.get_at(snap_left_tick)
-	var right_arrived_at_tick = prop.arrived_at_tick.get_at(snap_right_tick)
 
-	var left_timestamp = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, left_arrived_at_tick)
-	var right_timestamp = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, right_arrived_at_tick)
-	var interpolated_state = Vector2.ZERO
+	# NOTE: Maybe check for value integrity
 
-	if abs(left_timestamp - right_timestamp) < 0.000001:
-		interpolated_state = snap_right
+	if abs(left_timestamp_ms - right_timestamp_ms) < 0.000001:
+		interpolated_value = right_value
 	else:
 		var factor = clampf(
-			(float(target_time) - left_timestamp) / (right_timestamp - left_timestamp),
+			(float(target_time_conf) - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms),
 			0, 1)
-		
+
 		match prop.data_type:
 			WyncEntityProp.DATA_TYPE.FLOAT:
-				var left_pos = snap_left as float
-				var right_pos = snap_right as float
-				interpolated_state = lerp(left_pos, right_pos, factor)
+				var left = left_value as float
+				var right = right_value as float
+				interpolated_value = lerp(left, right, factor)
 			WyncEntityProp.DATA_TYPE.VECTOR2:
-				var left_pos = snap_left as Vector2
-				var right_pos = snap_right as Vector2
-				interpolated_state = left_pos.lerp(right_pos, factor)
+				var left = left_value as Vector2
+				var right = right_value as Vector2
+				interpolated_value = lerp(left, right, factor)
 			_:
 				Log.out(node_ctx, "W: data type not interpolable")
 				pass
-	
-	var last_tick_rendered_left = snap_left_tick
-	Log.out(node_ctx, "EVENT | snap_left_tick local:%s | converted:%s" % [ snap_left_tick, last_tick_rendered_left ])
-	DebugPlayerTrail.spawn(node_ctx, interpolated_state, 0.9, 2.5)
+
+	DebugPlayerTrail.spawn(node_ctx, interpolated_value, 0.9, 2.5)
