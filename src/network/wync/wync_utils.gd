@@ -65,6 +65,8 @@ static func prop_set_interpolate(ctx: WyncCtx, prop_id: int) -> bool:
 	if prop_id > ctx.props.size() -1:
 		return false
 	var prop = ctx.props[prop_id] as WyncEntityProp
+	if prop.data_type not in WyncEntityProp.INTERPOLABLE_DATA_TYPES:
+		return false
 	prop.interpolated = true
 	return true
 	

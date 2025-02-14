@@ -33,6 +33,6 @@ static func convert_local_ticks_to_server_ticks(co_ticks: CoTicks, ticks: int) -
 	#return ticks - co_ticks.server_ticks_offset
 
 
-static func get_tick_local_time_msec(co_predict_data: CoSingleNetPredictionData, co_ticks: CoTicks, ticks: int):
+static func get_tick_local_time_msec(co_predict_data: CoSingleNetPredictionData, co_ticks: CoTicks, ticks: int) -> int:
 	var frame = 1000.0 / Engine.physics_ticks_per_second
 	return co_predict_data.current_tick_timestamp + (ticks - co_ticks.ticks) * frame

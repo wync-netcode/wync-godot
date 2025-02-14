@@ -1,4 +1,4 @@
-[gd_scene load_steps=67 format=3 uid="uid://b8oeiuufqe32c"]
+[gd_scene load_steps=68 format=3 uid="uid://b8oeiuufqe32c"]
 
 [ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_1ps8v"]
 [ext_resource type="Script" path="res://data/StaticData.gd" id="2_2epi3"]
@@ -64,6 +64,7 @@
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_connect_req.gd" id="58_gjl0a"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_send_event_data.gd" id="59_xantl"]
 [ext_resource type="Script" path="res://src/network/wync/sy_user_wync_lerp_set.gd" id="61_cqch1"]
+[ext_resource type="Script" path="res://src/network/wync/sy_wync_lerp_precompute.gd" id="61_exqu2"]
 [ext_resource type="Script" path="res://src/systems/sy_player_subtick_input.gd" id="64_51gnu"]
 [ext_resource type="Script" path="res://src/systems/sy_player_subtick_events.gd" id="64_mfg3t"]
 
@@ -282,7 +283,6 @@ position = Vector2(146, 290)
 script = ExtResource("39_x655r")
 
 [node name="EnBallExtra" parent="worlds/WorldClient1/Entities" instance=ExtResource("15_h11ql")]
-visible = false
 modulate = Color(0.30377, 1, 0.358399, 1)
 position = Vector2(179, 291)
 
@@ -364,6 +364,9 @@ script = ExtResource("56_1fh53")
 
 [node name="SyWyncSendEventData" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
 script = ExtResource("59_xantl")
+
+[node name="SyWyncLerpPrecompute" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
+script = ExtResource("61_exqu2")
 
 [node name="SyNeteCleanup" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 script = ExtResource("40_dopds")

@@ -151,7 +151,7 @@ static func handle_event_player_block_place(node_ctx: Node, event: WyncEvent.Eve
 	
 	# Out of the two ways to predict 'event generated events' here we're chosing _Option number 2_:
 	# Generate new events as a prediction of the server's actions.
-	WyncEventUtils.publish_globa_event_as_server(wync_ctx, 0, event_id)
+	WyncEventUtils.publish_global_event_as_server(wync_ctx, 0, event_id)
 	
 	
 static func grid_block_break(node_ctx: Node, block_pos: Vector2i):
