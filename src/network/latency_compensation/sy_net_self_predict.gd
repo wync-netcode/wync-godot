@@ -37,10 +37,12 @@ func on_process(entities, _data, _delta: float):
 		
 		# Initialize stored predicted states. TODO: Move elsewhere
 		
+		"""
 		if co_net_predicted_states.curr.data == null:
 			co_net_predicted_states.curr.data = CoCollider.SnapData.new()
 			co_net_predicted_states.prev = co_net_predicted_states.curr.copy()
 			continue
+		"""
 		
 		# Reset state
 

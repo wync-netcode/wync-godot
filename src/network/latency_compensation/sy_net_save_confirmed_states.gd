@@ -81,12 +81,7 @@ func on_process(_entities, _data, _delta: float):
 				Log.err(self, "Couldn't find actor with id %s" % actor_id)
 				continue
 
-			var tick_data = NetTickData.new()
-			tick_data.tick = data.tick
-			tick_data.timestamp = curr_time
-			tick_data.data = CoCollider.SnapData.new()
-			tick_data.data.position = data.positions[i]
-			tick_data.data.velocity = data.velocities[i]
+			var tick_data = null
 
 			#Log.out(self, "data.tick %s" % data.tick)
 

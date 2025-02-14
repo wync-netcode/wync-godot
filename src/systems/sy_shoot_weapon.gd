@@ -7,7 +7,6 @@ func _ready():
 	super()
 	
 func on_process_entity(entity: Entity, _data, _delta: float):
-	var node2d = entity as Node as Node2D
 	var actor = entity.get_component(CoActor.label) as CoActor
 	var input = entity.get_component(CoActorInput.label) as CoActorInput
 	var weapon = entity.get_component(CoWeaponHeld.label) as CoWeaponHeld
@@ -57,14 +56,14 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 	var is_projectile: bool = StaticData.entity.Weapons[weapon.weapon_id].bullet_type == 1
 	var pellets: int = StaticData.entity.Weapons[weapon.weapon_id].pellet_count
 	var spread: int = StaticData.entity.Weapons[weapon.weapon_id].spread_deg
-	var aim_angle: float = node2d.global_position.angle_to_point(input.aim)
+	var aim_angle: float = collider.global_position.angle_to_point(input.aim)
 	var reach: int = 0
 	var raycast: RayCast2D = null
 
 	if not is_projectile:
 		var raycast_ent = ECS.get_singleton_entity(self, "EnRaycastSingleton")
 		if not raycast_ent:
-			print("E: Couldn't find singleton EnRaycastSingleton")
+			Log.err(self, "E: Couldn't find singleton EnRaycastSingleton")
 			return
 		var raycast_co = raycast_ent.get_component(CoRaycast.label) as CoRaycast
 		raycast = raycast_co as Node as RayCast2D
@@ -75,11 +74,11 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 
 		raycast.clear_exceptions()
 		raycast.add_exception(collider as CharacterBody2D)
-		raycast.global_position = node2d.global_position
+		raycast.global_position = collider.global_position
 
 	# fire one of the pellets with perfect accuracy
 
-	print("is_projectile %s %s" % [is_projectile, weapon.weapon_id])
+	Log.out(self, "is_projectile %s %s" % [is_projectile, weapon.weapon_id])
 	if pellets > 1:
 		pellets -= 1
 		if not is_projectile:
@@ -120,15 +119,15 @@ func launch_projectile(weapon_id: int, actor_id: int, owner_body: CoCollider, an
 	pro_data.owner_actor_id = actor_id
 
 
-
 func bullet_raycast(weapon_id: int, raycast: RayCast2D, angle: float, reach: float):
 	var entity = bullet_raycast_get_entity(raycast, angle, reach)
-	if not entity:
+	if entity == null:
 		return
-	if not entity.has_component(CoHealth.label):
+	if entity.has_component(CoHealth.label) == null:
+		Log.err(self, "entity doesn't have CoHealth %s" % [entity])
 		return
 	var damage = StaticData.entity.Weapons[weapon_id].damage
-	print("DAMAGE entity: %s for damage: %s" % [entity, damage])
+	Log.out(self, "DAMAGE entity: %s for damage: %s" % [entity, damage])
 	HealthUtils.generate_health_damage_event(entity, damage, 0)
 	
 	
@@ -138,10 +137,14 @@ func bullet_raycast_get_entity(raycast: RayCast2D, angle: float, reach: float) -
 	
 	if raycast.is_colliding():
 		var collider_node = raycast.get_collider() as Node2D
-		print("raycast collided with node ", collider_node)
+		Log.out(self, "raycast collided with node %s" % [collider_node])
 
-		if collider_node as Component:
+		if collider_node is Component:
 			var collider_entity = ECSUtils.get_entity_from_component(collider_node as Component) 
+			if collider_entity == null:
+				Log.err(self, "couldn't find entity for component %s" % [collider_node])
 			return collider_entity
+		else:
+			Log.err(self, "collider_node is not a Component %s" % [collider_node])
 
 	return null
