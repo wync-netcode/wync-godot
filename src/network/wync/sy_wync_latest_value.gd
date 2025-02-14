@@ -44,7 +44,11 @@ func on_process(entities, _data, _delta: float):
 	
 	# call integration function to sync new transforms with physics server
 	
-	integrate_state(wync_ctx, entities)
+	var entity_id_list: Array[int] = []
+	for entity: Entity in entities:
+		var co_actor = entity.get_component(CoActor.label) as CoActor
+		entity_id_list.append(co_actor.id)
+	integrate_state(wync_ctx, entity_id_list)
 
 
 static func reset_all_state_to_confirmed_tick(wync_ctx: WyncCtx, prop_ids: Array[int], tick: int):
@@ -80,19 +84,17 @@ static func reset_all_state_to_confirmed_tick_relative(wync_ctx: WyncCtx, prop_i
 		prop.setter.call(last_confirmed)
 
 
-static func integrate_state(wync_ctx: WyncCtx, entities: Array):
+static func integrate_state(wync_ctx: WyncCtx, wync_entity_ids: Array):
 	
 	# iterate all entities
 	# check if they have a prop that was affected?
 	# run entity integration function
 
-	for entity: Entity in entities:
+	for entity_id: int in wync_entity_ids:
 		
-		var co_actor = entity.get_component(CoActor.label) as CoActor
-		
-		if not wync_ctx.entity_has_props.has(co_actor.id):
+		if not wync_ctx.entity_has_props.has(entity_id):
 			continue
 				
-		var int_fun = WyncUtils.entity_get_integrate_fun(wync_ctx, co_actor.id)
+		var int_fun = WyncUtils.entity_get_integrate_fun(wync_ctx, entity_id)
 		if int_fun is Callable:
 			int_fun.call()

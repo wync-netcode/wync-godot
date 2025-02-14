@@ -231,8 +231,11 @@ static func handle_event_player_shoot(node_ctx: Node, event: WyncEvent.EventData
 	
 	Log.out(node_ctx, "Client shoots at tick_left %d | lerp_delta %s | lerp_ms %s | tick_diff %s" % [ tick_left, lerp_delta, lerp_ms, co_ticks.ticks - tick_left ])
 	
-	# ============================================================
+
+	# ------------------------------------------------------------
 	# time warp: reset all timewarpable props to a previous state, whilst saving their current state
+
+	var space := node_ctx.get_viewport().world_2d.space
 	
 	# 1. save current state
 	# TODO: update saved state _only_ for selected props
@@ -265,6 +268,10 @@ static func handle_event_player_shoot(node_ctx: Node, event: WyncEvent.EventData
 	
 	# 3. integrate physics
 
+	SyWyncLatestValue.integrate_state(wync_ctx, wync_ctx.tracked_entities.keys())
+	RapierPhysicsServer2D.space_step(space, 0)
+	RapierPhysicsServer2D.space_flush_queries(space)
+
 	#for entity: Entity in entities:
 		
 		#var co_actor = entity.get_component(CoActor.label) as CoActor
@@ -281,3 +288,7 @@ static func handle_event_player_shoot(node_ctx: Node, event: WyncEvent.EventData
 	SyWyncLerp.confirmed_states_set_to_tick(wync_ctx, prop_ids_to_timewarp, co_ticks.ticks, co_ticks)
 
 	# 5. integrate physics
+
+	SyWyncLatestValue.integrate_state(wync_ctx, wync_ctx.tracked_entities.keys())
+	RapierPhysicsServer2D.space_step(space, 0)
+	RapierPhysicsServer2D.space_flush_queries(space)

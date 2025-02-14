@@ -45,6 +45,7 @@ func on_process(entities, _data, delta: float):
 	for tick in range(last_confirmed_tick +1, target_tick +1):
 		
 		# set events inputs to corresponding value depending on tick
+		# --------------------------------------------------
 		# ALL INPUT/EVENT PROPS, no excepcion for now
 		# TODO: identify which I own and which belong to my foes'
 		
@@ -72,6 +73,7 @@ func on_process(entities, _data, delta: float):
 			# INPUT/EVENTs don't need integration functions
 		
 		# Prediction / Extrapolation:
+		# --------------------------------------------------
 		# Run user provided simulation functions
 		# TODO: Better way to receive simulate functions?
 		
@@ -92,6 +94,7 @@ func on_process(entities, _data, delta: float):
 		SyActorEvents.client_simulate_events(self)
 		
 		# bookkeeping
+		# --------------------------------------------------
 
 		for entity: Entity in entities:
 		
@@ -107,17 +110,19 @@ func on_process(entities, _data, delta: float):
 				
 			# debug player trail
 			
-			var progress = (float(tick) - last_confirmed_tick) / (target_tick - last_confirmed_tick)
-			var prop_position = WyncUtils.entity_get_prop(wync_ctx, co_actor.id, "position")
-			if prop_position:
-				if tick == target_tick || tick == last_confirmed_tick +1:
+			if tick == target_tick || tick == last_confirmed_tick +1:
+				var progress = (float(tick) - last_confirmed_tick) / (target_tick - last_confirmed_tick)
+				var prop_position = WyncUtils.entity_get_prop(wync_ctx, co_actor.id, "position")
+				if prop_position:
 					DebugPlayerTrail.spawn(self, prop_position.getter.call(), progress)
 
-			# update store predicted state metadata
+			# integration functions
 			
 			var int_fun = WyncUtils.entity_get_integrate_fun(wync_ctx, co_actor.id)
 			if int_fun is Callable:
 				int_fun.call()
+
+			# update/store predicted state metadata
 		
 			props_update_predicted_states_ticks(wync_ctx, wync_ctx.entity_has_props[co_actor.id], target_tick)
 		
