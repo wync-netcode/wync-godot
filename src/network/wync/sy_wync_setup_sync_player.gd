@@ -72,6 +72,14 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 			co_wync_events.events.append_array(events),
 	)
 	co_wync_events.prop_id = events_prop_id
+		
+	# integration function
+
+	var int_fun_id = WyncUtils.register_function(wync_ctx, co_collider.force_update_transform)
+	if int_fun_id < 0:
+		Log.err(self, "Couldn't register integrate fun")
+	else:
+		WyncUtils.entity_set_integration_fun(wync_ctx, co_actor.id, int_fun_id)
 
 	if WyncUtils.is_client(wync_ctx):
 		# interpolation
@@ -80,18 +88,6 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 		WyncUtils.prop_set_interpolate(wync_ctx, vel_prop_id)
 	
 		# setup extrapolation
-		
-		var sim_fun_id = WyncUtils.register_function(wync_ctx, SyActorMovement.simulate_movement)
-		if sim_fun_id < 0:
-			Log.err(self, "Couldn't register sim fun")
-		else:
-			WyncUtils.entity_set_sim_fun(wync_ctx, co_actor.id, sim_fun_id)
-		
-		var int_fun_id = WyncUtils.register_function(wync_ctx, co_collider.force_update_transform)
-		if int_fun_id < 0:
-			Log.err(self, "Couldn't register integrate fun")
-		else:
-			WyncUtils.entity_set_integration_fun(wync_ctx, co_actor.id, int_fun_id)
 			
 		WyncUtils.prop_set_predict(wync_ctx, pos_prop_id)
 		WyncUtils.prop_set_predict(wync_ctx, vel_prop_id)

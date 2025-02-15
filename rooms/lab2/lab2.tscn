@@ -128,7 +128,6 @@ script = ExtResource("31_10fi0")
 position = Vector2(100, 382)
 
 [node name="EnBallExtra" parent="worlds/WorldServer/Entities" instance=ExtResource("15_h11ql")]
-visible = false
 position = Vector2(290, 390)
 
 [node name="EnBlockGrid" parent="worlds/WorldServer/Entities" instance=ExtResource("17_y8ubi")]

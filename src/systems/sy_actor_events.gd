@@ -266,28 +266,26 @@ static func handle_event_player_shoot(node_ctx: Node, event: WyncEvent.EventData
 			continue
 		DebugPlayerTrail.spawn(node_ctx, prop.interpolated_state, 0.8, 2)
 	
-	# 3. integrate physics
+	# integrate physics
 
+	Log.out(node_ctx, "entities to integrate state are %s" % [wync_ctx.tracked_entities.keys()])
 	SyWyncLatestValue.integrate_state(wync_ctx, wync_ctx.tracked_entities.keys())
 	RapierPhysicsServer2D.space_step(space, 0)
 	RapierPhysicsServer2D.space_flush_queries(space)
 
-	#for entity: Entity in entities:
-		
-		#var co_actor = entity.get_component(CoActor.label) as CoActor
-		
-		#if not wync_ctx.entity_has_props.has(co_actor.id):
-			#continue
-				
-		#var int_fun = WyncUtils.entity_get_integrate_fun(wync_ctx, co_actor.id)
-		#if int_fun is Callable:
-			#int_fun.call()
+	# 3. do my physics checks
+
+	var world_id = ECS.find_world_up(node_ctx).get_instance_id()
+	var sy_shoot_weapon_entities = ECS.get_system_entities(world_id, SyShootWeapon.label)
+	for entity in sy_shoot_weapon_entities:
+		Log.out(node_ctx, "event,shoot | will process SyShootWeapon on entity %s" % [entity])
+		SyShootWeapon.simulate_shoot_weapon(node_ctx, entity)
 	
 	# 4. restore original state
 
 	SyWyncLerp.confirmed_states_set_to_tick(wync_ctx, prop_ids_to_timewarp, co_ticks.ticks, co_ticks)
 
-	# 5. integrate physics
+	# integrate physics
 
 	SyWyncLatestValue.integrate_state(wync_ctx, wync_ctx.tracked_entities.keys())
 	RapierPhysicsServer2D.space_step(space, 0)

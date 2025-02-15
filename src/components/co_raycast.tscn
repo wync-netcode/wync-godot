@@ -5,6 +5,6 @@
 [node name="CoRaycast" type="RayCast2D"]
 enabled = false
 target_position = Vector2(0, 100)
-collision_mask = 1025
+collision_mask = 1024
 hit_from_inside = true
 script = ExtResource("1_uvnq4")

@@ -50,4 +50,7 @@ func on_process(_entities, _data, _delta: float):
 			co_predict_data.latency_std_dev = ceil(sqrt(accum / counter)) 
 			co_predict_data.latency_stable = co_predict_data.latency_mean + co_predict_data.latency_std_dev * 2
 			
+			# NOTE: Allow for choosing a latency stabilization strategy:
+			# e.g. none (for using directly what the transport tells), std_dev, or 95th Qu
+			
 			Log.out(self, "latencyme stable updated to %s | mean %s | stddev %s | acum %s" % [co_predict_data.latency_stable, co_predict_data.latency_mean, co_predict_data.latency_std_dev, accum])

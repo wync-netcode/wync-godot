@@ -95,7 +95,7 @@ func _ready() -> void:
 		var inventory = player_entity.get_component(CoWeaponInventory.label) as CoWeaponInventory
 	
 		var w = CoWeaponStored.new()
-		w.weapon_id = StaticData.WEAPON.PISTOL
+		w.weapon_id = StaticData.WEAPON.UZI
 		w.bullets_total_left = 300
 		w.bullets_magazine_left = 10000
 		inventory.inventory.append(w)
