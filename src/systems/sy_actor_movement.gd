@@ -2,7 +2,6 @@ class_name SyActorMovement
 extends System
 const label: StringName = StringName("SyActorMovement")
 
-static var scene_debug_particle: PackedScene = preload("res://src/utils/debug/debug_particle.tscn")
 
 func _ready():
 	components = [CoActor.label, CoCollider.label, CoActorInput.label]
@@ -69,7 +68,7 @@ static func simulate_movement(entity: Entity, delta: float) -> void:
 	pass
 
 
-static func simulate_particle_on_start_moving(entity: Entity, delta: float, predicted_tick: int) -> void:
+static func simulate_particle_on_start_moving(entity: Entity, _delta: float, predicted_tick: int) -> void:
 	var single_wync = ECS.get_singleton_component(entity, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
 	
@@ -87,8 +86,6 @@ static func simulate_particle_on_start_moving(entity: Entity, delta: float, pred
 				return
 			WyncEventUtils.action_mark_as_ran_on_tick(wync_ctx, predicted_tick, action_id)
 		
-		var newi = scene_debug_particle.instantiate()
 		var is_client = WyncUtils.is_client(wync_ctx)
-		newi.color = Color.RED if is_client else Color.BLUE
-		entity.get_tree().root.add_child(newi)
-		newi.global_position = body.global_position
+		var particle_color = Color.RED if is_client else Color.BLUE
+		DebugParticle.spawn(entity.get_tree().root, body.global_position, particle_color)
