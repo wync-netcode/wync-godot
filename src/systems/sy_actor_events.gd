@@ -142,13 +142,13 @@ static func handle_events(node_ctx: Node, event_data: WyncEvent.EventData, peer_
 
 static func handle_event_player_block_break(node_ctx: Node, event: WyncEvent.EventData):
 	var block_pos = event.arg_data[0] as Vector2i
-	grid_block_break(node_ctx, block_pos)
+	grid_block_break(node_ctx, "EnBlockGrid", block_pos)
 	# NOTE: this could use more safety
 
 
 static func handle_event_player_block_place(node_ctx: Node, event: WyncEvent.EventData):
 	var block_pos = event.arg_data[0] as Vector2i
-	grid_block_place(node_ctx, block_pos)
+	grid_block_place(node_ctx, "EnBlockGrid", block_pos)
 
 	# NOTE: This event is a predicition of a Server Global event, so it has to be submitted
 	# as a client-side PREDICTION for peer_id 0 
@@ -170,10 +170,10 @@ static func handle_event_player_block_place(node_ctx: Node, event: WyncEvent.Eve
 	WyncEventUtils.publish_global_event_as_server(wync_ctx, 0, event_id)
 
 	
-static func grid_block_break(node_ctx: Node, block_pos: Vector2i):
-	var en_block_grid = ECS.get_singleton_entity(node_ctx, "EnBlockGrid")
+static func grid_block_break(node_ctx: Node, entity_block_grid_name: String, block_pos: Vector2i):
+	var en_block_grid = ECS.get_singleton_entity(node_ctx, entity_block_grid_name)
 	if not en_block_grid:
-		Log.err(node_ctx, "coulnd't get singleton EnBlockGrid")
+		Log.err(node_ctx, "coulnd't get singleton %s" % [entity_block_grid_name])
 		return
 	var co_block_grid = en_block_grid.get_component(CoBlockGrid.label) as CoBlockGrid
 	
@@ -186,10 +186,10 @@ static func grid_block_break(node_ctx: Node, block_pos: Vector2i):
 	block_data.id = CoBlockGrid.BLOCK.AIR
 
 
-static func grid_block_place(node_ctx: Node, block_pos: Vector2i):
-	var en_block_grid = ECS.get_singleton_entity(node_ctx, "EnBlockGrid")
+static func grid_block_place(node_ctx: Node, entity_block_grid_name: String, block_pos: Vector2i):
+	var en_block_grid = ECS.get_singleton_entity(node_ctx, entity_block_grid_name)
 	if not en_block_grid:
-		Log.err(node_ctx, "coulnd't get singleton EnBlockGrid")
+		Log.err(node_ctx, "coulnd't get singleton %s" % [entity_block_grid_name])
 		return
 	var co_block_grid = en_block_grid.get_component(CoBlockGrid.label) as CoBlockGrid
 	
@@ -240,7 +240,7 @@ static func handle_event_player_shoot(node_ctx: Node, event: WyncEvent.EventData
 	# 1. save current state
 	# TODO: update saved state _only_ for selected props
 	
-	SyWyncStateExtractor.extract_data_to_tick(wync_ctx, co_ticks.ticks)
+	SyWyncStateExtractor.extract_data_to_tick(wync_ctx, co_ticks, co_ticks.ticks)
 	
 	var prop_ids_to_timewarp: Array[int] = []
 	for prop_id: int in range(wync_ctx.props.size()):

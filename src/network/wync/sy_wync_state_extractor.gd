@@ -27,7 +27,7 @@ func on_process(_entities, _data, _delta: float):
 	
 	# extract data
 	
-	extract_data_to_tick(wync_ctx, co_ticks.ticks)
+	extract_data_to_tick(wync_ctx, co_ticks, co_ticks.ticks)
 
 	# build packet
 
@@ -77,9 +77,10 @@ func on_process(_entities, _data, _delta: float):
 		co_io_packets.out_packets.append(pkt)
 
 
-static func extract_data_to_tick(wync_ctx: WyncCtx, save_on_tick: int = -1):
+static func extract_data_to_tick(wync_ctx: WyncCtx, co_ticks: CoTicks, save_on_tick: int = -1):
 	
 	for entity_id_key in wync_ctx.entity_has_props.keys():
+
 		var prop_ids_array = wync_ctx.entity_has_props[entity_id_key] as Array
 		if not prop_ids_array.size():
 			continue
@@ -94,8 +95,51 @@ static func extract_data_to_tick(wync_ctx: WyncCtx, save_on_tick: int = -1):
 			if prop.data_type in [WyncEntityProp.DATA_TYPE.INPUT,
 				WyncEntityProp.DATA_TYPE.EVENT]:
 				continue
+
+			# relative_syncable receives special treatment
+
+			if prop.relative_syncable:
+				update_relative_syncable_prop(wync_ctx, co_ticks, prop_id)
+				continue
 			
 			# ===========================================================
 			# Save state history per tick
 			
 			prop.confirmed_states.insert_at(save_on_tick, prop.getter.call())
+
+
+## This function must be ran each frame
+
+static func update_relative_syncable_prop(ctx: WyncCtx, co_ticks: CoTicks, prop_id: int):
+	var prop = WyncUtils.get_prop(ctx, prop_id)
+	if prop == null:
+		return
+	prop = prop as WyncEntityProp
+	if not prop.relative_syncable:
+		return
+
+	# move base_state_tick forward
+
+	if not (ctx.delta_base_state_tick < co_ticks.ticks - ctx.max_prop_relative_sync_history_ticks):
+		return
+	ctx.delta_base_state_tick = co_ticks.ticks - ctx.max_prop_relative_sync_history_ticks
+
+	# update / merge events
+
+	var tick_event_array = prop.relative_change_event_list.get_at(ctx.delta_base_state_tick) as Array[int]
+	for event_id in tick_event_array:
+
+		# TODO: Make a new function get_event(event_id)
+		# TODO: Execute transformation on the data for every event
+		pass
+
+	tick_event_array.clear()
+
+
+
+	# extract with getter if we don't have any previous info
+
+	# move forwads the current history (if needed)
+
+
+	
