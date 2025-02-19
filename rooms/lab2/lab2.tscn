@@ -1,4 +1,4 @@
-[gd_scene load_steps=68 format=3 uid="uid://b8oeiuufqe32c"]
+[gd_scene load_steps=70 format=3 uid="uid://b8oeiuufqe32c"]
 
 [ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_1ps8v"]
 [ext_resource type="Script" path="res://data/StaticData.gd" id="2_2epi3"]
@@ -41,6 +41,7 @@
 [ext_resource type="Script" path="res://src/network/latency_compensation/co_net_buffered_inputs.gd" id="31_10fi0"]
 [ext_resource type="Script" path="res://src/systems/sy_draw_block_grid.gd" id="31_vohxg"]
 [ext_resource type="Script" path="res://addons/gs_ecs/group.gd" id="32_wj45u"]
+[ext_resource type="Script" path="res://src/systems/sy_block_grid_delta_randomize.gd" id="33_bbvl4"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_state_extractor.gd" id="34_bmka7"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_setup_sync_player.gd" id="35_m1lky"]
 [ext_resource type="Script" path="res://src/network/sy_nete_loopback_connect_res.gd" id="37_0dn44"]
@@ -57,6 +58,7 @@
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_lerp.gd" id="49_dsdhr"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_buffered_inputs.gd" id="50_jvul8"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_save_confirmed_states.gd" id="52_65fst"]
+[ext_resource type="Script" path="res://src/systems/sy_draw_block_grid_delta.gd" id="53_8nlkt"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_xtrap.gd" id="53_qmyp1"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_receive_client_info.gd" id="55_wsisn"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_send_inputs.gd" id="56_1fh53"]
@@ -134,6 +136,10 @@ position = Vector2(290, 390)
 position = Vector2(358, 28)
 singleton = true
 
+[node name="EnBlockGridDelta" parent="worlds/WorldServer/Entities" instance=ExtResource("17_y8ubi")]
+position = Vector2(358, 28)
+singleton = true
+
 [node name="SetupSystems" type="Node" parent="worlds/WorldServer"]
 
 [node name="SetupWyncServer" type="Node" parent="worlds/WorldServer/SetupSystems"]
@@ -180,8 +186,14 @@ script = ExtResource("15_uanrs")
 [node name="SyProjectileMovement" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsGameplay"]
 script = ExtResource("16_5f1s6")
 
-[node name="SyDrawBlockGridNode2D" type="Node2D" parent="worlds/WorldServer/GroupPhysics/SystemsGameplay"]
+[node name="SyDrawBlockGrid-Node2D" type="Node2D" parent="worlds/WorldServer/GroupPhysics/SystemsGameplay"]
 script = ExtResource("31_vohxg")
+
+[node name="SyDrawBlockGridDelta-Node2D" type="Node2D" parent="worlds/WorldServer/GroupPhysics/SystemsGameplay"]
+script = ExtResource("53_8nlkt")
+
+[node name="SyBlockGridDeltaRandomize" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsGameplay"]
+script = ExtResource("33_bbvl4")
 
 [node name="SystemsSetup" type="Node" parent="worlds/WorldServer/GroupPhysics"]
 
@@ -292,6 +304,10 @@ script = ExtResource("39_x655r")
 position = Vector2(358, 28)
 singleton = true
 
+[node name="EnBlockGridDelta" parent="worlds/WorldClient1/Entities" instance=ExtResource("17_y8ubi")]
+position = Vector2(358, 28)
+singleton = true
+
 [node name="GroupPhysics" type="Node" parent="worlds/WorldClient1"]
 script = ExtResource("32_wj45u")
 
@@ -335,8 +351,11 @@ script = ExtResource("55_wsisn")
 [node name="SyPlayerInput" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsProduceInputs"]
 script = ExtResource("10_47ome")
 
-[node name="SyDrawBlockGrid" type="Node2D" parent="worlds/WorldClient1/GroupPhysics/SystemsProduceInputs"]
+[node name="SyDrawBlockGrid-Node2D" type="Node2D" parent="worlds/WorldClient1/GroupPhysics/SystemsProduceInputs"]
 script = ExtResource("31_vohxg")
+
+[node name="SyDrawBlockGridDelta-Node2D" type="Node2D" parent="worlds/WorldClient1/GroupPhysics/SystemsProduceInputs"]
+script = ExtResource("53_8nlkt")
 
 [node name="SystemsWync" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 
