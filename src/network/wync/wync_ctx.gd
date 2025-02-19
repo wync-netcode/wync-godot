@@ -7,7 +7,7 @@ const ENTITY_ID_GLOBAL_EVENTS = 777
 var max_peers = 24
 var max_channels = 12
 var max_tick_history = 60 # 1 second at 60 fps
-var max_prop_relative_sync_history_ticks = 10 
+var max_prop_relative_sync_history_ticks = 20 # set to 1 to see if it's working alright 
 
 # Map<entity_id: int, unused_bool: bool>
 var tracked_entities: Dictionary

@@ -99,7 +99,10 @@ static func extract_data_to_tick(wync_ctx: WyncCtx, co_ticks: CoTicks, save_on_t
 			# relative_syncable receives special treatment
 
 			if prop.relative_syncable:
-				update_relative_syncable_prop(wync_ctx, co_ticks, prop_id)
+				# TODO: Move this elsewhere
+				var err = update_relative_syncable_prop(wync_ctx, co_ticks, prop_id)
+				if err != OK:
+					Log.err(wync_ctx, "delta sync | update_relative_syncable_prop err(%s)" % [err])
 				continue
 			
 			# ===========================================================
@@ -110,36 +113,58 @@ static func extract_data_to_tick(wync_ctx: WyncCtx, co_ticks: CoTicks, save_on_t
 
 ## This function must be ran each frame
 
-static func update_relative_syncable_prop(ctx: WyncCtx, co_ticks: CoTicks, prop_id: int):
+static func update_relative_syncable_prop(ctx: WyncCtx, co_ticks: CoTicks, prop_id: int) -> int:
 	var prop = WyncUtils.get_prop(ctx, prop_id)
 	if prop == null:
-		return
+		return 1
 	prop = prop as WyncEntityProp
 	if not prop.relative_syncable:
-		return
+		return 2
 
 	# move base_state_tick forward
 
-	if not (ctx.delta_base_state_tick < co_ticks.ticks - ctx.max_prop_relative_sync_history_ticks):
-		return
-	ctx.delta_base_state_tick = co_ticks.ticks - ctx.max_prop_relative_sync_history_ticks
+	var new_base_tick = co_ticks.ticks - ctx.max_prop_relative_sync_history_ticks +1
+	if not (ctx.delta_base_state_tick < new_base_tick):
+		return 3
+	ctx.delta_base_state_tick = new_base_tick
+
+	if prop.relative_change_real_tick.size <= 0:
+		return 4
 
 	# update / merge events
 
-	var tick_event_array = prop.relative_change_event_list.get_at(ctx.delta_base_state_tick) as Array[int]
-	for event_id in tick_event_array:
+	var oldest_event_tick = prop.relative_change_real_tick.get_tail()
+	
+	if oldest_event_tick != ctx.delta_base_state_tick:
+		#Log.err(ctx, "delta sync | not equal %s ==? %s" % [oldest_event_tick, ctx.delta_base_state_tick])
+		if oldest_event_tick < ctx.delta_base_state_tick:
+			Log.err(ctx, "delta sync | oldest event was skipped")
+			return 5
+		return 6
+
+	Log.out(ctx, "delta sync | are equal %s ==? %s" % [oldest_event_tick, ctx.delta_base_state_tick])
+
+	# consume delta events
+	
+	var event_array = prop.relative_change_event_list.pop_tail()
+	prop.relative_change_real_tick.pop_tail()
+
+	if event_array is not Array[int]:
+		return 7
+
+	Log.out(ctx, "delta sync | found these events %s" % [event_array])
+
+	for event_id: int in event_array:
 
 		# TODO: Make a new function get_event(event_id)
 		# TODO: Execute transformation on the data for every event
+		# TODO: merge to confirmed_states[0]
+		print("delta sync | TODO consume this event_id(%s)" % [event_id])
+
 		pass
 
-	tick_event_array.clear()
-
-
-
-	# extract with getter if we don't have any previous info
-
-	# move forwads the current history (if needed)
+	event_array.clear()
+	return OK
 
 
 	

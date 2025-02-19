@@ -70,11 +70,16 @@ static func prop_set_relative_syncable (
 	prop.relative_syncable = true
 	prop.getter_pointer = getter_pointer
 	prop.delta_blueprint_id = delta_blueprint_id
-	prop.relative_change_event_list = RingBuffer.new(ctx.max_prop_relative_sync_history_ticks)
-	prop.relative_change_real_tick = RingBuffer.new(ctx.max_prop_relative_sync_history_ticks)
+	prop.relative_change_event_list = FIFORingAny.new(ctx.max_prop_relative_sync_history_ticks)
+	prop.relative_change_real_tick = FIFORingAny.new(ctx.max_prop_relative_sync_history_ticks)
+
+	# allocate event arrays
 	for i in range(ctx.max_prop_relative_sync_history_ticks):
-		prop.relative_change_event_list.insert_at(i, [] as Array[int])
-		prop.relative_change_real_tick.insert_at(i, -1 as int)
+		prop.relative_change_event_list.push_head([] as Array[int])
+		prop.relative_change_real_tick.push_head(-1)
+	for i in range(ctx.max_prop_relative_sync_history_ticks):
+		prop.relative_change_event_list.pop_tail()
+		prop.relative_change_real_tick.pop_tail()
 
 	# confirmed states will always be of size 1
 	# index 0 -> store a copy of the base tick state
@@ -92,8 +97,9 @@ static func prop_is_relative_syncable(ctx: WyncCtx, prop_id: int) -> bool:
 	return prop.relative_syncable
 
 
+## commits a delta change event to this tick
 static func delta_sync_prop_push_event_to_tick \
-	(ctx: WyncCtx, prop_id: int, event_type_id: int, event_id: int, tick: int) -> int:
+	(ctx: WyncCtx, prop_id: int, event_type_id: int, event_id: int, co_ticks: CoTicks) -> int:
 	var prop = WyncUtils.get_prop(ctx, prop_id)
 	if prop == null:
 		return 1
@@ -109,14 +115,39 @@ static func delta_sync_prop_push_event_to_tick \
 	if not blueprint.event_handlers.has(event_type_id):
 		return 4
 
-	# push it
-	var event_list = prop.relative_change_event_list.get_at(tick) as Array
-	event_list.push_back(event_id)
+	# get event array
 
-	# TODO: avoid inserting this multiple times (each time an event is pushed)...
-	prop.relative_change_real_tick.insert_at(tick, tick as int)
+	var event_array = null # *Array[int]
+	var latest_event_tick = prop.relative_change_real_tick.get_head() as int
 
-	Log.out(ctx, "delta sync | event_list %s" % [event_list])
+	# push a new array
+
+	if co_ticks.ticks > latest_event_tick:
+		var err1 = prop.relative_change_event_list.extend_head()
+		var err2 = prop.relative_change_real_tick.push_head(co_ticks.ticks)
+		if (err1 + err2) != OK:
+			Log.out(ctx, "delta sync | extend_head, push_head | err1(%s) err2(%s)" % [err1, err2])
+			return 5
+
+		event_array = prop.relative_change_event_list.get_head()
+		event_array = event_array as Array[int]
+		event_array.clear()
+		# NOTE: Maybe it's not necessary to clean it, it should get cleaned when it's consumed.
+		# if it's dirty, that means we're overwriting events, so the history buffer is too short
+
+	# use the existing array for this tick
+
+	elif co_ticks.ticks == latest_event_tick:
+		event_array = prop.relative_change_event_list.get_head()
+		event_array = event_array as Array[int]
+
+	else:
+		Log.err(ctx, "delta sync | Trying to push delta event to an old tick. co_ticks(%s) latest_tick(%s)" % [co_ticks.ticks, latest_event_tick])
+		return 6
+
+	event_array.push_back(event_id)
+
+	Log.out(ctx, "delta sync | ticks(%s) event_list %s" % [co_ticks.ticks, event_array])
 	return OK
 
 
