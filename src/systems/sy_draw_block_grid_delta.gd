@@ -1,14 +1,11 @@
 extends System
-class_name SyDrawBlockGrid
-const label: StringName = StringName("SyDrawBlockGrid")
+class_name SyDrawBlockGridDelta
+const label: StringName = StringName("SyDrawBlockGridDelta")
 
-@export var desired_y_offset: int = 0
+@export var desired_y_offset: int = 1
 const TILE_LENGTH_PIXELS = 30
 
-
-func _ready():
-	components = [CoBlockGrid.label]
-	super()
+## This is a copy of SyDrawBlockGrid, but this one uses Delta Synchronization
 
 
 func _draw() -> void:
@@ -23,12 +20,7 @@ func _draw() -> void:
 		if _system == null || !_system.enabled:
 			return
 	
-	#var entities = ECS.world_system_entities[world_id][label]
-	#for entity in entities:
-		#draw_block_grid(entity)
-		#return
-
-	var en_block_grid = ECS.get_singleton_entity(self, "EnBlockGrid")
+	var en_block_grid = ECS.get_singleton_entity(self, "EnBlockGridDelta")
 	if not en_block_grid:
 		Log.err(self, "coulnd't get singleton EnBlockGrid")
 		return
@@ -90,22 +82,22 @@ func draw_block_grid(entity: Entity):
 			var mouse = node2d.get_local_mouse_position()
 			#Log.out(self, "mouse pos %s , rect pos %s" % [mouse, block_rect.position])
 			if block_rect.has_point(mouse):
-				var color = Color.WHITE
+				var color = Color.FUCHSIA
 				color.a = 0.5
 				node2d.draw_rect(block_rect, color, true)
 				
-				var event = GameInfo.EVENT_NONE
-				if Input.is_action_just_pressed("p1_mouse1"):
-					event = GameInfo.EVENT_PLAYER_BLOCK_BREAK
-				elif Input.is_action_just_pressed("p1_mouse2"):
-					event = GameInfo.EVENT_PLAYER_BLOCK_PLACE
-				if event != GameInfo.EVENT_NONE:
-					color = Color.RED
-					color.a = 0.5
-					node2d.draw_rect(block_rect, color, true)
-					Log.out(self, "EVENT MOUSE CLICK %s" % Vector2i(i,j))
+				#var event = GameInfo.EVENT_NONE
+				#if Input.is_action_just_pressed("p1_mouse1"):
+					#event = GameInfo.EVENT_PLAYER_BLOCK_BREAK
+				#elif Input.is_action_just_pressed("p1_mouse2"):
+					#event = GameInfo.EVENT_PLAYER_BLOCK_PLACE
+				#if event != GameInfo.EVENT_NONE:
+					#color = Color.RED
+					#color.a = 0.5
+					#node2d.draw_rect(block_rect, color, true)
+					#Log.out(self, "EVENT MOUSE CLICK %s" % Vector2i(i,j))
 					
-					generate_click_event(event, Vector2i(i,j))
+					#generate_click_event(event, Vector2i(i,j))
 
 
 func on_process(_entities, _data, _delta):
