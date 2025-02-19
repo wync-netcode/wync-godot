@@ -22,8 +22,9 @@ static var INTERPOLABLE_DATA_TYPES: Array[DATA_TYPE] = [
 
 var name_id: String
 var data_type: DATA_TYPE
-var getter: Callable
-var setter: Callable
+var getter: Callable #: func() -> Variant
+var setter: Callable #: func(Variant) -> void
+var getter_pointer: Callable #: func() -> VariantPointer # for relative sync props
 
 # Optional properties:
 # TODO: Move these elsewhere
@@ -84,3 +85,9 @@ var delta_blueprint_id: int = -1
 
 # Ring <tick: int, Array[event_id: int]> 
 var relative_change_event_list: RingBuffer
+
+# real_tick saves a copy of the tick int
+# Ring <tick: int, real_tick: int> 
+var relative_change_real_tick: RingBuffer
+
+

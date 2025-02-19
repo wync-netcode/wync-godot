@@ -115,6 +115,7 @@ script = ExtResource("12_8x65i")
 singleton = true
 
 [node name="CoSingleWyncContext" type="Node" parent="worlds/WorldServer/Singletons"]
+unique_name_in_owner = true
 script = ExtResource("13_ckh8x")
 singleton = true
 

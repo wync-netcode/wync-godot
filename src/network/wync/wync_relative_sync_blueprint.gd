@@ -8,4 +8,6 @@ class_name WyncDeltaBlueprint
 # * Stores Callables
 # * Allows to check if a given event_type_id is supported
 # Map <event_type_id: int, handler: Callable>
+# Map <event_type_id: int, func (data: Variant, event: WyncEvent.EventData) -> int>
 var event_handlers: Dictionary
+
