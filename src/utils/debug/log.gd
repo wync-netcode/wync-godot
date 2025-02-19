@@ -1,11 +1,14 @@
 class_name Log
 
 
-## @argument caller: Node or Object
+## @argument caller: Null | Node | Object
 static func out(caller, msg: String):
 	var name = ""
 	var script_name = ""
-	var script = caller.get_script()
+	var script = null
+
+	if caller is Object:
+		script = caller.get_script()
 
 	if script != null:
 		script_name = script.get_global_name()
@@ -21,11 +24,14 @@ static func out(caller, msg: String):
 	print("%s | %s" % [name, msg])
 
 
-## @argument caller: Node or Object
+## @argument caller: Null | Node | Object
 static func err(caller, msg: String):
 	var name = ""
 	var script_name = ""
-	var script = caller.get_script()
+	var script = null
+
+	if caller is Object:
+		script = caller.get_script()
 
 	if script != null:
 		script_name = script.get_global_name()

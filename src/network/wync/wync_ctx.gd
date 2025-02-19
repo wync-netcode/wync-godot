@@ -44,6 +44,11 @@ var peer_has_channel_has_events: Array[Array]
 # Array<delta_blueprint_id: int, Blueprint>
 var delta_blueprints: Array[WyncDeltaBlueprint]
 
+# how far in the past we can go
+# Updated every frame, should correspond to current_tick - max_history_ticks
+var delta_base_state_tick: int = -1
+
+
 ## Server only ==============================
 
 # peer[0] = -1: it's reserved for the server
