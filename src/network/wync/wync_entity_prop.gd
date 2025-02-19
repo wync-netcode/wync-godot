@@ -79,7 +79,8 @@ var relative_syncable: bool = false
 var delta_blueprint_id: int = -1
 
 # how far in the past we can go
-var base_state_tick: int = -1
+# Updated every frame, should correspond to current_tick - max_history_ticks
+#var base_state_tick: int = -1
 
 # Ring <tick: int, Array[event_id: int]> 
-var relative_changes_list: RingBuffer
+var relative_change_event_list: RingBuffer
