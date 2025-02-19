@@ -5,9 +5,14 @@ const label: StringName = StringName("SyBlockGridDeltaRandomize")
 
 func on_process(_entities, _data, _delta):
 	
+	"""
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
-	if co_ticks.ticks % Engine.physics_ticks_per_second != 0:
-		return
+	if not (
+		(co_ticks.ticks % Engine.physics_ticks_per_second == 0) ||
+		(co_ticks.ticks % 17 == 0) ||
+		(co_ticks.ticks % 3 == 0)
+		):
+		return"""
 
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
@@ -20,7 +25,9 @@ func on_process(_entities, _data, _delta):
 
 	var en_block_grid_delta = ECS.get_singleton_entity(self, "EnBlockGridDelta")
 	if en_block_grid_delta:
-		insert_random_block(wync_ctx, en_block_grid_delta)
+		for i in range(2):
+			insert_random_block(wync_ctx, en_block_grid_delta)
+			Log.out(self, "Generated new random event EVENT_DELTA_BLOCK_REPLACE")
 	else:
 		Log.err(self, "coulnd't get singleton EnBlockGridDelta")
 
@@ -50,9 +57,7 @@ func insert_random_block(wync_ctx: WyncCtx, en_block_grid: Entity):
 	WyncEventUtils.event_add_arg(wync_ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, block_type)
 	event_id = WyncEventUtils.event_wrap_up(wync_ctx, event_id)
 
-	var err = WyncDeltaSyncUtils.delta_sync_prop_push_event_to_tick(wync_ctx, prop_blocks_id, GameInfo.EVENT_DELTA_BLOCK_REPLACE, event_id, co_ticks.ticks)
+	var err = WyncDeltaSyncUtils.delta_sync_prop_push_event_to_tick(wync_ctx, prop_blocks_id, GameInfo.EVENT_DELTA_BLOCK_REPLACE, event_id, co_ticks)
 	if err != OK:
 		Log.err(self, "Failed to push delta-sync-event err(%s)" % [err])
 	WyncDeltaSyncUtils.merge_event_to_state(wync_ctx, prop_blocks_id, event_id)
-	
-

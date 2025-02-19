@@ -80,14 +80,11 @@ var relative_syncable: bool = false
 var delta_blueprint_id: int = -1
 
 # how far in the past we can go
-# Updated every frame, should correspond to current_tick - max_history_ticks
-#var base_state_tick: int = -1
+# Updated every frame, should correspond to (current_tick - max_history_ticks + 1)
+# FIFORingAny <insert_order: int, Array[event_id: int]>
+var relative_change_event_list: FIFORingAny
 
-# Ring <tick: int, Array[event_id: int]> 
-var relative_change_event_list: RingBuffer
-
-# real_tick saves a copy of the tick int
-# Ring <tick: int, real_tick: int> 
-var relative_change_real_tick: RingBuffer
-
-
+# Lets us know oldest / latest tick where a delta event took place
+# Each entry corresponds to a relative_change_event_list entry
+# FIFORingAny <insert_order: int, tick: int>
+var relative_change_real_tick: FIFORingAny
