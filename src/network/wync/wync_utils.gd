@@ -76,6 +76,7 @@ static func prop_is_interpolated(ctx: WyncCtx, prop_id: int) -> bool:
 	var prop = ctx.props[prop_id] as WyncEntityProp
 	return prop.interpolated
 
+# server only
 static func prop_set_timewarpable(ctx: WyncCtx, prop_id: int) -> bool:
 	if prop_id > ctx.props.size() -1:
 		return false
@@ -84,11 +85,13 @@ static func prop_set_timewarpable(ctx: WyncCtx, prop_id: int) -> bool:
 	prop.confirmed_states = RingBuffer.new(ctx.max_tick_history)
 	return true
 
+# server only
 static func prop_is_timewarpable(ctx: WyncCtx, prop_id: int) -> bool:
 	if prop_id > ctx.props.size() -1:
 		return false
 	var prop = ctx.props[prop_id] as WyncEntityProp
 	return prop.timewarpable
+
 
 """
 static func prop_set_push_to_global_event(ctx: WyncCtx, prop_id: int, channel: int) -> int:
