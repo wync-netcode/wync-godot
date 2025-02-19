@@ -69,3 +69,17 @@ var lerp_right_confirmed_state_tick: int
 # global events
 #var push_to_global_event: bool = false
 #var global_event_channel: int = 0
+
+# Related to relative syncronization
+# --------------------------------------------------
+
+var relative_syncable: bool = false
+
+# What blueprint does this prop obeys? This dictates relative sync events
+var delta_blueprint_id: int = -1
+
+# how far in the past we can go
+var base_state_tick: int = -1
+
+# Ring <tick: int, Array[event_id: int]> 
+var relative_changes_list: RingBuffer

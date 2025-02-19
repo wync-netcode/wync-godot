@@ -7,6 +7,7 @@ const ENTITY_ID_GLOBAL_EVENTS = 777
 var max_peers = 24
 var max_channels = 12
 var max_tick_history = 60 # 1 second at 60 fps
+var max_prop_relative_sync_history_ticks = 10 
 
 # Map<entity_id: int, unused_bool: bool>
 var tracked_entities: Dictionary
@@ -40,6 +41,8 @@ var peer_has_channel_has_events: Array[Array]
 # > What about just storing this metadata in the event wrapper?
 # var entities_that_published_global_events_this_tick: Array[int]
 
+# Array<delta_blueprint_id: int, Blueprint>
+var delta_blueprints: Array[WyncDeltaBlueprint]
 
 ## Server only ==============================
 
@@ -53,6 +56,12 @@ var client_owns_prop: Dictionary
 # Stores client metadata
 # Array<client_id: int, WyncClientInfo>
 var client_has_info: Array
+
+# used to know two things:
+# 1. If a player has received info about this prop before
+# 2. What was the Last tick we sent prop data (relative sync event) to a client
+# Array[12] < client_id: int, Map<prop_id: int, tick: int> >
+var client_has_relative_prop_has_last_tick: Array[Dictionary]
 
 
 ## Client only ==============================
