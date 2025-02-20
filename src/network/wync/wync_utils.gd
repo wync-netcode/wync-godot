@@ -303,6 +303,14 @@ static func server_setup(ctx: WyncCtx) -> int:
 	ctx.peers[ctx.my_peer_id] = -1
 	ctx.connected = true
 
+	# setup event caching
+	ctx.events_hash_to_id.init(ctx.max_amount_cache_events)
+	ctx.to_peers_i_sent_events = []
+	ctx.to_peers_i_sent_events.resize(ctx.max_peers)
+	for i in range(ctx.max_peers):
+		ctx.to_peers_i_sent_events[i] = FIFOMap.new()
+		ctx.to_peers_i_sent_events[i].init(ctx.max_amount_cache_events)
+
 	# setup peer channels
 	WyncUtils.setup_peer_global_events(ctx, ctx.my_peer_id)
 	for i in range(1, 2):
@@ -316,8 +324,12 @@ static func client_setup_my_client(ctx: WyncCtx, peer_id: int) -> bool:
 	ctx.my_peer_id = peer_id
 	ctx.client_owns_prop[peer_id] = []
 
-	ctx.events_hash_to_id.init(WyncCtx.MAX_AMOUNT_CACHE_EVENTS)
-	ctx.events_sent.init(WyncCtx.MAX_AMOUNT_CACHE_EVENTS)
+	# setup event caching
+	ctx.events_hash_to_id.init(ctx.max_amount_cache_events)
+	ctx.to_peers_i_sent_events = []
+	ctx.to_peers_i_sent_events.resize(1)
+	ctx.to_peers_i_sent_events[ctx.SERVER_PEER_ID] = FIFOMap.new()
+	ctx.to_peers_i_sent_events[ctx.SERVER_PEER_ID].init(ctx.max_amount_cache_events)
 	
 	# setup server global events
 	WyncUtils.setup_peer_global_events(ctx, 0)
