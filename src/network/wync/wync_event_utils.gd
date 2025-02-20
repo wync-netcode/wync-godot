@@ -134,7 +134,7 @@ static func publish_global_event_as_server \
 	if (channel < 0 || channel > ctx.max_channels):
 		return 5
 	
-	ctx.peer_has_channel_has_events[0][channel].append(event_id)
+	ctx.peer_has_channel_has_events[WyncCtx.SERVER_PEER_ID][channel].append(event_id)
 	return 0
 
 

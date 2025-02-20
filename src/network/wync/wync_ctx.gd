@@ -64,7 +64,7 @@ var delta_base_state_tick: int = -1
 ## Server only ==============================
 
 # peer[0] = -1: it's reserved for the server
-# Array<client_id: int, any_data: int> # NOTE: Should be Ring
+# List<client_id: int, any_data: int> # NOTE: Should be Ring
 var peers: Array[int]
 
 # Map<client_id: int, prop_id: Array[int]>
