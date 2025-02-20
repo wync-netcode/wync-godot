@@ -311,6 +311,12 @@ static func server_setup(ctx: WyncCtx) -> int:
 		ctx.to_peers_i_sent_events[i] = FIFOMap.new()
 		ctx.to_peers_i_sent_events[i].init(ctx.max_amount_cache_events)
 
+	# setup relative synchronization
+	ctx.peers_events_to_sync = []
+	ctx.peers_events_to_sync.resize(ctx.max_peers)
+	for i in range(ctx.max_peers):
+		ctx.peers_events_to_sync[i] = {} as Dictionary
+
 	# setup peer channels
 	WyncUtils.setup_peer_global_events(ctx, ctx.my_peer_id)
 	for i in range(1, 2):
@@ -330,9 +336,14 @@ static func client_setup_my_client(ctx: WyncCtx, peer_id: int) -> bool:
 	ctx.to_peers_i_sent_events.resize(1)
 	ctx.to_peers_i_sent_events[ctx.SERVER_PEER_ID] = FIFOMap.new()
 	ctx.to_peers_i_sent_events[ctx.SERVER_PEER_ID].init(ctx.max_amount_cache_events)
+
+	# setup relative synchronization
+	ctx.peers_events_to_sync = []
+	ctx.peers_events_to_sync.resize(1)
+	ctx.peers_events_to_sync[ctx.SERVER_PEER_ID] = {} as Dictionary
 	
 	# setup server global events
-	WyncUtils.setup_peer_global_events(ctx, 0)
+	WyncUtils.setup_peer_global_events(ctx, ctx.SERVER_PEER_ID)
 	# setup own global events
 	WyncUtils.setup_peer_global_events(ctx, ctx.my_peer_id)
 	return true

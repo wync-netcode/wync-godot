@@ -24,16 +24,16 @@ func on_process(_entities, _data, _delta: float):
 		Log.err(self, "Not connected")
 		return
 	
-	var event_amount = wync_ctx.events_to_sync_this_tick.keys().size()
+	var event_keys = wync_ctx.peers_events_to_sync[WyncCtx.SERVER_PEER_ID].keys()
+	var event_amount = event_keys.size()
 	if event_amount <= 0:
 		return
 	#Log.out(self, "Event count to sync %s" % event_amount)
 	
 	var data = WyncPktEventData.new()
 	
-	var keys = wync_ctx.events_to_sync_this_tick.keys()
 	for i in range(event_amount):
-		var event_id = keys[i]
+		var event_id = event_keys[i]
 		#Log.out(self, "event_id %s" % event_id)
 		
 		# get event data
