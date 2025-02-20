@@ -166,7 +166,7 @@ func generate_click_event(
 		Log.out(self, "event %s hash %s" % [_event, HashUtils.hash_any(_event.data.arg_data)])
 	
 	# save the event id to component
-	co_wync_events.events.append(event_id)
+	#co_wync_events.events.append(event_id)
 
 	# TODO: After using Global Events per tick
 	# now that we're commiting to this event, let's publish it
