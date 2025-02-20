@@ -46,16 +46,17 @@ func on_process(_entities, _data, _delta: float):
 		
 		# check if server already has it
 		var event_hash = HashUtils.hash_any(wync_event)
+		# NOTE: is_serve_cached could be skipped? all events should be cached on our side...
 		var is_event_cached = wync_ctx.events_hash_to_id.has_item_hash(event_hash)
 		if (is_event_cached):
 			var cached_event_id = wync_ctx.events_hash_to_id.get_item_by_hash(event_hash)
 			if (cached_event_id != null):
-				var server_has_it = wync_ctx.events_sent.has_item_hash(cached_event_id)
+				var server_has_it = wync_ctx.to_peers_i_sent_events[wync_ctx.SERVER_PEER_ID].has_item_hash(cached_event_id)
 				if (server_has_it):
 					continue
 		
 		# server doesn't have it
-		wync_ctx.events_sent.push_head_hash_and_item(event_id, true)
+		wync_ctx.to_peers_i_sent_events[wync_ctx.SERVER_PEER_ID].push_head_hash_and_item(event_id, true)
 		
 		# package it
 		
