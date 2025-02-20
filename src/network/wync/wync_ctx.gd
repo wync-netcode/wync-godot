@@ -24,9 +24,6 @@ var entity_has_props: Dictionary
 # Map<event_id: uint, WyncEvent>
 var events: Dictionary
 
-# Set[event_id]
-var events_to_sync_this_tick: Dictionary
-
 # Array<channel_id: int, Array<event_id>>
 # Array[Array[int]]
 # global_events_channel_in_order
@@ -84,6 +81,15 @@ var client_has_info: Array
 var client_has_relative_prop_has_last_tick: Array[Dictionary]
 # each 10 frames and on prop creation. check for initialization
 # each 1 frame. use it to send needed state
+
+# relative synchronization
+# --------------------------------------------------------------------------------
+
+#var peers_entities_to_sync
+#var peers_props_to_sync
+
+# Array<client_id: int, ordered_set<event_id> >
+var peers_events_to_sync: Array[Dictionary]
 
 
 ## Client only ==============================

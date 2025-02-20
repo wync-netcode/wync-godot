@@ -26,7 +26,7 @@ func on_process(_entities, _data, _delta: float):
 		return
 	
 	# reset events_id to sync
-	wync_ctx.events_to_sync_this_tick.clear()
+	wync_ctx.peers_events_to_sync[WyncCtx.SERVER_PEER_ID].clear()
 	
 	for prop_id: int in wync_ctx.client_owns_prop[wync_ctx.my_peer_id]:
 		
@@ -72,7 +72,7 @@ func on_process(_entities, _data, _delta: float):
 				input is Array):
 				input = input as Array
 				for event_id in input:
-					wync_ctx.events_to_sync_this_tick[event_id] = 0
+					wync_ctx.peers_events_to_sync[WyncCtx.SERVER_PEER_ID][event_id] = 0
 				
 
 		net_inputs.amount = net_inputs.inputs.size()
