@@ -289,6 +289,7 @@ static func peer_register(ctx: WyncCtx, peer_data: int = -1) -> int:
 	var peer_id = ctx.peers.size()
 	ctx.peers.append(peer_data)
 	ctx.client_owns_prop[peer_id] = []
+	ctx.client_has_relative_prop_has_last_tick[peer_id] = {}
 	
 	if !is_client(ctx):
 		ctx.client_has_info[peer_id] = WyncClientInfo.new()

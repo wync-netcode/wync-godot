@@ -75,3 +75,13 @@ func get_head() -> Variant:
 ## @returns Optional<Variant>
 func get_tail() -> Variant:
 	return ring[tail]
+
+
+## @returns Optional<Variant>
+func get_relative_to_head(pos: int) -> Variant:
+	return ring[(head + pos) % size]
+
+
+## @returns Optional<Variant>
+func get_relative_to_tail(pos: int) -> Variant:
+	return ring[(tail + pos) % size]

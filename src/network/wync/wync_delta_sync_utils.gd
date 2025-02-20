@@ -224,3 +224,26 @@ static func delta_sync_prop_extract_state (ctx: WyncCtx, prop_id: int) -> int:
 
 ## Logic Loops
 ## ================================================================
+
+
+## execute this function on prop creation
+## and periodically? for clients that are just joining...
+## Need to make sure clients have a history of last state received about _delta sync props_
+## NOTE: Is this necessary at all?
+static func delta_sync_prop_initialize_clients (ctx: WyncCtx, prop_id: int) -> int:
+	var prop = WyncUtils.get_prop(ctx, prop_id)
+	if prop == null:
+		return 1
+	prop = prop as WyncEntityProp
+	if not prop.relative_syncable:
+		return 2
+
+	for client_id in range(1, ctx.peers.size()):
+		# TODO: check client is healthy
+
+		var client_relative_props = ctx.client_has_relative_prop_has_last_tick[client_id] as Dictionary
+		var knows_about_prop = client_relative_props.has(prop_id)
+		if not knows_about_prop:
+			client_relative_props[prop_id] = -1
+
+	return OK
