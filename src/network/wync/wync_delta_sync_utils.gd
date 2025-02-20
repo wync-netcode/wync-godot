@@ -151,8 +151,22 @@ static func delta_sync_prop_push_event_to_tick \
 	return OK
 
 
-static func merge_event_to_state(ctx: WyncCtx, prop_id: int, event_id: int) -> int:
-	# TODO: We need a way to get a hold of the real data to apply the transforms...
+static func merge_event_to_state_confirmed_state(ctx: WyncCtx, prop_id: int, event_id: int) -> int:
+	var prop = WyncUtils.get_prop(ctx, prop_id)
+	if prop == null:
+		return 1
+	prop = prop as WyncEntityProp
+	if not prop.relative_syncable:
+		return 2
+
+	var state_pointer = prop.confirmed_states.get_at(0)
+	if state_pointer == null:
+		return 3
+
+	return _merge_event_to_state(ctx, prop, event_id, state_pointer)
+
+
+static func merge_event_to_state_real_state(ctx: WyncCtx, prop_id: int, event_id: int) -> int:
 	var prop = WyncUtils.get_prop(ctx, prop_id)
 	if prop == null:
 		return 1
@@ -164,7 +178,12 @@ static func merge_event_to_state(ctx: WyncCtx, prop_id: int, event_id: int) -> i
 	if state_pointer == null:
 		return 3
 
+	return _merge_event_to_state(ctx, prop, event_id, state_pointer)
+
+
+static func _merge_event_to_state(ctx: WyncCtx, prop: WyncEntityProp, event_id: int, state: Variant) -> int:
 	# get event transform function
+	# TODO: Make a new function get_event(event_id)
 	
 	if not ctx.events.has(event_id):
 		return 4
@@ -178,7 +197,7 @@ static func merge_event_to_state(ctx: WyncCtx, prop_id: int, event_id: int) -> i
 	blueprint = blueprint as WyncDeltaBlueprint
 
 	var handler = blueprint.event_handlers[event_data.event_type_id] as Callable
-	handler.call(state_pointer, event_data)
+	handler.call(state, event_data)
 
 	# Handler prototype reminder: func (data: Variant, event: WyncEvent.EventData)
 

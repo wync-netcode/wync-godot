@@ -60,4 +60,5 @@ func insert_random_block(wync_ctx: WyncCtx, en_block_grid: Entity):
 	var err = WyncDeltaSyncUtils.delta_sync_prop_push_event_to_tick(wync_ctx, prop_blocks_id, GameInfo.EVENT_DELTA_BLOCK_REPLACE, event_id, co_ticks)
 	if err != OK:
 		Log.err(self, "Failed to push delta-sync-event err(%s)" % [err])
-	WyncDeltaSyncUtils.merge_event_to_state(wync_ctx, prop_blocks_id, event_id)
+
+	WyncDeltaSyncUtils.merge_event_to_state_real_state(wync_ctx, prop_blocks_id, event_id)

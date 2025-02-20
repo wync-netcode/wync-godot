@@ -152,15 +152,10 @@ static func update_relative_syncable_prop(ctx: WyncCtx, co_ticks: CoTicks, prop_
 	if event_array is not Array[int]:
 		return 7
 
-	Log.out(ctx, "delta sync | found these events %s" % [event_array])
+	Log.out(ctx, "delta sync | gonna consume these events %s" % [event_array])
 
 	for event_id: int in event_array:
-
-		# TODO: Make a new function get_event(event_id)
-		# TODO: Execute transformation on the data for every event
-		# TODO: merge to confirmed_states[0]
-		print("delta sync | TODO consume this event_id(%s)" % [event_id])
-
+		WyncDeltaSyncUtils.merge_event_to_state_confirmed_state(ctx, prop_id, event_id)
 		pass
 
 	event_array.clear()
