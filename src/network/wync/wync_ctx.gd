@@ -67,6 +67,8 @@ var client_has_info: Array
 # 2. What was the Last tick we sent prop data (relative sync event) to a client
 # Array[12] < client_id: int, Map<prop_id: int, tick: int> >
 var client_has_relative_prop_has_last_tick: Array[Dictionary]
+# each 10 frames and on prop creation. check for initialization
+# each 1 frame. use it to send needed state
 
 
 ## Client only ==============================
@@ -121,11 +123,13 @@ var tick_action_history: RingBuffer = RingBuffer.new(tick_action_history_size)
 # TODO: Move to WyncUtils
 func _init() -> void:
 	peer_has_channel_has_events.resize(max_peers)
+	client_has_relative_prop_has_last_tick.resize(max_peers) # NOTE: index 0 not used
 	for peer_i in range(max_peers):
 		peer_has_channel_has_events[peer_i] = []
 		peer_has_channel_has_events[peer_i].resize(max_channels)
 		for channel_i in range(max_channels):
 			peer_has_channel_has_events[peer_i][channel_i] = []
+		client_has_relative_prop_has_last_tick[peer_i] = {}
 	
 	for i in range(tick_action_history_size):
 		tick_action_history.insert_at(i, {} as Dictionary)

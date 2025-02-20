@@ -24,6 +24,9 @@ func on_process(_entities, _data, _delta: float):
 	
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
+
+	# TODO: iterate per each client, maybe make it configurable, cause some updates might be global
+	var client_id = 1
 	
 	# extract data
 	
@@ -47,11 +50,23 @@ func on_process(_entities, _data, _delta: float):
 			var prop = wync_ctx.props[prop_id] as WyncEntityProp
 			
 			# don't extract input values
-			# FIXME: should events be extracted? game event yes, but other player events? Maybe we need an option to what events to share.
+			# FIXME: should events be extracted? game event yes, but other player events?
+			# Maybe we need an option to what events to share.
 			# NOTE: what about a setting like: NEVER, TO_ALL, TO_ALL_EXCEPT_OWNER, ONLY_TO_SERVER
 			if prop.data_type in [WyncEntityProp.DATA_TYPE.INPUT,
 				WyncEntityProp.DATA_TYPE.EVENT]:
 				continue
+
+			if prop.relative_syncable:
+
+				# send fullsnapshot if client doesn't have history, or if it's too old
+
+				var client_relative_props = wync_ctx.client_has_relative_prop_has_last_tick[client_id] as Dictionary
+				if not client_relative_props.has(prop_id):
+					client_relative_props[prop_id] = -1
+				if client_relative_props[prop_id] >= wync_ctx.delta_base_state_tick:
+					continue
+				client_relative_props[prop_id] = co_ticks.ticks
 			
 			# ===========================================================
 			# Save state history per tick
