@@ -55,9 +55,11 @@ static func delta_blueprint_register_event (
 
 static func prop_set_relative_syncable (
 	ctx: WyncCtx,
+	entity_id: int,
 	prop_id: int,
 	delta_blueprint_id: int,
-	getter_pointer: Callable
+	getter_pointer: Callable,
+	# predictable: bool = false # TODO
 	# timewarpable: bool # TODO
 	) -> Error:
 	var prop = WyncUtils.get_prop(ctx, prop_id)
@@ -71,16 +73,6 @@ static func prop_set_relative_syncable (
 	prop.relative_syncable = true
 	prop.getter_pointer = getter_pointer
 	prop.delta_blueprint_id = delta_blueprint_id
-	prop.relative_change_event_list = FIFORingAny.new(ctx.max_prop_relative_sync_history_ticks)
-	prop.relative_change_real_tick = FIFORingAny.new(ctx.max_prop_relative_sync_history_ticks)
-
-	# allocate event arrays
-	for i in range(ctx.max_prop_relative_sync_history_ticks):
-		prop.relative_change_event_list.push_head([] as Array[int])
-		prop.relative_change_real_tick.push_head(-1)
-	for i in range(ctx.max_prop_relative_sync_history_ticks):
-		prop.relative_change_event_list.pop_tail()
-		prop.relative_change_real_tick.pop_tail()
 
 	# depending on the features and if it's server or client we'll need different things
 	# * delta prop, server side, no timewarp: real state, delta event buffer
@@ -91,8 +83,30 @@ static func prop_set_relative_syncable (
 	# assuming no timewarpable
 	prop.confirmed_states = RingBuffer.new(0)
 
-	#if timewarpable or predictable:
-	#prop.confirmed_states = RingBuffer.new(1)
+	#if WyncUtils.is_client(ctx):
+		#if predictable:
+			#WyncUtils.prop_set_predict(ctx, prop_id)
+			#prop.confirmed_states = RingBuffer.new(ctx.max_delta_prop_predicted_ticks)
+
+	# setup auxiliar prop for delta change events
+	prop.current_delta_events = [] as Array[int]
+	var events_prop_id = WyncUtils.prop_register(
+		ctx,
+		entity_id,
+		"auxiliar_delta_events",
+		WyncEntityProp.DATA_TYPE.EVENT,
+		func():
+			return prop.current_delta_events.duplicate(true),
+		func(events: Array):
+			prop.current_delta_events.clear()
+			# NOTE: somehow can't check cast like this `if events is not Array[int]:`
+			prop.current_delta_events.append_array(events),
+	)
+	var aux_prop = WyncUtils.get_prop(ctx, events_prop_id) as WyncEntityProp
+	aux_prop.is_auxiliar_prop = true
+	aux_prop.auxiliar_delta_events_prop_id = prop_id
+
+	prop.auxiliar_delta_events_prop_id = events_prop_id
 
 	return OK
 
@@ -105,8 +119,8 @@ static func prop_is_relative_syncable(ctx: WyncCtx, prop_id: int) -> bool:
 	return prop.relative_syncable
 
 
-## commits a delta change event to this tick
-static func delta_sync_prop_push_event_to_tick \
+## commits a delta event to this tick
+static func delta_prop_push_event_to_current \
 	(ctx: WyncCtx, prop_id: int, event_type_id: int, event_id: int, co_ticks: CoTicks) -> int:
 	var prop = WyncUtils.get_prop(ctx, prop_id)
 	if prop == null:
@@ -123,39 +137,9 @@ static func delta_sync_prop_push_event_to_tick \
 	if not blueprint.event_handlers.has(event_type_id):
 		return 4
 
-	# get event array
-
-	var event_array = null # *Array[int]
-	var latest_event_tick = prop.relative_change_real_tick.get_head() as int
-
-	# push a new array
-
-	if co_ticks.ticks > latest_event_tick:
-		var err1 = prop.relative_change_event_list.extend_head()
-		var err2 = prop.relative_change_real_tick.push_head(co_ticks.ticks)
-		if (err1 + err2) != OK:
-			Log.out(ctx, "delta sync | extend_head, push_head | err1(%s) err2(%s)" % [err1, err2])
-			return 5
-
-		event_array = prop.relative_change_event_list.get_head()
-		event_array = event_array as Array[int]
-		event_array.clear()
-		# NOTE: Maybe it's not necessary to clean it, it should get cleaned when it's consumed.
-		# if it's dirty, that means we're overwriting events, so the history buffer is too short
-
-	# use the existing array for this tick
-
-	elif co_ticks.ticks == latest_event_tick:
-		event_array = prop.relative_change_event_list.get_head()
-		event_array = event_array as Array[int]
-
-	else:
-		Log.err(ctx, "delta sync | Trying to push delta event to an old tick. co_ticks(%s) latest_tick(%s)" % [co_ticks.ticks, latest_event_tick])
-		return 6
-
-	event_array.push_back(event_id)
-
-	Log.out(ctx, "delta sync | ticks(%s) event_list %s" % [co_ticks.ticks, event_array])
+	# append event to current delta events
+	prop.current_delta_events.append(event_id)
+	Log.out(ctx, "delta_prop_push_event_to_current | delta sync | ticks(%s) event_list %s" % [co_ticks.ticks, prop.current_delta_events])
 	return OK
 
 

@@ -29,6 +29,7 @@ static func prop_register(
 	prop.setter = setter
 
 	# TODO: Dynamic sized buffer for all owned predicted props?
+	# TODO: Only do this if this prop is predicted
 	if (data_type == WyncEntityProp.DATA_TYPE.INPUT ||
 		data_type == WyncEntityProp.DATA_TYPE.EVENT):
 		prop.confirmed_states = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE)

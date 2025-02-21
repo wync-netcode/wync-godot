@@ -60,6 +60,7 @@ func setup_block_grid_delta(entity: Entity):
 	
 	var co_actor = entity.get_component(CoActor.label) as CoActor
 	var co_block_grid = entity.get_component(CoBlockGrid.label) as CoBlockGrid
+	var wync_entity_id = co_actor.id
 	
 	# TODO: Move this elsewhere
 	# Setup random blocks on server
@@ -78,10 +79,10 @@ func setup_block_grid_delta(entity: Entity):
 
 	# setup props
 	
-	WyncUtils.track_entity(wync_ctx, co_actor.id)
+	WyncUtils.track_entity(wync_ctx, wync_entity_id)
 	var blocks_prop = WyncUtils.prop_register(
 		wync_ctx,
-		co_actor.id,
+		wync_entity_id,
 		"blocks",
 		WyncEntityProp.DATA_TYPE.ANY,
 		func() -> CoBlockGrid: return co_block_grid.make_duplicate(),
@@ -92,9 +93,10 @@ func setup_block_grid_delta(entity: Entity):
 
 	var err = WyncDeltaSyncUtils.prop_set_relative_syncable(
 		wync_ctx,
+		wync_entity_id,
 		blocks_prop,
 		blueprint_id,
-		func() -> CoBlockGrid: return co_block_grid
+		func() -> CoBlockGrid: return co_block_grid,
 	)
 	if err > 0:
 		Log.err(self, "Couldn't set relative sync to Prop id(%s) err(%s)" % [blocks_prop, err])

@@ -75,16 +75,26 @@ var lerp_right_confirmed_state_tick: int
 # --------------------------------------------------
 
 var relative_syncable: bool = false
+var is_auxiliar_prop: bool = false
 
 # What blueprint does this prop obeys? This dictates relative sync events
 var delta_blueprint_id: int = -1
 
+# if relative_syncable point to auxiliar prop
+# if is_auxiliar_prop point to delta prop
+var auxiliar_delta_events_prop_id: int = -1
+
+# DEPRECATED?
 # how far in the past we can go
 # Updated every frame, should correspond to (current_tick - max_history_ticks + 1)
 # FIFORingAny <insert_order: int, Array[event_id: int]>
 var relative_change_event_list: FIFORingAny
 
+# DEPRECATED?
 # Lets us know oldest / latest tick where a delta event took place
 # Each entry corresponds to a relative_change_event_list entry
 # FIFORingAny <insert_order: int, tick: int>
 var relative_change_real_tick: FIFORingAny
+
+# A place to insert current delta events
+var current_delta_events: Array[int]

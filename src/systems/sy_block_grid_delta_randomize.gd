@@ -6,7 +6,10 @@ const label: StringName = StringName("SyBlockGridDeltaRandomize")
 func on_process(_entities, _data, _delta):
 	
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
-	if co_ticks.ticks < 40 || co_ticks.ticks > 110:
+	if not (
+		(co_ticks.ticks > 40 && co_ticks.ticks < 110)
+		|| (co_ticks.ticks > 150 && co_ticks.ticks < 170)
+		):
 		return
 	#if not (
 		#(co_ticks.ticks % (Engine.physics_ticks_per_second * 2) == 0)
@@ -92,7 +95,7 @@ func insert_random_block_by_delta_event(wync_ctx: WyncCtx, en_block_grid: Entity
 	WyncEventUtils.event_add_arg(wync_ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, block_type)
 	event_id = WyncEventUtils.event_wrap_up(wync_ctx, event_id)
 
-	var err = WyncDeltaSyncUtils.delta_sync_prop_push_event_to_tick(wync_ctx, prop_blocks_id, GameInfo.EVENT_DELTA_BLOCK_REPLACE, event_id, co_ticks)
+	var err = WyncDeltaSyncUtils.delta_prop_push_event_to_current(wync_ctx, prop_blocks_id, GameInfo.EVENT_DELTA_BLOCK_REPLACE, event_id, co_ticks)
 	if err != OK:
 		Log.err(self, "Failed to push delta-sync-event err(%s)" % [err])
 

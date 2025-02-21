@@ -2,8 +2,7 @@ extends System
 class_name SyWyncSendInputs
 const label: StringName = StringName("SyWyncSendInputs")
 
-## * Sends inputs to server in chunks
-## * TODO: Let the server deduce which actor to move based on client
+## * Sends inputs/events in chunks
 
 
 func on_process(_entities, _data, _delta: float):
@@ -71,7 +70,7 @@ func on_process(_entities, _data, _delta: float):
 			if (input_prop.data_type == WyncEntityProp.DATA_TYPE.EVENT &&
 				input is Array):
 				input = input as Array
-				for event_id in input:
+				for event_id: int in input:
 					var event_set = wync_ctx.peers_events_to_sync[WyncCtx.SERVER_PEER_ID] as Dictionary
 					event_set[event_id] = true
 				
