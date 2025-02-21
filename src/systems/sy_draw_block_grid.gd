@@ -2,7 +2,6 @@ extends System
 class_name SyDrawBlockGrid
 const label: StringName = StringName("SyDrawBlockGrid")
 
-@export var desired_y_offset: int = 0
 const TILE_LENGTH_PIXELS = 30
 
 
@@ -23,26 +22,19 @@ func _draw() -> void:
 		if _system == null || !_system.enabled:
 			return
 	
-	#var entities = ECS.world_system_entities[world_id][label]
-	#for entity in entities:
-		#draw_block_grid(entity)
-		#return
-
 	var en_block_grid = ECS.get_singleton_entity(self, "EnBlockGrid")
-	if not en_block_grid:
-		Log.err(self, "coulnd't get singleton EnBlockGrid")
-		return
-	draw_block_grid(en_block_grid)
+	if en_block_grid:
+		draw_block_grid(en_block_grid, "EnBlockGrid", Vector2i(0, 0))
 
 
-func draw_block_grid(entity: Entity):
+func draw_block_grid(entity: Entity, singleton_grid_name: String, offset: Vector2i):
 	var node2d = self as Node as Node2D
 	var block_grid = entity.get_component(CoBlockGrid.label) as CoBlockGrid
 	if !block_grid:
 		return
 	var single_world = ECS.get_singleton_component(self, CoSingleWorld.label) as CoSingleWorld
 	var x_offset = single_world.world_id * ((block_grid.LENGTH + 1) * TILE_LENGTH_PIXELS)
-	var y_offset = desired_y_offset * ((block_grid.LENGTH + 1) * TILE_LENGTH_PIXELS)
+	var y_offset = offset.y * ((block_grid.LENGTH + 1) * TILE_LENGTH_PIXELS)
 	
 	for i in range(block_grid.LENGTH):
 		for j in range(block_grid.LENGTH):
@@ -105,7 +97,7 @@ func draw_block_grid(entity: Entity):
 					node2d.draw_rect(block_rect, color, true)
 					Log.out(self, "EVENT MOUSE CLICK %s" % Vector2i(i,j))
 					
-					generate_click_event(event, Vector2i(i,j))
+					generate_block_grid_event(singleton_grid_name, event, Vector2i(i,j))
 
 
 func on_process(_entities, _data, _delta):
@@ -118,7 +110,8 @@ func is_client_application() -> bool:
 	return single_client != null
 
 
-func generate_click_event(
+func generate_block_grid_event(
+	block_grid_id: String,
 	event_type_id: int,
 	event_data # : any
 	):
@@ -153,8 +146,9 @@ func generate_click_event(
 		return
 	
 	# first register the event to Wync
-	var event_id = WyncEventUtils.instantiate_new_event(wync_ctx, event_type_id, 1)
-	WyncEventUtils.event_add_arg(wync_ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, event_data)
+	var event_id = WyncEventUtils.instantiate_new_event(wync_ctx, event_type_id, 2)
+	WyncEventUtils.event_add_arg(wync_ctx, event_id, 0, WyncEntityProp.DATA_TYPE.STRING, block_grid_id)
+	WyncEventUtils.event_add_arg(wync_ctx, event_id, 1, WyncEntityProp.DATA_TYPE.VECTOR2, event_data)
 	event_id = WyncEventUtils.event_wrap_up(wync_ctx, event_id)
 	if (event_id < 0):
 		Log.err(self, "Error WyncEventUtils.event_wrap_up(wync_ctx, event_id)")
@@ -162,16 +156,13 @@ func generate_click_event(
 	
 	var _event = wync_ctx.events[event_id] as WyncEvent
 	if _event:
-		Log.out(self, "TESTING event hash: event_data %s arg_data %s" % [event_data, _event.data.arg_data])
+		Log.out(self, "TESTING event id(%s) hash: event_data %s arg_count %s arg_data %s" % [event_id, event_data, _event.data.arg_count, _event.data.arg_data])
 		Log.out(self, "event %s hash %s" % [_event, HashUtils.hash_any(_event.data.arg_data)])
 	
 	# save the event id to component
 	#co_wync_events.events.append(event_id)
 
-	# TODO: After using Global Events per tick
 	# now that we're commiting to this event, let's publish it
-	#WyncEventUtils.global_event_publish_on_demand(
-	#	wync_ctx, co_wync_events.prop_id, event_id)
 	WyncEventUtils.publish_global_event_as_client(
 		wync_ctx, 0, event_id
 	)

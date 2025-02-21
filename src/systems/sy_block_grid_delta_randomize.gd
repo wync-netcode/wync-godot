@@ -7,8 +7,8 @@ func on_process(_entities, _data, _delta):
 	
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 	if not (
-		(co_ticks.ticks > 40 && co_ticks.ticks < 110)
-		|| (co_ticks.ticks > 150 && co_ticks.ticks < 170)
+		(co_ticks.ticks > 10 && co_ticks.ticks < 50)
+		#|| (co_ticks.ticks > 150 && co_ticks.ticks < 170)
 		):
 		return
 	#if not (
