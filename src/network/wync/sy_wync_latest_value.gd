@@ -94,25 +94,37 @@ static func reset_all_state_to_confirmed_tick_relative(wync_ctx: WyncCtx, prop_i
 		prop.setter.call(last_confirmed)
 
 
-# should be run each frame, applies delta events and keeps delta props healthy
+# should be run on client each logic frame
+# applies delta events and keeps delta props healthy
 
 static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Array[int]):
 
 	var delta_props_last_tick = ctx.client_has_relative_prop_has_last_tick[ctx.my_peer_id] as Dictionary
-	
+	#Log.out(ctx, "SyWyncLatestValue | delta sync | delta_prop_ids %s" % [prop_ids])
+
 	for prop_id: int in prop_ids:
 		var prop = WyncUtils.get_prop(ctx, prop_id)
 		if prop == null:
+			Log.err(ctx, "SyWyncLatestValue | delta sync | couldn't find prop id(%s)" % [prop_id])
 			continue 
 		prop = prop as WyncEntityProp
 
-		# NOTE: events must be applied in order, currently assuming they're already ordered
-		# This assumption relies on the transport reliable-ordered capabilities
-		# We're probably have to order it if that's not a guarantee
-		while (prop.relative_change_real_tick.size):
-			var delta_event_id_list = prop.relative_change_event_list.get_tail() as Array[int]
+		var aux_prop = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
+		if aux_prop == null:
+			Log.err(ctx, "SyWyncLatestValue | delta sync | couldn't find aux_prop id(%s)" % [prop.auxiliar_delta_events_prop_id])
+			continue
+		aux_prop = aux_prop as WyncEntityProp
+		
+		# NOTE: Are we sure we have delta_props_last_tick[prop_id]?
+		# apply events in order
 
-			for event_id: int in delta_event_id_list:
+		for tick: int in range(delta_props_last_tick[prop_id] +1, ctx.last_tick_received +1):
+			var delta_event_list = aux_prop.confirmed_states.get_at(tick)
+			if delta_event_list is not Array[int]:
+				Log.err(ctx, "SyWyncLatestValue | delta sync | we don't have an input for this tick %s" % [tick])
+				continue
+
+			for event_id: int in delta_event_list:
 				var err = WyncDeltaSyncUtils.merge_event_to_state_real_state(ctx, prop_id, event_id)
 
 				# this error is almost fatal, should never happen, it could fail because of not finding the event
@@ -123,11 +135,8 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 					break
 				Log.out(ctx, "delta sync | client consumed delta event %d" % [event_id])
 
-			prop.relative_change_event_list.pop_tail()
-			var delta_event_tick = prop.relative_change_real_tick.pop_tail()
-
 			# update the latest tick we're at
-			delta_props_last_tick[prop_id] = max(delta_event_tick, delta_props_last_tick[prop_id])
+			delta_props_last_tick[prop_id] = ctx.last_tick_received
 
 
 static func integrate_state(wync_ctx: WyncCtx, wync_entity_ids: Array):

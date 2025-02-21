@@ -62,8 +62,14 @@ func on_process(_entities, _data, _delta: float):
 				WyncEntityProp.DATA_TYPE.EVENT]:
 				continue
 
+			# TODO: Allow EVENT props if it doesn't belong to a client
+			# Allow auxiliar props
 			if prop.relative_syncable:
-				continue
+				var prop_aux = WyncUtils.get_prop(wync_ctx, prop.auxiliar_delta_events_prop_id)
+				if prop_aux == null:
+					continue
+				prop_id = prop.auxiliar_delta_events_prop_id
+				prop = prop_aux
 			
 			# ===========================================================
 			# Save state history per tick
@@ -143,11 +149,15 @@ static func extract_data_to_tick(wync_ctx: WyncCtx, co_ticks: CoTicks, save_on_t
 			# relative_syncable receives special treatment
 
 			if prop.relative_syncable:
-				# TODO: Move this elsewhere
 				var err = update_relative_syncable_prop(wync_ctx, co_ticks, prop_id)
 				if err != OK:
 					Log.err(wync_ctx, "delta sync | update_relative_syncable_prop err(%s)" % [err])
-				continue
+				
+				# Allow auxiliar props
+				var prop_aux = WyncUtils.get_prop(wync_ctx, prop.auxiliar_delta_events_prop_id)
+				if prop_aux == null:
+					continue
+				prop = prop_aux
 			
 			# ===========================================================
 			# Save state history per tick
@@ -171,6 +181,11 @@ static func update_relative_syncable_prop(ctx: WyncCtx, co_ticks: CoTicks, prop_
 	if not (ctx.delta_base_state_tick < new_base_tick):
 		return 3
 	ctx.delta_base_state_tick = new_base_tick
+	
+	# on new tick, clear all events?
+	return OK
+
+	"""
 
 	if prop.relative_change_real_tick.size <= 0:
 		return OK
@@ -206,6 +221,7 @@ static func update_relative_syncable_prop(ctx: WyncCtx, co_ticks: CoTicks, prop_
 
 	event_array.clear()
 	return OK
+	"""
 
 
 	

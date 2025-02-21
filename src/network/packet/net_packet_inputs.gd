@@ -23,7 +23,7 @@ func duplicate() -> NetPacketInputs:
 	var newi = NetPacketInputs.new()
 	newi.prop_id = prop_id
 	newi.amount = amount
-	newi.inputs = []
-	for input in self.inputs:
+	newi.inputs = [] as Array[NetTickDataDecorator]
+	for input: NetTickDataDecorator in self.inputs:
 		newi.inputs.append(input.duplicate())
 	return newi

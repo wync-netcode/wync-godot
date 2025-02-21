@@ -53,6 +53,11 @@ func on_process(_entities, _data, _delta: float):
 				local_prop.arrived_at_tick.insert_at(data.tick, co_ticks.ticks)
 				local_prop.just_received_new_state = true
 
+				if local_prop.is_auxiliar_prop:
+					var delta_prop = WyncUtils.get_prop(wync_ctx, local_prop.auxiliar_delta_events_prop_id) as WyncEntityProp
+					delta_prop.just_received_new_state = true
+
+
 			# process relative syncable separatedly for now to reason about them separatedly
 
 			for prop: WyncPktPropSnap.PropSnap in snap.props:

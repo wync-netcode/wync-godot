@@ -5,11 +5,14 @@ class_name WyncCtx
 
 const SERVER_PEER_ID = 0
 const ENTITY_ID_GLOBAL_EVENTS = 777
+# NOTE: Rename to PRED_INPUT_BUFFER_SIZE
+const INPUT_BUFFER_SIZE = 60 * 12
 var max_amount_cache_events = 2 # it could be useful to have a different value for server cache
 var max_peers = 24
 var max_channels = 12
 var max_tick_history = 60 # 1 second at 60 fps
 var max_prop_relative_sync_history_ticks = 20 # set to 1 to see if it's working alright 
+var max_delta_prop_predicted_ticks = 60 # 1000ms ping at 60fps 2000ms ping at 30fps
 
 # Map<entity_id: int, unused_bool: bool>
 var tracked_entities: Dictionary
@@ -24,10 +27,7 @@ var entity_has_props: Dictionary
 # Map<event_id: uint, WyncEvent>
 var events: Dictionary
 
-# Array<channel_id: int, Array<event_id>>
-# Array[Array[int]]
-# global_events_channel_in_order
-# var global_events_channel: Array[Array]
+var event_id_counter: int
 
 # 24 clients, 12 channels, unlimited event ids
 # Array[24 clients]< Array[12 channels] < Dictionary <int, unused_bool> > >
@@ -94,7 +94,7 @@ var peers_events_to_sync: Array[Dictionary]
 
 ## Client only ==============================
 
-# last tick received from the server
+## last tick received from the server
 var last_tick_received: int
 
 # Map<entity_id: int, sim_fun_id>
@@ -117,12 +117,6 @@ var entity_has_simulation_fun: Dictionary
 
 # Meta state / Managment
 var connected: bool = false
-
-# NOTE: Rename to PRED_INPUT_BUFFER_SIZE
-const INPUT_BUFFER_SIZE = 60 * 12
-
-var event_id_counter: int
-
 
 # This size should be the maximum amount of 'tick_offset' for prediction
 var tick_action_history_size: int = 20
