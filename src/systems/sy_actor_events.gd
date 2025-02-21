@@ -24,7 +24,6 @@ func on_process(entities: Array, _data, _delta: float, node_ctx: Node = null):
 static func server_simulate_events(node_ctx: Node = null):
 	var co_single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = co_single_wync.ctx
-	var channel_id = 0
 
 	# Handle clients' events
 	for wync_peer_id in range(1, wync_ctx.peers.size()):
@@ -135,6 +134,10 @@ static func handle_events(node_ctx: Node, event_data: WyncEvent.EventData, peer_
 			handle_event_player_block_break(node_ctx, event_data)
 		GameInfo.EVENT_PLAYER_BLOCK_PLACE:
 			handle_event_player_block_place(node_ctx, event_data)
+		GameInfo.EVENT_PLAYER_BLOCK_BREAK_DELTA:
+			handle_event_player_block_break_delta(node_ctx, event_data)
+		GameInfo.EVENT_PLAYER_BLOCK_PLACE_DELTA:
+			handle_event_player_block_place_delta(node_ctx, event_data)
 		GameInfo.EVENT_PLAYER_SHOOT:
 			handle_event_player_shoot(node_ctx, event_data, peer_id)
 		_:
@@ -142,14 +145,16 @@ static func handle_events(node_ctx: Node, event_data: WyncEvent.EventData, peer_
 
 
 static func handle_event_player_block_break(node_ctx: Node, event: WyncEvent.EventData):
-	var block_pos = event.arg_data[0] as Vector2i
-	grid_block_break(node_ctx, "EnBlockGrid", block_pos)
+	var singleton_name = event.arg_data[0] as String
+	var block_pos = event.arg_data[1] as Vector2i
+	grid_block_break(node_ctx, singleton_name, block_pos)
 	# NOTE: this could use more safety
 
 
 static func handle_event_player_block_place(node_ctx: Node, event: WyncEvent.EventData):
-	var block_pos = event.arg_data[0] as Vector2i
-	grid_block_place(node_ctx, "EnBlockGrid", block_pos)
+	var singleton_name = event.arg_data[0] as String
+	var block_pos = event.arg_data[1] as Vector2i
+	grid_block_place(node_ctx, singleton_name, block_pos)
 
 	# NOTE: This event is a predicition of a Server Global event, so it has to be submitted
 	# as a client-side PREDICTION for peer_id 0 
@@ -162,45 +167,127 @@ static func handle_event_player_block_place(node_ctx: Node, event: WyncEvent.Eve
 	var co_single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = co_single_wync.ctx
 
-	var event_id = WyncEventUtils.instantiate_new_event(wync_ctx, GameInfo.EVENT_PLAYER_BLOCK_BREAK, 1)
-	WyncEventUtils.event_add_arg(wync_ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
+	var event_id = WyncEventUtils.instantiate_new_event(wync_ctx, GameInfo.EVENT_PLAYER_BLOCK_BREAK, 2)
+	WyncEventUtils.event_add_arg(wync_ctx, event_id, 0, WyncEntityProp.DATA_TYPE.STRING, singleton_name)
+	WyncEventUtils.event_add_arg(wync_ctx, event_id, 1, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
 	event_id = WyncEventUtils.event_wrap_up(wync_ctx, event_id)
 	
 	# Out of the two ways to predict 'event generated events' here we're chosing _Option number 2_:
 	# Generate new events as a prediction of the server's actions.
 	WyncEventUtils.publish_global_event_as_server(wync_ctx, 0, event_id)
 
+
+static func handle_event_player_block_break_delta(node_ctx: Node, event: WyncEvent.EventData):
+	var co_ticks = ECS.get_singleton_component(node_ctx, CoTicks.label) as CoTicks
+	var co_single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
+	var ctx = co_single_wync.ctx
+
+	var singleton_name = event.arg_data[0] as String
+	var block_pos = event.arg_data[1] as Vector2i
 	
-static func grid_block_break(node_ctx: Node, entity_block_grid_name: String, block_pos: Vector2i):
-	var en_block_grid = ECS.get_singleton_entity(node_ctx, entity_block_grid_name)
+	var en_block_grid = ECS.get_singleton_entity(node_ctx, singleton_name)
 	if not en_block_grid:
-		Log.err(node_ctx, "coulnd't get singleton %s" % [entity_block_grid_name])
+		Log.err(node_ctx, "coulnd't get singleton %s" % [singleton_name])
 		return
+
+	# user checks: is this event valid?
+
 	var co_block_grid = en_block_grid.get_component(CoBlockGrid.label) as CoBlockGrid
-	
 	if not (MathUtils.is_between_int(block_pos.x, 0, co_block_grid.LENGTH -1)
 	&& MathUtils.is_between_int(block_pos.y, 0, co_block_grid.LENGTH -1)):
 		Log.err(node_ctx, "block_pos %s is invalid" % [block_pos])
 		return
-	
-	var block_data = co_block_grid.blocks[block_pos.x][block_pos.y] as CoBlockGrid.BlockData
-	block_data.id = CoBlockGrid.BLOCK.AIR
 
+	# find the "blocks" property
 
-static func grid_block_place(node_ctx: Node, entity_block_grid_name: String, block_pos: Vector2i):
-	var en_block_grid = ECS.get_singleton_entity(node_ctx, entity_block_grid_name)
-	if not en_block_grid:
-		Log.err(node_ctx, "coulnd't get singleton %s" % [entity_block_grid_name])
+	var co_actor = en_block_grid.get_component(CoActor.label) as CoActor
+	var blocks_prop_id = WyncUtils.entity_get_prop_id(ctx, co_actor.id, "blocks")
+	if blocks_prop_id == -1:
+		Log.err(node_ctx, "coulnd't find 'blocks' prop on singleton %s" % [singleton_name])
 		return
-	var co_block_grid = en_block_grid.get_component(CoBlockGrid.label) as CoBlockGrid
+	var blocks_prop = WyncUtils.get_prop(ctx, blocks_prop_id) as WyncEntityProp
+	if not blocks_prop.relative_syncable:
+		Log.err(node_ctx, "singleton %s prop blocks id(%s) is not relative_syncable" % [singleton_name, blocks_prop_id])
+		return
+
+	# Commit a Delta Event here
+
+	var event_id = WyncEventUtils.instantiate_new_event(ctx, GameInfo.EVENT_DELTA_BLOCK_REPLACE, 2)
+	WyncEventUtils.event_add_arg(ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
+	WyncEventUtils.event_add_arg(ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, CoBlockGrid.BLOCK.AIR)
+	event_id = WyncEventUtils.event_wrap_up(ctx, event_id)
+
+	var err = WyncDeltaSyncUtils.delta_prop_push_event_to_current(
+		ctx, blocks_prop_id, GameInfo.EVENT_DELTA_BLOCK_REPLACE, event_id, co_ticks)
+	if err != OK:
+		Log.err(node_ctx, "Failed to push delta-sync-event err(%s)" % [err])
+
+	# If this runs on the client it means prediction...
+
+	if not WyncUtils.is_client(ctx):
+		WyncDeltaSyncUtils.merge_event_to_state_real_state(ctx, blocks_prop_id, event_id)
+
+
+static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEvent.EventData):
+	var co_ticks = ECS.get_singleton_component(node_ctx, CoTicks.label) as CoTicks
+	var co_single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
+	var ctx = co_single_wync.ctx
+
+	var singleton_name = event.arg_data[0] as String
+	var block_pos = event.arg_data[1] as Vector2i
 	
+	var en_block_grid = ECS.get_singleton_entity(node_ctx, singleton_name)
+	if not en_block_grid:
+		Log.err(node_ctx, "coulnd't get singleton %s" % [singleton_name])
+		return
+
+	# user checks: is this event valid?
+
+	var co_block_grid = en_block_grid.get_component(CoBlockGrid.label) as CoBlockGrid
 	if not (MathUtils.is_between_int(block_pos.x, 0, co_block_grid.LENGTH -1)
 	&& MathUtils.is_between_int(block_pos.y, 0, co_block_grid.LENGTH -1)):
 		Log.err(node_ctx, "block_pos %s is invalid" % [block_pos])
 		return
-	
-	var block_data = co_block_grid.blocks[block_pos.x][block_pos.y] as CoBlockGrid.BlockData
-	block_data.id = CoBlockGrid.BLOCK.STONE
+
+	# find the "blocks" property
+
+	var co_actor = en_block_grid.get_component(CoActor.label) as CoActor
+	var blocks_prop_id = WyncUtils.entity_get_prop_id(ctx, co_actor.id, "blocks")
+	if blocks_prop_id == -1:
+		Log.err(node_ctx, "coulnd't find 'blocks' prop on singleton %s" % [singleton_name])
+		return
+	var blocks_prop = WyncUtils.get_prop(ctx, blocks_prop_id) as WyncEntityProp
+	if not blocks_prop.relative_syncable:
+		Log.err(node_ctx, "singleton %s prop blocks id(%s) is not relative_syncable" % [singleton_name, blocks_prop_id])
+		return
+
+	# Commit a Delta Event here
+
+	var event_id = WyncEventUtils.instantiate_new_event(ctx, GameInfo.EVENT_DELTA_BLOCK_REPLACE, 2)
+	WyncEventUtils.event_add_arg(ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
+	WyncEventUtils.event_add_arg(ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, CoBlockGrid.BLOCK.TNT)
+	event_id = WyncEventUtils.event_wrap_up(ctx, event_id)
+	var err = WyncDeltaSyncUtils.delta_prop_push_event_to_current(
+		ctx, blocks_prop_id, GameInfo.EVENT_DELTA_BLOCK_REPLACE, event_id, co_ticks)
+	if err != OK:
+		Log.err(node_ctx, "Failed to push delta-sync-event err(%s)" % [err])
+	if not WyncUtils.is_client(ctx):
+		WyncDeltaSyncUtils.merge_event_to_state_real_state(ctx, blocks_prop_id, event_id)
+
+	# secondary break event
+	block_pos.x -= 1
+	if block_pos.x < 0:
+		return
+	event_id = WyncEventUtils.instantiate_new_event(ctx, GameInfo.EVENT_DELTA_BLOCK_REPLACE, 2)
+	WyncEventUtils.event_add_arg(ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
+	WyncEventUtils.event_add_arg(ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, CoBlockGrid.BLOCK.AIR)
+	event_id = WyncEventUtils.event_wrap_up(ctx, event_id)
+	err = WyncDeltaSyncUtils.delta_prop_push_event_to_current(
+		ctx, blocks_prop_id, GameInfo.EVENT_DELTA_BLOCK_REPLACE, event_id, co_ticks)
+	if err != OK:
+		Log.err(node_ctx, "Failed to push delta-sync-event err(%s)" % [err])
+	if not WyncUtils.is_client(ctx):
+		WyncDeltaSyncUtils.merge_event_to_state_real_state(ctx, blocks_prop_id, event_id)
 
 
 # server only function
@@ -291,3 +378,40 @@ static func handle_event_player_shoot(node_ctx: Node, event: WyncEvent.EventData
 	SyWyncLatestValue.integrate_state(wync_ctx, wync_ctx.tracked_entities.keys())
 	RapierPhysicsServer2D.space_step(space, 0)
 	RapierPhysicsServer2D.space_flush_queries(space)
+
+
+
+# --------------------------------------------------------------------------------
+# Game util functions
+
+	
+static func grid_block_break(node_ctx: Node, entity_block_grid_name: String, block_pos: Vector2i):
+	var en_block_grid = ECS.get_singleton_entity(node_ctx, entity_block_grid_name)
+	if not en_block_grid:
+		Log.err(node_ctx, "coulnd't get singleton %s" % [entity_block_grid_name])
+		return
+	var co_block_grid = en_block_grid.get_component(CoBlockGrid.label) as CoBlockGrid
+	
+	if not (MathUtils.is_between_int(block_pos.x, 0, co_block_grid.LENGTH -1)
+	&& MathUtils.is_between_int(block_pos.y, 0, co_block_grid.LENGTH -1)):
+		Log.err(node_ctx, "block_pos %s is invalid" % [block_pos])
+		return
+	
+	var block_data = co_block_grid.blocks[block_pos.x][block_pos.y] as CoBlockGrid.BlockData
+	block_data.id = CoBlockGrid.BLOCK.AIR
+
+
+static func grid_block_place(node_ctx: Node, entity_block_grid_name: String, block_pos: Vector2i):
+	var en_block_grid = ECS.get_singleton_entity(node_ctx, entity_block_grid_name)
+	if not en_block_grid:
+		Log.err(node_ctx, "coulnd't get singleton %s" % [entity_block_grid_name])
+		return
+	var co_block_grid = en_block_grid.get_component(CoBlockGrid.label) as CoBlockGrid
+	
+	if not (MathUtils.is_between_int(block_pos.x, 0, co_block_grid.LENGTH -1)
+	&& MathUtils.is_between_int(block_pos.y, 0, co_block_grid.LENGTH -1)):
+		Log.err(node_ctx, "block_pos %s is invalid" % [block_pos])
+		return
+	
+	var block_data = co_block_grid.blocks[block_pos.x][block_pos.y] as CoBlockGrid.BlockData
+	block_data.id = CoBlockGrid.BLOCK.STONE
