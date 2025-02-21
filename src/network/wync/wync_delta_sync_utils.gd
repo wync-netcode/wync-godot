@@ -58,6 +58,7 @@ static func prop_set_relative_syncable (
 	prop_id: int,
 	delta_blueprint_id: int,
 	getter_pointer: Callable
+	# timewarpable: bool # TODO
 	) -> Error:
 	var prop = WyncUtils.get_prop(ctx, prop_id)
 	if prop == null:
@@ -81,10 +82,17 @@ static func prop_set_relative_syncable (
 		prop.relative_change_event_list.pop_tail()
 		prop.relative_change_real_tick.pop_tail()
 
-	# confirmed states will always be of size 1
-	# index 0 -> store a copy of the base tick state
-	# index 1? -> store a copy of the real state when doing timewarp
-	prop.confirmed_states = RingBuffer.new(1)
+	# depending on the features and if it's server or client we'll need different things
+	# * delta prop, server side, no timewarp: real state, delta event buffer
+	# * delta prop, client side, no prediction: real state, received delta event buffer
+	# * delta prop, client side, predictable: base state, real state, received delta event buffer, predicted delta event buffer
+	# * delta prop, server side, timewarpable: base state, real state, delta event buffer
+
+	# assuming no timewarpable
+	prop.confirmed_states = RingBuffer.new(0)
+
+	#if timewarpable or predictable:
+	#prop.confirmed_states = RingBuffer.new(1)
 
 	return OK
 
@@ -151,19 +159,22 @@ static func delta_sync_prop_push_event_to_tick \
 	return OK
 
 
+# FIXME: this function name doesn't describe what it does
 static func merge_event_to_state_confirmed_state(ctx: WyncCtx, prop_id: int, event_id: int) -> int:
-	var prop = WyncUtils.get_prop(ctx, prop_id)
-	if prop == null:
-		return 1
-	prop = prop as WyncEntityProp
-	if not prop.relative_syncable:
-		return 2
+	# TODO
+	return 1
+	#var prop = WyncUtils.get_prop(ctx, prop_id)
+	#if prop == null:
+		#return 1
+	#prop = prop as WyncEntityProp
+	#if not prop.relative_syncable:
+		#return 2
 
-	var state_pointer = prop.confirmed_states.get_at(0)
-	if state_pointer == null:
-		return 3
+	#var state_pointer = prop.getter_pointer.call()
+	#if state_pointer == null:
+		#return 3
 
-	return _merge_event_to_state(ctx, prop, event_id, state_pointer)
+	#return _merge_event_to_state(ctx, prop, event_id, state_pointer)
 
 
 static func merge_event_to_state_real_state(ctx: WyncCtx, prop_id: int, event_id: int) -> int:
@@ -186,14 +197,15 @@ static func _merge_event_to_state(ctx: WyncCtx, prop: WyncEntityProp, event_id: 
 	# TODO: Make a new function get_event(event_id)
 	
 	if not ctx.events.has(event_id):
-		return 4
+		Log.err(ctx, "delta sync | couldn't find event id(%s)" % [event_id])
+		return 14
 	var event_data = (ctx.events[event_id] as WyncEvent).data
 
 	# NOTE: Maybe confirm this prop's blueprint supports this event_type
 
 	var blueprint = get_delta_blueprint(ctx, prop.delta_blueprint_id)
 	if blueprint == null:
-		return 5
+		return 15
 	blueprint = blueprint as WyncDeltaBlueprint
 
 	var handler = blueprint.event_handlers[event_data.event_type_id] as Callable

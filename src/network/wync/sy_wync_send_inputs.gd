@@ -72,7 +72,8 @@ func on_process(_entities, _data, _delta: float):
 				input is Array):
 				input = input as Array
 				for event_id in input:
-					wync_ctx.peers_events_to_sync[WyncCtx.SERVER_PEER_ID][event_id] = 0
+					var event_set = wync_ctx.peers_events_to_sync[WyncCtx.SERVER_PEER_ID] as Dictionary
+					event_set[event_id] = true
 				
 
 		net_inputs.amount = net_inputs.inputs.size()

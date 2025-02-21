@@ -44,9 +44,9 @@ func on_process(_entities, _data, _delta: float):
 			return
 		send_events_to_peer(self, ctx, co_io_packets, WyncCtx.SERVER_PEER_ID, co_client.server_peer)
 	else: # server
-		for i in range(ctx.peers.size):
-			var net_peer_id = ctx.peers[i]
-			send_events_to_peer(self, ctx, co_io_packets, i, net_peer_id)
+		for wync_peer_id in range(ctx.peers.size()):
+			var net_peer_id = ctx.peers[wync_peer_id]
+			send_events_to_peer(self, ctx, co_io_packets, wync_peer_id, net_peer_id)
 
 
 static func send_events_to_peer(
@@ -99,11 +99,11 @@ static func send_events_to_peer(
 		
 		for j in range(wync_event.arg_count):
 			event_data.arg_data[j] = WyncUtils.duplicate_any(wync_event.arg_data[j])
-			Log.out(node_ctx, "%s" % [wync_event.arg_data[j]])
-			Log.out(node_ctx, "%s" % [event_data.arg_data[j]])
+			#Log.out(node_ctx, "%s" % [wync_event.arg_data[j]])
+			#Log.out(node_ctx, "%s" % [event_data.arg_data[j]])
 		
 		data.events.append(event_data)
-		Log.out(node_ctx, "%s" % HashUtils.object_to_dictionary(event_data))
+		#Log.out(node_ctx, "sending this event %s" % HashUtils.object_to_dictionary(event_data))
 	
 	if (data.events.size() == 0):
 		return

@@ -30,19 +30,28 @@ func on_process(entities, _data, _delta: float):
 	# TODO: store props in HashMap instead of Array
 	
 	var prop_id_list: Array[int] = []
+	var prop_id_list_delta_sync: Array[int] = []
 	for prop_id: int in wync_ctx.props.size():
 		var prop = WyncUtils.get_prop(wync_ctx, prop_id)
 		if prop == null:
 			continue
 		prop = prop as WyncEntityProp
-		if !prop.dirty:
+		if !prop.just_received_new_state:
 			continue
-		prop.dirty = false
-		prop_id_list.append(prop_id)
+		prop.just_received_new_state = false
+
+		if prop.relative_syncable:
+			prop_id_list_delta_sync.append(prop_id)
+		else:
+			prop_id_list.append(prop_id)
 		
 	reset_all_state_to_confirmed_tick_relative(wync_ctx, prop_id_list, 0)
 	
+	delta_props_update_and_apply_delta_events(wync_ctx, prop_id_list_delta_sync)
+	
+	
 	# call integration function to sync new transforms with physics server
+	# NOTE: Maybe include in the filter if they actually are elligible to integrate
 	
 	var entity_id_list: Array[int] = []
 	for entity: Entity in entities:
@@ -51,19 +60,19 @@ func on_process(entities, _data, _delta: float):
 	integrate_state(wync_ctx, entity_id_list)
 
 
-static func reset_all_state_to_confirmed_tick(wync_ctx: WyncCtx, prop_ids: Array[int], tick: int):
+#static func reset_all_state_to_confirmed_tick(wync_ctx: WyncCtx, prop_ids: Array[int], tick: int):
 	
-	for prop_id: int in prop_ids:
-		var prop = WyncUtils.get_prop(wync_ctx, prop_id)
-		if prop == null:
-			continue 
-		prop = prop as WyncEntityProp
+	#for prop_id: int in prop_ids:
+		#var prop = WyncUtils.get_prop(wync_ctx, prop_id)
+		#if prop == null:
+			#continue 
+		#prop = prop as WyncEntityProp
 		
-		var last_confirmed = prop.confirmed_states.get_at(tick)
-		if last_confirmed == null:
-			continue
+		#var last_confirmed = prop.confirmed_states.get_at(tick)
+		#if last_confirmed == null:
+			#continue
 		
-		prop.setter.call(last_confirmed.data)
+		#prop.setter.call(last_confirmed.data)
 
 
 static func reset_all_state_to_confirmed_tick_relative(wync_ctx: WyncCtx, prop_ids: Array[int], tick: int):
@@ -74,6 +83,7 @@ static func reset_all_state_to_confirmed_tick_relative(wync_ctx: WyncCtx, prop_i
 			continue 
 		prop = prop as WyncEntityProp
 		
+		
 		var last_confirmed_tick = prop.last_ticks_received.get_relative(tick) as int
 		var last_confirmed = prop.confirmed_states.get_at(last_confirmed_tick)
 		if last_confirmed == null:
@@ -82,6 +92,42 @@ static func reset_all_state_to_confirmed_tick_relative(wync_ctx: WyncCtx, prop_i
 		# TODO: check type before applying (shouldn't be necessary if we ensure we're filling the correct data)
 		# Log.out(wync_ctx, "LatestValue | setted prop_name_id %s" % [prop.name_id])
 		prop.setter.call(last_confirmed)
+
+
+# should be run each frame, applies delta events and keeps delta props healthy
+
+static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Array[int]):
+
+	var delta_props_last_tick = ctx.client_has_relative_prop_has_last_tick[ctx.my_peer_id] as Dictionary
+	
+	for prop_id: int in prop_ids:
+		var prop = WyncUtils.get_prop(ctx, prop_id)
+		if prop == null:
+			continue 
+		prop = prop as WyncEntityProp
+
+		# NOTE: events must be applied in order, currently assuming they're already ordered
+		# This assumption relies on the transport reliable-ordered capabilities
+		# We're probably have to order it if that's not a guarantee
+		while (prop.relative_change_real_tick.size):
+			var delta_event_id_list = prop.relative_change_event_list.get_tail() as Array[int]
+
+			for event_id: int in delta_event_id_list:
+				var err = WyncDeltaSyncUtils.merge_event_to_state_real_state(ctx, prop_id, event_id)
+
+				# this error is almost fatal, should never happen, it could fail because of not finding the event
+				# in that case we're gonna continue in hopes we eventually get the event data
+				# TODO: implement measures against this ever happening
+				if err:
+					Log.err(ctx, "delta sync | VERY BAD, couldn't apply event id(%s) err(%s)" % [event_id, err])
+					break
+				Log.out(ctx, "delta sync | client consumed delta event %d" % [event_id])
+
+			prop.relative_change_event_list.pop_tail()
+			var delta_event_tick = prop.relative_change_real_tick.pop_tail()
+
+			# update the latest tick we're at
+			delta_props_last_tick[prop_id] = max(delta_event_tick, delta_props_last_tick[prop_id])
 
 
 static func integrate_state(wync_ctx: WyncCtx, wync_entity_ids: Array):

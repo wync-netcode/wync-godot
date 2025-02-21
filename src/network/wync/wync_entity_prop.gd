@@ -29,7 +29,7 @@ var getter_pointer: Callable #: func() -> VariantPointer # for relative sync pro
 # Optional properties:
 # TODO: Move these elsewhere
 
-var dirty: bool # new state was received from the server
+var just_received_new_state: bool # new state was received from the server
 var interpolated: bool
 var interpolated_state # : any
 

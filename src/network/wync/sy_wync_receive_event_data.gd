@@ -32,7 +32,7 @@ func on_process(_entities, _data, _delta: float, node_root: Node = null):
 			continue
 		
 		# consume
-		Log.out(node_self, "Consume WyncPktEventData")
+		Log.out(node_self, "events | Consume WyncPktEventData")
 		co_io.in_packets.remove_at(k)
 
 		for event: WyncPktEventData.EventData in data.events:
@@ -44,4 +44,5 @@ func on_process(_entities, _data, _delta: float, node_root: Node = null):
 			wync_event.data.arg_data = event.arg_data # std::move(std::unique_pointer)
 			wync_ctx.events[event.event_id] = wync_event
 		
+			Log.out(node_self, "events | got this events %s" % [event.event_id])
 			# NOTE: what if we already have this event data? Maybe it's better to receive it anyway?
