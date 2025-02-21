@@ -84,9 +84,8 @@ func on_process(_entities, _data, _delta: float):
 		# update last tick received
 		wync_ctx.last_tick_received = max(wync_ctx.last_tick_received, data.tick)
 
-	save_delta_snap_from_packets(wync_ctx, co_io)
 
-
+"""
 func save_delta_snap_from_packets(ctx: WyncCtx, co_io: CoIOPackets):
 
 	# save tick data from packets
@@ -143,3 +142,4 @@ func save_delta_snap_from_packets(ctx: WyncCtx, co_io: CoIOPackets):
 				delta_props_last_tick[snap.prop_id] = max_event_tick
 			else:
 				delta_props_last_tick[snap.prop_id] = max(max_event_tick, delta_props_last_tick[snap.prop_id])
+"""
