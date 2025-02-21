@@ -14,7 +14,7 @@ func on_process(_entities, _data, _delta: float):
 	
 	# client tick start
 	if WyncUtils.is_client(wync_ctx):
-		pass
+		sy_wync_receive_event_data.on_process([], null, _delta, self)
 	
 	# server tick start
 	else:

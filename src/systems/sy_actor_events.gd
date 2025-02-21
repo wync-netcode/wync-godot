@@ -91,6 +91,7 @@ static func run_server_events(node_ctx: Node, wync_ctx: WyncCtx):
 		event = event as WyncEvent
 
 		# handle it
+		Log.out(node_ctx, "event handling | handling server event %s" % [event_id])
 		handle_events(node_ctx, event.data, server_wync_peer_id)
 		WyncEventUtils.global_event_consume(wync_ctx, server_wync_peer_id, channel_id, event_id)
 

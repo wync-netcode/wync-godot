@@ -18,8 +18,8 @@ class_name WyncPktPropSnapDelta
 
 class PropSnap:
 	var prop_id: int
-	var delta_event_tick: Array[int]
-	var delta_event_id: Array[int]
+	var delta_event_tick_list: Array[int]
+	var delta_event_id_list: Array[Array] #: Array[Array[int]]
 
 var snaps: Array[PropSnap] = []
 
@@ -30,8 +30,8 @@ func duplicate() -> WyncPktPropSnapDelta:
 	for snap: PropSnap in snaps:
 		var new_snap = PropSnap.new()
 		new_snap.prop_id = snap.prop_id
-		new_snap.delta_event_tick = snap.delta_event_tick.duplicate(true)
-		new_snap.delta_event_id = snap.delta_event_id.duplicate(true)
+		new_snap.delta_event_tick_list = snap.delta_event_tick_list.duplicate(true)
+		new_snap.delta_event_id_list = snap.delta_event_id_list.duplicate(true)
 
 		i.snaps.append(new_snap)
 			

@@ -24,13 +24,17 @@ func on_process(_entities, _data, _delta: float):
 	
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
-
-	# TODO: iterate per each client, maybe make it configurable, cause some updates might be global
-	var client_id = 1
 	
 	# extract data
 	
 	extract_data_to_tick(wync_ctx, co_ticks, co_ticks.ticks)
+
+	# TODO: iterate per each client, maybe make it configurable, cause some updates might be global
+	# Only run if there is at least one client (peer_id 0 is server)
+	if wync_ctx.peers.size() <= 1:
+		return
+
+	var client_id = 1
 
 	# build packet
 
@@ -46,9 +50,10 @@ func on_process(_entities, _data, _delta: float):
 		entity_snap.entity_id = entity_id_key
 		
 		for prop_id in prop_ids_array:
-			
-			var prop = wync_ctx.props[prop_id] as WyncEntityProp
-			
+			var prop = WyncUtils.get_prop(wync_ctx, prop_id)
+			if prop == null:
+				continue
+			prop = prop as WyncEntityProp
 			# don't extract input values
 			# FIXME: should events be extracted? game event yes, but other player events?
 			# Maybe we need an option to what events to share.
@@ -58,24 +63,48 @@ func on_process(_entities, _data, _delta: float):
 				continue
 
 			if prop.relative_syncable:
-
-				# send fullsnapshot if client doesn't have history, or if it's too old
-
-				var client_relative_props = wync_ctx.client_has_relative_prop_has_last_tick[client_id] as Dictionary
-				if not client_relative_props.has(prop_id):
-					client_relative_props[prop_id] = -1
-				if client_relative_props[prop_id] >= wync_ctx.delta_base_state_tick:
-					continue
-				client_relative_props[prop_id] = co_ticks.ticks
+				continue
 			
 			# ===========================================================
 			# Save state history per tick
 			
 			var state = prop.confirmed_states.get_at(co_ticks.ticks)
-			
 			var prop_snap = WyncPktPropSnap.PropSnap.new()
 			prop_snap.prop_id = prop_id
 			prop_snap.prop_value = WyncUtils.duplicate_any(state)
+			entity_snap.props.append(prop_snap)
+
+		
+		# process delta props separatedly for now
+		# --------------------------------------------------
+
+		for prop_id in prop_ids_array:
+			var prop = WyncUtils.get_prop(wync_ctx, prop_id)
+			if prop == null:
+				continue
+			prop = prop as WyncEntityProp
+			if not prop.relative_syncable:
+				continue
+			if prop.timewarpable:
+				# TODO: currently not implemented
+				continue
+
+			# send fullsnapshot if client doesn't have history, or if it's too old
+
+			var client_relative_props = wync_ctx.client_has_relative_prop_has_last_tick[client_id] as Dictionary
+			if not client_relative_props.has(prop_id):
+				client_relative_props[prop_id] = -1
+			if client_relative_props[prop_id] >= wync_ctx.delta_base_state_tick:
+				continue
+			client_relative_props[prop_id] = co_ticks.ticks
+			
+			# ===========================================================
+			# Save state history per tick
+			
+			var state = prop.getter.call() # getter already gives a copy
+			var prop_snap = WyncPktPropSnap.PropSnap.new()
+			prop_snap.prop_id = prop_id
+			prop_snap.prop_value = state
 			entity_snap.props.append(prop_snap)
 			
 			#Log.out(self, "wync: Found prop %s" % prop.name_id)
@@ -144,7 +173,7 @@ static func update_relative_syncable_prop(ctx: WyncCtx, co_ticks: CoTicks, prop_
 	ctx.delta_base_state_tick = new_base_tick
 
 	if prop.relative_change_real_tick.size <= 0:
-		return 4
+		return OK
 
 	# update / merge events
 
@@ -157,7 +186,7 @@ static func update_relative_syncable_prop(ctx: WyncCtx, co_ticks: CoTicks, prop_
 			return 5
 		return 6
 
-	Log.out(ctx, "delta sync | are equal %s ==? %s" % [oldest_event_tick, ctx.delta_base_state_tick])
+	#Log.out(ctx, "delta sync | are equal %s ==? %s" % [oldest_event_tick, ctx.delta_base_state_tick])
 
 	# consume delta events
 	
@@ -169,9 +198,11 @@ static func update_relative_syncable_prop(ctx: WyncCtx, co_ticks: CoTicks, prop_
 
 	Log.out(ctx, "delta sync | gonna consume these events %s" % [event_array])
 
-	for event_id: int in event_array:
-		WyncDeltaSyncUtils.merge_event_to_state_confirmed_state(ctx, prop_id, event_id)
-		pass
+	# NOTE: Actually applying the events to the base should be done if timewarpable
+	# (in that case we actually have a base)
+	#for event_id: int in event_array:
+		#WyncDeltaSyncUtils.merge_event_to_state_real_state(ctx, prop_id, event_id)
+		#pass
 
 	event_array.clear()
 	return OK

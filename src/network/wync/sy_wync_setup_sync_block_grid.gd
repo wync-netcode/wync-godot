@@ -102,7 +102,7 @@ func setup_block_grid_delta(entity: Entity):
 
 	# required to extract state on start
 
-	WyncDeltaSyncUtils.delta_sync_prop_extract_state(wync_ctx, blocks_prop)
+	#WyncDeltaSyncUtils.delta_sync_prop_extract_state(wync_ctx, blocks_prop)
 	
 	var flag = CoFlagWyncEntityTracked.new()
 	ECS.entity_add_component_node(entity, flag)
