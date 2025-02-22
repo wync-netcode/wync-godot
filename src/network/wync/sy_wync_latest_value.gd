@@ -48,6 +48,10 @@ func on_process(entities, _data, _delta: float):
 	reset_all_state_to_confirmed_tick_relative(wync_ctx, prop_id_list, 0)
 	
 	delta_props_update_and_apply_delta_events(wync_ctx, prop_id_list_delta_sync)
+
+	# !!!
+	# TODO: _delta props_ Detect we're on a PREDICTED state and REWIND back to authoritative state
+	# !!!
 	
 	
 	# call integration function to sync new transforms with physics server
@@ -116,6 +120,8 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 		aux_prop = aux_prop as WyncEntityProp
 		
 		# NOTE: Are we sure we have delta_props_last_tick[prop_id]?
+		if not delta_props_last_tick.has(prop_id):
+			continue
 		# apply events in order
 
 		for tick: int in range(delta_props_last_tick[prop_id] +1, ctx.last_tick_received +1):

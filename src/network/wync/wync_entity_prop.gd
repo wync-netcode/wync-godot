@@ -80,3 +80,10 @@ var auxiliar_delta_events_prop_id: int = -1
 
 # A place to insert current delta events
 var current_delta_events: Array[int]
+
+# A place to insert current undo delta events
+var current_undo_delta_events: Array[int]
+
+# Exclusive to auxiliar props, here we store undo event_ids
+# Ring <tick: id, data: Array[int]>
+var confirmed_states_undo: RingBuffer = RingBuffer.new(10)

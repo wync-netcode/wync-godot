@@ -37,10 +37,13 @@ func on_process(entities, _data, delta: float):
 	# prediction loop
 	# FIXME: using last_confirmed_tick is UB
 	# FIXME: not all props will have the same 'last_confirmed_tick'
-	
+
 	var last_confirmed_tick = wync_ctx.last_tick_received
 	if last_confirmed_tick == 0:
 		return
+
+	wync_ctx.currently_on_predicted_tick = true
+	# NOTE: defer: wync_ctx.currently_on_predicted_tick = false
 	
 	for tick in range(last_confirmed_tick +1, target_tick +1):
 		
@@ -71,9 +74,13 @@ func on_process(entities, _data, delta: float):
 			
 			prop.setter.call(input_snap)
 			# INPUT/EVENTs don't need integration functions
+
+		# clearing delta events before predicting, predicted delta events will be
+		# polled and cached at the end of the predicted tick
+		SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(wync_ctx)
 		
+		# START USER PREDICTION FUNCTIONS --------------------------------------
 		# Prediction / Extrapolation:
-		# --------------------------------------------------
 		# Run user provided simulation functions
 		# TODO: Better way to receive simulate functions?
 		
@@ -93,7 +100,9 @@ func on_process(entities, _data, delta: float):
 		
 		SyActorEvents.client_simulate_events(self)
 		
-		# bookkeeping
+		# END USER PREDICTION FUNCTIONS ----------------------------------------
+		
+		# wync bookkeeping
 		# --------------------------------------------------
 
 		for entity: Entity in entities:
@@ -126,9 +135,31 @@ func on_process(entities, _data, delta: float):
 		
 			props_update_predicted_states_ticks(wync_ctx, wync_ctx.entity_has_props[co_actor.id], target_tick)
 		
+		# extract / poll for generated predicted _undo delta events_
+		
+		for prop_id: int in range(wync_ctx.props.size()):
+			var prop = WyncUtils.get_prop(wync_ctx, prop_id)
+			if prop == null:
+				continue
+			prop = prop as WyncEntityProp
+			if not prop.relative_syncable:
+				continue
+				
+			var aux_prop = WyncUtils.get_prop(wync_ctx, prop.auxiliar_delta_events_prop_id)
+			if aux_prop == null:
+				continue
+			aux_prop = aux_prop as WyncEntityProp
+			
+			var undo_events = aux_prop.current_undo_delta_events.duplicate(true)
+			aux_prop.confirmed_states_undo.insert_at(tick, undo_events)
+		
 		# sync transforms to physics server
 		RapierPhysicsServer2D.space_step(space, 0)
 		RapierPhysicsServer2D.space_flush_queries(space)
+
+	# "defer"
+	wync_ctx.currently_on_predicted_tick = false
+	SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(wync_ctx)
 
 
 static func props_update_predicted_states_data(ctx: WyncCtx, props_ids: Array) -> void:

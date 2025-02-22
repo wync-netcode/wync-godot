@@ -59,8 +59,8 @@ static func prop_set_relative_syncable (
 	prop_id: int,
 	delta_blueprint_id: int,
 	getter_pointer: Callable,
-	# predictable: bool = false # TODO
-	# timewarpable: bool # TODO
+	predictable: bool = false,
+	# timewarpable: bool # NOT PLANNED
 	) -> Error:
 	var prop = WyncUtils.get_prop(ctx, prop_id)
 	if prop == null:
@@ -83,10 +83,10 @@ static func prop_set_relative_syncable (
 	# assuming no timewarpable
 	prop.confirmed_states = RingBuffer.new(0)
 
-	#if WyncUtils.is_client(ctx):
-		#if predictable:
-			#WyncUtils.prop_set_predict(ctx, prop_id)
-			#prop.confirmed_states = RingBuffer.new(ctx.max_delta_prop_predicted_ticks)
+	var need_undo_events = false
+	if WyncUtils.is_client(ctx) && predictable:
+		need_undo_events = true
+		WyncUtils.prop_set_predict(ctx, prop_id)
 
 	# setup auxiliar prop for delta change events
 	prop.current_delta_events = [] as Array[int]
@@ -102,9 +102,8 @@ static func prop_set_relative_syncable (
 			# NOTE: somehow can't check cast like this `if events is not Array[int]:`
 			prop.current_delta_events.append_array(events),
 	)
-	var aux_prop = WyncUtils.get_prop(ctx, events_prop_id) as WyncEntityProp
-	aux_prop.is_auxiliar_prop = true
-	aux_prop.auxiliar_delta_events_prop_id = prop_id
+
+	WyncDeltaSyncUtils.prop_set_auxiliar(ctx, events_prop_id, prop_id, need_undo_events)
 
 	prop.auxiliar_delta_events_prop_id = events_prop_id
 
@@ -117,6 +116,22 @@ static func prop_is_relative_syncable(ctx: WyncCtx, prop_id: int) -> bool:
 		return false
 	prop = prop as WyncEntityProp
 	return prop.relative_syncable
+
+
+static func prop_set_auxiliar(ctx: WyncCtx, prop_id: int, auxiliar_pair: int, undo_events: int) -> int: 
+	var prop = WyncUtils.get_prop(ctx, prop_id)
+	if prop == null:
+		return 1
+	prop = prop as WyncEntityProp
+	if (prop.data_type != WyncEntityProp.DATA_TYPE.EVENT):
+		return 2
+	prop.is_auxiliar_prop = true
+	prop.auxiliar_delta_events_prop_id = auxiliar_pair
+
+	# undo events are only for prediction and timewarp
+	if undo_events:
+		prop.confirmed_states_undo = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE)
+	return OK
 
 
 ## commits a delta event to this tick
@@ -147,20 +162,9 @@ static func delta_prop_push_event_to_current \
 static func merge_event_to_state_confirmed_state(ctx: WyncCtx, prop_id: int, event_id: int) -> int:
 	# TODO
 	return 1
-	#var prop = WyncUtils.get_prop(ctx, prop_id)
-	#if prop == null:
-		#return 1
-	#prop = prop as WyncEntityProp
-	#if not prop.relative_syncable:
-		#return 2
-
-	#var state_pointer = prop.getter_pointer.call()
-	#if state_pointer == null:
-		#return 3
-
-	#return _merge_event_to_state(ctx, prop, event_id, state_pointer)
 
 
+"""
 static func merge_event_to_state_real_state(ctx: WyncCtx, prop_id: int, event_id: int) -> int:
 	var prop = WyncUtils.get_prop(ctx, prop_id)
 	if prop == null:
@@ -173,31 +177,82 @@ static func merge_event_to_state_real_state(ctx: WyncCtx, prop_id: int, event_id
 	if state_pointer == null:
 		return 3
 
-	return _merge_event_to_state(ctx, prop, event_id, state_pointer)
+	var result = _merge_event_to_state(ctx, prop, event_id, state_pointer, false)
+	return result[0]
+"""
+
+static func merge_event_to_state_real_state \
+	(ctx: WyncCtx, prop_id: int, event_id: int) -> int:
+	var prop = WyncUtils.get_prop(ctx, prop_id)
+	if prop == null:
+		return 1
+	prop = prop as WyncEntityProp
+	if not prop.relative_syncable:
+		return 2
+
+	if (WyncUtils.is_client(ctx)
+		&& not WyncUtils.prop_is_predicted(ctx, prop_id)
+		&& ctx.currently_on_predicted_tick
+		):
+		return OK
+
+# every time we merge a delta event WHILE PREDICTING (that is, not when merging received data)
+# we make sure to always produce an _undo delta event_ 
+
+	var is_client_predicting = WyncUtils.is_client(ctx) \
+			&& WyncUtils.prop_is_predicted(ctx, prop_id) \
+			&& ctx.currently_on_predicted_tick 
+	var aux_prop = null # : WyncEntityProp*
+
+	if (is_client_predicting):
+		aux_prop = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
+		if aux_prop == null:
+			return 3
+		aux_prop = aux_prop as WyncEntityProp
+		if not aux_prop.is_auxiliar_prop:
+			return 4
+
+	var state_pointer = prop.getter_pointer.call()
+	if state_pointer == null:
+		return 5
+
+	var result: Array[int] = _merge_event_to_state(ctx, prop, event_id, state_pointer, true)
+
+	if (is_client_predicting):
+		# commit event to aux_prop
+		if result[0] == OK:
+			if result[1] >= 0:
+				aux_prop.current_undo_delta_events.append(result[1])
+	
+	return result[0]
 
 
-static func _merge_event_to_state(ctx: WyncCtx, prop: WyncEntityProp, event_id: int, state: Variant) -> int:
+## @returns Tuple[int, int]. [0] -> Error, [1] -> undo_event_id
+static func _merge_event_to_state \
+	(ctx: WyncCtx, prop: WyncEntityProp, event_id: int, state: Variant, requires_undo: bool) -> Array[int]:
 	# get event transform function
 	# TODO: Make a new function get_event(event_id)
 	
 	if not ctx.events.has(event_id):
 		Log.err(ctx, "delta sync | couldn't find event id(%s)" % [event_id])
-		return 14
+		return [14, -1]
 	var event_data = (ctx.events[event_id] as WyncEvent).data
 
 	# NOTE: Maybe confirm this prop's blueprint supports this event_type
 
 	var blueprint = get_delta_blueprint(ctx, prop.delta_blueprint_id)
 	if blueprint == null:
-		return 15
+		return [15, -1]
 	blueprint = blueprint as WyncDeltaBlueprint
 
 	var handler = blueprint.event_handlers[event_data.event_type_id] as Callable
-	handler.call(state, event_data)
+	var result: Array[int] = handler.call(state, event_data, requires_undo, ctx if requires_undo else null)
+	if result[0] != OK: result[0] += 100
 
-	# Handler prototype reminder: func (data: Variant, event: WyncEvent.EventData)
+	# Reminder: Handler interface
+	# (state: Variant, event: WyncEvent.EventData, requires_undo: bool, ctx: WyncCtx*) -> [err, undo_event_id]:
 
-	return 0
+	return result
 
 
 ## Use this function when setting up an relative_syncable prop.

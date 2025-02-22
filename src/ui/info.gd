@@ -12,8 +12,7 @@ extends Control
 
 func _process(_delta):
 	lblMain.text = \
-	"""
-	PhysicsFPS: %s
+	"""PhysicsFPS: %s
 	ScreenFPS: %s
 	Latency: %s
 	Latency_stable: %s

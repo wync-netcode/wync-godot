@@ -32,8 +32,12 @@ func on_process(_entities, _data, _delta):
 		for i in range(2):
 			insert_random_block_by_delta_event(wync_ctx, en_block_grid_delta)
 		Log.out(self, "Generated new random event EVENT_DELTA_BLOCK_REPLACE")
-	else:
-		Log.err(self, "coulnd't get singleton EnBlockGridDelta")
+
+	var en_block_grid_delta_predicted = ECS.get_singleton_entity(self, "EnBlockGridDeltaPredicted")
+	if en_block_grid_delta_predicted:
+		for i in range(2):
+			insert_random_block_by_delta_event(wync_ctx, en_block_grid_delta_predicted)
+		Log.out(self, "Generated new random event EVENT_DELTA_BLOCK_REPLACE")
 
 
 func insert_random_block_by_global_event(wync_ctx: WyncCtx, en_block_grid: Entity):

@@ -8,6 +8,9 @@ class_name WyncDeltaBlueprint
 # * Stores Callables
 # * Allows to check if a given event_type_id is supported
 # Map <event_type_id: int, handler: Callable>
-# Map <event_type_id: int, func (data: Variant, event: WyncEvent.EventData) -> int>
 var event_handlers: Dictionary
 
+# Callable interface
+# 'first time' is another name for 'requires_undo'
+# 'wync_ctx' will only be set if 'requires_undo' is
+# (state: Variant, event: WyncEvent.EventData, requires_undo: bool, ctx: WyncCtx*) -> [err, undo_event_id]:
