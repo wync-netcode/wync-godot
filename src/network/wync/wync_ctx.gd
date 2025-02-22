@@ -128,6 +128,12 @@ var tick_action_history_size: int = 20
 var tick_action_history: RingBuffer = RingBuffer.new(tick_action_history_size)
 
 
+# prediction
+# --------------------------------------------------------------------------------
+
+var currently_on_predicted_tick: bool = false
+
+
 # TODO: Move to WyncUtils
 func _init() -> void:
 	peer_has_channel_has_events.resize(max_peers)

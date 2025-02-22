@@ -142,6 +142,10 @@ singleton = true
 position = Vector2(358, 28)
 singleton = true
 
+[node name="EnBlockGridDeltaPredicted" parent="worlds/WorldServer/Entities" instance=ExtResource("17_y8ubi")]
+position = Vector2(358, 28)
+singleton = true
+
 [node name="SetupSystems" type="Node" parent="worlds/WorldServer"]
 
 [node name="SetupWyncServer" type="Node" parent="worlds/WorldServer/SetupSystems"]
@@ -279,6 +283,7 @@ script = ExtResource("13_ckh8x")
 singleton = true
 
 [node name="CanvasLayer" type="CanvasLayer" parent="worlds/WorldClient1/Singletons"]
+visible = false
 
 [node name="EnChatbox" parent="worlds/WorldClient1/Singletons/CanvasLayer" instance=ExtResource("46_g7a7n")]
 
@@ -314,6 +319,10 @@ singleton = true
 
 [node name="EnBlockGridDelta" parent="worlds/WorldClient1/Entities" instance=ExtResource("17_y8ubi")]
 position = Vector2(358, 28)
+singleton = true
+
+[node name="EnBlockGridDeltaPredicted" parent="worlds/WorldClient1/Entities" instance=ExtResource("17_y8ubi")]
+position = Vector2(387, 29)
 singleton = true
 
 [node name="GroupPhysics" type="Node" parent="worlds/WorldClient1"]
@@ -354,15 +363,15 @@ script = ExtResource("35_m1lky")
 [node name="SyWyncSetupSyncBlockGrid" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsSetup"]
 script = ExtResource("38_g8ek6")
 
-[node name="SystemsProduceInputs" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
+[node name="SystemsGenInputs&Events(ButNoExeThem)" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 
-[node name="SyPlayerInput" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsProduceInputs"]
+[node name="SyPlayerInput" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsGenInputs&Events(ButNoExeThem)"]
 script = ExtResource("10_47ome")
 
-[node name="SyDrawBlockGrid-Node2D" type="Node2D" parent="worlds/WorldClient1/GroupPhysics/SystemsProduceInputs"]
+[node name="SyDrawBlockGrid-Node2D" type="Node2D" parent="worlds/WorldClient1/GroupPhysics/SystemsGenInputs&Events(ButNoExeThem)"]
 script = ExtResource("31_vohxg")
 
-[node name="SyDrawBlockGridDelta-Node2D" type="Node2D" parent="worlds/WorldClient1/GroupPhysics/SystemsProduceInputs"]
+[node name="SyDrawBlockGridDelta-Node2D" type="Node2D" parent="worlds/WorldClient1/GroupPhysics/SystemsGenInputs&Events(ButNoExeThem)"]
 script = ExtResource("53_8nlkt")
 
 [node name="SystemsWync" type="Node" parent="worlds/WorldClient1/GroupPhysics"]

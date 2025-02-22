@@ -21,6 +21,7 @@ func on_process_entity(entity : Entity, _data, _delta: float):
 	# register actors that aren't registered
 
 	var cursor = co_actors.cursor
+	var success = false
 	for i in range(co_actors.max_actors):
 		cursor = (co_actors.cursor + i) % co_actors.max_actors
 
@@ -31,6 +32,9 @@ func on_process_entity(entity : Entity, _data, _delta: float):
 			var flag = CoActorRegisteredFlag.new()
 			ECS.entity_add_component_node(entity, flag)
 			print("D: Registered Actor %s:%s with id %s" % [entity, entity.name, cursor])
+			success = true
 			break
 
+	if not success:
+		Log.err(self, "Couldn't register actor %s" % [entity])
 	co_actors.cursor = cursor

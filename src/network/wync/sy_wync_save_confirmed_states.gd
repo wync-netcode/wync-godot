@@ -70,9 +70,9 @@ func on_process(_entities, _data, _delta: float):
 				if not local_prop.relative_syncable:
 					continue
 
-				if WyncUtils.prop_is_predicted(wync_ctx, prop.prop_id):
-					# TODO: Currently not supported
-					continue
+				# TODO: overwrite real data, clear all delta events, etc.
+				# if a _predicted delta prop_ receives fullsnapshot cleanup must be done
+				# if a delta prop receives a fullsnapshot we have no other option but to comply
 
 				local_prop.setter.call(prop.prop_value)
 				local_prop.just_received_new_state = true
@@ -80,6 +80,8 @@ func on_process(_entities, _data, _delta: float):
 				delta_props_last_tick[prop.prop_id] = data.tick
 
 				# TODO: reset event buffer, clean events that should already be applied by this tick
+				# Reset it but only for one prop
+				# SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(wync_ctx)
 
 		# update last tick received
 		wync_ctx.last_tick_received = max(wync_ctx.last_tick_received, data.tick)

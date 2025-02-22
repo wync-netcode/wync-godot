@@ -2,6 +2,11 @@ extends System
 class_name SyWyncBufferedInputs
 const label: StringName = StringName("SyWyncBufferedInputs")
 
+## Polling and buffering of:
+## * INPUT props that the client owns
+## * EVENT props that the client owns
+
+## Old description:
 ## * Buffers the inputs per tick
 ## Rules for saving a tick
 ## * Si ya existe no lo reemplaces

@@ -24,7 +24,7 @@ func _draw() -> void:
 	
 	var en_block_grid = ECS.get_singleton_entity(self, "EnBlockGrid")
 	if en_block_grid:
-		draw_block_grid(en_block_grid, "EnBlockGrid", Vector2i(0, 0))
+		draw_block_grid(en_block_grid, "EnBlockGrid", Vector2i(3, 0))
 
 
 func draw_block_grid(entity: Entity, singleton_grid_name: String, offset: Vector2i):
@@ -33,7 +33,7 @@ func draw_block_grid(entity: Entity, singleton_grid_name: String, offset: Vector
 	if !block_grid:
 		return
 	var single_world = ECS.get_singleton_component(self, CoSingleWorld.label) as CoSingleWorld
-	var x_offset = single_world.world_id * ((block_grid.LENGTH + 1) * TILE_LENGTH_PIXELS)
+	var x_offset = (offset.x + single_world.world_id) * ((block_grid.LENGTH + 1) * TILE_LENGTH_PIXELS)
 	var y_offset = offset.y * ((block_grid.LENGTH + 1) * TILE_LENGTH_PIXELS)
 	
 	for i in range(block_grid.LENGTH):
