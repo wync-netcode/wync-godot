@@ -45,7 +45,7 @@ func on_process(_entities, _data, _delta: float):
 				# NOTE: Somehow I can't find another way to keep the prev updated
 				co_predict_data.tick_offset_prev = co_predict_data.tick_offset
 
-	# use max so that we never go back
+	# target_tick can only go forward. Use max so that we never go back
 	co_predict_data.target_tick = max(co_ticks.server_ticks + co_predict_data.tick_offset, co_predict_data.target_tick)
 	co_predict_data.current_tick_timestamp = curr_time
 	

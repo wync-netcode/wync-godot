@@ -133,6 +133,7 @@ var tick_action_history: RingBuffer = RingBuffer.new(tick_action_history_size)
 # --------------------------------------------------------------------------------
 
 var currently_on_predicted_tick: bool = false
+var current_predicted_tick: int = 0 # only for debugging
 
 
 # TODO: Move to WyncUtils
