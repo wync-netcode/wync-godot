@@ -221,28 +221,28 @@ static func merge_event_to_state_real_state \
 	if (is_client_predicting):
 		# commit event to aux_prop
 		if result[0] == OK:
-			if result[1] >= 0:
+			if result[1] != null:
 				aux_prop.current_undo_delta_events.append(result[1])
 	
 	return result[0]
 
 
-## @returns Tuple[int, int]. [0] -> Error, [1] -> undo_event_id
+## @returns Tuple[int, Optional<int>]. [0] -> Error, [1] -> undo_event_id || null
 static func _merge_event_to_state \
-	(ctx: WyncCtx, prop: WyncEntityProp, event_id: int, state: Variant, requires_undo: bool) -> Array[int]:
+	(ctx: WyncCtx, prop: WyncEntityProp, event_id: int, state: Variant, requires_undo: bool) -> Array[Variant]:
 	# get event transform function
 	# TODO: Make a new function get_event(event_id)
 	
 	if not ctx.events.has(event_id):
 		Log.err(ctx, "delta sync | couldn't find event id(%s)" % [event_id])
-		return [14, -1]
+		return [14, null]
 	var event_data = (ctx.events[event_id] as WyncEvent).data
 
 	# NOTE: Maybe confirm this prop's blueprint supports this event_type
 
 	var blueprint = get_delta_blueprint(ctx, prop.delta_blueprint_id)
 	if blueprint == null:
-		return [15, -1]
+		return [15, null]
 	blueprint = blueprint as WyncDeltaBlueprint
 
 	var handler = blueprint.event_handlers[event_data.event_type_id] as Callable

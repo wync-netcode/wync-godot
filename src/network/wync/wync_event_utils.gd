@@ -26,15 +26,18 @@ static func _get_new_event_id(ctx: WyncCtx) -> int:
 		ctx.event_id_counter = 0
 		
 	# return the generated id
+	assert(event_id > 0)
 	return event_id
 
 
-## @returns int event_id
+## @returns Optional<int>. event_id
 static func instantiate_new_event(
 	ctx: WyncCtx,
 	event_type_id: int,
 	arg_count: int
-	) -> int:
+	) -> Variant:
+	if not ctx.connected:
+		return null
 		
 	var event_id = _get_new_event_id(ctx)
 	var event = WyncEvent.new()
@@ -68,15 +71,15 @@ static func event_add_arg(
 	return 0
 
 
-## @returns int. (-1) -> error, (int > 0) -> event id
+## @returns Optional<int>. null -> error, int -> event id
 static func event_wrap_up(
 		ctx: WyncCtx,
 		event_id: int,
-	) -> int:
+	) -> Variant:
 		
 	var event = ctx.events[event_id]
 	if event is not WyncEvent:
-		return -1
+		return null
 	event = event as WyncEvent
 	
 	var event_hash = HashUtils.hash_any(event.data)

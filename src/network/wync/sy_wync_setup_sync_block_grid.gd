@@ -155,7 +155,7 @@ static func blueprint_handle_event_delta_block_replace \
 		WyncEventUtils.event_add_arg(ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
 		WyncEventUtils.event_add_arg(ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, prev_block_type)
 		event_id = WyncEventUtils.event_wrap_up(ctx, event_id)
-		if (event_id < 0):
+		if (event_id == null):
 			Log.err(null, "EVENT_DELTA_BLOCK_REPLACE | Error couldn't wrap up event")
 
 	# finally: modify state

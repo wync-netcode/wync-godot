@@ -5,6 +5,7 @@ const label: StringName = StringName("SyWyncBufferedInputs")
 ## Polling and buffering of:
 ## * INPUT props that the client owns
 ## * EVENT props that the client owns
+## * Client authoritative global events
 
 ## Old description:
 ## * Buffers the inputs per tick

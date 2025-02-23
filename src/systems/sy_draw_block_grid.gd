@@ -5,6 +5,10 @@ const label: StringName = StringName("SyDrawBlockGrid")
 const TILE_LENGTH_PIXELS = 30
 
 
+## This system runs ONE time AFTER the physics frame has ended, but not EVERY _draw frame_. 
+## As a result, events generated here must be buffered at the beginning of the next physics frame
+
+
 func _ready():
 	components = [CoBlockGrid.label]
 	super()
@@ -53,27 +57,7 @@ func draw_block_grid(entity: Entity, singleton_grid_name: String, offset: Vector
 			sprite_rect.size -= Vector2.ONE * 8
 			
 			var block = block_grid.blocks[i][j] as CoBlockGrid.BlockData
-			match block.id:
-				CoBlockGrid.BLOCK.AIR:
-					node2d.draw_line(sprite_rect.position, sprite_rect.end, Color.AQUAMARINE, 3)
-				CoBlockGrid.BLOCK.STONE:
-					node2d.draw_rect(sprite_rect, Color.DIM_GRAY, true)
-					node2d.draw_rect(sprite_rect, Color.BLACK, false)
-				CoBlockGrid.BLOCK.TNT:
-					node2d.draw_rect(sprite_rect, Color.DARK_RED, true)
-					var tnt_stripe_rect = Rect2(sprite_rect)
-					tnt_stripe_rect.position.y += tnt_stripe_rect.size.y / 3
-					tnt_stripe_rect.size.y /= 3
-					node2d.draw_rect(tnt_stripe_rect, Color.WHITE, true)
-					node2d.draw_rect(sprite_rect, Color.BLACK, false)
-					pass
-			
-			# on fire
-			if block.on_fire:
-				var fire_rect = Rect2(sprite_rect)
-				fire_rect.position.x += fire_rect.size.x * 0.7
-				fire_rect.size *= 1.0 - 0.7
-				node2d.draw_rect(fire_rect, Color.ORANGE, true)
+			SyDrawBlockGrid.draw_block(node2d, sprite_rect, block)
 			
 			# client interaction
 			if !is_client_application():
@@ -83,7 +67,7 @@ func draw_block_grid(entity: Entity, singleton_grid_name: String, offset: Vector
 			#Log.out(self, "mouse pos %s , rect pos %s" % [mouse, block_rect.position])
 			if block_rect.has_point(mouse):
 				var color = Color.WHITE
-				color.a = 0.5
+				color.a = 0.3
 				node2d.draw_rect(block_rect, color, true)
 				
 				var event = GameInfo.EVENT_NONE
@@ -98,6 +82,37 @@ func draw_block_grid(entity: Entity, singleton_grid_name: String, offset: Vector
 					Log.out(self, "EVENT MOUSE CLICK %s" % Vector2i(i,j))
 					
 					generate_block_grid_event(singleton_grid_name, event, Vector2i(i,j))
+
+
+static func draw_block(node2d: Node2D, sprite_rect: Rect2, block: CoBlockGrid.BlockData):
+	match block.id:
+		CoBlockGrid.BLOCK.AIR:
+			node2d.draw_line(sprite_rect.position, sprite_rect.end, Color.AQUAMARINE, 3)
+		CoBlockGrid.BLOCK.DIRT:
+			node2d.draw_rect(sprite_rect, Color.SADDLE_BROWN, true)
+			node2d.draw_rect(sprite_rect, Color.BLACK, false)
+		CoBlockGrid.BLOCK.STONE:
+			node2d.draw_rect(sprite_rect, Color.DARK_GRAY, true)
+			node2d.draw_rect(sprite_rect, Color.BLACK, false)
+		CoBlockGrid.BLOCK.GOLD:
+			node2d.draw_rect(sprite_rect, Color.GOLDENROD, true)
+			node2d.draw_rect(sprite_rect, Color.BLACK, false)
+		CoBlockGrid.BLOCK.DIAMOND:
+			node2d.draw_rect(sprite_rect, Color.MEDIUM_TURQUOISE, true) # Color.DARK_RED
+			"""
+			var tnt_stripe_rect = Rect2(sprite_rect)
+			tnt_stripe_rect.position.y += tnt_stripe_rect.size.y / 3
+			tnt_stripe_rect.size.y /= 3
+			node2d.draw_rect(tnt_stripe_rect, Color.WHITE, true)"""
+			node2d.draw_rect(sprite_rect, Color.BLACK, false)
+			pass
+	
+	# on fire
+	if block.on_fire:
+		var fire_rect = Rect2(sprite_rect)
+		fire_rect.position.x += fire_rect.size.x * 0.7
+		fire_rect.size *= 1.0 - 0.7
+		node2d.draw_rect(fire_rect, Color.MEDIUM_VIOLET_RED, true)
 
 
 func on_process(_entities, _data, _delta):
@@ -124,6 +139,8 @@ func generate_block_grid_event(
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
+	if not wync_ctx.connected:
+		return
 	
 	# FIXME: harcoded entity with id 0
 	var player_entity_id = 0
@@ -150,7 +167,7 @@ func generate_block_grid_event(
 	WyncEventUtils.event_add_arg(wync_ctx, event_id, 0, WyncEntityProp.DATA_TYPE.STRING, block_grid_id)
 	WyncEventUtils.event_add_arg(wync_ctx, event_id, 1, WyncEntityProp.DATA_TYPE.VECTOR2, event_data)
 	event_id = WyncEventUtils.event_wrap_up(wync_ctx, event_id)
-	if (event_id < 0):
+	if (event_id == null):
 		Log.err(self, "Error WyncEventUtils.event_wrap_up(wync_ctx, event_id)")
 		return
 	
