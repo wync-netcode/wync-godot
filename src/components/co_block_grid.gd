@@ -4,8 +4,10 @@ static var label = ECS.add_component()
 
 enum BLOCK {
 	AIR,
+	DIRT,
 	STONE,
-	TNT
+	GOLD,
+	DIAMOND
 }
 
 class BlockData:
@@ -37,7 +39,7 @@ func generate_random_blocks():
 			# 0: air
 			# 1: stone
 			# 2: tnt
-			blocks[i][j].id = random_generator.randi_range(BLOCK.AIR, BLOCK.TNT)
+			blocks[i][j].id = random_generator.randi_range(BLOCK.AIR, BLOCK.DIAMOND)
 			
 			# on fire
 			if random_generator.randi_range(0, 3) == 0:

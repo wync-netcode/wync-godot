@@ -24,6 +24,8 @@ func on_process(entities: Array, _data, _delta: float, node_ctx: Node = null):
 static func server_simulate_events(node_ctx: Node = null):
 	var co_single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = co_single_wync.ctx
+	if not wync_ctx.connected:
+		return
 
 	# Handle clients' events
 	for wync_peer_id in range(1, wync_ctx.peers.size()):
@@ -36,6 +38,8 @@ static func server_simulate_events(node_ctx: Node = null):
 static func client_simulate_events(node_ctx: Node = null):
 	var co_single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = co_single_wync.ctx
+	if not wync_ctx.connected:
+		return
 	
 	# Predict handling my own events
 	run_client_events(node_ctx, wync_ctx, wync_ctx.my_peer_id)
@@ -58,6 +62,8 @@ static func run_client_events(node_ctx: Node, wync_ctx: WyncCtx, client_wync_pee
 	
 	var channel_id = 0
 	var event_list: Array = wync_ctx.peer_has_channel_has_events[client_wync_peer_id][channel_id]
+
+	# NOTE: shouldn't this be ran from beggining to end?
 	for i in range(event_list.size() -1, -1, -1):
 		var event_id = event_list[i]
 		if not wync_ctx.events.has(event_id):
@@ -128,7 +134,7 @@ static func run_local_entity_events(node_ctx: Node, entity: Entity):
 
 
 static func handle_events(node_ctx: Node, event_data: WyncEvent.EventData, peer_id: int):
-	Log.out(node_ctx, "EVENT | handling %d" % [event_data.event_type_id])
+	Log.out(node_ctx, "EVENT | debug1 | handling %d" % [event_data.event_type_id])
 	match event_data.event_type_id:
 		GameInfo.EVENT_PLAYER_BLOCK_BREAK:
 			handle_event_player_block_break(node_ctx, event_data)
@@ -210,11 +216,18 @@ static func handle_event_player_block_break_delta(node_ctx: Node, event: WyncEve
 		Log.err(node_ctx, "singleton %s prop blocks id(%s) is not relative_syncable" % [singleton_name, blocks_prop_id])
 		return
 
+	# get the current block in order to "downgrade" it
+
+	var block_new_stage = CoBlockGrid.BLOCK.AIR
+	var block_data = co_block_grid.blocks[block_pos.x][block_pos.y] as CoBlockGrid.BlockData
+	if block_data.id > CoBlockGrid.BLOCK.AIR:
+		block_new_stage = block_data.id -1
+
 	# Commit a Delta Event here
 
 	var event_id = WyncEventUtils.instantiate_new_event(ctx, GameInfo.EVENT_DELTA_BLOCK_REPLACE, 2)
 	WyncEventUtils.event_add_arg(ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
-	WyncEventUtils.event_add_arg(ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, CoBlockGrid.BLOCK.AIR)
+	WyncEventUtils.event_add_arg(ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, block_new_stage)
 	event_id = WyncEventUtils.event_wrap_up(ctx, event_id)
 
 	var err = WyncDeltaSyncUtils.delta_prop_push_event_to_current(
@@ -262,9 +275,14 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 
 	# Commit a Delta Event here
 
+	var block_data = co_block_grid.blocks[block_pos.x][block_pos.y] as CoBlockGrid.BlockData
+	var block_new_stage = CoBlockGrid.BLOCK.DIAMOND 
+	if block_data.id < CoBlockGrid.BLOCK.DIAMOND: # upgrade block
+		block_new_stage = block_data.id +1
+
 	var event_id = WyncEventUtils.instantiate_new_event(ctx, GameInfo.EVENT_DELTA_BLOCK_REPLACE, 2)
 	WyncEventUtils.event_add_arg(ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
-	WyncEventUtils.event_add_arg(ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, CoBlockGrid.BLOCK.TNT)
+	WyncEventUtils.event_add_arg(ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, block_new_stage)
 	event_id = WyncEventUtils.event_wrap_up(ctx, event_id)
 	var err = WyncDeltaSyncUtils.delta_prop_push_event_to_current(
 		ctx, blocks_prop_id, GameInfo.EVENT_DELTA_BLOCK_REPLACE, event_id, co_ticks)
@@ -272,17 +290,27 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 		Log.err(node_ctx, "Failed to push delta-sync-event err(%s)" % [err])
 	WyncDeltaSyncUtils.merge_event_to_state_real_state(ctx, blocks_prop_id, event_id)
 
+	var event_data = (ctx.events[event_id] as WyncEvent).data
+	if WyncUtils.is_client(ctx):
+		Log.out(node_ctx, "delta sync debug1 | tick(PRED) predicted event (%s) %s" % [event_id, HashUtils.object_to_dictionary(event_data)])
+
 	# purposefully misspredict
 	if WyncUtils.is_client(ctx):
 		var initial_y = block_pos.y
-		for i in range(1, 4):
+		for i in range(1, 2):
 			# secondary break event
 			block_pos.y = initial_y - i
 			if block_pos.y < 0:
 				return
+
+			block_data = co_block_grid.blocks[block_pos.x][block_pos.y] as CoBlockGrid.BlockData
+			block_new_stage = CoBlockGrid.BLOCK.AIR
+			if block_data.id > block_new_stage: # downgrade block
+				block_new_stage = block_data.id -1
+
 			event_id = WyncEventUtils.instantiate_new_event(ctx, GameInfo.EVENT_DELTA_BLOCK_REPLACE, 2)
 			WyncEventUtils.event_add_arg(ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
-			WyncEventUtils.event_add_arg(ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, CoBlockGrid.BLOCK.STONE)
+			WyncEventUtils.event_add_arg(ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, block_new_stage)
 			event_id = WyncEventUtils.event_wrap_up(ctx, event_id)
 			err = WyncDeltaSyncUtils.delta_prop_push_event_to_current(
 				ctx, blocks_prop_id, GameInfo.EVENT_DELTA_BLOCK_REPLACE, event_id, co_ticks)
@@ -292,12 +320,19 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 		return
 
 	# secondary break event
+
 	block_pos.x -= 1
 	if block_pos.x < 0:
 		return
+
+	block_data = co_block_grid.blocks[block_pos.x][block_pos.y] as CoBlockGrid.BlockData
+	block_new_stage = CoBlockGrid.BLOCK.AIR
+	if block_data.id > block_new_stage: # downgrade block
+		block_new_stage = block_data.id -1
+
 	event_id = WyncEventUtils.instantiate_new_event(ctx, GameInfo.EVENT_DELTA_BLOCK_REPLACE, 2)
 	WyncEventUtils.event_add_arg(ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
-	WyncEventUtils.event_add_arg(ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, CoBlockGrid.BLOCK.AIR)
+	WyncEventUtils.event_add_arg(ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, block_new_stage)
 	event_id = WyncEventUtils.event_wrap_up(ctx, event_id)
 	err = WyncDeltaSyncUtils.delta_prop_push_event_to_current(
 		ctx, blocks_prop_id, GameInfo.EVENT_DELTA_BLOCK_REPLACE, event_id, co_ticks)

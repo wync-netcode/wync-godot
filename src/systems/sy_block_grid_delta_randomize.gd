@@ -20,6 +20,8 @@ func on_process(_entities, _data, _delta):
 
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
+	if not wync_ctx.connected:
+		return
 	
 	#var en_block_grid = ECS.get_singleton_entity(self, "EnBlockGrid")
 	#if en_block_grid:
@@ -75,13 +77,15 @@ func insert_random_block_by_global_event(wync_ctx: WyncCtx, en_block_grid: Entit
 
 
 func insert_random_block_by_delta_event(wync_ctx: WyncCtx, en_block_grid: Entity):
+
+	var random_generator = RandomNumberGenerator.new()
 	
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 	var co_actor = en_block_grid.get_component(CoActor.label) as CoActor
 	var co_block_grid = en_block_grid.get_component(CoBlockGrid.label) as CoBlockGrid
 
 	var block_pos = Vector2i(randi_range(0, CoBlockGrid.LENGTH-1), randi_range(0, CoBlockGrid.LENGTH-1))
-	var block_type = [CoBlockGrid.BLOCK.AIR, CoBlockGrid.BLOCK.STONE, CoBlockGrid.BLOCK.TNT].pick_random()
+	var block_type = random_generator.randi_range(CoBlockGrid.BLOCK.AIR, CoBlockGrid.BLOCK.DIAMOND)
 
 	var block_data = co_block_grid.blocks[block_pos.x][block_pos.y] as CoBlockGrid.BlockData
 	block_data.id = block_type
