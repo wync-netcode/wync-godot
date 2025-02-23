@@ -77,6 +77,7 @@ var client_has_info: Array
 # used to know two things:
 # 1. If a player has received info about this prop before
 # 2. What was the Last tick we sent prop data (relative sync event) to a client
+#    (Counts for both fullsnapshot and _delta events_)
 # Array[12] < client_id: int, Map<prop_id: int, tick: int> >
 var client_has_relative_prop_has_last_tick: Array[Dictionary]
 # each 10 frames and on prop creation. check for initialization

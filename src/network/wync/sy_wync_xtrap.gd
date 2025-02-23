@@ -157,9 +157,11 @@ func on_process(entities, _data, delta: float):
 		RapierPhysicsServer2D.space_step(space, 0)
 		RapierPhysicsServer2D.space_flush_queries(space)
 
+	SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(wync_ctx)
+	co_predict_data.delta_prop_last_tick_predicted = target_tick
+
 	# "defer"
 	wync_ctx.currently_on_predicted_tick = false
-	SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(wync_ctx)
 
 
 static func props_update_predicted_states_data(ctx: WyncCtx, props_ids: Array) -> void:
