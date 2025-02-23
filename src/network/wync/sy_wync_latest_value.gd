@@ -16,6 +16,8 @@ func _ready():
 
 
 func on_process(entities, _data, _delta: float):
+	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
 
 	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
 	if not co_loopback:
@@ -31,6 +33,7 @@ func on_process(entities, _data, _delta: float):
 	
 	var prop_id_list: Array[int] = []
 	var prop_id_list_delta_sync: Array[int] = []
+	var prop_id_list_delta_sync_predicted: Array[int] = []
 	for prop_id: int in wync_ctx.props.size():
 		var prop = WyncUtils.get_prop(wync_ctx, prop_id)
 		if prop == null:
@@ -42,16 +45,19 @@ func on_process(entities, _data, _delta: float):
 
 		if prop.relative_syncable:
 			prop_id_list_delta_sync.append(prop_id)
+			if WyncUtils.prop_is_predicted(wync_ctx, prop_id):
+				prop_id_list_delta_sync_predicted.append(prop_id)
 		else:
 			prop_id_list.append(prop_id)
 		
+	# rest state to _canonic_
+
 	reset_all_state_to_confirmed_tick_relative(wync_ctx, prop_id_list, 0)
+	predicted_delta_props_rollback_to_canonic_state(wync_ctx, prop_id_list_delta_sync_predicted, co_ticks, co_predict_data)
+
+	# apply newly received delta events to catch up to _canonic_
 	
 	delta_props_update_and_apply_delta_events(wync_ctx, prop_id_list_delta_sync)
-
-	# !!!
-	# TODO: _delta props_ Detect we're on a PREDICTED state and REWIND back to authoritative state
-	# !!!
 	
 	
 	# call integration function to sync new transforms with physics server
@@ -143,6 +149,69 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 
 			# update the latest tick we're at
 			delta_props_last_tick[prop_id] = ctx.last_tick_received
+
+
+static func predicted_delta_props_rollback_to_canonic_state \
+	(ctx: WyncCtx, prop_ids: Array[int], co_ticks: CoTicks, co_predict_data: CoSingleNetPredictionData):
+
+	var delta_props_last_tick = ctx.client_has_relative_prop_has_last_tick[ctx.my_peer_id] as Dictionary
+	#Log.out(ctx, "SyWyncLatestValue | delta sync | delta_prop_ids %s" % [prop_ids])
+
+	for prop_id: int in prop_ids:
+		var prop = WyncUtils.get_prop(ctx, prop_id)
+		if prop == null:
+			Log.err(ctx, "SyWyncLatestValue | delta sync | couldn't find prop id(%s)" % [prop_id])
+			continue 
+		prop = prop as WyncEntityProp
+
+		var aux_prop = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
+		if aux_prop == null:
+			Log.err(ctx, "SyWyncLatestValue | delta sync | couldn't find aux_prop id(%s)" % [prop.auxiliar_delta_events_prop_id])
+			continue
+		aux_prop = aux_prop as WyncEntityProp
+		
+		# NOTE: Are we sure we have delta_props_last_tick[prop_id]?
+		if not delta_props_last_tick.has(prop_id):
+			continue
+
+		var last_delta_prop_tick = delta_props_last_tick[prop_id]
+
+		# apply events in order
+
+		Log.out(ctx, "SyWyncLatestValue | server_ticks(%s) target_pred_tick(%s) last_delta_prop_tick(%s) last_tick_pred(%s)" % [
+			co_ticks.server_ticks,
+			co_predict_data.target_tick,
+			last_delta_prop_tick,
+			co_predict_data.delta_prop_last_tick_predicted,
+		])
+		for tick: int in range(co_predict_data.delta_prop_last_tick_predicted, last_delta_prop_tick, -1):
+
+			var undo_event_id_list = aux_prop.confirmed_states_undo.get_at(tick)
+			if undo_event_id_list == null || undo_event_id_list is not Array[int]:
+				
+				var local_tick = co_predict_data.get_tick_predicted(tick)
+				Log.err(ctx, "SyWyncLatestValue | have we predicted tick %s ? %s" % [tick, local_tick])
+				
+				# TODO: Tidy up this way of making sure there are no more predicted ticks
+				# FIXME: This is gonna break when we introduce Prop Spawning
+				
+				var we_didnt_predict = local_tick == null || local_tick is not int
+				if we_didnt_predict:
+					# that's fine
+					break
+				else: # we DID predict and there is NO cache
+					Log.err(ctx, "SyWyncLatestValue | FATAL got an empty undo_event_id_list prop(%s) tick(%s)" % [prop_id, tick])
+					assert(false)
+					return
+					
+			undo_event_id_list = undo_event_id_list as Array[int]
+			if undo_event_id_list.size():
+				Log.out(ctx, "SyWyncLatestValue | gonna revert predicted_tick %s with undo_events %s" % [tick, undo_event_id_list])
+
+			# merge state
+
+			for event_id: int in undo_event_id_list:
+				WyncDeltaSyncUtils.merge_event_to_state_real_state(ctx, prop_id, event_id)
 
 
 static func integrate_state(wync_ctx: WyncCtx, wync_entity_ids: Array):

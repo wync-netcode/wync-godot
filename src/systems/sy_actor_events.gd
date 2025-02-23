@@ -272,6 +272,25 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 		Log.err(node_ctx, "Failed to push delta-sync-event err(%s)" % [err])
 	WyncDeltaSyncUtils.merge_event_to_state_real_state(ctx, blocks_prop_id, event_id)
 
+	# purposefully misspredict
+	if WyncUtils.is_client(ctx):
+		var initial_y = block_pos.y
+		for i in range(1, 4):
+			# secondary break event
+			block_pos.y = initial_y - i
+			if block_pos.y < 0:
+				return
+			event_id = WyncEventUtils.instantiate_new_event(ctx, GameInfo.EVENT_DELTA_BLOCK_REPLACE, 2)
+			WyncEventUtils.event_add_arg(ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
+			WyncEventUtils.event_add_arg(ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, CoBlockGrid.BLOCK.STONE)
+			event_id = WyncEventUtils.event_wrap_up(ctx, event_id)
+			err = WyncDeltaSyncUtils.delta_prop_push_event_to_current(
+				ctx, blocks_prop_id, GameInfo.EVENT_DELTA_BLOCK_REPLACE, event_id, co_ticks)
+			if err != OK:
+				Log.err(node_ctx, "Failed to push delta-sync-event err(%s)" % [err])
+			WyncDeltaSyncUtils.merge_event_to_state_real_state(ctx, blocks_prop_id, event_id)
+		return
+
 	# secondary break event
 	block_pos.x -= 1
 	if block_pos.x < 0:
