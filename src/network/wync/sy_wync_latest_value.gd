@@ -197,8 +197,9 @@ static func predicted_delta_props_rollback_to_canonic_state \
 				
 				var we_didnt_predict = local_tick == null || local_tick is not int
 				if we_didnt_predict:
+					# FIXME: There are gonna be older values used here, make sure to overwrite them
 					# that's fine, stop here
-					break
+					continue
 				else: # we DID predict and there is NO cache
 					Log.err(ctx, "SyWyncLatestValue | FATAL got an empty undo_event_id_list prop(%s) tick(%s)" % [prop_id, tick])
 					assert(false)
