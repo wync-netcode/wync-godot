@@ -31,7 +31,7 @@ func on_process(_entities, _data, _delta: float, p_node_root: Node = null):
 	var single_wync = ECS.get_singleton_component(node_root, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
 	var co_ticks = wync_ctx.co_ticks
-	var co_predict_data = ECS.get_singleton_component(node_root, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
+	var co_predict_data = wync_ctx.co_predict_data
 	var tick_curr = co_ticks.server_ticks
 
 	if not wync_ctx.connected:
@@ -67,7 +67,7 @@ func on_process(_entities, _data, _delta: float, p_node_root: Node = null):
 	
 
 static func wync_tick_set_input(
-	co_predict_data: CoSingleNetPredictionData,
+	co_predict_data: CoPredictionData,
 	wync_ctx: WyncCtx,
 	input_prop_id: int,
 	tick_curr: int,

@@ -55,7 +55,7 @@ static func debug_show_timewarpable_lerped_positions(node_ctx: Node, wync_ctx: W
 	# TODO: generalize with 'wync_lerp'
 	
 	var co_ticks = wync_ctx.co_ticks
-	var co_predict_data = ECS.get_singleton_component(node_ctx, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
+	var co_predict_data = wync_ctx.co_predict_data
 	
 	var curr_tick_time = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, co_ticks.ticks)
 	var curr_time = curr_tick_time + co_ticks.lerp_delta_accumulator_ms

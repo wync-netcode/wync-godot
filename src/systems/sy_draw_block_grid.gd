@@ -184,5 +184,5 @@ func generate_block_grid_event(
 		wync_ctx, 0, event_id
 	)
 	
-	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
+	var co_predict_data = wync_ctx.co_predict_data
 	Log.out("ticks(%s|%s) co_wync_events.events %s:%s:%s" % [co_ticks.ticks, co_predict_data.target_tick, co_wync_events, co_wync_events.events.size(), co_wync_events.events], Log.TAG_GAME_EVENT)

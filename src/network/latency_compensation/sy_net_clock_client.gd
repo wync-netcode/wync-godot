@@ -14,7 +14,7 @@ func _ready():
 func on_process(_entities, _data, _delta: float):
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
-	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
+	var co_predict_data = wync_ctx.co_predict_data
 	var co_ticks = wync_ctx.co_ticks
 
 	var en_client = ECS.get_singleton_entity(self, "EnSingleClient")
@@ -62,7 +62,7 @@ func on_process(_entities, _data, _delta: float):
 			# TODO: Allow for updating co_ticks.server_ticks_offset every minute or so
 
 
-		var server_ticks = %CoSingleWyncContext.ctx.co_ticks.ticks -1
+		var server_ticks = %"CoSingleWyncContext-Server".ctx.co_ticks.ticks -1
 		
 		Log.out("Servertime %s, real %s, d %s | ticks %s, real %s, d %s | latency %s | clock %s | %s | %s | %s" % [
 			int(current_server_time),

@@ -5,8 +5,8 @@ extends Control
 @onready var lblMain: Label = %lblMain
 # TODO: Use a service
 @onready var co_loopback: CoTransportLoopback = %CoTransportLoopback
-@onready var co_prediction_data: CoSingleNetPredictionData = %CoSingleNetPredictionData
-@onready var co_wync_ctx: CoSingleWyncContext = %CoSingleWyncContext
+@onready var co_wync_ctx_server: CoSingleWyncContext = %"CoSingleWyncContext-Server"
+@onready var co_wync_ctx_client: CoSingleWyncContext = %"CoSingleWyncContext-Server"
 
 
 func _process(_delta):
@@ -24,9 +24,9 @@ func _process(_delta):
 		Engine.physics_ticks_per_second,
 		Performance.get_monitor(Performance.TIME_FPS),
 		co_loopback.latency,
-		co_prediction_data.latency_stable,
-		co_prediction_data.tick_offset,
-		co_prediction_data.lerp_ms,
-		co_wync_ctx.ctx.co_ticks.ticks,
-		co_wync_ctx.ctx.delta_base_state_tick
+		co_wync_ctx_client.ctx.co_predict_data.latency_stable,
+		co_wync_ctx_client.ctx.co_predict_data.tick_offset,
+		co_wync_ctx_client.ctx.co_predict_data.lerp_ms,
+		co_wync_ctx_server.ctx.co_ticks.ticks,
+		co_wync_ctx_server.ctx.delta_base_state_tick
 	]

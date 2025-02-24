@@ -155,7 +155,7 @@ static func is_entity_tracked(ctx: WyncCtx, entity_id: int) -> bool:
 # ================================================================
 
 ## @returns tuple[int, int]. tick left, tick right
-static func find_closest_two_snapshots_from_prop_id(ctx: WyncCtx, target_time: int, prop_id: int, co_ticks: CoTicks, co_predict_data: CoSingleNetPredictionData) -> Array:
+static func find_closest_two_snapshots_from_prop_id(ctx: WyncCtx, target_time: int, prop_id: int, co_ticks: CoTicks, co_predict_data: CoPredictionData) -> Array:
 	
 	var prop = WyncUtils.get_prop(ctx, prop_id)
 	if prop == null:
@@ -171,7 +171,7 @@ static func find_closest_two_snapshots_from_prop_id(ctx: WyncCtx, target_time: i
 
 
 ## @returns tuple[int, int]. tick left, tick right
-static func find_closest_two_snapshots_from_prop(_ctx: WyncCtx, target_time: int, prop: WyncEntityProp, co_ticks: CoTicks, co_predict_data: CoSingleNetPredictionData) -> Array:
+static func find_closest_two_snapshots_from_prop(_ctx: WyncCtx, target_time: int, prop: WyncEntityProp, co_ticks: CoTicks, co_predict_data: CoPredictionData) -> Array:
 	
 	var snap_left = -1
 	var snap_right = -1

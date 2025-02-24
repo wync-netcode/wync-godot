@@ -20,7 +20,7 @@ func on_process(entities, _data, _delta: float):
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
 	var co_ticks = wync_ctx.co_ticks
-	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
+	var co_predict_data = wync_ctx.co_predict_data
 
 	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
 	if not co_loopback:
@@ -155,7 +155,7 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 
 
 static func predicted_delta_props_rollback_to_canonic_state \
-	(ctx: WyncCtx, prop_ids: Array[int], co_ticks: CoTicks, co_predict_data: CoSingleNetPredictionData):
+	(ctx: WyncCtx, prop_ids: Array[int], co_ticks: CoTicks, co_predict_data: CoPredictionData):
 
 	var delta_props_last_tick = ctx.client_has_relative_prop_has_last_tick[ctx.my_peer_id] as Dictionary
 	#Log.out(ctx, "SyWyncLatestValue | delta sync | delta_prop_ids %s" % [prop_ids])

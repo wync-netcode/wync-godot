@@ -19,7 +19,7 @@ func on_process(_entities, _data, _delta: float):
 
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
-	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
+	var co_predict_data = wync_ctx.co_predict_data
 	var co_ticks = wync_ctx.co_ticks
 
 	var curr_tick_time = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, co_ticks.ticks)
@@ -48,7 +48,7 @@ func on_process(_entities, _data, _delta: float):
 
 func precompute_lerping_prop_confirmed_states(
 		wync_ctx: WyncCtx, prop_id: int, target_time: int,
-		co_ticks: CoTicks, co_predict_data: CoSingleNetPredictionData
+		co_ticks: CoTicks, co_predict_data: CoPredictionData
 	):
 	var prop = WyncUtils.get_prop(wync_ctx, prop_id)
 	if prop == null:

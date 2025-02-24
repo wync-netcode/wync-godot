@@ -14,7 +14,7 @@ func on_process(_entities, _data, _delta: float):
 		return
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
-	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
+	var co_predict_data = wync_ctx.co_predict_data
 	var co_ticks = wync_ctx.co_ticks
 	var physics_fps = Engine.physics_ticks_per_second
 	

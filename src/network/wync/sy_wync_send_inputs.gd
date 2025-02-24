@@ -16,11 +16,12 @@ func on_process(_entities, _data, _delta: float):
 		Log.err("No server peer", Log.TAG_INPUT_BUFFER)
 		return
 	var co_io_packets = en_client.get_component(CoIOPackets.label) as CoIOPackets
-	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
-	var tick_pred = co_predict_data.target_tick
 	
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
+	var co_predict_data = wync_ctx.co_predict_data
+	var tick_pred = co_predict_data.target_tick
+
 	if !wync_ctx.connected:
 		return
 	

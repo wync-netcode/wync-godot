@@ -243,7 +243,7 @@ event_add_arg(arg_type: enum, arg_data: any)
 entity_event_prop_add_new(event_type_id, tick)
 
 func tick_set_event(
-	co_predict_data: CoSingleNetPredictionData,
+	co_predict_data: CoPredictionData,
 	wync_ctx: WyncCtx,
 	input_prop_id: int,
 	tick_curr: int,

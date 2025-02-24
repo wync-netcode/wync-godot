@@ -4,7 +4,7 @@ class_name WyncCtx
 ## Extra structures
 
 var co_ticks: CoTicks = CoTicks.new()
-var co_predict_data: CoSingleNetPredictionData = CoSingleNetPredictionData.new()
+var co_predict_data: CoPredictionData = CoPredictionData.new()
 
 ## Server & Client ==============================
 
