@@ -235,6 +235,10 @@ static func handle_event_player_block_break_delta(node_ctx: Node, event: WyncEve
 	if err != OK:
 		Log.err(node_ctx, "Failed to push delta-sync-event err(%s)" % [err])
 
+	var event_data = (ctx.events[event_id] as WyncEvent).data
+	if WyncUtils.is_client(ctx):
+		Log.out(node_ctx, "delta sync debug1 | pred_tick(%s) predicted event (%s) %s" % [ctx.current_predicted_tick, event_id, HashUtils.object_to_dictionary(event_data)])
+
 	# If this runs on the client it means prediction...
 
 	WyncDeltaSyncUtils.merge_event_to_state_real_state(ctx, blocks_prop_id, event_id)
@@ -317,6 +321,10 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 			if err != OK:
 				Log.err(node_ctx, "Failed to push delta-sync-event err(%s)" % [err])
 			WyncDeltaSyncUtils.merge_event_to_state_real_state(ctx, blocks_prop_id, event_id)
+
+			event_data = (ctx.events[event_id] as WyncEvent).data
+			if WyncUtils.is_client(ctx):
+				Log.out(node_ctx, "delta sync debug1 | pred_tick(%s) predicted event (%s) %s" % [ctx.current_predicted_tick, event_id, HashUtils.object_to_dictionary(event_data)])
 		return
 
 	# secondary break event
@@ -339,6 +347,10 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 	if err != OK:
 		Log.err(node_ctx, "Failed to push delta-sync-event err(%s)" % [err])
 	WyncDeltaSyncUtils.merge_event_to_state_real_state(ctx, blocks_prop_id, event_id)
+
+	event_data = (ctx.events[event_id] as WyncEvent).data
+	if WyncUtils.is_client(ctx):
+		Log.out(node_ctx, "delta sync debug1 | pred_tick(%s) predicted event (%s) %s" % [ctx.current_predicted_tick, event_id, HashUtils.object_to_dictionary(event_data)])
 
 
 # server only function

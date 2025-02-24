@@ -196,7 +196,6 @@ static func predicted_delta_props_rollback_to_canonic_state \
 			if undo_event_id_list == null || undo_event_id_list is not Array[int]:
 				
 				var local_tick = co_predict_data.get_tick_predicted(tick)
-				Log.err(ctx, "SyWyncLatestValue | have we predicted tick %s ? %s" % [tick, local_tick])
 				
 				# TODO: Tidy up this way of making sure there are no more predicted ticks
 				# FIXME: This is gonna break when we introduce Prop Spawning
@@ -205,6 +204,7 @@ static func predicted_delta_props_rollback_to_canonic_state \
 				if we_didnt_predict:
 					# FIXME: There are gonna be older values used here, make sure to overwrite them
 					# that's fine, stop here
+					Log.out(ctx, "SyWyncLatestValue debug1 | didn't / haven't predicted this tick %s" % [tick])
 					continue
 				else: # we DID predict and there is NO cache
 					Log.err(ctx, "SyWyncLatestValue | FATAL got an empty undo_event_id_list prop(%s) tick(%s)" % [prop_id, tick])
@@ -217,6 +217,11 @@ static func predicted_delta_props_rollback_to_canonic_state \
 
 			for event_id: int in undo_event_id_list:
 				WyncDeltaSyncUtils.merge_event_to_state_real_state(ctx, prop_id, event_id)
+
+				if not ctx.events.has(event_id):
+					continue
+				var event_data = (ctx.events[event_id] as WyncEvent).data
+				Log.out(ctx, "SyWyncLatestValue | delta sync debug1 | applied undo_events predicted_tick(%s) %s %s" % [tick, undo_event_id_list, HashUtils.object_to_dictionary(event_data)])
 
 
 static func integrate_state(wync_ctx: WyncCtx, wync_entity_ids: Array):
