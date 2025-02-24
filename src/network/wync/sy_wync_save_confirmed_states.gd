@@ -14,7 +14,7 @@ func on_process(_entities, _data, _delta: float):
 
 	var en_client = ECS.get_singleton_entity(self, "EnSingleClient")
 	if not en_client:
-		Log.err(self, "Couldn't find singleton EnSingleClient")
+		Log.err("Couldn't find singleton EnSingleClient", Log.TAG_LATEST_VALUE)
 		return
 	var co_io = en_client.get_component(CoIOPackets.label) as CoIOPackets
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
@@ -34,14 +34,14 @@ func on_process(_entities, _data, _delta: float):
 		for snap: WyncPktPropSnap.EntitySnap in data.snaps:
 			
 			if not WyncUtils.is_entity_tracked(wync_ctx, snap.entity_id):
-				Log.err(self, "couldn't find entity (%s) skipping..." % [snap.entity_id])
+				Log.err("couldn't find entity (%s) skipping..." % [snap.entity_id], Log.TAG_LATEST_VALUE)
 				continue
 			
 			for prop: WyncPktPropSnap.PropSnap in snap.props:
 				
 				var local_prop = WyncUtils.get_prop(wync_ctx, prop.prop_id)
 				if local_prop == null:
-					Log.err(self, "couldn't find prop (%s) skipping..." % [prop.prop_id])
+					Log.err("couldn't find prop (%s) skipping..." % [prop.prop_id], Log.TAG_LATEST_VALUE)
 					continue
 				local_prop = local_prop as WyncEntityProp
 				if local_prop.relative_syncable:
@@ -65,7 +65,7 @@ func on_process(_entities, _data, _delta: float):
 				
 				var local_prop = WyncUtils.get_prop(wync_ctx, prop.prop_id)
 				if local_prop == null:
-					Log.err(self, "couldn't find prop (%s) skipping..." % [prop.prop_id])
+					Log.err("couldn't find prop (%s) skipping..." % [prop.prop_id], Log.TAG_LATEST_VALUE)
 					continue
 				local_prop = local_prop as WyncEntityProp
 				if not local_prop.relative_syncable:
@@ -79,7 +79,7 @@ func on_process(_entities, _data, _delta: float):
 				local_prop.just_received_new_state = true
 				var delta_props_last_tick = wync_ctx.client_has_relative_prop_has_last_tick[wync_ctx.my_peer_id] as Dictionary
 				delta_props_last_tick[prop.prop_id] = data.tick
-				Log.out(self, "delta sync debug1 | ser_tick(%s) delta_prop_last_tick %s" % [co_ticks.server_ticks, delta_props_last_tick])
+				Log.out("delta sync debug1 | ser_tick(%s) delta_prop_last_tick %s" % [co_ticks.server_ticks, delta_props_last_tick], Log.TAG_LATEST_VALUE)
 
 				# TODO: reset event buffer, clean events that should already be applied by this tick
 				# Reset it but only for one prop

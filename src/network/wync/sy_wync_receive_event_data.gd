@@ -13,14 +13,14 @@ func on_process(_entities, _data, _delta: float, node_root: Node = null):
 	if not en_peer:
 		en_peer = ECS.get_singleton_entity(node_self, "EnSingleServer")
 	if not en_peer:
-		Log.err(node_self, "Couldn't find singleton EnSingleClient or EnSingleServer")
+		Log.err("Couldn't find singleton EnSingleClient or EnSingleServer", Log.TAG_EVENT_DATA)
 		return
 	var co_io = en_peer.get_component(CoIOPackets.label) as CoIOPackets
 
 	var single_wync = ECS.get_singleton_component(node_self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
 	if not wync_ctx.connected:
-		Log.err(node_self, "Not connected")
+		Log.err("Not connected", Log.TAG_EVENT_DATA)
 		return
 
 	# save event data from packets
@@ -32,7 +32,7 @@ func on_process(_entities, _data, _delta: float, node_root: Node = null):
 			continue
 		
 		# consume
-		Log.out(node_self, "events | Consume WyncPktEventData")
+		Log.out("events | Consume WyncPktEventData", Log.TAG_EVENT_DATA)
 		co_io.in_packets.remove_at(k)
 
 		for event: WyncPktEventData.EventData in data.events:
@@ -44,5 +44,5 @@ func on_process(_entities, _data, _delta: float, node_root: Node = null):
 			wync_event.data.arg_data = event.arg_data # std::move(std::unique_pointer)
 			wync_ctx.events[event.event_id] = wync_event
 		
-			Log.out(node_self, "events | got this events %s" % [event.event_id])
+			Log.out("events | got this events %s" % [event.event_id], Log.TAG_EVENT_DATA)
 			# NOTE: what if we already have this event data? Maybe it's better to receive it anyway?

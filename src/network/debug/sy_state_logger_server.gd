@@ -13,7 +13,7 @@ func on_process_entity(entity, _data, _delta: float):
 	
 	var co_state_log = GlobalSingletons.singleton.get_component(CoStateLog.label) as CoStateLog
 	if not co_state_log:
-		Log.err(self, "E: Couldn't find singleton CoStateLog")
+		Log.err("E: Couldn't find singleton CoStateLog")
 		return
 	
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks

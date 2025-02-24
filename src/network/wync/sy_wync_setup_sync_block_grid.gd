@@ -51,7 +51,7 @@ func setup_block_grid(entity: Entity):
 	
 	var flag = CoFlagWyncEntityTracked.new()
 	ECS.entity_add_component_node(entity, flag)
-	Log.out(self, "wync: Registered entity %s with id %s" % [entity, co_actor.id])
+	Log.out("wync: Registered entity %s with id %s" % [entity, co_actor.id], Log.TAG_PROP_SETUP)
 
 
 func setup_block_grid_delta(entity: Entity, predicted: bool):
@@ -102,7 +102,7 @@ func setup_block_grid_delta(entity: Entity, predicted: bool):
 		predicted
 	)
 	if err > 0:
-		Log.err(self, "Couldn't set relative sync to Prop id(%s) err(%s)" % [blocks_prop, err])
+		Log.err("Couldn't set relative sync to Prop id(%s) err(%s)" % [blocks_prop, err], Log.TAG_PROP_SETUP)
 		return
 
 	# required to extract state on start
@@ -111,7 +111,7 @@ func setup_block_grid_delta(entity: Entity, predicted: bool):
 	
 	var flag = CoFlagWyncEntityTracked.new()
 	ECS.entity_add_component_node(entity, flag)
-	Log.out(self, "wync: Registered entity %s with id %s" % [entity, co_actor.id])
+	Log.out("wync: Registered entity %s with id %s" % [entity, co_actor.id], Log.TAG_PROP_SETUP)
 
 
 # Remember that these delta changes ARE NOT EVENTS but just changes over time.
@@ -129,7 +129,7 @@ static func blueprint_handle_event_delta_block_replace \
 	# TODO: Maybe also tell me the data_type that is stored in the prop.
 
 	if state is not CoBlockGrid:
-		Log.err(null, "EVENT_DELTA_BLOCK_REPLACE | Data is not CoBlockGrid")
+		Log.err("EVENT_DELTA_BLOCK_REPLACE | Data is not CoBlockGrid", Log.TAG_DELTA_EVENT)
 		return [1, -1]
 	var co_block_grid = state as CoBlockGrid
 	var block_pos = event.arg_data[0] as Vector2i
@@ -140,7 +140,7 @@ static func blueprint_handle_event_delta_block_replace \
 
 	if not (MathUtils.is_between_int(block_pos.x, 0, co_block_grid.LENGTH -1)
 	&& MathUtils.is_between_int(block_pos.y, 0, co_block_grid.LENGTH -1)):
-		Log.err(null, "EVENT_DELTA_BLOCK_REPLACE | block_pos %s is invalid" % [block_pos])
+		Log.err("EVENT_DELTA_BLOCK_REPLACE | block_pos %s is invalid" % [block_pos], Log.TAG_DELTA_EVENT)
 		return [1, -1]
 
 	var block_data = co_block_grid.blocks[block_pos.x][block_pos.y] as CoBlockGrid.BlockData
@@ -156,7 +156,7 @@ static func blueprint_handle_event_delta_block_replace \
 		WyncEventUtils.event_add_arg(ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, prev_block_type)
 		event_id = WyncEventUtils.event_wrap_up(ctx, event_id)
 		if (event_id == null):
-			Log.err(null, "EVENT_DELTA_BLOCK_REPLACE | Error couldn't wrap up event")
+			Log.err("EVENT_DELTA_BLOCK_REPLACE | Error couldn't wrap up event", Log.TAG_DELTA_EVENT)
 
 	# finally: modify state
 

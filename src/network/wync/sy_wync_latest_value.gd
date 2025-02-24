@@ -21,7 +21,7 @@ func on_process(entities, _data, _delta: float):
 
 	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
 	if not co_loopback:
-		Log.err(self, "Couldn't find singleton CoTransportLoopback")
+		Log.err("Couldn't find singleton CoTransportLoopback", Log.TAG_LATEST_VALUE)
 		return
 	
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
@@ -115,13 +115,13 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 	for prop_id: int in prop_ids:
 		var prop = WyncUtils.get_prop(ctx, prop_id)
 		if prop == null:
-			Log.err(ctx, "SyWyncLatestValue | delta sync | couldn't find prop id(%s)" % [prop_id])
+			Log.err("SyWyncLatestValue | delta sync | couldn't find prop id(%s)" % [prop_id], Log.TAG_LATEST_VALUE)
 			continue 
 		prop = prop as WyncEntityProp
 
 		var aux_prop = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
 		if aux_prop == null:
-			Log.err(ctx, "SyWyncLatestValue | delta sync | couldn't find aux_prop id(%s)" % [prop.auxiliar_delta_events_prop_id])
+			Log.err("SyWyncLatestValue | delta sync | couldn't find aux_prop id(%s)" % [prop.auxiliar_delta_events_prop_id], Log.TAG_LATEST_VALUE)
 			continue
 		aux_prop = aux_prop as WyncEntityProp
 		
@@ -136,7 +136,7 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 		for tick: int in range(delta_props_last_tick[prop_id] +1, ctx.last_tick_received +1):
 			var delta_event_list = aux_prop.confirmed_states.get_at(tick)
 			if delta_event_list is not Array[int]:
-				Log.err(ctx, "SyWyncLatestValue | delta sync | we don't have an input for this tick %s" % [tick])
+				Log.err("SyWyncLatestValue | delta sync | we don't have an input for this tick %s" % [tick], Log.TAG_LATEST_VALUE)
 				continue
 
 			for event_id: int in delta_event_list:
@@ -146,9 +146,9 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 				# in that case we're gonna continue in hopes we eventually get the event data
 				# TODO: implement measures against this ever happening
 				if err:
-					Log.err(ctx, "delta sync | VERY BAD, couldn't apply event id(%s) err(%s)" % [event_id, err])
+					Log.err("delta sync | VERY BAD, couldn't apply event id(%s) err(%s)" % [event_id, err], Log.TAG_LATEST_VALUE)
 					break
-				Log.out(ctx, "delta sync | client consumed delta event %d" % [event_id])
+				Log.out("delta sync | client consumed delta event %d" % [event_id], Log.TAG_LATEST_VALUE)
 
 			# update the latest tick we're at
 			delta_props_last_tick[prop_id] = ctx.last_tick_received
@@ -163,7 +163,7 @@ static func predicted_delta_props_rollback_to_canonic_state \
 	for prop_id: int in prop_ids:
 		var prop = WyncUtils.get_prop(ctx, prop_id)
 		if prop == null:
-			Log.err(ctx, "SyWyncLatestValue | delta sync | couldn't find prop id(%s)" % [prop_id])
+			Log.err("SyWyncLatestValue | delta sync | couldn't find prop id(%s)" % [prop_id], Log.TAG_LATEST_VALUE)
 			continue 
 		prop = prop as WyncEntityProp
 
@@ -172,7 +172,7 @@ static func predicted_delta_props_rollback_to_canonic_state \
 
 		var aux_prop = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
 		if aux_prop == null:
-			Log.err(ctx, "SyWyncLatestValue | delta sync | couldn't find aux_prop id(%s)" % [prop.auxiliar_delta_events_prop_id])
+			Log.err("SyWyncLatestValue | delta sync | couldn't find aux_prop id(%s)" % [prop.auxiliar_delta_events_prop_id], Log.TAG_LATEST_VALUE)
 			continue
 		aux_prop = aux_prop as WyncEntityProp
 		
@@ -184,12 +184,12 @@ static func predicted_delta_props_rollback_to_canonic_state \
 
 		# apply events in order
 
-		Log.out(ctx, "SyWyncLatestValue | server_ticks(%s) target_pred_tick(%s) last_delta_prop_tick(%s) last_tick_pred(%s)" % [
+		Log.out("SyWyncLatestValue | server_ticks(%s) target_pred_tick(%s) last_delta_prop_tick(%s) last_tick_pred(%s)" % [
 			co_ticks.server_ticks,
 			co_predict_data.target_tick,
 			last_delta_prop_tick,
 			co_predict_data.delta_prop_last_tick_predicted,
-		])
+		], Log.TAG_LATEST_VALUE)
 		for tick: int in range(co_predict_data.delta_prop_last_tick_predicted, last_delta_prop_tick, -1):
 
 			var undo_event_id_list = aux_prop.confirmed_states_undo.get_at(tick)
@@ -204,10 +204,10 @@ static func predicted_delta_props_rollback_to_canonic_state \
 				if we_didnt_predict:
 					# FIXME: There are gonna be older values used here, make sure to overwrite them
 					# that's fine, stop here
-					Log.out(ctx, "SyWyncLatestValue debug1 | didn't / haven't predicted this tick %s" % [tick])
+					Log.out("SyWyncLatestValue debug1 | didn't / haven't predicted this tick %s" % [tick], Log.TAG_LATEST_VALUE)
 					continue
 				else: # we DID predict and there is NO cache
-					Log.err(ctx, "SyWyncLatestValue | FATAL got an empty undo_event_id_list prop(%s) tick(%s)" % [prop_id, tick])
+					Log.err("SyWyncLatestValue | FATAL got an empty undo_event_id_list prop(%s) tick(%s)" % [prop_id, tick], Log.TAG_LATEST_VALUE)
 					assert(false)
 					return
 					
@@ -221,7 +221,7 @@ static func predicted_delta_props_rollback_to_canonic_state \
 				if not ctx.events.has(event_id):
 					continue
 				var event_data = (ctx.events[event_id] as WyncEvent).data
-				Log.out(ctx, "SyWyncLatestValue | delta sync debug1 | applied undo_events predicted_tick(%s) %s %s" % [tick, undo_event_id_list, HashUtils.object_to_dictionary(event_data)])
+				Log.out("SyWyncLatestValue | delta sync debug1 | applied undo_events predicted_tick(%s) %s %s" % [tick, undo_event_id_list, HashUtils.object_to_dictionary(event_data)], Log.TAG_LATEST_VALUE)
 
 
 static func integrate_state(wync_ctx: WyncCtx, wync_entity_ids: Array):

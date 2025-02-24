@@ -53,7 +53,7 @@ func send_event_ids_to_peers():
 			continue
 		aux_prop = aux_prop as WyncEntityProp
 		if aux_prop.data_type != WyncEntityProp.DATA_TYPE.EVENT:
-			Log.err(self, "auxiliar prop id(%s) is not EVENT" % prop_id)
+			Log.err("auxiliar prop id(%s) is not EVENT" % prop_id, Log.TAG_DELTA_EVENT)
 			continue
 
 		# prepare packet
@@ -63,7 +63,7 @@ func send_event_ids_to_peers():
 		for tick in range(co_ticks.ticks - CoNetBufferedInputs.AMOUNT_TO_SEND, co_ticks.ticks +1):
 			var input = aux_prop.confirmed_states.get_at(tick)
 			if input == null:
-				Log.err(self, "we don't have an input for this tick %s" % [tick])
+				Log.err("we don't have an input for this tick %s" % [tick], Log.TAG_DELTA_EVENT)
 				continue
 			
 			var tick_input_wrap = NetPacketInputs.NetTickDataDecorator.new()
@@ -71,7 +71,7 @@ func send_event_ids_to_peers():
 			
 			var copy = WyncUtils.duplicate_any(input)
 			if copy == null:
-				Log.out(self, "WARNING: input data couldn't be duplicated %s" % [input])
+				Log.out("WARNING: input data couldn't be duplicated %s" % [input], Log.TAG_DELTA_EVENT)
 			tick_input_wrap.data = copy if copy != null else input
 				
 			net_inputs.inputs.append(tick_input_wrap)
@@ -115,7 +115,7 @@ func queue_event_data_to_be_synced_to_peers():
 			continue
 		aux_prop = aux_prop as WyncEntityProp
 		if aux_prop.data_type != WyncEntityProp.DATA_TYPE.EVENT:
-			Log.err(self, "auxiliar prop id(%s) is not EVENT" % prop_id)
+			Log.err("auxiliar prop id(%s) is not EVENT" % prop_id, Log.TAG_DELTA_EVENT)
 			continue
 
 		# iterate through all peers
@@ -132,7 +132,7 @@ func queue_event_data_to_be_synced_to_peers():
 			# client history too old, need to perform full snapshot, continuing...
 
 			if client_last_tick < ctx.delta_base_state_tick:
-				Log.out(self, "delta sync | client_last_tick too old, needs full snapshot, skipping...")
+				Log.out("delta sync | client_last_tick too old, needs full snapshot, skipping...", Log.TAG_DELTA_EVENT)
 				continue
 
 			var event_set = ctx.peers_events_to_sync[wync_client_id] as Dictionary
@@ -143,7 +143,7 @@ func queue_event_data_to_be_synced_to_peers():
 				# get _delta events_ for this tick
 				var input = aux_prop.confirmed_states.get_at(tick)
 				if input is not Array[int]:
-					Log.err(self, "we don't have an input for this tick %s" % [tick])
+					Log.err("we don't have an input for this tick %s" % [tick], Log.TAG_DELTA_EVENT)
 					continue
 				
 				for event_id: int in input:

@@ -37,7 +37,7 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 				already_registered = true
 		
 		if already_registered:
-			Log.out(self, "Client %s already registered" % client_peer_id)
+			Log.out("Client %s already registered" % client_peer_id, Log.TAG_NETE_CONNECT)
 			continue
 
 		# register client on server

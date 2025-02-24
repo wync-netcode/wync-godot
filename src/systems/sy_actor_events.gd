@@ -96,7 +96,7 @@ static func run_server_events(node_ctx: Node, wync_ctx: WyncCtx):
 		event = event as WyncEvent
 
 		# handle it
-		Log.out(node_ctx, "event handling | handling server event %s" % [event_id])
+		Log.out("event handling | handling server event %s" % [event_id], Log.TAG_GAME_EVENT)
 		handle_events(node_ctx, event.data, server_wync_peer_id)
 		WyncEventUtils.global_event_consume(wync_ctx, server_wync_peer_id, channel_id, event_id)
 
@@ -110,11 +110,11 @@ static func run_local_entity_events(node_ctx: Node, entity: Entity):
 	# check if this event has an owner
 
 	if not WyncUtils.prop_exists(wync_ctx, co_wync_events.prop_id):
-		Log.err(node_ctx, "Couldn't find a Prop for this Event prop_id(%d)" % [co_wync_events.prop_id])
+		Log.err("Couldn't find a Prop for this Event prop_id(%d)" % [co_wync_events.prop_id], Log.TAG_GAME_EVENT)
 		return
 	var peer_id = WyncUtils.prop_get_peer_owner(wync_ctx, co_wync_events.prop_id)
 	if peer_id == -1:
-		Log.err(node_ctx, "Couldn't find owner for prop_id(%d)" % [co_wync_events.prop_id])
+		Log.err("Couldn't find owner for prop_id(%d)" % [co_wync_events.prop_id], Log.TAG_GAME_EVENT)
 		return
 	# NOTE: Maybe check if the peer is alive
 	
@@ -134,7 +134,7 @@ static func run_local_entity_events(node_ctx: Node, entity: Entity):
 
 
 static func handle_events(node_ctx: Node, event_data: WyncEvent.EventData, peer_id: int):
-	Log.out(node_ctx, "EVENT | debug1 | handling %d" % [event_data.event_type_id])
+	Log.out("EVENT | debug1 | handling %d" % [event_data.event_type_id], Log.TAG_GAME_EVENT)
 	match event_data.event_type_id:
 		GameInfo.EVENT_PLAYER_BLOCK_BREAK:
 			handle_event_player_block_break(node_ctx, event_data)
@@ -147,7 +147,7 @@ static func handle_events(node_ctx: Node, event_data: WyncEvent.EventData, peer_
 		GameInfo.EVENT_PLAYER_SHOOT:
 			handle_event_player_shoot(node_ctx, event_data, peer_id)
 		_:
-			Log.err(node_ctx, "event_type_id not recognized %s" % event_data.event_type_id)
+			Log.err("event_type_id not recognized %s" % event_data.event_type_id, Log.TAG_GAME_EVENT)
 
 
 static func handle_event_player_block_break(node_ctx: Node, event: WyncEvent.EventData):
@@ -193,7 +193,7 @@ static func handle_event_player_block_break_delta(node_ctx: Node, event: WyncEve
 	
 	var en_block_grid = ECS.get_singleton_entity(node_ctx, singleton_name)
 	if not en_block_grid:
-		Log.err(node_ctx, "coulnd't get singleton %s" % [singleton_name])
+		Log.err("coulnd't get singleton %s" % [singleton_name], Log.TAG_GAME_EVENT)
 		return
 
 	# user checks: is this event valid?
@@ -201,7 +201,7 @@ static func handle_event_player_block_break_delta(node_ctx: Node, event: WyncEve
 	var co_block_grid = en_block_grid.get_component(CoBlockGrid.label) as CoBlockGrid
 	if not (MathUtils.is_between_int(block_pos.x, 0, co_block_grid.LENGTH -1)
 	&& MathUtils.is_between_int(block_pos.y, 0, co_block_grid.LENGTH -1)):
-		Log.err(node_ctx, "block_pos %s is invalid" % [block_pos])
+		Log.err("block_pos %s is invalid" % [block_pos], Log.TAG_GAME_EVENT)
 		return
 
 	# find the "blocks" property
@@ -209,11 +209,11 @@ static func handle_event_player_block_break_delta(node_ctx: Node, event: WyncEve
 	var co_actor = en_block_grid.get_component(CoActor.label) as CoActor
 	var blocks_prop_id = WyncUtils.entity_get_prop_id(ctx, co_actor.id, "blocks")
 	if blocks_prop_id == -1:
-		Log.err(node_ctx, "coulnd't find 'blocks' prop on singleton %s" % [singleton_name])
+		Log.err("coulnd't find 'blocks' prop on singleton %s" % [singleton_name], Log.TAG_GAME_EVENT)
 		return
 	var blocks_prop = WyncUtils.get_prop(ctx, blocks_prop_id) as WyncEntityProp
 	if not blocks_prop.relative_syncable:
-		Log.err(node_ctx, "singleton %s prop blocks id(%s) is not relative_syncable" % [singleton_name, blocks_prop_id])
+		Log.err("singleton %s prop blocks id(%s) is not relative_syncable" % [singleton_name, blocks_prop_id], Log.TAG_GAME_EVENT)
 		return
 
 	# get the current block in order to "downgrade" it
@@ -233,11 +233,11 @@ static func handle_event_player_block_break_delta(node_ctx: Node, event: WyncEve
 	var err = WyncDeltaSyncUtils.delta_prop_push_event_to_current(
 		ctx, blocks_prop_id, GameInfo.EVENT_DELTA_BLOCK_REPLACE, event_id, co_ticks)
 	if err != OK:
-		Log.err(node_ctx, "Failed to push delta-sync-event err(%s)" % [err])
+		Log.err("Failed to push delta-sync-event err(%s)" % [err], Log.TAG_DELTA_EVENT)
 
 	var event_data = (ctx.events[event_id] as WyncEvent).data
 	if WyncUtils.is_client(ctx):
-		Log.out(node_ctx, "delta sync debug1 | pred_tick(%s) predicted event (%s) %s" % [ctx.current_predicted_tick, event_id, HashUtils.object_to_dictionary(event_data)])
+		Log.out("delta sync debug1 | pred_tick(%s) predicted event (%s) %s" % [ctx.current_predicted_tick, event_id, HashUtils.object_to_dictionary(event_data)], Log.TAG_DELTA_EVENT)
 
 	# If this runs on the client it means prediction...
 
@@ -254,7 +254,7 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 	
 	var en_block_grid = ECS.get_singleton_entity(node_ctx, singleton_name)
 	if not en_block_grid:
-		Log.err(node_ctx, "coulnd't get singleton %s" % [singleton_name])
+		Log.err("coulnd't get singleton %s" % [singleton_name], Log.TAG_GAME_EVENT)
 		return
 
 	# user checks: is this event valid?
@@ -262,7 +262,7 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 	var co_block_grid = en_block_grid.get_component(CoBlockGrid.label) as CoBlockGrid
 	if not (MathUtils.is_between_int(block_pos.x, 0, co_block_grid.LENGTH -1)
 	&& MathUtils.is_between_int(block_pos.y, 0, co_block_grid.LENGTH -1)):
-		Log.err(node_ctx, "block_pos %s is invalid" % [block_pos])
+		Log.err("block_pos %s is invalid" % [block_pos], Log.TAG_GAME_EVENT)
 		return
 
 	# find the "blocks" property
@@ -270,11 +270,11 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 	var co_actor = en_block_grid.get_component(CoActor.label) as CoActor
 	var blocks_prop_id = WyncUtils.entity_get_prop_id(ctx, co_actor.id, "blocks")
 	if blocks_prop_id == -1:
-		Log.err(node_ctx, "coulnd't find 'blocks' prop on singleton %s" % [singleton_name])
+		Log.err("coulnd't find 'blocks' prop on singleton %s" % [singleton_name], Log.TAG_GAME_EVENT)
 		return
 	var blocks_prop = WyncUtils.get_prop(ctx, blocks_prop_id) as WyncEntityProp
 	if not blocks_prop.relative_syncable:
-		Log.err(node_ctx, "singleton %s prop blocks id(%s) is not relative_syncable" % [singleton_name, blocks_prop_id])
+		Log.err("singleton %s prop blocks id(%s) is not relative_syncable" % [singleton_name, blocks_prop_id], Log.TAG_GAME_EVENT)
 		return
 
 	# Commit a Delta Event here
@@ -291,12 +291,12 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 	var err = WyncDeltaSyncUtils.delta_prop_push_event_to_current(
 		ctx, blocks_prop_id, GameInfo.EVENT_DELTA_BLOCK_REPLACE, event_id, co_ticks)
 	if err != OK:
-		Log.err(node_ctx, "Failed to push delta-sync-event err(%s)" % [err])
+		Log.err("Failed to push delta-sync-event err(%s)" % [err], Log.TAG_DELTA_EVENT)
 	WyncDeltaSyncUtils.merge_event_to_state_real_state(ctx, blocks_prop_id, event_id)
 
 	var event_data = (ctx.events[event_id] as WyncEvent).data
 	if WyncUtils.is_client(ctx):
-		Log.out(node_ctx, "delta sync debug1 | pred_tick(%s) predicted event (%s) %s" % [ctx.current_predicted_tick, event_id, HashUtils.object_to_dictionary(event_data)])
+		Log.out("delta sync debug1 | pred_tick(%s) predicted event (%s) %s" % [ctx.current_predicted_tick, event_id, HashUtils.object_to_dictionary(event_data)], Log.TAG_DELTA_EVENT)
 
 	# purposefully misspredict
 	if WyncUtils.is_client(ctx):
@@ -319,12 +319,12 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 			err = WyncDeltaSyncUtils.delta_prop_push_event_to_current(
 				ctx, blocks_prop_id, GameInfo.EVENT_DELTA_BLOCK_REPLACE, event_id, co_ticks)
 			if err != OK:
-				Log.err(node_ctx, "Failed to push delta-sync-event err(%s)" % [err])
+				Log.err("Failed to push delta-sync-event err(%s)" % [err], Log.TAG_DELTA_EVENT)
 			WyncDeltaSyncUtils.merge_event_to_state_real_state(ctx, blocks_prop_id, event_id)
 
 			event_data = (ctx.events[event_id] as WyncEvent).data
 			if WyncUtils.is_client(ctx):
-				Log.out(node_ctx, "delta sync debug1 | pred_tick(%s) predicted event (%s) %s" % [ctx.current_predicted_tick, event_id, HashUtils.object_to_dictionary(event_data)])
+				Log.out("delta sync debug1 | pred_tick(%s) predicted event (%s) %s" % [ctx.current_predicted_tick, event_id, HashUtils.object_to_dictionary(event_data)], Log.TAG_DELTA_EVENT)
 		return
 
 	# secondary break event
@@ -345,12 +345,12 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 	err = WyncDeltaSyncUtils.delta_prop_push_event_to_current(
 		ctx, blocks_prop_id, GameInfo.EVENT_DELTA_BLOCK_REPLACE, event_id, co_ticks)
 	if err != OK:
-		Log.err(node_ctx, "Failed to push delta-sync-event err(%s)" % [err])
+		Log.err("Failed to push delta-sync-event err(%s)" % [err], Log.TAG_DELTA_EVENT)
 	WyncDeltaSyncUtils.merge_event_to_state_real_state(ctx, blocks_prop_id, event_id)
 
 	event_data = (ctx.events[event_id] as WyncEvent).data
 	if WyncUtils.is_client(ctx):
-		Log.out(node_ctx, "delta sync debug1 | pred_tick(%s) predicted event (%s) %s" % [ctx.current_predicted_tick, event_id, HashUtils.object_to_dictionary(event_data)])
+		Log.out("delta sync debug1 | pred_tick(%s) predicted event (%s) %s" % [ctx.current_predicted_tick, event_id, HashUtils.object_to_dictionary(event_data)], Log.TAG_DELTA_EVENT)
 
 
 # server only function
@@ -369,18 +369,18 @@ static func handle_event_player_shoot(node_ctx: Node, event: WyncEvent.EventData
 	
 	# TODO: Lerp delta is not in this format
 	if lerp_delta < 0 || lerp_delta > 1000:
-		Log.err(node_ctx, "TIMEWARP | lerp_delta is outside [0, 1] (%s)" % [lerp_delta])
+		Log.err("TIMEWARP | lerp_delta is outside [0, 1] (%s)" % [lerp_delta], Log.TAG_TIMEWARP)
 		return
 
 	# TODO: limit the tick to the small range defined by the client's: latency + lerp_ms + last_packet_sent
 	if ((tick_left <= co_ticks.ticks - wync_ctx.max_tick_history) ||
 		(tick_left > co_ticks.ticks)
 		):
-		Log.err(node_ctx, "timewarp | tick_left out of range (%s)" % [tick_left])
+		Log.err("timewarp | tick_left out of range (%s)" % [tick_left], Log.TAG_TIMEWARP)
 		return
 
 	
-	Log.out(node_ctx, "Client shoots at tick_left %d | lerp_delta %s | lerp_ms %s | tick_diff %s" % [ tick_left, lerp_delta, lerp_ms, co_ticks.ticks - tick_left ])
+	Log.out("Client shoots at tick_left %d | lerp_delta %s | lerp_ms %s | tick_diff %s" % [ tick_left, lerp_delta, lerp_ms, co_ticks.ticks - tick_left ], Log.TAG_TIMEWARP)
 	
 
 	# ------------------------------------------------------------
@@ -419,7 +419,7 @@ static func handle_event_player_shoot(node_ctx: Node, event: WyncEvent.EventData
 	
 	# integrate physics
 
-	Log.out(node_ctx, "entities to integrate state are %s" % [wync_ctx.tracked_entities.keys()])
+	Log.out("entities to integrate state are %s" % [wync_ctx.tracked_entities.keys()], Log.TAG_TIMEWARP)
 	SyWyncLatestValue.integrate_state(wync_ctx, wync_ctx.tracked_entities.keys())
 	RapierPhysicsServer2D.space_step(space, 0)
 	RapierPhysicsServer2D.space_flush_queries(space)
@@ -429,7 +429,7 @@ static func handle_event_player_shoot(node_ctx: Node, event: WyncEvent.EventData
 	var world_id = ECS.find_world_up(node_ctx).get_instance_id()
 	var sy_shoot_weapon_entities = ECS.get_system_entities(world_id, SyShootWeapon.label)
 	for entity in sy_shoot_weapon_entities:
-		Log.out(node_ctx, "event,shoot | will process SyShootWeapon on entity %s" % [entity])
+		Log.out("event,shoot | will process SyShootWeapon on entity %s" % [entity], Log.TAG_TIMEWARP)
 		SyShootWeapon.simulate_shoot_weapon(node_ctx, entity)
 	
 	# 4. restore original state
@@ -451,13 +451,13 @@ static func handle_event_player_shoot(node_ctx: Node, event: WyncEvent.EventData
 static func grid_block_break(node_ctx: Node, entity_block_grid_name: String, block_pos: Vector2i):
 	var en_block_grid = ECS.get_singleton_entity(node_ctx, entity_block_grid_name)
 	if not en_block_grid:
-		Log.err(node_ctx, "coulnd't get singleton %s" % [entity_block_grid_name])
+		Log.err("coulnd't get singleton %s" % [entity_block_grid_name], Log.TAG_GAME_EVENT)
 		return
 	var co_block_grid = en_block_grid.get_component(CoBlockGrid.label) as CoBlockGrid
 	
 	if not (MathUtils.is_between_int(block_pos.x, 0, co_block_grid.LENGTH -1)
 	&& MathUtils.is_between_int(block_pos.y, 0, co_block_grid.LENGTH -1)):
-		Log.err(node_ctx, "block_pos %s is invalid" % [block_pos])
+		Log.err("block_pos %s is invalid" % [block_pos], Log.TAG_GAME_EVENT)
 		return
 	
 	var block_data = co_block_grid.blocks[block_pos.x][block_pos.y] as CoBlockGrid.BlockData
@@ -467,13 +467,13 @@ static func grid_block_break(node_ctx: Node, entity_block_grid_name: String, blo
 static func grid_block_place(node_ctx: Node, entity_block_grid_name: String, block_pos: Vector2i):
 	var en_block_grid = ECS.get_singleton_entity(node_ctx, entity_block_grid_name)
 	if not en_block_grid:
-		Log.err(node_ctx, "coulnd't get singleton %s" % [entity_block_grid_name])
+		Log.err("coulnd't get singleton %s" % [entity_block_grid_name], Log.TAG_GAME_EVENT)
 		return
 	var co_block_grid = en_block_grid.get_component(CoBlockGrid.label) as CoBlockGrid
 	
 	if not (MathUtils.is_between_int(block_pos.x, 0, co_block_grid.LENGTH -1)
 	&& MathUtils.is_between_int(block_pos.y, 0, co_block_grid.LENGTH -1)):
-		Log.err(node_ctx, "block_pos %s is invalid" % [block_pos])
+		Log.err("block_pos %s is invalid" % [block_pos], Log.TAG_GAME_EVENT)
 		return
 	
 	var block_data = co_block_grid.blocks[block_pos.x][block_pos.y] as CoBlockGrid.BlockData

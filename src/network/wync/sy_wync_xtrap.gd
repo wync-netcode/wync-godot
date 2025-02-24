@@ -18,7 +18,7 @@ func on_process(entities, _data, delta: float):
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
 	if not co_loopback:
-		Log.err(self, "Couldn't find singleton CoTransportLoopback")
+		Log.err("Couldn't find singleton CoTransportLoopback", Log.TAG_XTRAP)
 		return
 	
 	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
@@ -28,7 +28,7 @@ func on_process(entities, _data, delta: float):
 
 	var target_tick = co_predict_data.target_tick
 
-	Log.out(self, "debug1 | xtrap (init) lo_tick(%s) ser_ticks(%s) offset(%s) target_tick(%s)" % [co_ticks.ticks, co_ticks.server_ticks, co_predict_data.tick_offset, target_tick])
+	Log.out("debug1 | xtrap (init) lo_tick(%s) ser_ticks(%s) offset(%s) target_tick(%s)" % [co_ticks.ticks, co_ticks.server_ticks, co_predict_data.tick_offset, target_tick], Log.TAG_XTRAP)
 	
 	# get physics space to later sync transforms to physics server
 	# sync physics after 'SyWyncLatestValue'
@@ -176,7 +176,7 @@ func on_process(entities, _data, delta: float):
 			
 			var undo_events = aux_prop.current_undo_delta_events.duplicate(true)
 			aux_prop.confirmed_states_undo.insert_at(tick, undo_events)
-			#Log.out(self, "for SyWyncLatestValue | saving undo_events for tick %s" % [tick])
+			#Log.out("for SyWyncLatestValue | saving undo_events for tick %s" % [tick], Log.TAG_XTRAP)
 		
 		# sync transforms to physics server
 		RapierPhysicsServer2D.space_step(space, 0)

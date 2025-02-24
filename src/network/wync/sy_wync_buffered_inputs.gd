@@ -43,22 +43,22 @@ func on_process(_entities, _data, _delta: float, node_root: Node = null):
 		
 		# Log.out(node_self, "client owns prop %s" % prop_id)
 		if not WyncUtils.prop_exists(wync_ctx, prop_id):
-			Log.err(node_self, "prop %s doesn't exists" % prop_id)
+			Log.err("prop %s doesn't exists" % prop_id, Log.TAG_INPUT_BUFFER)
 			continue
 		var input_prop = wync_ctx.props[prop_id] as WyncEntityProp
 		if not input_prop:
-			Log.err(node_self, "not input_prop %s" % prop_id)
+			Log.err("not input_prop %s" % prop_id, Log.TAG_INPUT_BUFFER)
 			continue
 		if input_prop.data_type not in [
 			WyncEntityProp.DATA_TYPE.INPUT,
 			WyncEntityProp.DATA_TYPE.EVENT]:
-			Log.err(node_self, "prop %s is not INPUT or EVENT" % prop_id)
+			Log.err("prop %s is not INPUT or EVENT" % prop_id, Log.TAG_INPUT_BUFFER)
 			continue
 	
 		# Log.out(node_self, "gonna call getter for prop %s" % prop_id)
 		var new_state = input_prop.getter.call()
 		if new_state == null:
-			Log.out(node_self, "new_state == null :%s" % [new_state])
+			Log.out("new_state == null :%s" % [new_state], Log.TAG_INPUT_BUFFER)
 			continue
 		
 		# Log.out(node_self, "Saving event state :%s" % [new_state])

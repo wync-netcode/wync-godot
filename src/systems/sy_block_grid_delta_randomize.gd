@@ -34,13 +34,13 @@ func on_process(_entities, _data, _delta):
 	if en_block_grid_delta:
 		for i in range(2):
 			insert_random_block_by_delta_event(wync_ctx, en_block_grid_delta)
-		Log.out(self, "Generated new random event EVENT_DELTA_BLOCK_REPLACE")
+		Log.out("Generated new random event EVENT_DELTA_BLOCK_REPLACE")
 
 	var en_block_grid_delta_predicted = ECS.get_singleton_entity(self, "EnBlockGridDeltaPredicted")
 	if en_block_grid_delta_predicted:
 		for i in range(2):
 			insert_random_block_by_delta_event(wync_ctx, en_block_grid_delta_predicted)
-		Log.out(self, "Generated new random event EVENT_DELTA_BLOCK_REPLACE")
+		Log.out("Generated new random event EVENT_DELTA_BLOCK_REPLACE")
 
 
 func insert_random_block_by_global_event(wync_ctx: WyncCtx, en_block_grid: Entity):
@@ -95,7 +95,7 @@ func insert_random_block_by_delta_event(wync_ctx: WyncCtx, en_block_grid: Entity
 
 	var prop_blocks_id = WyncUtils.entity_get_prop_id(wync_ctx, co_actor.id, "blocks")
 	if prop_blocks_id == -1:
-		Log.err(self, "Couldn't find prop [blocks] for entity %s" % [co_actor.id])
+		Log.err("Couldn't find prop [blocks] for entity %s" % [co_actor.id])
 
 	# Commit a Delta Event here
 
@@ -106,6 +106,6 @@ func insert_random_block_by_delta_event(wync_ctx: WyncCtx, en_block_grid: Entity
 
 	var err = WyncDeltaSyncUtils.delta_prop_push_event_to_current(wync_ctx, prop_blocks_id, GameInfo.EVENT_DELTA_BLOCK_REPLACE, event_id, co_ticks)
 	if err != OK:
-		Log.err(self, "Failed to push delta-sync-event err(%s)" % [err])
+		Log.err("Failed to push delta-sync-event err(%s)" % [err], Log.TAG_DELTA_EVENT)
 
 	WyncDeltaSyncUtils.merge_event_to_state_real_state(wync_ctx, prop_blocks_id, event_id)

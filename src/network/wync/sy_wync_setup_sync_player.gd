@@ -77,7 +77,7 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 
 	var int_fun_id = WyncUtils.register_function(wync_ctx, co_collider.force_update_transform)
 	if int_fun_id < 0:
-		Log.err(self, "Couldn't register integrate fun")
+		Log.err("Couldn't register integrate fun", Log.TAG_PROP_SETUP)
 	else:
 		WyncUtils.entity_set_integration_fun(wync_ctx, co_actor.id, int_fun_id)
 
@@ -103,4 +103,4 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 		
 	var flag = CoFlagWyncEntityTracked.new()
 	ECS.entity_add_component_node(entity, flag)
-	Log.out(self, "wync: Registered entity %s with id %s" % [entity, co_actor.id])
+	Log.out("wync: Registered entity %s with id %s" % [entity, co_actor.id], Log.TAG_PROP_SETUP)
