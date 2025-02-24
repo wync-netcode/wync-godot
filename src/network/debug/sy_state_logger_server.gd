@@ -1,6 +1,7 @@
 extends System
 class_name SyStateLoggerServer
 const label: StringName = StringName("SyStateLoggerServer")
+"""
 
 const ACTOR_TO_LOG_ID = 0
 
@@ -39,3 +40,4 @@ func on_process_entity(entity, _data, _delta: float):
 	# log there
 	
 	co_state_log.server_state[state.tick] = state
+"""
