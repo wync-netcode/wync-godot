@@ -23,10 +23,10 @@ func on_process(_entities, _data, _delta: float):
 		var target_tick = max(co_ticks.server_ticks + co_predict_data.tick_offset, co_predict_data.target_tick)
 		var target_time = curr_time + co_predict_data.tick_offset_desired * (1000.0 / physics_fps)
 
-		Log.out(self, "co_predict_data.tick_offset_desired %s" % [co_predict_data.tick_offset_desired])
-		Log.out(self, "Updating tick offset to %s" % co_predict_data.tick_offset)
-		Log.out(self, "target_tick %s | target_time %s | with tick offset %s" % [target_tick, target_time, curr_time + co_predict_data.tick_offset * (1000.0 / physics_fps) ])
-		Log.out(self, "target_tick_timestamp %s" % [target_tick * (1000.0 / physics_fps) ])
+		Log.out("co_predict_data.tick_offset_desired %s" % [co_predict_data.tick_offset_desired], Log.TAG_PRED_TICK)
+		Log.out("Updating tick offset to %s" % co_predict_data.tick_offset, Log.TAG_PRED_TICK)
+		Log.out("target_tick %s | target_time %s | with tick offset %s" % [target_tick, target_time, curr_time + co_predict_data.tick_offset * (1000.0 / physics_fps) ], Log.TAG_PRED_TICK)
+		Log.out("target_tick_timestamp %s" % [target_tick * (1000.0 / physics_fps) ], Log.TAG_PRED_TICK)
 
 			
 	# Smoothly transition tick_offset

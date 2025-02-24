@@ -152,7 +152,7 @@ static func extract_data_to_tick(wync_ctx: WyncCtx, co_ticks: CoTicks, save_on_t
 			if prop.relative_syncable:
 				var err = update_relative_syncable_prop(wync_ctx, co_ticks, prop_id)
 				if err != OK:
-					Log.err(wync_ctx, "delta sync | update_relative_syncable_prop err(%s)" % [err])
+					Log.err("delta sync | update_relative_syncable_prop err(%s)" % [err])
 				
 				# Allow auxiliar props
 				var prop_aux = WyncUtils.get_prop(wync_ctx, prop.auxiliar_delta_events_prop_id)

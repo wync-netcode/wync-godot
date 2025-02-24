@@ -11,7 +11,7 @@ func on_process(_entities, _data, _delta: float):
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var ctx = single_wync.ctx as WyncCtx
 	if not ctx.connected:
-		Log.err(self, "Not connected")
+		Log.err("Not connected", Log.TAG_EVENT_DATA)
 		return
 
 	# get co_io_packets
@@ -20,18 +20,18 @@ func on_process(_entities, _data, _delta: float):
 	if WyncUtils.is_client(ctx):
 		var en_client = ECS.get_singleton_entity(self, "EnSingleClient")
 		if not en_client:
-			Log.err(self, "Couldn't find singleton EnSingleClient")
+			Log.err("Couldn't find singleton EnSingleClient", Log.TAG_EVENT_DATA)
 			return
 		co_io_packets = en_client.get_component(CoIOPackets.label) as CoIOPackets
 	else:
 		var en_server = ECS.get_singleton_entity(self, "EnSingleServer")
 		if not en_server:
-			Log.err(self, "Couldn't find singleton EnSingleServer")
+			Log.err("Couldn't find singleton EnSingleServer", Log.TAG_EVENT_DATA)
 			return
 		co_io_packets = en_server.get_component(CoIOPackets.label) as CoIOPackets
 
 	if co_io_packets == null:
-		Log.err(self, "Couldn't find CoIOPackets")
+		Log.err("Couldn't find CoIOPackets", Log.TAG_EVENT_DATA)
 		return
 
 	# send events
@@ -40,7 +40,7 @@ func on_process(_entities, _data, _delta: float):
 		var en_client = ECS.get_singleton_entity(self, "EnSingleClient")
 		var co_client = en_client.get_component(CoClient.label) as CoClient
 		if co_client.server_peer < 0:
-			Log.err(self, "No server peer")
+			Log.err("No server peer", Log.TAG_EVENT_DATA)
 			return
 		send_events_to_peer(self, ctx, co_io_packets, WyncCtx.SERVER_PEER_ID, co_client.server_peer)
 	else: # server
@@ -69,7 +69,7 @@ static func send_events_to_peer(
 		# get event data
 		
 		if not ctx.events.has(event_id):
-			Log.err(node_ctx, "couldn't find event_id %s" % event_id)
+			Log.err("couldn't find event_id %s" % event_id, Log.TAG_EVENT_DATA)
 			continue
 		
 		var wync_event = (ctx.events[event_id] as WyncEvent).data
@@ -114,4 +114,4 @@ static func send_events_to_peer(
 	pkt.to_peer = net_peer_id
 	pkt.data = data
 	co_io_packets.out_packets.append(pkt)
-	Log.out(node_ctx, "sent")
+	Log.out("sent", Log.TAG_EVENT_DATA)

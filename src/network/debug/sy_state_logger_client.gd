@@ -13,7 +13,7 @@ func on_process_entity(entity, _data, _delta: float):
 	
 	var co_state_log = GlobalSingletons.singleton.get_component(CoStateLog.label) as CoStateLog
 	if not co_state_log:
-		Log.err(self, "E: Couldn't find singleton CoStateLog")
+		Log.err("E: Couldn't find singleton CoStateLog")
 		return
 	
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
@@ -48,6 +48,6 @@ func on_process_entity(entity, _data, _delta: float):
 	var tick_show = co_predict_data.last_tick_confirmed
 	#if co_ticks.ticks % 60 == 0:
 	if tick_show > 0 && co_state_log.client_state.has(tick_show):
-		Log.out(self, "(%d) server: %s client %s diff %s" % [tick_show, co_state_log.server_state[tick_show].input, co_state_log.client_state[tick_show].input, co_state_log.server_state[tick_show].input - co_state_log.client_state[tick_show].input])
-		Log.out(self, "(%d) server: %s client %s" % [tick_show, co_state_log.server_state[tick_show].vel, co_state_log.client_state[tick_show].vel])
-		Log.out(self, "(%d) server: %s client %s" % [tick_show, co_state_log.server_state[tick_show].pos, co_state_log.client_state[tick_show].pos])
+		Log.out("(%d) server: %s client %s diff %s" % [tick_show, co_state_log.server_state[tick_show].input, co_state_log.client_state[tick_show].input, co_state_log.server_state[tick_show].input - co_state_log.client_state[tick_show].input])
+		Log.out("(%d) server: %s client %s" % [tick_show, co_state_log.server_state[tick_show].vel, co_state_log.client_state[tick_show].vel])
+		Log.out("(%d) server: %s client %s" % [tick_show, co_state_log.server_state[tick_show].pos, co_state_log.client_state[tick_show].pos])

@@ -14,7 +14,7 @@ func on_process(_entities, _data, _delta: float):
 
 	var en_client = ECS.get_singleton_entity(self, "EnSingleClient")
 	if not en_client:
-		Log.err(self, "Couldn't find singleton EnSingleClient")
+		Log.err("Couldn't find singleton EnSingleClient", Log.TAG_WYNC_PEER_SETUP)
 		return
 	var co_io = en_client.get_component(CoIOPackets.label) as CoIOPackets
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
@@ -42,4 +42,4 @@ func on_process(_entities, _data, _delta: float):
 		
 		# set prop ownership
 		WyncUtils.prop_set_client_owner(wync_ctx, data.prop_id, wync_ctx.my_peer_id)
-		Log.out(self, "Prop %s ownership given to client %s" % [data.prop_id, wync_ctx.my_peer_id])
+		Log.out("Prop %s ownership given to client %s" % [data.prop_id, wync_ctx.my_peer_id], Log.TAG_WYNC_PEER_SETUP)

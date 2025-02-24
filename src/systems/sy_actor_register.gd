@@ -36,5 +36,5 @@ func on_process_entity(entity : Entity, _data, _delta: float):
 			break
 
 	if not success:
-		Log.err(self, "Couldn't register actor %s" % [entity])
+		Log.err("Couldn't register actor %s" % [entity])
 	co_actors.cursor = cursor

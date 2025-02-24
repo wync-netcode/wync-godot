@@ -21,7 +21,7 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 	var co_io = entity.get_component(CoIOPackets.label) as CoIOPackets
 	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
 	if not co_loopback:
-		Log.err(self, "Couldn't find singleton CoTransportLoopback")
+		Log.err("Couldn't find singleton CoTransportLoopback", Log.TAG_NETE_CONNECT)
 		return
 	
 	# try to find a server
@@ -37,7 +37,7 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 					server_peer_id = i
 
 	if server_peer_id < 0:
-		Log.err(self, "Couldn't find registered server peer in CoTransportLoopback")
+		Log.err("Couldn't find registered server peer in CoTransportLoopback", Log.TAG_NETE_CONNECT)
 		return
 	
 	# "connect" to server
@@ -68,4 +68,4 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 		co_client.identifier = data.identifier
 		co_client.server_peer = pkt.from_peer
 
-		Log.out(self, "client_peer_id %s connected to server_peer_id %s" % [co_io.peer_id, co_client.server_peer])
+		Log.out("client_peer_id %s connected to server_peer_id %s" % [co_io.peer_id, co_client.server_peer], Log.TAG_NETE_CONNECT)

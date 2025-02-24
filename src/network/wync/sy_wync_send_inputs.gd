@@ -9,11 +9,11 @@ func on_process(_entities, _data, _delta: float):
 
 	var en_client = ECS.get_singleton_entity(self, "EnSingleClient")
 	if not en_client:
-		Log.err(self, "Couldn't find singleton EnSingleClient")
+		Log.err("Couldn't find singleton EnSingleClient", Log.TAG_INPUT_BUFFER)
 		return
 	var co_client = en_client.get_component(CoClient.label) as CoClient
 	if co_client.server_peer < 0:
-		Log.err(self, "No server peer")
+		Log.err("No server peer", Log.TAG_INPUT_BUFFER)
 		return
 	var co_io_packets = en_client.get_component(CoIOPackets.label) as CoIOPackets
 	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
@@ -30,15 +30,15 @@ func on_process(_entities, _data, _delta: float):
 	for prop_id: int in wync_ctx.client_owns_prop[wync_ctx.my_peer_id]:
 		
 		if not WyncUtils.prop_exists(wync_ctx, prop_id):
-			Log.err(self, "prop %s doesn't exists" % prop_id)
+			Log.err("prop %s doesn't exists" % prop_id, Log.TAG_INPUT_BUFFER)
 			continue
 		var input_prop = wync_ctx.props[prop_id] as WyncEntityProp
 		if not input_prop:
-			Log.err(self, "not input_prop %s" % prop_id)
+			Log.err("not input_prop %s" % prop_id, Log.TAG_INPUT_BUFFER)
 			continue
 		if input_prop.data_type not in [WyncEntityProp.DATA_TYPE.INPUT,
 			WyncEntityProp.DATA_TYPE.EVENT]:
-			Log.err(self, "prop %s is not INPUT or EVENT" % prop_id)
+			Log.err("prop %s is not INPUT or EVENT" % prop_id, Log.TAG_INPUT_BUFFER)
 			continue
 		var buffered_inputs = input_prop.confirmed_states
 
@@ -61,7 +61,7 @@ func on_process(_entities, _data, _delta: float):
 			
 			var copy = WyncUtils.duplicate_any(input)
 			if copy == null:
-				Log.out(self, "WARNING: input data couldn't be duplicated %s" % [input])
+				Log.out("WARNING: input data couldn't be duplicated %s" % [input], Log.TAG_INPUT_BUFFER)
 			tick_input_wrap.data = copy if copy != null else input
 				
 			net_inputs.inputs.append(tick_input_wrap)
