@@ -366,6 +366,30 @@ static func is_peer_registered(ctx: WyncCtx, peer_data: int) -> int:
 			return peer_id
 	return -1
 
+
+static func wync_set_my_nete_peer_id (ctx: WyncCtx, nete_peer_id: int) -> int:
+	ctx.my_nete_peer_id = nete_peer_id
+	return OK
+
+
+## Client only
+static func wync_set_server_nete_peer_id (ctx: WyncCtx, nete_peer_id: int) -> int:
+	if ctx.peers.size() == 0:
+		ctx.peers.resize(1)
+	ctx.peers[0] = nete_peer_id
+	ctx.my_nete_peer_id = nete_peer_id
+	return OK
+
+
+## Gets nete_peer_id from a given wync_peer_id
+## Used to know to whom to send packets
+## @returns int: nete_peer_id if found; -1 if not found
+static func get_nete_peer_id_from_wync_peer_id (ctx: WyncCtx, wync_peer_id: int) -> int:
+	if wync_peer_id >= 0 && wync_peer_id < ctx.peers.size():
+		return ctx.peers[wync_peer_id]
+	return -1
+
+
 """
 static func setup_general_global_events(ctx: WyncCtx) -> int:
 	ctx.global_events_channel.resize(WyncCtx.MAX_GLOBAL_EVENT_CHANNELS)

@@ -1,4 +1,4 @@
-[gd_scene load_steps=68 format=3 uid="uid://b8oeiuufqe32c"]
+[gd_scene load_steps=69 format=3 uid="uid://b8oeiuufqe32c"]
 
 [ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_1ps8v"]
 [ext_resource type="Script" path="res://data/StaticData.gd" id="2_2epi3"]
@@ -51,6 +51,7 @@
 [ext_resource type="Script" path="res://src/network/sy_nete_cleanup.gd" id="40_dopds"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_clock_client.gd" id="45_6w0w5"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_state_extractor_delta_sync.gd" id="45_rb2o4"]
+[ext_resource type="Script" path="res://src/network/user_wync/sy_user_wync_queue_packets.gd" id="46_8e2uo"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_tick_start_before.gd" id="47_ybb08"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_setup_sync_ball.gd" id="49_4ofub"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_lerp.gd" id="49_dsdhr"]
@@ -233,6 +234,9 @@ script = ExtResource("59_xantl")
 [node name="SyNeteCleanup" type="Node" parent="worlds/WorldServer/GroupPhysics"]
 script = ExtResource("40_dopds")
 
+[node name="SyUserWyncQueuePackets" type="Node" parent="worlds/WorldServer/GroupPhysics"]
+script = ExtResource("46_8e2uo")
+
 [node name="GroupProcess" type="Node" parent="worlds/WorldServer"]
 script = ExtResource("32_wj45u")
 
@@ -382,6 +386,9 @@ script = ExtResource("61_exqu2")
 
 [node name="SyNeteCleanup" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 script = ExtResource("40_dopds")
+
+[node name="SyUserWyncQueuePackets" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
+script = ExtResource("46_8e2uo")
 
 [node name="GroupProcess" type="Node" parent="worlds/WorldClient1"]
 script = ExtResource("32_wj45u")

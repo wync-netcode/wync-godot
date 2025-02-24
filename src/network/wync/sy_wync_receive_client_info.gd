@@ -30,16 +30,25 @@ func on_process(_entities, _data, _delta: float):
 		if not data:
 			continue
 		
+		wync_handle_packet_res_client_info(wync_ctx, data)
+
 		# consume
 		co_io.in_packets.remove_at(k)
+
+
+static func wync_handle_packet_res_client_info(ctx: WyncCtx, data: Variant):
+
+	if data is not WyncPacketResClientInfo:
+		return 1
+	data = data as WyncPacketResClientInfo
 		
-		# check if entity id exists
-		# NOTE: is this check enough?
-		# NOTE: maybe there's no need to check, because these props can be sync later
-		#if not WyncUtils.is_entity_tracked(wync_ctx, data.entity_id):
-			#Log.out(self, "Entity %s isn't tracked" % data.entity_id)
-			#continue
-		
-		# set prop ownership
-		WyncUtils.prop_set_client_owner(wync_ctx, data.prop_id, wync_ctx.my_peer_id)
-		Log.out("Prop %s ownership given to client %s" % [data.prop_id, wync_ctx.my_peer_id], Log.TAG_WYNC_PEER_SETUP)
+	# check if entity id exists
+	# NOTE: is this check enough?
+	# NOTE: maybe there's no need to check, because these props can be sync later
+	#if not WyncUtils.is_entity_tracked(wync_ctx, data.entity_id):
+		#Log.out(self, "Entity %s isn't tracked" % data.entity_id)
+		#continue
+	
+	# set prop ownership
+	WyncUtils.prop_set_client_owner(ctx, data.prop_id, ctx.my_peer_id)
+	Log.out("Prop %s ownership given to client %s" % [data.prop_id, ctx.my_peer_id], Log.TAG_WYNC_PEER_SETUP)

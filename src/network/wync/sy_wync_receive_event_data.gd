@@ -30,19 +30,30 @@ func on_process(_entities, _data, _delta: float, node_root: Node = null):
 		var data = pkt.data as WyncPktEventData
 		if not data:
 			continue
+
+		wync_handle_pkt_event_data(wync_ctx, data)
 		
 		# consume
 		Log.out("events | Consume WyncPktEventData", Log.TAG_EVENT_DATA)
 		co_io.in_packets.remove_at(k)
 
-		for event: WyncPktEventData.EventData in data.events:
-			
-			var wync_event = WyncEvent.new()
-			wync_event.data.event_type_id = event.event_type_id
-			wync_event.data.arg_count = event.arg_count
-			wync_event.data.arg_data_type = event.arg_data_type.duplicate(true)
-			wync_event.data.arg_data = event.arg_data # std::move(std::unique_pointer)
-			wync_ctx.events[event.event_id] = wync_event
+
+static func wync_handle_pkt_event_data(ctx: WyncCtx, data: Variant) -> int:
+
+	if data is not WyncPktEventData:
+		return 1
+	data = data as WyncPktEventData
+
+	for event: WyncPktEventData.EventData in data.events:
 		
-			Log.out("events | got this events %s" % [event.event_id], Log.TAG_EVENT_DATA)
-			# NOTE: what if we already have this event data? Maybe it's better to receive it anyway?
+		var wync_event = WyncEvent.new()
+		wync_event.data.event_type_id = event.event_type_id
+		wync_event.data.arg_count = event.arg_count
+		wync_event.data.arg_data_type = event.arg_data_type.duplicate(true)
+		wync_event.data.arg_data = event.arg_data # std::move(std::unique_pointer)
+		ctx.events[event.event_id] = wync_event
+	
+		Log.out("events | got this events %s" % [event.event_id], Log.TAG_EVENT_DATA)
+		# NOTE: what if we already have this event data? Maybe it's better to receive it anyway?
+
+	return OK

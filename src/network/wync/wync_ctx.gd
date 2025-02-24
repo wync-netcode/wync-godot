@@ -1,7 +1,10 @@
 class_name WyncCtx
 
+## outgoing packets
 
-## Extra structures
+var out_packets: Array[NetPacket]
+
+## Extra structures =============================
 
 var co_ticks: CoTicks = CoTicks.new()
 var co_predict_data: CoPredictionData = CoPredictionData.new()
@@ -114,6 +117,7 @@ var entity_has_integrate_fun: Dictionary
 var props_to_predict: Array[int]
 
 var my_peer_id: int = -1
+var my_nete_peer_id: int = -1
 
 # Array<sim_fun_id: int, Callable>
 # stores:
