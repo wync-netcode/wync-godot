@@ -128,6 +128,9 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 		# NOTE: Are we sure we have delta_props_last_tick[prop_id]?
 		if not delta_props_last_tick.has(prop_id):
 			continue
+
+		# FIXME: There will be UB if between the range before last_tick_received we didn't receive and input
+		# resulting in usage of old values
 		# apply events in order
 
 		for tick: int in range(delta_props_last_tick[prop_id] +1, ctx.last_tick_received +1):
@@ -163,6 +166,9 @@ static func predicted_delta_props_rollback_to_canonic_state \
 			Log.err(ctx, "SyWyncLatestValue | delta sync | couldn't find prop id(%s)" % [prop_id])
 			continue 
 		prop = prop as WyncEntityProp
+
+		# not checking if props are valid for this operation or not
+		# that should be checked before passing prop_ids to this function
 
 		var aux_prop = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
 		if aux_prop == null:

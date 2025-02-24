@@ -45,16 +45,25 @@ func on_process(entities, _data, delta: float):
 	wync_ctx.currently_on_predicted_tick = true
 	# NOTE: defer: wync_ctx.currently_on_predicted_tick = false
 	
+	# We can detect a local_tick is duplicated by checking is the same as te previous,
+	# Then we can honor the config wheter to allow duplication or not for each prop
+	var is_local_tick_duplicated = false
+	var prev_local_tick: Variant = null # Optional<int>
+	var local_tick: Variant = null # Optional<int>
+	
 	for tick in range(last_confirmed_tick +1, target_tick +1):
+		wync_ctx.current_predicted_tick = tick
 		
 		# set events inputs to corresponding value depending on tick
 		# --------------------------------------------------
 		# ALL INPUT/EVENT PROPS, no excepcion for now
 		# TODO: identify which I own and which belong to my foes'
 		
-		var local_tick = co_predict_data.get_tick_predicted(tick)
+		prev_local_tick = local_tick
+		local_tick = co_predict_data.get_tick_predicted(tick)
 		if local_tick == null || local_tick is not int:
 			continue
+		is_local_tick_duplicated = prev_local_tick == local_tick
 		
 		for prop_id: int in range(wync_ctx.props.size()):
 			
@@ -69,6 +78,15 @@ func on_process(entities, _data, delta: float):
 		
 			# using local_tick for predicted states INPUT,EVENT
 			var input_snap = prop.confirmed_states.get_at(local_tick)
+			# honor no duplication
+			if (prop.data_type == WyncEntityProp.DATA_TYPE.EVENT
+				&& is_local_tick_duplicated):
+
+				if (not prop.allow_duplication_on_tick_skip):
+
+					# set default value, in the future we might support INPUT type as well
+					input_snap = [] as Array[int]
+				
 			if input_snap == null:
 				continue
 			
@@ -143,6 +161,8 @@ func on_process(entities, _data, delta: float):
 				continue
 			prop = prop as WyncEntityProp
 			if not prop.relative_syncable:
+				continue
+			if not WyncUtils.prop_is_predicted(wync_ctx, prop_id):
 				continue
 				
 			var aux_prop = WyncUtils.get_prop(wync_ctx, prop.auxiliar_delta_events_prop_id)

@@ -62,6 +62,7 @@ func on_process(_entities, _data, _delta: float, node_root: Node = null):
 			continue
 		
 		# Log.out(node_self, "Saving event state :%s" % [new_state])
+		# TODO: Should always run once per tick regardless of props
 		wync_tick_set_input(co_predict_data, wync_ctx, prop_id, tick_curr, new_state)
 	
 
@@ -78,6 +79,8 @@ func wync_tick_set_input(
 	# save tick relationship
 	
 	co_predict_data.set_tick_predicted(tick_pred, tick_curr)
+	
+	# NOTE, are we assuming our max step skip is 2?
 	# Compensate for UP smooth tick_offset transition
 	# check if previous input is missing -> then duplicate
 	if not co_predict_data.get_tick_predicted(tick_pred-1):

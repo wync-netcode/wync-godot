@@ -63,7 +63,8 @@ func on_process(_entities, _data, _delta: float):
 				continue
 
 			# TODO: Allow EVENT props if it doesn't belong to a client
-			# Allow auxiliar props
+			# TODO: TYPE_EVENT props should be sent in chunks, not here
+			# Allow auxiliar props to be synced
 			if prop.relative_syncable:
 				var prop_aux = WyncUtils.get_prop(wync_ctx, prop.auxiliar_delta_events_prop_id)
 				if prop_aux == null:
