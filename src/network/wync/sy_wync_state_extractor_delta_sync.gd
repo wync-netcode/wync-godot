@@ -16,7 +16,7 @@ func on_process(_entities, _data, _delta: float):
 
 # --------------------------------------------------------------------------------
 # Service 1: Send all event_ids to clients
-# TODO: For know all clients know about this prop, later we can filter
+# TODO: For now all clients know about this prop, later we can filter
 
 
 func send_event_ids_to_peers():

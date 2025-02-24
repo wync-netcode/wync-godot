@@ -54,6 +54,7 @@ func on_process(_entities, _data, _delta: float):
 				local_prop.just_received_new_state = true
 
 				if local_prop.is_auxiliar_prop:
+					# notify _main delta prop_ about the updates
 					var delta_prop = WyncUtils.get_prop(wync_ctx, local_prop.auxiliar_delta_events_prop_id) as WyncEntityProp
 					delta_prop.just_received_new_state = true
 
@@ -78,6 +79,7 @@ func on_process(_entities, _data, _delta: float):
 				local_prop.just_received_new_state = true
 				var delta_props_last_tick = wync_ctx.client_has_relative_prop_has_last_tick[wync_ctx.my_peer_id] as Dictionary
 				delta_props_last_tick[prop.prop_id] = data.tick
+				Log.out(self, "delta sync debug1 | ser_tick(%s) delta_prop_last_tick %s" % [co_ticks.server_ticks, delta_props_last_tick])
 
 				# TODO: reset event buffer, clean events that should already be applied by this tick
 				# Reset it but only for one prop

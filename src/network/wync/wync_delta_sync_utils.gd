@@ -102,8 +102,11 @@ static func prop_set_relative_syncable (
 			# NOTE: somehow can't check cast like this `if events is not Array[int]:`
 			prop.current_delta_events.append_array(events),
 	)
-
+	# FIXME: shouldn't we be setting the auxiliar as predicted?
+	# the main prop IS marked as predicted, however, auxiliar props are NOT marked
+	# but we still ALLOCATE and USE the extra buffer space, including space for 'confirmed_states_undo'
 	WyncDeltaSyncUtils.prop_set_auxiliar(ctx, events_prop_id, prop_id, need_undo_events)
+	#WyncUtils.prop_set_prediction_duplication(ctx, events_prop_id, false)
 
 	prop.auxiliar_delta_events_prop_id = events_prop_id
 
@@ -204,6 +207,7 @@ static func merge_event_to_state_real_state \
 			&& ctx.currently_on_predicted_tick 
 	var aux_prop = null # : WyncEntityProp*
 
+	# get auxiliar prop
 	if (is_client_predicting):
 		aux_prop = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
 		if aux_prop == null:
@@ -218,8 +222,8 @@ static func merge_event_to_state_real_state \
 
 	var result: Array[int] = _merge_event_to_state(ctx, prop, event_id, state_pointer, true)
 
+	# cache _undo delta event_ to aux_prop
 	if (is_client_predicting):
-		# commit event to aux_prop
 		if result[0] == OK:
 			if result[1] != null:
 				aux_prop.current_undo_delta_events.append(result[1])

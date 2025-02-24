@@ -83,6 +83,10 @@ var client_has_relative_prop_has_last_tick: Array[Dictionary]
 # each 10 frames and on prop creation. check for initialization
 # each 1 frame. use it to send needed state
 
+# TODO: use it to prevent applying _undo delta events_ of a range too broad that uses old values from the ring
+# maybe it can be a single int that works for all predicted props
+# var relative_prop_has_last_tick_predicted: Array[Dictionary]
+
 # relative synchronization
 # --------------------------------------------------------------------------------
 

@@ -93,6 +93,14 @@ static func prop_is_timewarpable(ctx: WyncCtx, prop_id: int) -> bool:
 	var prop = ctx.props[prop_id] as WyncEntityProp
 	return prop.timewarpable
 
+## Only for INPUT / EVENT props
+static func prop_set_prediction_duplication(ctx: WyncCtx, prop_id: int, duplication: bool) -> bool:
+	if prop_id > ctx.props.size() -1:
+		return false
+	var prop = ctx.props[prop_id] as WyncEntityProp
+	prop.allow_duplication_on_tick_skip = duplication
+	return prop.timewarpable
+
 
 """
 static func prop_set_push_to_global_event(ctx: WyncCtx, prop_id: int, channel: int) -> int:

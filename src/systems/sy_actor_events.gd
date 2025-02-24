@@ -292,7 +292,7 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 
 	var event_data = (ctx.events[event_id] as WyncEvent).data
 	if WyncUtils.is_client(ctx):
-		Log.out(node_ctx, "delta sync debug1 | tick(PRED) predicted event (%s) %s" % [event_id, HashUtils.object_to_dictionary(event_data)])
+		Log.out(node_ctx, "delta sync debug1 | pred_tick(%s) predicted event (%s) %s" % [ctx.current_predicted_tick, event_id, HashUtils.object_to_dictionary(event_data)])
 
 	# purposefully misspredict
 	if WyncUtils.is_client(ctx):
