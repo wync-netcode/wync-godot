@@ -16,16 +16,16 @@ func _ready():
 
 
 func on_process(entities, _data, _delta: float):
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+	
+	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var wync_ctx = single_wync.ctx as WyncCtx
+	var co_ticks = wync_ctx.co_ticks
 	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
 
 	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
 	if not co_loopback:
 		Log.err("Couldn't find singleton CoTransportLoopback", Log.TAG_LATEST_VALUE)
 		return
-	
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = single_wync.ctx as WyncCtx
 	
 	# Reset all extrapolated entities to last confirmed tick
 	# Don't affect predicted entities?

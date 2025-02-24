@@ -1,6 +1,4 @@
-extends Component
 class_name CoTicks
-static var label = ECS.add_component()
 
 @export var ticks_initial_value: int
 @export var time_ms_offset: int

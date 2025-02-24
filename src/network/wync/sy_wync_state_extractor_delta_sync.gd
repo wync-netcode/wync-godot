@@ -21,15 +21,14 @@ func on_process(_entities, _data, _delta: float):
 
 func send_event_ids_to_peers():
 
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var ctx = single_wync.ctx as WyncCtx
+	var co_ticks = ctx.co_ticks
 	var single_server = ECS.get_singleton_entity(self, "EnSingleServer")
 	if not single_server:
 		print("E: Couldn't find singleton EnSingleServer")
 		return
 	var co_io_packets = single_server.get_component(CoIOPackets.label) as CoIOPackets
-	
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var ctx = single_wync.ctx as WyncCtx
 
 	# reset events
 
@@ -95,9 +94,10 @@ func send_event_ids_to_peers():
 
 
 func queue_event_data_to_be_synced_to_peers():
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var ctx = single_wync.ctx as WyncCtx
+	var co_ticks = ctx.co_ticks
 
 	for prop_id: int in range(ctx.props.size()):
 

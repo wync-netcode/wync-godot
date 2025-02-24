@@ -8,8 +8,7 @@ func _ready():
 	super()
 
 	
-func on_process_entity(entity: Entity, _data, delta: float):
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+func on_process_entity(entity: Entity, _data, _delta: float):
 	var co_actor_renderer = entity.get_component(CoActorRenderer.label) as CoActorRenderer
 	var co_ball = entity.get_component(CoBall.label) as CoBall
 	

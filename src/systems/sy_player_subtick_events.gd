@@ -18,7 +18,9 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 	if !input.shoot:
 		return
 	
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var wync_ctx = single_wync.ctx as WyncCtx
+	var co_ticks = wync_ctx.co_ticks
 	var co_wync_events = entity.get_component(CoWyncEvents.label) as CoWyncEvents
 	
 	# poll once per tick
@@ -26,9 +28,6 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 		Log.out("skipping", Log.TAG_SUBTICK_EVENT)
 		return
 	co_wync_events.last_tick_polled = co_ticks.ticks
-		
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = single_wync.ctx as WyncCtx
 	
 	# send time warp info: last_tick_rendered_left, lerp_delta_time_ms
 	
@@ -55,7 +54,7 @@ static func debug_show_timewarpable_lerped_positions(node_ctx: Node, wync_ctx: W
 
 	# TODO: generalize with 'wync_lerp'
 	
-	var co_ticks = ECS.get_singleton_component(node_ctx, CoTicks.label) as CoTicks
+	var co_ticks = wync_ctx.co_ticks
 	var co_predict_data = ECS.get_singleton_component(node_ctx, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
 	
 	var curr_tick_time = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, co_ticks.ticks)

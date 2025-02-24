@@ -12,8 +12,10 @@ func on_process(_entities, _data, _delta: float):
 	if not co_loopback:
 		Log.err("Couldn't find singleton CoTransportLoopback", Log.TAG_LATENCY)
 		return
+	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var wync_ctx = single_wync.ctx as WyncCtx
 	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+	var co_ticks = wync_ctx.co_ticks
 	var physics_fps = Engine.physics_ticks_per_second
 	
 	# Poll latency

@@ -7,7 +7,9 @@ const label: StringName = StringName("SyWyncStateExtractor")
 
 func on_process(_entities, _data, _delta: float):
 
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var wync_ctx = single_wync.ctx as WyncCtx
+	var co_ticks = wync_ctx.co_ticks
 
 	# throttle send rate
 	# TODO: make this configurable
@@ -21,9 +23,6 @@ func on_process(_entities, _data, _delta: float):
 		return
 	var co_io_packets = single_server.get_component(CoIOPackets.label) as CoIOPackets
 	var co_server = single_server.get_component(CoServer.label) as CoServer
-	
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = single_wync.ctx as WyncCtx
 	
 	# extract data
 	

@@ -7,7 +7,9 @@ const label: StringName = StringName("SyNetClockServer")
 
 func on_process(_entities, _data, _delta: float):
 
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var wync_ctx = single_wync.ctx as WyncCtx
+	var co_ticks = wync_ctx.co_ticks
 	var physics_fps = Engine.physics_ticks_per_second
 	
 	# throttle send rate

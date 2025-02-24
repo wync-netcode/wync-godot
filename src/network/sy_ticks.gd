@@ -3,13 +3,10 @@ class_name SyTicks
 const label: StringName = StringName("SyTicks")
 
 
-func _ready():
-	components = [CoTicks.label]
-	super()
-
-
 func on_process(_entities, _data, _delta: float):
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var wync_ctx = single_wync.ctx as WyncCtx
+	var co_ticks = wync_ctx.co_ticks
 	if co_ticks:
 		co_ticks.ticks += 1
 		co_ticks.server_ticks += 1

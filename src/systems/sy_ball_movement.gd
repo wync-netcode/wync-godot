@@ -32,9 +32,9 @@ static func simulate_movement(entity: Entity, _delta: float) -> void:
 
 
 func recalculate_aim(entity: Entity):
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+	var game_ticks = Engine.get_physics_frames()
 	var physics_fps = Engine.physics_ticks_per_second
 	
-	if (co_ticks.ticks % (physics_fps * 2) == 0):
+	if (game_ticks % (physics_fps * 2) == 0):
 		var co_ball = entity.get_component(CoBall.label) as CoBall
 		co_ball.aim_radians = randf() * 2 * PI

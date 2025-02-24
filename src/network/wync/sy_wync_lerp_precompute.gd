@@ -17,10 +17,10 @@ func _ready():
 
 func on_process(_entities, _data, _delta: float):
 
-	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
+	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
+	var co_ticks = wync_ctx.co_ticks
 
 	var curr_tick_time = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, co_ticks.ticks)
 	var curr_time = curr_tick_time + int(1000.0 / (Engine.physics_ticks_per_second * 2)) # half a physic frame

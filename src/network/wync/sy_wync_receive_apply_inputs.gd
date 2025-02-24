@@ -18,9 +18,9 @@ func on_process(_entities, _data, _delta: float, node_root: Node = null):
 		Log.err("Couldn't find singleton EnSingleServer", Log.TAG_INPUT_RECEIVE)
 		return
 	var co_io = en_server.get_component(CoIOPackets.label) as CoIOPackets
-	var co_ticks = ECS.get_singleton_component(node_self, CoTicks.label) as CoTicks
 	var single_wync = ECS.get_singleton_component(node_self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
+	var co_ticks = wync_ctx.co_ticks
 
 	# save all inputs to props
 

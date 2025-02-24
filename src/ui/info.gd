@@ -6,7 +6,6 @@ extends Control
 # TODO: Use a service
 @onready var co_loopback: CoTransportLoopback = %CoTransportLoopback
 @onready var co_prediction_data: CoSingleNetPredictionData = %CoSingleNetPredictionData
-@onready var co_ticks: CoTicks = %CoTicks
 @onready var co_wync_ctx: CoSingleWyncContext = %CoSingleWyncContext
 
 
@@ -28,6 +27,6 @@ func _process(_delta):
 		co_prediction_data.latency_stable,
 		co_prediction_data.tick_offset,
 		co_prediction_data.lerp_ms,
-		co_ticks.ticks,
+		co_wync_ctx.ctx.co_ticks.ticks,
 		co_wync_ctx.ctx.delta_base_state_tick
 	]

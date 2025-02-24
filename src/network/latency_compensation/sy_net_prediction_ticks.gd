@@ -8,8 +8,10 @@ const label: StringName = StringName("SyNetPredictionTicks")
 
 func on_process(_entities, _data, _delta: float):
 
+	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var wync_ctx = single_wync.ctx as WyncCtx
 	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+	var co_ticks = wync_ctx.co_ticks
 	
 	var curr_time = ClockUtils.time_get_ticks_msec(co_ticks)
 	var physics_fps = Engine.physics_ticks_per_second
@@ -55,8 +57,5 @@ func on_process(_entities, _data, _delta: float):
 	# Setup the next tick-action-history
 	# Run before any prediction takes places on the current tick
 	# NOTE: This could be moved elsewhere
-	
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = single_wync.ctx as WyncCtx
 	
 	WyncEventUtils.action_tick_history_reset(wync_ctx, co_predict_data.target_tick)

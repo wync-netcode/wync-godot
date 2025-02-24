@@ -108,9 +108,9 @@ func generate_block_grid_event(
 	# NOTE current approach:
 	# Feed event into my prop array of events
 	
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
+	var co_ticks = wync_ctx.co_ticks
 	
 	# FIXME: harcoded entity with id 0
 	var player_entity_id = 0

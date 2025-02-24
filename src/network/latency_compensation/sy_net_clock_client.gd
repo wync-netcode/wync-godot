@@ -12,6 +12,10 @@ func _ready():
 	
 
 func on_process(_entities, _data, _delta: float):
+	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var wync_ctx = single_wync.ctx as WyncCtx
+	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
+	var co_ticks = wync_ctx.co_ticks
 
 	var en_client = ECS.get_singleton_entity(self, "EnSingleClient")
 	if not en_client:
@@ -32,8 +36,6 @@ func on_process(_entities, _data, _delta: float):
 		# consume
 		co_io.in_packets.remove_at(k)
 
-		var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
-		var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 		var curr_time = ClockUtils.time_get_ticks_msec(co_ticks)
 		var physics_fps = Engine.physics_ticks_per_second
 		var server_time_diff = (data.time + data.latency) - curr_time
@@ -60,7 +62,7 @@ func on_process(_entities, _data, _delta: float):
 			# TODO: Allow for updating co_ticks.server_ticks_offset every minute or so
 
 
-		var server_ticks = %CoTicks.ticks -1
+		var server_ticks = %CoSingleWyncContext.ctx.co_ticks.ticks -1
 		
 		Log.out("Servertime %s, real %s, d %s | ticks %s, real %s, d %s | latency %s | clock %s | %s | %s | %s" % [
 			int(current_server_time),

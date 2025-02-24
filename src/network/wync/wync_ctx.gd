@@ -1,6 +1,11 @@
 class_name WyncCtx
 
 
+## Extra structures
+
+var co_ticks: CoTicks = CoTicks.new()
+var co_predict_data: CoSingleNetPredictionData = CoSingleNetPredictionData.new()
+
 ## Server & Client ==============================
 
 const SERVER_PEER_ID = 0
