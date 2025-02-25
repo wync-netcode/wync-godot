@@ -28,7 +28,7 @@ func on_process(_entities, _data, _delta: float):
 		if not data:
 			continue
 
-		WyncFlow.wync_handle_pkt_prop_snap(wync_ctx, data)
+		#WyncFlow.wync_handle_pkt_prop_snap(wync_ctx, data)
 
 		co_io.in_packets.remove_at(k)
 

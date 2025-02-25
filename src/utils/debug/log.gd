@@ -2,6 +2,8 @@ class_name Log
 
 enum {
 	TAG_DEBUG1,
+	TAG_DEBUG2,
+	TAG_DEBUG3,
 	TAG_CLOCK,
 	TAG_LATENCY,
 	TAG_PRED_TICK,
@@ -25,6 +27,8 @@ enum {
 
 const tag_names: Dictionary = {
 	TAG_DEBUG1: "Debug1",
+	TAG_DEBUG2: "Debug2",
+	TAG_DEBUG3: "Debug3",
 	TAG_CLOCK: "Clock",
 	TAG_LATENCY: "Latency",
 	TAG_PRED_TICK: "Pred-tick",

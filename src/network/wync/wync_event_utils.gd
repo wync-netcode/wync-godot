@@ -221,13 +221,13 @@ static func add_event_to_prop_tick(
 	
 	# reset in case it doesn't exist
 	var data_wrap = input_prop.confirmed_states.get_at(tick_current)
-	if data_wrap == null || data_wrap is not NetPacketInputs.NetTickDataDecorator:
-		data_wrap = NetPacketInputs.NetTickDataDecorator.new()
+	if data_wrap == null || data_wrap is not WyncPktInputs.NetTickDataDecorator:
+		data_wrap = WyncPktInputs.NetTickDataDecorator.new()
 		data_wrap.tick = tick_current
 		data_wrap.data = []
 		input_prop.confirmed_states.insert_at(tick_current, data_wrap)
 	
-	data_wrap = data_wrap as NetPacketInputs.NetTickDataDecorator
+	data_wrap = data_wrap as WyncPktInputs.NetTickDataDecorator
 	if data_wrap.tick != tick_current:
 		data_wrap.tick = tick_current
 		(data_wrap.data as Array).clear() # NOTE: maybe just Array.clear()?

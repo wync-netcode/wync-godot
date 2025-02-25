@@ -29,6 +29,7 @@ class EventData:
 	func duplicate() -> EventData:
 		var newi = EventData.new()
 		newi.event_id = event_id
+		newi.event_type_id = event_type_id
 		newi.arg_count = arg_count
 		newi.arg_data_type = arg_data_type.duplicate(true)
 		# WARNING: Only godot types will be duplicated
@@ -40,7 +41,7 @@ var events: Array[EventData]
 
 func duplicate() -> WyncPktEventData:
 	var newi = WyncPktEventData.new()
-	newi.events = []
+	newi.events = [] as Array[EventData]
 	for event in events:
 		newi.events.append(event.duplicate())
 	return newi

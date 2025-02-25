@@ -25,11 +25,11 @@ func on_process(_entities, _data, _delta: float, node_root: Node = null):
 
 	for k in range(co_io.in_packets.size()-1, -1, -1):
 		var pkt = co_io.in_packets[k] as NetPacket
-		var data = pkt.data as NetPacketInputs
+		var data = pkt.data as WyncPktInputs
 		if not data:
 			continue
 
-		WyncFlow.wync_handle_net_packet_inputs(wync_ctx, data, pkt.from_peer)
+		#WyncFlow.wync_handle_net_packet_inputs(wync_ctx, data, pkt.from_peer)
 			
 		# consume
 		co_io.in_packets.remove_at(k)

@@ -2,7 +2,7 @@ class_name WyncCtx
 
 ## outgoing packets
 
-var out_packets: Array[NetPacket]
+var out_packets: Array[WyncPacketOut]
 
 ## Extra structures =============================
 

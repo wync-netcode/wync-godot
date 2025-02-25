@@ -31,7 +31,7 @@ func on_process(_entities, _data, _delta: float, node_root: Node = null):
 		if not data:
 			continue
 
-		WyncFlow.wync_handle_pkt_event_data(wync_ctx, data)
+		#WyncFlow.wync_handle_pkt_event_data(wync_ctx, data)
 		
 		# consume
 		Log.out("events | Consume WyncPktEventData", Log.TAG_EVENT_DATA)

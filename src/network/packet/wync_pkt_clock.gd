@@ -1,12 +1,12 @@
-class_name NetPacketClock
+class_name WyncPktClock
 
 var tick: int
 var time: int
 var latency: int
 
 
-func duplicate() -> NetPacketClock:
-	var newi = NetPacketClock.new()
+func duplicate() -> WyncPktClock:
+	var newi = WyncPktClock.new()
 	newi.tick = tick
 	newi.time = time
 	newi.latency = latency

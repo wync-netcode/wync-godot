@@ -1,6 +1,6 @@
 extends System
-class_name SyUserWyncConsumePackets
-const label: StringName = StringName("SyUserWyncConsumePackets")
+class_name SyUserWyncConsumePacketsSecond
+const label: StringName = StringName("SyUserWyncConsumePacketsSecond")
 
 ## Grab packets from the network to feed Wync
 
@@ -26,7 +26,7 @@ func on_process(_entities, _data, _delta: float):
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
 	
-	# check for packets
+	# TODO
 
 	for k in range(co_io.in_packets.size()-1, -1, -1):
 		var pkt = co_io.in_packets[k] as NetPacket
@@ -42,6 +42,9 @@ func on_process(_entities, _data, _delta: float):
 			continue
 		var data = pkt.data as WyncPacket
 		
+		if not data.packet_type_id in [WyncPacket.WYNC_PKT_JOIN_RES, WyncPacket.WYNC_PKT_RES_CLIENT_INFO]:
+			continue
+
 		WyncFlow.wync_feed_packet(wync_ctx, data, pkt.from_peer)
 
 		# consume

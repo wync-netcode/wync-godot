@@ -1,4 +1,4 @@
-class_name NetPacketInputs
+class_name WyncPktInputs
 
 class NetTickDataDecorator:
 	var tick: int
@@ -19,8 +19,8 @@ var amount: int = 0
 var inputs: Array[NetTickDataDecorator]
 
 
-func duplicate() -> NetPacketInputs:
-	var newi = NetPacketInputs.new()
+func duplicate() -> WyncPktInputs:
+	var newi = WyncPktInputs.new()
 	newi.prop_id = prop_id
 	newi.amount = amount
 	newi.inputs = [] as Array[NetTickDataDecorator]

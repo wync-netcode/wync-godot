@@ -72,6 +72,8 @@ static func run_client_events(node_ctx: Node, wync_ctx: WyncCtx, client_wync_pee
 		if event is not WyncEvent:
 			continue
 		event = event as WyncEvent
+		
+		#Log.out("Gonna execute this event %s" % [event_id], Log.TAG_DEBUG3)
 
 		# handle it
 		handle_events(node_ctx, event.data, client_wync_peer_id)

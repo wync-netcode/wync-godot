@@ -28,7 +28,7 @@ func on_process(_entities, _data, _delta: float):
 		if not data:
 			continue
 
-		WyncFlow.wync_handle_pkt_join_req(wync_ctx, data, pkt.from_peer)
+		#WyncFlow.wync_handle_pkt_join_req(wync_ctx, data, pkt.from_peer)
 			
 		# consume
 		co_io.in_packets.remove_at(k)

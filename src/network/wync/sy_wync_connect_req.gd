@@ -38,7 +38,7 @@ func on_process(_entities, _data, _delta: float):
 		if not data:
 			continue
 
-		WyncFlow.wync_handle_pkt_join_res(wync_ctx, data)
+		#WyncFlow.wync_handle_pkt_join_res(wync_ctx, data)
 
 		# consume
 		co_io.in_packets.remove_at(k)

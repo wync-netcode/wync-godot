@@ -1,6 +1,6 @@
 extends System
-class_name SyNetClockServer
-const label: StringName = StringName("SyNetClockServer")
+class_name SyWyncClockServer
+const label: StringName = StringName("SyWyncClockServer")
 
 ## Periodically send server clock to clients
 
@@ -25,20 +25,20 @@ func on_process(_entities, _data, _delta: float):
 	if not single_server:
 		print("E: Couldn't find singleton EnSingleServer")
 		return
-	var co_io_packets = single_server.get_component(CoIOPackets.label) as CoIOPackets
-	var co_server = single_server.get_component(CoServer.label) as CoServer
 	
 	# prepare packet
 
-	var packet = NetPacketClock.new()
+	var packet = WyncPktClock.new()
 	packet.tick = co_ticks.ticks
 	packet.time = ClockUtils.time_get_ticks_msec(co_ticks)
 	packet.latency = co_loopback.latency # send raw latency
 
 	# queue for sending
 
-	for peer: CoServer.ServerPeer in co_server.peers:
-		var pkt = NetPacket.new()
-		pkt.to_peer = peer.peer_id
-		pkt.data = packet.duplicate()
-		co_io_packets.out_packets.append(pkt)
+	for wync_peer_id: int in range(1, wync_ctx.peers.size()):
+
+		var packet_dup = WyncUtils.duplicate_any(packet)
+		var result = WyncFlow.wync_wrap_packet_out(wync_ctx, wync_peer_id, WyncPacket.WYNC_PKT_CLOCK, packet_dup)
+		if result[0] == OK:
+			var packet_out = result[1] as WyncPacketOut
+			wync_ctx.out_packets.append(packet_out)

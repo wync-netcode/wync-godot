@@ -19,26 +19,57 @@ static func wync_tick_start(ctx: WyncCtx):
 	# after tick start
 
 
-static func wync_feed_packet(ctx: WyncCtx, data: Variant, from_peer: int) -> int:
-	# server
-	if data is WyncPktJoinRes:
-		wync_handle_pkt_join_res(ctx, data)
-	elif data is WyncPktEventData:
-		wync_handle_pkt_event_data(ctx, data)
-	elif data is WyncPktJoinReq:
-		wync_handle_pkt_join_req(ctx, data, from_peer)
-	elif data is NetPacketInputs:
-		wync_handle_net_packet_inputs(ctx, data, from_peer)
-	elif data is WyncPktPropSnap:
-		wync_handle_pkt_prop_snap(ctx, data)
-	elif data is WyncPacketResClientInfo:
-		wync_handle_packet_res_client_info(ctx, data)
-	else:
-		Log.err("Packet not recognized %s skipping" % [data])
-		return -1
+static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_id: int) -> int:
+	match wync_pkt.packet_type_id:
+		WyncPacket.WYNC_PKT_JOIN_REQ:
+			wync_handle_pkt_join_req(ctx, wync_pkt.data, from_nete_peer_id)
+		WyncPacket.WYNC_PKT_JOIN_RES:
+			wync_handle_pkt_join_res(ctx, wync_pkt.data)
+		WyncPacket.WYNC_PKT_EVENT_DATA:
+			wync_handle_pkt_event_data(ctx, wync_pkt.data)
+		WyncPacket.WYNC_PKT_INPUTS:
+			if not WyncUtils.is_client(ctx):
+				wync_handle_net_packet_inputs(ctx, wync_pkt.data, from_nete_peer_id)
+		WyncPacket.WYNC_PKT_PROP_SNAP:
+			wync_handle_pkt_prop_snap(ctx, wync_pkt.data)
+		WyncPacket.WYNC_PKT_RES_CLIENT_INFO:
+			wync_handle_packet_res_client_info(ctx, wync_pkt.data)
+		WyncPacket.WYNC_PKT_CLOCK:
+			wync_handle_pkt_clock(ctx, wync_pkt.data)
+		_:
+			Log.err("wync packet_type_id(%s) not recognized skipping (%s)" % [wync_pkt.packet_type_id, wync_pkt.data])
+			return -1
 
-	# client
 	return OK
+
+
+static func wync_packet_type_exists(packet_type_id: int) -> bool:
+	return packet_type_id >= 0 && packet_type_id < WyncPacket.WYNC_PKT_AMOUNT
+
+
+## Wraps a valid packet in a WyncPacket in a WyncPacketOut for delivery
+## @param packet: void*. A pointer to the packet data
+## @returns Tuple[int, WyncPacketOut]. [0] -> Error; [1] -> WyncPacketOut.
+static func wync_wrap_packet_out(ctx: WyncCtx, to_wync_peer_id: int, packet_type_id: int, data: Variant) -> Array:
+
+	if not wync_packet_type_exists(packet_type_id):
+		Log.err("Invalid packet_type_id(%s)" % [packet_type_id])
+		return [1, null]
+
+	var nete_peer_id = WyncUtils.get_nete_peer_id_from_wync_peer_id(ctx, to_wync_peer_id)
+	if nete_peer_id == -1:
+		Log.err("Couldn't find a nete_peer_id for wync_peer_id(%s)" % [to_wync_peer_id])
+		return [2, null]
+
+	var wync_pkt = WyncPacket.new()
+	wync_pkt.packet_type_id = packet_type_id
+	wync_pkt.data = data
+
+	var wync_pkt_out = WyncPacketOut.new()
+	wync_pkt_out.to_nete_peer_id = nete_peer_id
+	wync_pkt_out.data = wync_pkt
+
+	return [OK, wync_pkt_out]
 
 
 static func wync_try_to_connect(ctx: WyncCtx) -> int:
@@ -52,10 +83,9 @@ static func wync_try_to_connect(ctx: WyncCtx) -> int:
 	# TODO: Move this elsewhere
 	
 	var packet_data = WyncPktJoinReq.new()
-	var packet = NetPacket.new()
-	packet.to_peer = server_nete_peer_id
-	packet.data = packet_data
-	ctx.out_packets.append(packet)
+	var result = wync_wrap_packet_out(ctx, WyncCtx.SERVER_PEER_ID, WyncPacket.WYNC_PKT_JOIN_REQ, packet_data)
+	if result[0] == OK:
+		ctx.out_packets.append(result[1])
 	return OK
 
 
@@ -79,7 +109,7 @@ static func wync_handle_pkt_join_res(ctx: WyncCtx, data: Variant) -> int:
 	ctx.my_peer_id = data.wync_client_id
 	WyncUtils.client_setup_my_client(ctx, data.wync_client_id)
 
-	Log.out("client nete_peer_id(%s) connected as wync_peer_id(%s)" % [ctx.my_nete_peer_id, ctx.my_peer_id], Log.TAG_WYNC_CONNECT)
+	Log.out("client nete_peer_id(%s) connected as wync_peer_id(%s)" % [ctx.my_nete_peer_id, ctx.my_peer_id], Log.TAG_WYNC_CONNECT, Log.TAG_DEBUG2)
 	return OK
 
 
@@ -99,12 +129,14 @@ static func wync_handle_pkt_event_data(ctx: WyncCtx, data: Variant) -> int:
 		ctx.events[event.event_id] = wync_event
 	
 		Log.out("events | got this events %s" % [event.event_id], Log.TAG_EVENT_DATA)
+		if event.event_id == 105:
+			print_debug("")
 		# NOTE: what if we already have this event data? Maybe it's better to receive it anyway?
 
 	return OK
 
 
-static func wync_handle_pkt_join_req(ctx: WyncCtx, data: Variant, from_peer: int) -> int:
+static func wync_handle_pkt_join_req(ctx: WyncCtx, data: Variant, from_nete_peer_id: int) -> int:
 
 	if data is not WyncPktJoinReq:
 		return 1
@@ -114,40 +146,45 @@ static func wync_handle_pkt_join_req(ctx: WyncCtx, data: Variant, from_peer: int
 	# NOTE: the criteria to determine wether a client has a valid prop ownership could be user defined
 	# NOTE: wync setup must be ran only once per client
 	
-	var wync_client_id = WyncUtils.is_peer_registered(ctx, from_peer)
+	var wync_client_id = WyncUtils.is_peer_registered(ctx, from_nete_peer_id)
 	if wync_client_id != -1:
-		Log.out("Client %s already setup in Wync as %s" % [from_peer, wync_client_id], Log.TAG_WYNC_CONNECT)
+		Log.out("Client %s already setup in Wync as %s" % [from_nete_peer_id, wync_client_id], Log.TAG_WYNC_CONNECT)
 		return 1
-	wync_client_id = WyncUtils.peer_register(ctx, from_peer)
+	wync_client_id = WyncUtils.peer_register(ctx, from_nete_peer_id)
 	
 	# send confirmation
 	
-	var packet_data = WyncPktJoinRes.new()
-	packet_data.approved = true
-	packet_data.wync_client_id = wync_client_id
-	
-	var packet = NetPacket.new()
-	packet.to_peer = from_peer
-	packet.data = packet_data
-	ctx.out_packets.append(packet)
+	var packet = WyncPktJoinRes.new()
+	packet.approved = true
+	packet.wync_client_id = wync_client_id
+	var result = wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_JOIN_RES, packet)
+	if result[0] == OK:
+		ctx.out_packets.append(result[1])
 	
 	# NOTE: Maybe move this elsewhere, the client could ask this any time
 	# FIXME Harcoded: client 0 -> entity 0 (player)
-	packet = make_client_info_packet(ctx, wync_client_id, 0, "input")
-	packet.to_peer = from_peer
-	ctx.out_packets.append(packet)
-	
-	packet = make_client_info_packet(ctx, wync_client_id, 0, "events")
-	packet.to_peer = from_peer
-	ctx.out_packets.append(packet)
+
+	var packet_info: WyncPktResClientInfo
+	packet_info = make_client_info_packet(ctx, wync_client_id, 0, "input")
+	result = wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_RES_CLIENT_INFO, packet_info)
+	if result[0] == OK:
+		ctx.out_packets.append(result[1])
+
+	packet_info = make_client_info_packet(ctx, wync_client_id, 0, "events")
+	result = wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_RES_CLIENT_INFO, packet_info)
+	if result[0] == OK:
+		ctx.out_packets.append(result[1])
 	
 	# let client own it's global events
 	# NOTE: Maybe move this where all channels are defined
+
 	var global_events_entity_id = WyncCtx.ENTITY_ID_GLOBAL_EVENTS + wync_client_id
 	if WyncUtils.is_entity_tracked(ctx, global_events_entity_id):
-		packet = make_client_info_packet(ctx, wync_client_id, global_events_entity_id, "channel_0")
-		packet.to_peer = from_peer
-		ctx.out_packets.append(packet)
+
+		packet_info = make_client_info_packet(ctx, wync_client_id, global_events_entity_id, "channel_0")
+		result = wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_RES_CLIENT_INFO, packet_info)
+		if result[0] == OK:
+			ctx.out_packets.append(result[1])
 	
 	else:
 		Log.err("Global Event Entity (id %s) for peer_id %s NOT FOUND" % [global_events_entity_id, wync_client_id], Log.TAG_WYNC_CONNECT)
@@ -159,36 +196,35 @@ static func make_client_info_packet(
 	ctx: WyncCtx,
 	wync_client_id: int,
 	entity_id: int,
-	prop_name: String) -> NetPacket:
+	prop_name: String) -> WyncPktResClientInfo:
 	
 	var prop_id = WyncUtils.entity_get_prop_id(ctx, entity_id, prop_name)
-	var packet_data = WyncPacketResClientInfo.new()
+	var packet_data = WyncPktResClientInfo.new()
 	packet_data.entity_id = entity_id
 	packet_data.prop_id = prop_id
 	
 	WyncUtils.prop_set_client_owner(ctx, prop_id, wync_client_id)
 	Log.out("assigned (entity %s: prop %s) to client %s" % [packet_data.entity_id, prop_id, wync_client_id], Log.TAG_WYNC_CONNECT)
 	
-	var packet = NetPacket.new()
-	packet.data = packet_data
-	return packet
+	return packet_data
 
 
-static func wync_handle_net_packet_inputs(ctx: WyncCtx, data: Variant, from_peer: int) -> int:
-
-	if data is not NetPacketInputs:
+static func wync_handle_net_packet_inputs(ctx: WyncCtx, data: Variant, from_nete_peer_id: int) -> int:
+	if not ctx.connected:
 		return 1
-	data = data as NetPacketInputs
+	if data is not WyncPktInputs:
+		return 2
+	data = data as WyncPktInputs
 
 	# client and prop exists
-	var client_id = WyncUtils.is_peer_registered(ctx, from_peer)
+	var client_id = WyncUtils.is_peer_registered(ctx, from_nete_peer_id)
 	if client_id < 0:
 		Log.err("client %s is not registered" % client_id, Log.TAG_INPUT_RECEIVE)
-		return 2
+		return 3
 	var prop_id = data.prop_id
 	if not WyncUtils.prop_exists(ctx, prop_id):
 		Log.err("prop %s doesn't exists" % prop_id, Log.TAG_INPUT_RECEIVE)
-		return 3
+		return 4
 	
 	# check client has ownership over this prop
 	var client_owns_prop = false
@@ -196,14 +232,14 @@ static func wync_handle_net_packet_inputs(ctx: WyncCtx, data: Variant, from_peer
 		if i_prop_id == prop_id:
 			client_owns_prop = true
 	if not client_owns_prop:
-		return 4
+		return 5
 	
 	var input_prop = ctx.props[prop_id] as WyncEntityProp
 	
 	# save the input in the prop before simulation
 	# TODO: data.copy is not standarized
 	
-	for input: NetPacketInputs.NetTickDataDecorator in data.inputs:
+	for input: WyncPktInputs.NetTickDataDecorator in data.inputs:
 		var copy = WyncUtils.duplicate_any(input.data)
 		if copy == null:
 			Log.out("WARNING: input data can't be duplicated %s" % [input.data], Log.TAG_INPUT_RECEIVE)
@@ -254,7 +290,7 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 			continue
 		
 		for prop: WyncPktPropSnap.PropSnap in snap.props:
-			
+
 			var local_prop = WyncUtils.get_prop(ctx, prop.prop_id)
 			if local_prop == null:
 				Log.err("couldn't find prop (%s) skipping..." % [prop.prop_id], Log.TAG_LATEST_VALUE)
@@ -283,6 +319,7 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 			if local_prop == null:
 				Log.err("couldn't find prop (%s) skipping..." % [prop.prop_id], Log.TAG_LATEST_VALUE)
 				continue
+
 			local_prop = local_prop as WyncEntityProp
 			if not local_prop.relative_syncable:
 				continue
@@ -296,7 +333,7 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 			var delta_props_last_tick = ctx.client_has_relative_prop_has_last_tick[ctx.my_peer_id] as Dictionary
 			delta_props_last_tick[prop.prop_id] = data.tick
 			Log.out("delta sync debug1 | ser_tick(%s) delta_prop_last_tick %s" % [ctx.co_ticks.server_ticks, delta_props_last_tick], Log.TAG_LATEST_VALUE)
-
+				
 			# TODO: reset event buffer, clean events that should already be applied by this tick
 			# Reset it but only for one prop
 			# SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(ctx)
@@ -307,9 +344,9 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 
 static func wync_handle_packet_res_client_info(ctx: WyncCtx, data: Variant):
 
-	if data is not WyncPacketResClientInfo:
+	if data is not WyncPktResClientInfo:
 		return 1
-	data = data as WyncPacketResClientInfo
+	data = data as WyncPktResClientInfo
 		
 	# check if entity id exists
 	# NOTE: is this check enough?
@@ -321,3 +358,49 @@ static func wync_handle_packet_res_client_info(ctx: WyncCtx, data: Variant):
 	# set prop ownership
 	WyncUtils.prop_set_client_owner(ctx, data.prop_id, ctx.my_peer_id)
 	Log.out("Prop %s ownership given to client %s" % [data.prop_id, ctx.my_peer_id], Log.TAG_WYNC_PEER_SETUP)
+
+
+static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
+
+	if data is not WyncPktClock:
+		return 1
+	data = data as WyncPktClock
+
+	var co_predict_data = ctx.co_predict_data
+	var co_ticks = ctx.co_ticks
+	var curr_time = ClockUtils.time_get_ticks_msec(co_ticks)
+	var physics_fps = Engine.physics_ticks_per_second
+	var server_time_diff = (data.time + data.latency) - curr_time
+
+	# calculate mean
+	
+	co_predict_data.clock_packets_received += 1
+	co_predict_data.clock_offset_accumulator += server_time_diff
+	co_predict_data.clock_offset_mean = (co_predict_data.clock_offset_mean * (co_predict_data.clock_packets_received-1) + server_time_diff) / co_predict_data.clock_packets_received
+	
+	# update ticks
+	
+	var current_server_time: float = curr_time + co_predict_data.clock_offset_mean
+	var time_since_packet_sent: float = current_server_time - data.time
+	
+	if co_predict_data.clock_packets_received < 11:
+		co_ticks.server_ticks = data.tick \
+		+ round(time_since_packet_sent / (1000.0 / physics_fps))
+		co_ticks.server_ticks_offset = co_ticks.server_ticks - co_ticks.ticks
+		
+	elif not co_ticks.server_ticks_offset_initialized:
+		co_ticks.server_ticks_offset_initialized = true
+		co_ticks.server_ticks = co_ticks.ticks + co_ticks.server_ticks_offset
+		# TODO: Allow for updating co_ticks.server_ticks_offset every minute or so
+
+	Log.out("Servertime %s, real %s, d %s | server_ticks_aprox %s | latency %s | clock %s | %s | %s | %s" % [
+		int(current_server_time),
+		Time.get_ticks_msec(),
+		str(Time.get_ticks_msec() - current_server_time).pad_zeros(2).pad_decimals(1),
+		co_ticks.server_ticks,
+		Time.get_ticks_msec() - data.time,
+		str(co_predict_data.clock_offset_mean).pad_decimals(2),
+		str(time_since_packet_sent).pad_decimals(2),
+		str(time_since_packet_sent / (1000.0 / physics_fps)).pad_decimals(2),
+		co_ticks.server_ticks_offset,
+	], Log.TAG_CLOCK)

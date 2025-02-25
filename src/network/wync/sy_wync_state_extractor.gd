@@ -21,8 +21,6 @@ func on_process(_entities, _data, _delta: float):
 	if not single_server:
 		print("E: Couldn't find singleton EnSingleServer")
 		return
-	var co_io_packets = single_server.get_component(CoIOPackets.label) as CoIOPackets
-	var co_server = single_server.get_component(CoServer.label) as CoServer
 	
 	# extract data
 	
@@ -115,16 +113,19 @@ func on_process(_entities, _data, _delta: float):
 			
 			#Log.out(self, "wync: Found prop %s" % prop.name_id)
 			
+			
 		packet.snaps.append(entity_snap)
 
 
-	# prepare packets to send
+	# queue _out packets_ for delivery
 
-	for peer: CoServer.ServerPeer in co_server.peers:
-		var pkt = NetPacket.new()
-		pkt.to_peer = peer.peer_id
-		pkt.data = packet.duplicate()
-		co_io_packets.out_packets.append(pkt)
+	for wync_peer_id: int in range(1, wync_ctx.peers.size()):
+
+		var packet_dup = WyncUtils.duplicate_any(packet)
+		var result = WyncFlow.wync_wrap_packet_out(wync_ctx, wync_peer_id, WyncPacket.WYNC_PKT_PROP_SNAP, packet_dup)
+		if result[0] == OK:
+			var packet_out = result[1] as WyncPacketOut
+			wync_ctx.out_packets.append(packet_out)
 
 
 static func extract_data_to_tick(wync_ctx: WyncCtx, co_ticks: CoTicks, save_on_tick: int = -1):

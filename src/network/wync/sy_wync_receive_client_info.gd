@@ -26,11 +26,11 @@ func on_process(_entities, _data, _delta: float):
 	
 	for k in range(co_io.in_packets.size()-1, -1, -1):
 		var pkt = co_io.in_packets[k] as NetPacket
-		var data = pkt.data as WyncPacketResClientInfo
+		var data = pkt.data as WyncPktResClientInfo
 		if not data:
 			continue
 		
-		WyncFlow.wync_handle_packet_res_client_info(wync_ctx, data)
+		#WyncFlow.wync_handle_packet_res_client_info(wync_ctx, data)
 
 		# consume
 		co_io.in_packets.remove_at(k)

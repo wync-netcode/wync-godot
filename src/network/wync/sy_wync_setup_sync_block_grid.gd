@@ -51,7 +51,7 @@ func setup_block_grid(entity: Entity):
 	
 	var flag = CoFlagWyncEntityTracked.new()
 	ECS.entity_add_component_node(entity, flag)
-	Log.out("wync: Registered entity %s with id %s" % [entity, co_actor.id], Log.TAG_PROP_SETUP)
+	Log.out("wync: Registered entity %s with id %s" % [entity, co_actor.id], Log.TAG_PROP_SETUP, Log.TAG_DEBUG2)
 
 
 func setup_block_grid_delta(entity: Entity, predicted: bool):
@@ -111,7 +111,7 @@ func setup_block_grid_delta(entity: Entity, predicted: bool):
 	
 	var flag = CoFlagWyncEntityTracked.new()
 	ECS.entity_add_component_node(entity, flag)
-	Log.out("wync: Registered entity %s with id %s" % [entity, co_actor.id], Log.TAG_PROP_SETUP)
+	Log.out("wync: Registered entity %s with id %s" % [entity, co_actor.id], Log.TAG_PROP_SETUP, Log.TAG_DEBUG2)
 
 
 # Remember that these delta changes ARE NOT EVENTS but just changes over time.

@@ -18,7 +18,6 @@ func on_process(_entities, _data, _delta: float):
 	if co_io == null:
 		var single_server = ECS.get_singleton_entity(self, "EnSingleServer")
 		if single_server:
-			var co_server = single_server.get_component(CoServer.label) as CoServer
 			co_io = single_server.get_component(CoIOPackets.label) as CoIOPackets
 	
 	if co_io == null:
@@ -27,16 +26,21 @@ func on_process(_entities, _data, _delta: float):
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
 	
-	# check for packets
+	# queue _out packets_ for delivery
 
-	for pkt: NetPacket in wync_ctx.out_packets:
+	for pkt: WyncPacketOut in wync_ctx.out_packets:
 		
-		# TODO: use a different packet struct unique to Wync
 		# queue
 		
 		var packet = NetPacket.new()
-		packet.to_peer = pkt.to_peer
-		packet.data = pkt.data
+		packet.packet_type_id = GameInfo.NETE_PKT_WYNC_PKT
+		packet.to_peer = pkt.to_nete_peer_id
+
+		# send contained WyncPacket
+		# no need to copy I guess
+		packet.data = pkt.data 
+
 		co_io.out_packets.append(packet)
 
+	# clear 
 	wync_ctx.out_packets.clear()
