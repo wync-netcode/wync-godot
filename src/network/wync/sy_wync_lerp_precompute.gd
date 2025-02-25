@@ -18,9 +18,13 @@ func _ready():
 func on_process(_entities, _data, _delta: float):
 
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = single_wync.ctx as WyncCtx
-	var co_predict_data = wync_ctx.co_predict_data
-	var co_ticks = wync_ctx.co_ticks
+	var ctx = single_wync.ctx as WyncCtx
+	wync_lerp_precompute (ctx)
+
+
+static func wync_lerp_precompute (ctx: WyncCtx):
+	var co_predict_data = ctx.co_predict_data
+	var co_ticks = ctx.co_ticks
 
 	var curr_tick_time = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, co_ticks.ticks)
 	var curr_time = curr_tick_time + int(1000.0 / (Engine.physics_ticks_per_second * 2)) # half a physic frame
@@ -28,8 +32,8 @@ func on_process(_entities, _data, _delta: float):
 
 	# precompute which ticks we'll be interpolating
 
-	for prop_id: int in range(wync_ctx.props.size()):
-		var prop = WyncUtils.get_prop(wync_ctx, prop_id)
+	for prop_id: int in range(ctx.props.size()):
+		var prop = WyncUtils.get_prop(ctx, prop_id)
 		if prop == null:
 			continue
 		prop = prop as WyncEntityProp
@@ -38,24 +42,24 @@ func on_process(_entities, _data, _delta: float):
 
 		# -> for predictes states
 
-		if WyncUtils.prop_is_predicted(wync_ctx, prop_id):
-			precompute_lerping_prop_predicted(wync_ctx, prop_id, co_ticks)
+		if WyncUtils.prop_is_predicted(ctx, prop_id):
+			precompute_lerping_prop_predicted(ctx, prop_id, co_ticks)
 
 		# -> for confirmed states
 		else:
-			precompute_lerping_prop_confirmed_states(wync_ctx, prop_id, target_time_conf, co_ticks, co_predict_data)
+			precompute_lerping_prop_confirmed_states(ctx, prop_id, target_time_conf, co_ticks, co_predict_data)
 
 
-func precompute_lerping_prop_confirmed_states(
-		wync_ctx: WyncCtx, prop_id: int, target_time: int,
+static func precompute_lerping_prop_confirmed_states(
+		ctx: WyncCtx, prop_id: int, target_time: int,
 		co_ticks: CoTicks, co_predict_data: CoPredictionData
 	):
-	var prop = WyncUtils.get_prop(wync_ctx, prop_id)
+	var prop = WyncUtils.get_prop(ctx, prop_id)
 	if prop == null:
 		return
 	prop = prop as WyncEntityProp
 
-	var snaps = WyncUtils.find_closest_two_snapshots_from_prop(wync_ctx, target_time, prop, co_ticks, co_predict_data)
+	var snaps = WyncUtils.find_closest_two_snapshots_from_prop(ctx, target_time, prop, co_ticks, co_predict_data)
 	if snaps.size() != 2:
 		return
 
@@ -70,11 +74,11 @@ func precompute_lerping_prop_confirmed_states(
 	co_ticks.last_tick_rendered_left = max(co_ticks.last_tick_rendered_left, prop.lerp_left_confirmed_state_tick)
 
 
-func precompute_lerping_prop_predicted(
-		wync_ctx: WyncCtx, prop_id: int,
+static func precompute_lerping_prop_predicted(
+		ctx: WyncCtx, prop_id: int,
 		co_ticks: CoTicks
 	):
-	var prop = WyncUtils.get_prop(wync_ctx, prop_id)
+	var prop = WyncUtils.get_prop(ctx, prop_id)
 	if prop == null:
 		return
 	prop = prop as WyncEntityProp

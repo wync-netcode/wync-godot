@@ -10,38 +10,17 @@ func on_process(_entities, _data, _delta: float):
 
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var ctx = single_wync.ctx as WyncCtx
+	wync_send_event_data (ctx)
+
+
+static func wync_send_event_data (ctx: WyncCtx):
 	if not ctx.connected:
 		Log.err("Not connected", Log.TAG_EVENT_DATA)
-		return
-
-	# get co_io_packets
-
-	var co_io_packets = null
-	if WyncUtils.is_client(ctx):
-		var en_client = ECS.get_singleton_entity(self, "EnSingleClient")
-		if not en_client:
-			Log.err("Couldn't find singleton EnSingleClient", Log.TAG_EVENT_DATA)
-			return
-		co_io_packets = en_client.get_component(CoIOPackets.label) as CoIOPackets
-	else:
-		var en_server = ECS.get_singleton_entity(self, "EnSingleServer")
-		if not en_server:
-			Log.err("Couldn't find singleton EnSingleServer", Log.TAG_EVENT_DATA)
-			return
-		co_io_packets = en_server.get_component(CoIOPackets.label) as CoIOPackets
-
-	if co_io_packets == null:
-		Log.err("Couldn't find CoIOPackets", Log.TAG_EVENT_DATA)
 		return
 
 	# send events
 	
 	if WyncUtils.is_client(ctx):
-		var en_client = ECS.get_singleton_entity(self, "EnSingleClient")
-		var co_client = en_client.get_component(CoClient.label) as CoClient
-		if co_client.server_peer < 0:
-			Log.err("No server peer", Log.TAG_EVENT_DATA)
-			return
 		send_events_to_peer(ctx, WyncCtx.SERVER_PEER_ID)
 	else: # server
 		for wync_peer_id in range(1, ctx.peers.size()):

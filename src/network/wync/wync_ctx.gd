@@ -1,5 +1,18 @@
 class_name WyncCtx
 
+## extrapolation service ??
+
+# We can detect a local_tick is duplicated by checking is the same as te previous,
+# Then we can honor the config wheter to allow duplication or not for each prop
+var xtrap_is_local_tick_duplicated = false
+var xtrap_prev_local_tick: Variant = null # Optional<int>
+var xtrap_local_tick: Variant = null # Optional<int>
+
+
+## user network info feed
+
+var current_tick_nete_latency_ms: int
+
 ## outgoing packets
 
 var out_packets: Array[WyncPacketOut]

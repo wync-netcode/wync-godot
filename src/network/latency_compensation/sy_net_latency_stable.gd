@@ -13,14 +13,22 @@ func on_process(_entities, _data, _delta: float):
 		Log.err("Couldn't find singleton CoTransportLoopback", Log.TAG_LATENCY)
 		return
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = single_wync.ctx as WyncCtx
-	var co_predict_data = wync_ctx.co_predict_data
-	var co_ticks = wync_ctx.co_ticks
+	
+	# user must give Wync the current latency
+	
+	WyncFlow.wync_client_set_current_latency (single_wync.ctx, co_loopback.latency)
+	#wync_stabilize_latency (single_wync.ctx)
+
+
+static func wync_stabilize_latency (ctx: WyncCtx):
+
+	var co_predict_data = ctx.co_predict_data
+	var co_ticks = ctx.co_ticks
 	var physics_fps = Engine.physics_ticks_per_second
 	
 	# Poll latency
 	if co_ticks.ticks % ceili(float(physics_fps) / 2) == 0:
-		co_predict_data.latency_buffer[co_predict_data.latency_buffer_head % co_predict_data.LATENCY_BUFFER_SIZE] = co_loopback.latency
+		co_predict_data.latency_buffer[co_predict_data.latency_buffer_head % co_predict_data.LATENCY_BUFFER_SIZE] = ctx.current_tick_nete_latency_ms
 		co_predict_data.latency_buffer_head += 1
 		
 		# sliding window mean

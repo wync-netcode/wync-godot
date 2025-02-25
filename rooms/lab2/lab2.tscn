@@ -1,4 +1,4 @@
-[gd_scene load_steps=71 format=3 uid="uid://b8oeiuufqe32c"]
+[gd_scene load_steps=66 format=3 uid="uid://b8oeiuufqe32c"]
 
 [ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_1ps8v"]
 [ext_resource type="Script" path="res://data/StaticData.gd" id="2_2epi3"]
@@ -48,7 +48,6 @@
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_connect_res.gd" id="38_kvckb"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_latency_stable.gd" id="38_vuulq"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/co_flag_net_extrapolate.gd" id="39_x655r"]
-[ext_resource type="Script" path="res://src/network/latency_compensation/sy_net_prediction_ticks.gd" id="40_ailwx"]
 [ext_resource type="Script" path="res://src/network/sy_nete_cleanup.gd" id="40_dopds"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_clock_client.gd" id="45_6w0w5"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_state_extractor_delta_sync.gd" id="45_rb2o4"]
@@ -56,20 +55,16 @@
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_tick_start_before.gd" id="47_ybb08"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_setup_sync_ball.gd" id="49_4ofub"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_lerp.gd" id="49_dsdhr"]
-[ext_resource type="Script" path="res://src/network/wync/sy_wync_buffered_inputs.gd" id="50_jvul8"]
-[ext_resource type="Script" path="res://src/network/wync/sy_wync_save_confirmed_states.gd" id="52_65fst"]
+[ext_resource type="Script" path="res://src/network/user_wync/sy_user_wync_flow_client_1.gd" id="52_cempw"]
 [ext_resource type="Script" path="res://src/network/user_wync/sy_user_wync_consume_packets_second.gd" id="52_e5cf6"]
 [ext_resource type="Script" path="res://src/systems/sy_draw_block_grid_delta.gd" id="53_8nlkt"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_xtrap.gd" id="53_qmyp1"]
-[ext_resource type="Script" path="res://src/network/wync/sy_wync_receive_client_info.gd" id="55_wsisn"]
-[ext_resource type="Script" path="res://src/network/wync/sy_wync_send_inputs.gd" id="56_1fh53"]
-[ext_resource type="Script" path="res://src/network/wync/sy_wync_latest_value.gd" id="56_x35pt"]
-[ext_resource type="Script" path="res://src/network/wync/sy_wync_connect_req.gd" id="58_gjl0a"]
+[ext_resource type="Script" path="res://src/network/user_wync/sy_user_wync_flow_client_2.gd" id="59_na25t"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_send_event_data.gd" id="59_xantl"]
 [ext_resource type="Script" path="res://src/network/wync/sy_user_wync_lerp_set.gd" id="61_cqch1"]
-[ext_resource type="Script" path="res://src/network/wync/sy_wync_lerp_precompute.gd" id="61_exqu2"]
 [ext_resource type="Script" path="res://src/systems/sy_player_subtick_input.gd" id="64_51gnu"]
 [ext_resource type="Script" path="res://src/systems/sy_player_subtick_events.gd" id="64_mfg3t"]
+[ext_resource type="Script" path="res://src/network/user_wync/sy_user_wync_flow_client_3.gd" id="65_f2cyv"]
 
 [node name="Lab2" type="Node2D"]
 script = ExtResource("1_1ps8v")
@@ -314,42 +309,32 @@ singleton = true
 [node name="GroupPhysics" type="Node" parent="worlds/WorldClient1"]
 script = ExtResource("32_wj45u")
 
-[node name="SyWyncTickStartBefore" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
-script = ExtResource("47_ybb08")
+[node name="SystemsUser" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 
-[node name="SyTicks" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
-script = ExtResource("18_oeqdo")
-
-[node name="SyWyncTickStartAfter" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
-script = ExtResource("22_smcj4")
-
-[node name="SyUserWyncConsumePacketsSecond" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
-script = ExtResource("52_e5cf6")
-
-[node name="SystemsSetup" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
-
-[node name="SyActorRegister" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsSetup"]
+[node name="SyActorRegister" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsUser"]
 script = ExtResource("19_rcs17")
 
-[node name="SyNeteTransportLoopbackPeerRegister" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsSetup"]
+[node name="SyNeteTransportLoopbackPeerRegister" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsUser"]
 script = ExtResource("17_320aq")
 
-[node name="SyNeteLoopbackConnectReq" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsSetup"]
+[node name="SyNeteLoopbackConnectReq" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsUser"]
 script = ExtResource("19_56q07")
 
-[node name="SyWyncConnectReq" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsSetup"]
-script = ExtResource("58_gjl0a")
+[node name="SystemsWyncStart" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 
-[node name="SyWyncReceiveClientInfo" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsSetup"]
-script = ExtResource("55_wsisn")
+[node name="SyUserWyncFlowClient1" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWyncStart"]
+script = ExtResource("52_cempw")
 
-[node name="SyWyncSetupSyncBall" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsSetup"]
+[node name="SyUserWyncConsumePacketsSecond" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWyncStart"]
+script = ExtResource("52_e5cf6")
+
+[node name="SyWyncSetupSyncBall" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWyncStart"]
 script = ExtResource("49_4ofub")
 
-[node name="SyWyncSetupSyncPlayer" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsSetup"]
+[node name="SyWyncSetupSyncPlayer" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWyncStart"]
 script = ExtResource("35_m1lky")
 
-[node name="SyWyncSetupSyncBlockGrid" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsSetup"]
+[node name="SyWyncSetupSyncBlockGrid" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWyncStart"]
 script = ExtResource("38_g8ek6")
 
 [node name="SystemsGenInputs&Events(ButNoExeThem)" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
@@ -363,43 +348,28 @@ script = ExtResource("31_vohxg")
 [node name="SyDrawBlockGridDelta-Node2D" type="Node2D" parent="worlds/WorldClient1/GroupPhysics/SystemsGenInputs&Events(ButNoExeThem)"]
 script = ExtResource("53_8nlkt")
 
-[node name="SyUserWyncConsumePackets" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
+[node name="SystemsWyncMiddle&End" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
+
+[node name="SyUserWyncConsumePackets" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWyncMiddle&End"]
 script = ExtResource("22_jqrce")
 
-[node name="SystemsWync" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
-
-[node name="SyNetLatencyStable" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
+[node name="SyNetLatencyStable-SetsLatency" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWyncMiddle&End"]
 script = ExtResource("38_vuulq")
 
-[node name="SyNetPredictionTicks" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
-script = ExtResource("40_ailwx")
+[node name="SyUserWyncFlowClient2" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWyncMiddle&End"]
+script = ExtResource("59_na25t")
 
-[node name="SyWyncBufferedInputs(POLL)" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
-script = ExtResource("50_jvul8")
-
-[node name="SyWyncSaveConfirmedStates" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
-script = ExtResource("52_65fst")
-
-[node name="SyWyncLatestValue" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
-script = ExtResource("56_x35pt")
-
-[node name="SyWyncXtrap" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
+[node name="SyWyncXtrap" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWyncMiddle&End"]
 script = ExtResource("53_qmyp1")
 
-[node name="SyWyncSendInputs" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
-script = ExtResource("56_1fh53")
+[node name="SyUserWyncFlowClient3" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWyncMiddle&End"]
+script = ExtResource("65_f2cyv")
 
-[node name="SyWyncSendEventData" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
-script = ExtResource("59_xantl")
-
-[node name="SyWyncLerpPrecompute" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWync"]
-script = ExtResource("61_exqu2")
+[node name="SyUserWyncQueuePackets" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWyncMiddle&End"]
+script = ExtResource("46_8e2uo")
 
 [node name="SyNeteCleanup" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 script = ExtResource("40_dopds")
-
-[node name="SyUserWyncQueuePackets" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
-script = ExtResource("46_8e2uo")
 
 [node name="GroupProcess" type="Node" parent="worlds/WorldClient1"]
 script = ExtResource("32_wj45u")

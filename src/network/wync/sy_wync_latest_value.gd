@@ -18,14 +18,17 @@ func _ready():
 func on_process(entities, _data, _delta: float):
 	
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = single_wync.ctx as WyncCtx
-	var co_ticks = wync_ctx.co_ticks
-	var co_predict_data = wync_ctx.co_predict_data
 
 	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
 	if not co_loopback:
 		Log.err("Couldn't find singleton CoTransportLoopback", Log.TAG_LATEST_VALUE)
 		return
+	wync_reset_props_to_latest_value (single_wync.ctx)
+	
+	
+static func wync_reset_props_to_latest_value (ctx: WyncCtx):
+	var co_ticks = ctx.co_ticks
+	var co_predict_data = ctx.co_predict_data
 	
 	# Reset all extrapolated entities to last confirmed tick
 	# Don't affect predicted entities?
@@ -34,8 +37,8 @@ func on_process(entities, _data, _delta: float):
 	var prop_id_list: Array[int] = []
 	var prop_id_list_delta_sync: Array[int] = []
 	var prop_id_list_delta_sync_predicted: Array[int] = []
-	for prop_id: int in wync_ctx.props.size():
-		var prop = WyncUtils.get_prop(wync_ctx, prop_id)
+	for prop_id: int in ctx.props.size():
+		var prop = WyncUtils.get_prop(ctx, prop_id)
 		if prop == null:
 			continue
 		prop = prop as WyncEntityProp
@@ -45,35 +48,40 @@ func on_process(entities, _data, _delta: float):
 
 		if prop.relative_syncable:
 			prop_id_list_delta_sync.append(prop_id)
-			if WyncUtils.prop_is_predicted(wync_ctx, prop_id):
+			if WyncUtils.prop_is_predicted(ctx, prop_id):
 				prop_id_list_delta_sync_predicted.append(prop_id)
 		else:
 			prop_id_list.append(prop_id)
 		
 	# rest state to _canonic_
 
-	reset_all_state_to_confirmed_tick_relative(wync_ctx, prop_id_list, 0)
-	predicted_delta_props_rollback_to_canonic_state(wync_ctx, prop_id_list_delta_sync_predicted, co_ticks, co_predict_data)
+	reset_all_state_to_confirmed_tick_relative(ctx, prop_id_list, 0)
+	predicted_delta_props_rollback_to_canonic_state(ctx, prop_id_list_delta_sync_predicted, co_ticks, co_predict_data)
 
 	# apply newly received delta events to catch up to _canonic_
 	
-	delta_props_update_and_apply_delta_events(wync_ctx, prop_id_list_delta_sync)
+	delta_props_update_and_apply_delta_events(ctx, prop_id_list_delta_sync)
 	
 	
 	# call integration function to sync new transforms with physics server
 	# NOTE: Maybe include in the filter if they actually are elligible to integrate
 	
 	var entity_id_list: Array[int] = []
+	
+	"""
 	for entity: Entity in entities:
 		var co_actor = entity.get_component(CoActor.label) as CoActor
-		entity_id_list.append(co_actor.id)
-	integrate_state(wync_ctx, entity_id_list)
+		entity_id_list.append(co_actor.id)"""
+		
+	for wync_entity_id: int in ctx.tracked_entities.keys():
+		entity_id_list.append(wync_entity_id as int)
+	integrate_state(ctx, entity_id_list)
 
 
-#static func reset_all_state_to_confirmed_tick(wync_ctx: WyncCtx, prop_ids: Array[int], tick: int):
+#static func reset_all_state_to_confirmed_tick(ctx: WyncCtx, prop_ids: Array[int], tick: int):
 	
 	#for prop_id: int in prop_ids:
-		#var prop = WyncUtils.get_prop(wync_ctx, prop_id)
+		#var prop = WyncUtils.get_prop(ctx, prop_id)
 		#if prop == null:
 			#continue 
 		#prop = prop as WyncEntityProp
@@ -85,10 +93,10 @@ func on_process(entities, _data, _delta: float):
 		#prop.setter.call(last_confirmed.data)
 
 
-static func reset_all_state_to_confirmed_tick_relative(wync_ctx: WyncCtx, prop_ids: Array[int], tick: int):
+static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: Array[int], tick: int):
 	
 	for prop_id: int in prop_ids:
-		var prop = WyncUtils.get_prop(wync_ctx, prop_id)
+		var prop = WyncUtils.get_prop(ctx, prop_id)
 		if prop == null:
 			continue 
 		prop = prop as WyncEntityProp
@@ -100,7 +108,7 @@ static func reset_all_state_to_confirmed_tick_relative(wync_ctx: WyncCtx, prop_i
 			continue
 		
 		# TODO: check type before applying (shouldn't be necessary if we ensure we're filling the correct data)
-		# Log.out(wync_ctx, "LatestValue | setted prop_name_id %s" % [prop.name_id])
+		# Log.out(ctx, "LatestValue | setted prop_name_id %s" % [prop.name_id])
 		prop.setter.call(last_confirmed)
 
 
@@ -224,7 +232,7 @@ static func predicted_delta_props_rollback_to_canonic_state \
 				Log.out("SyWyncLatestValue | delta sync debug1 | applied undo_events predicted_tick(%s) %s %s" % [tick, undo_event_id_list, HashUtils.object_to_dictionary(event_data)], Log.TAG_LATEST_VALUE)
 
 
-static func integrate_state(wync_ctx: WyncCtx, wync_entity_ids: Array):
+static func integrate_state(ctx: WyncCtx, wync_entity_ids: Array):
 	
 	# iterate all entities
 	# check if they have a prop that was affected?
@@ -232,9 +240,9 @@ static func integrate_state(wync_ctx: WyncCtx, wync_entity_ids: Array):
 
 	for entity_id: int in wync_entity_ids:
 		
-		if not wync_ctx.entity_has_props.has(entity_id):
+		if not ctx.entity_has_props.has(entity_id):
 			continue
 				
-		var int_fun = WyncUtils.entity_get_integrate_fun(wync_ctx, entity_id)
+		var int_fun = WyncUtils.entity_get_integrate_fun(ctx, entity_id)
 		if int_fun is Callable:
 			int_fun.call()

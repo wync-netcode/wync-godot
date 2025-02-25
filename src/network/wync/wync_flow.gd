@@ -1,22 +1,51 @@
 class_name WyncFlow
 
 
-static func wync_tick_start(ctx: WyncCtx):
+static func wync_client_tick_start(ctx: WyncCtx):
+	
 	# before tick start
 
-	# client
-	if WyncUtils.is_client(ctx):
-		pass
-		#sy_wync_buffered_inputs.on_process([], null, _delta, self)
-	
-	# server
-	else:
-		pass
+	SyWyncBufferedInputs.wync_buffer_inputs(ctx)
 
-
-	# increase ticks
+	SyTicks.wync_advance_ticks(ctx)
 
 	# after tick start
+
+	# sy_wync_receive_event_data.on_process([], null, _delta, self)
+
+	# SyUserWyncConsumePacketsSecond # consume packets would go after this function
+
+	WyncFlow.wync_try_to_connect(ctx)
+
+	# SyWyncReceiveClientInfo
+
+
+static func wync_client_tick_middle(ctx: WyncCtx):
+
+	# SyUserWyncConsumePackets
+
+	# SyNetLatencyStable
+	# WyncFlow.wync_client_set_current_latency (single_wync.ctx, co_loopback.latency)
+	# wync_stabilize_latency (single_wync.ctx)
+	SyNetLatencyStable.wync_stabilize_latency(ctx)
+
+	SyNetPredictionTicks.wync_update_prediction_ticks(ctx)
+
+	SyWyncBufferedInputs.wync_buffer_inputs(ctx)
+
+	# SyWyncSaveConfirmedStates
+	# WyncFlow.wync_handle_pkt_prop_snap(wync_ctx, data)
+
+	SyWyncLatestValue.wync_reset_props_to_latest_value(ctx)
+
+
+static func wync_client_tick_end(ctx: WyncCtx):
+
+	SyWyncSendInputs.wync_send_inputs(ctx)
+
+	SyWyncSendEventData.wync_send_event_data(ctx)
+
+	SyWyncLerpPrecompute.wync_lerp_precompute(ctx)
 
 
 static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_id: int) -> int:
@@ -73,6 +102,8 @@ static func wync_wrap_packet_out(ctx: WyncCtx, to_wync_peer_id: int, packet_type
 
 
 static func wync_try_to_connect(ctx: WyncCtx) -> int:
+	if ctx.connected:
+		return OK
 
 	# try get server nete_peer_id
 	var server_nete_peer_id = WyncUtils.get_nete_peer_id_from_wync_peer_id(ctx, WyncCtx.SERVER_PEER_ID)
@@ -404,3 +435,10 @@ static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
 		str(time_since_packet_sent / (1000.0 / physics_fps)).pad_decimals(2),
 		co_ticks.server_ticks_offset,
 	], Log.TAG_CLOCK)
+
+
+## client only
+## set the latency this client is experimenting (get it from your transport)
+## @argument latency_ms: int. Latency in milliseconds
+static func wync_client_set_current_latency (ctx: WyncCtx, latency_ms: int):
+	ctx.current_tick_nete_latency_ms = latency_ms

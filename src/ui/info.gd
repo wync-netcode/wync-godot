@@ -6,7 +6,7 @@ extends Control
 # TODO: Use a service
 @onready var co_loopback: CoTransportLoopback = %CoTransportLoopback
 @onready var co_wync_ctx_server: CoSingleWyncContext = %"CoSingleWyncContext-Server"
-@onready var co_wync_ctx_client: CoSingleWyncContext = %"CoSingleWyncContext-Server"
+@onready var co_wync_ctx_client: CoSingleWyncContext = %"CoSingleWyncContext-Client"
 
 
 func _process(_delta):

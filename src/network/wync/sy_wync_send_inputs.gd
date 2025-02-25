@@ -13,22 +13,27 @@ func on_process(_entities, _data, _delta: float):
 		return
 	
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = single_wync.ctx as WyncCtx
-	var co_predict_data = wync_ctx.co_predict_data
+	var ctx = single_wync.ctx as WyncCtx
+	wync_send_inputs (ctx)
+	
+
+static func wync_send_inputs (ctx: WyncCtx):
+
+	var co_predict_data = ctx.co_predict_data
 	var tick_pred = co_predict_data.target_tick
 
-	if !wync_ctx.connected:
+	if !ctx.connected:
 		return
 	
 	# reset events_id to sync
-	wync_ctx.peers_events_to_sync[WyncCtx.SERVER_PEER_ID].clear()
+	ctx.peers_events_to_sync[WyncCtx.SERVER_PEER_ID].clear()
 	
-	for prop_id: int in wync_ctx.client_owns_prop[wync_ctx.my_peer_id]:
+	for prop_id: int in ctx.client_owns_prop[ctx.my_peer_id]:
 		
-		if not WyncUtils.prop_exists(wync_ctx, prop_id):
+		if not WyncUtils.prop_exists(ctx, prop_id):
 			Log.err("prop %s doesn't exists" % prop_id, Log.TAG_INPUT_BUFFER)
 			continue
-		var input_prop = wync_ctx.props[prop_id] as WyncEntityProp
+		var input_prop = ctx.props[prop_id] as WyncEntityProp
 		if not input_prop:
 			Log.err("not input_prop %s" % prop_id, Log.TAG_INPUT_BUFFER)
 			continue
@@ -67,7 +72,7 @@ func on_process(_entities, _data, _delta: float):
 				input is Array):
 				input = input as Array
 				for event_id: int in input:
-					var event_set = wync_ctx.peers_events_to_sync[WyncCtx.SERVER_PEER_ID] as Dictionary
+					var event_set = ctx.peers_events_to_sync[WyncCtx.SERVER_PEER_ID] as Dictionary
 					event_set[event_id] = true
 				
 
@@ -77,7 +82,7 @@ func on_process(_entities, _data, _delta: float):
 
 		# prepare peer packet and send (queue)
 
-		var result = WyncFlow.wync_wrap_packet_out(wync_ctx, WyncCtx.SERVER_PEER_ID, WyncPacket.WYNC_PKT_INPUTS, pkt_inputs)
+		var result = WyncFlow.wync_wrap_packet_out(ctx, WyncCtx.SERVER_PEER_ID, WyncPacket.WYNC_PKT_INPUTS, pkt_inputs)
 		if result[0] == OK:
 			var packet_out = result[1] as WyncPacketOut
-			wync_ctx.out_packets.append(packet_out)
+			ctx.out_packets.append(packet_out)
