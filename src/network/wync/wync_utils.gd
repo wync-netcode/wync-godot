@@ -5,9 +5,10 @@ class_name WyncUtils
 # ================================================================
 
 
-static func track_entity(ctx: WyncCtx, entity_id: int):
+static func track_entity(ctx: WyncCtx, entity_id: int, entity_type_id: int):
 	ctx.tracked_entities[entity_id] = true
 	ctx.entity_has_props[entity_id] = []
+	ctx.entity_is_of_type[entity_id] = entity_type_id
 
 
 static func prop_register(
@@ -421,7 +422,7 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 		return 1
 	
 	var entity_id = WyncCtx.ENTITY_ID_GLOBAL_EVENTS + peer_id
-	WyncUtils.track_entity(ctx, entity_id)
+	WyncUtils.track_entity(ctx, entity_id, -1)
 	var channel_id = 0
 	var prop_channel = WyncUtils.prop_register(
 		ctx,
@@ -435,6 +436,8 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 			event_array.clear()
 			event_array.append_array(input),
 	)
+
+	# predict my own global channel
 	if (WyncUtils.is_client(ctx) && peer_id == ctx.my_peer_id):
 		WyncUtils.prop_set_predict(ctx, prop_channel)
 

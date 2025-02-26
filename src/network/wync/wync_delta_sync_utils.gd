@@ -68,6 +68,7 @@ static func prop_set_relative_syncable (
 	prop = prop as WyncEntityProp
 
 	if not delta_blueprint_exists(ctx, delta_blueprint_id):
+		Log.err("delta blueprint(%s) doesn't exists" % [delta_blueprint_id])
 		return ERR_DOES_NOT_EXIST
 	
 	prop.relative_syncable = true

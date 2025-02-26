@@ -4,11 +4,12 @@ static var label = ECS.add_component()
 
 ## Ring buffer to keep track of actors
 
+## Ring<entity_id: int, entity_obj: Entity>
 var actors: Array[Entity]
 var cursor: int = 0
 var actor_count: int = 0
 const max_actors: int = 10
 
 
-func _ready() -> void:
+func _init() -> void:
 	actors.resize(max_actors)

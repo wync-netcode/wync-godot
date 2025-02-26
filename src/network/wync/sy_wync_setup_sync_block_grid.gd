@@ -16,15 +16,33 @@ func _ready():
 
 
 func on_process(entities, _data, _delta):
+	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var wync_ctx = single_wync.ctx as WyncCtx
+	if !wync_ctx.connected:
+		return
+
+	if GameInfo.BLUEPRINT_ID_BLOCK_GRID_DELTA == -1:
+		UserWyncUtils.setup_blueprints(wync_ctx)
+	elif not WyncDeltaSyncUtils.delta_blueprint_exists(wync_ctx, GameInfo.BLUEPRINT_ID_BLOCK_GRID_DELTA):
+		UserWyncUtils.setup_blueprints(wync_ctx)
+
+
 	for entity in entities:
 		if entity.name == "EnBlockGrid":
-			setup_block_grid(entity)
+			#UserWyncUtils.setup_entity_block_grid_predicted(self, entity)
+			UserWyncUtils.setup_entity_type(self, entity, GameInfo.ENTITY_TYPE_GRID_PREDICTED)
+			#setup_block_grid(entity)
 		if entity.name == "EnBlockGridDelta":
-			setup_block_grid_delta(entity, false)
+			#UserWyncUtils.setup_entity_block_grid_delta(self, entity, false)
+			UserWyncUtils.setup_entity_type(self, entity, GameInfo.ENTITY_TYPE_GRID_DELTA)
+			#setup_block_grid_delta(entity, false)
 		if entity.name == "EnBlockGridDeltaPredicted":
-			setup_block_grid_delta(entity, true)
+			#UserWyncUtils.setup_entity_block_grid_delta(self, entity, true)
+			UserWyncUtils.setup_entity_type(self, entity, GameInfo.ENTITY_TYPE_GRID_DELTA_PREDICTED)
+			#setup_block_grid_delta(entity, true)
 
 
+"""
 func setup_block_grid(entity: Entity):
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
@@ -163,6 +181,7 @@ static func blueprint_handle_event_delta_block_replace \
 	block_data.id = block_type
 
 	return [OK, event_id]
+"""
 
 """
 static func blueprint_handle_event_delta_block_replace \

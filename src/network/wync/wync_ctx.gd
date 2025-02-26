@@ -44,6 +44,10 @@ var props: Array[WyncEntityProp]
 # Map<entity_id: int, Array<prop_id>>
 var entity_has_props: Dictionary
 
+# User defined types, so that they can know what data types to sync
+# Map<entity_id: int, entity_type_id: int>
+var entity_is_of_type: Dictionary
+
 # TODO: Separate generated events from CACHED events
 # Map<event_id: uint, WyncEvent>
 var events: Dictionary
