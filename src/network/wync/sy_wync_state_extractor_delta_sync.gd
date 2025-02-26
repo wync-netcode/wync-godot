@@ -9,9 +9,11 @@ const label: StringName = StringName("SyWyncStateExtractorDeltaSync")
 
 
 func on_process(_entities, _data, _delta: float):
+	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var ctx = single_wync.ctx as WyncCtx
 
-	send_event_ids_to_peers()
-	queue_event_data_to_be_synced_to_peers()
+	send_event_ids_to_peers(ctx)
+	queue_event_data_to_be_synced_to_peers(ctx)
 
 
 # --------------------------------------------------------------------------------
@@ -19,15 +21,9 @@ func on_process(_entities, _data, _delta: float):
 # TODO: For now all clients know about this prop, later we can filter
 
 
-func send_event_ids_to_peers():
+static func send_event_ids_to_peers(ctx: WyncCtx):
 
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var ctx = single_wync.ctx as WyncCtx
 	var co_ticks = ctx.co_ticks
-	var single_server = ECS.get_singleton_entity(self, "EnSingleServer")
-	if not single_server:
-		print("E: Couldn't find singleton EnSingleServer")
-		return
 
 	# reset events
 
@@ -93,10 +89,8 @@ func send_event_ids_to_peers():
 # collect what event_ids need their _event data_ synced depending on peer
 
 
-func queue_event_data_to_be_synced_to_peers():
+static func queue_event_data_to_be_synced_to_peers(ctx: WyncCtx):
 
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var ctx = single_wync.ctx as WyncCtx
 	var co_ticks = ctx.co_ticks
 
 	for prop_id: int in range(ctx.props.size()):

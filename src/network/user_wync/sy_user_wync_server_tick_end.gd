@@ -1,6 +1,6 @@
-class_name SyUserWyncFlowClient2
+class_name SyUserWyncServerTickEnd
 extends System
-const label: StringName = StringName("SyUserWyncFlowClient2")
+const label: StringName = StringName("SyUserWyncServerTickEnd")
 
 ## Runs wync flow functions (tick start, tick end, etc)
 
@@ -12,12 +12,13 @@ func on_process(_entities, _data, _delta: float):
 	
 	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
 	if not co_loopback:
-		Log.err("Couldn't find singleton CoTransportLoopback", Log.TAG_LATENCY)
+		print("E: Couldn't find singleton CoTransportLoopback")
 		return
-	
-	# let wync know the latency
-	WyncFlow.wync_client_set_current_latency (single_wync.ctx, co_loopback.latency)
+
+	# set latency
+	WyncFlow.wync_client_set_current_latency(ctx, co_loopback.latency)
 	# TODO: set current time
 	#WyncFlow.wync_client_set_current_time_ms(ctx, my_game_time)
 
-	WyncFlow.wync_client_tick_middle(ctx)
+	# tick end
+	WyncFlow.wync_server_tick_end(ctx)

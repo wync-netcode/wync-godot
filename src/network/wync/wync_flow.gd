@@ -1,6 +1,40 @@
 class_name WyncFlow
 
 
+static func wync_server_tick_start(ctx: WyncCtx):
+	# before tick start
+
+	SyTicks.wync_advance_ticks(ctx)
+
+	# after tick start
+
+	WyncFlow.wync_input_props_set_tick_value(ctx)
+
+	SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(ctx)
+
+	SyWyncTickStartAfter.predicted_props_clear_events(ctx)
+
+
+static func wync_server_tick_end(ctx: WyncCtx):
+
+	SyWyncClockServer.wync_server_sync_clock(ctx)
+
+	# regular extractor
+
+	SyWyncStateExtractor.extract_data_to_tick(ctx, ctx.co_ticks, ctx.co_ticks.ticks)
+
+	SyWyncStateExtractor.wync_send_extracted_data(ctx)
+
+	# delta extractor
+
+	SyWyncStateExtractorDeltaSync.send_event_ids_to_peers(ctx)
+
+	SyWyncStateExtractorDeltaSync.queue_event_data_to_be_synced_to_peers(ctx)
+
+	SyWyncSendEventData.wync_send_event_data (ctx)
+
+
+
 static func wync_client_tick_start(ctx: WyncCtx):
 	
 	# before tick start
@@ -12,6 +46,10 @@ static func wync_client_tick_start(ctx: WyncCtx):
 	# after tick start
 
 	# sy_wync_receive_event_data.on_process([], null, _delta, self)
+
+	SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(ctx)
+
+	SyWyncTickStartAfter.predicted_props_clear_events(ctx)
 
 	# SyUserWyncConsumePacketsSecond # consume packets would go after this function
 
@@ -27,6 +65,7 @@ static func wync_client_tick_middle(ctx: WyncCtx):
 	# SyNetLatencyStable
 	# WyncFlow.wync_client_set_current_latency (single_wync.ctx, co_loopback.latency)
 	# wync_stabilize_latency (single_wync.ctx)
+
 	SyNetLatencyStable.wync_stabilize_latency(ctx)
 
 	SyNetPredictionTicks.wync_update_prediction_ticks(ctx)
@@ -58,7 +97,7 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 			wync_handle_pkt_event_data(ctx, wync_pkt.data)
 		WyncPacket.WYNC_PKT_INPUTS:
 			if not WyncUtils.is_client(ctx):
-				wync_handle_net_packet_inputs(ctx, wync_pkt.data, from_nete_peer_id)
+				wync_handle_pkt_inputs(ctx, wync_pkt.data, from_nete_peer_id)
 		WyncPacket.WYNC_PKT_PROP_SNAP:
 			wync_handle_pkt_prop_snap(ctx, wync_pkt.data)
 		WyncPacket.WYNC_PKT_RES_CLIENT_INFO:
@@ -240,7 +279,7 @@ static func make_client_info_packet(
 	return packet_data
 
 
-static func wync_handle_net_packet_inputs(ctx: WyncCtx, data: Variant, from_nete_peer_id: int) -> int:
+static func wync_handle_pkt_inputs(ctx: WyncCtx, data: Variant, from_nete_peer_id: int) -> int:
 	if not ctx.connected:
 		return 1
 	if data is not WyncPktInputs:
