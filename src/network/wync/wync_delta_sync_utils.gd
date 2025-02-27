@@ -221,7 +221,7 @@ static func merge_event_to_state_real_state \
 	if state_pointer == null:
 		return 5
 
-	var result: Array[int] = _merge_event_to_state(ctx, prop, event_id, state_pointer, true)
+	var result: Array[Variant] = _merge_event_to_state(ctx, prop, event_id, state_pointer, true)
 
 	# cache _undo delta event_ to aux_prop
 	if (is_client_predicting):

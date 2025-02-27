@@ -33,6 +33,9 @@ static func wync_server_tick_end(ctx: WyncCtx):
 
 	SyWyncSendEventData.wync_send_event_data (ctx)
 
+	WyncThrottle.wync_system_send_entities_to_spawn(ctx)
+
+	#TODO : WyncThrottle.wync_system_send_entities_updates(ctx)
 
 
 static func wync_client_tick_start(ctx: WyncCtx):

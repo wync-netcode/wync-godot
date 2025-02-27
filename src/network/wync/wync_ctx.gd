@@ -166,16 +166,31 @@ var currently_on_predicted_tick: bool = false
 var current_predicted_tick: int = 0 # only for debugging
 
 
+
+# * Only add/remove _entity ids_ when a packet is confirmed sent (WYNC_EXTRACT_WRITE)
+# * Confirmed list of entities the client sees
+# Array <client_id: int, Set[entity_id: int]>
+var clients_sees_entities: Array[Dictionary]
+
+# Tener la garantía de que todo lo que está aquí se puede spawnear
+# * Every frame we check.. 
+# Array <client_id: int, Set[entity_id: int]>
+var clients_sees_new_entities: Array[Dictionary]
+
 # TODO: Move to WyncUtils
 func _init() -> void:
 	peer_has_channel_has_events.resize(max_peers)
 	client_has_relative_prop_has_last_tick.resize(max_peers) # NOTE: index 0 not used
+	clients_sees_entities.resize(max_peers)
+	clients_sees_new_entities.resize(max_peers)
 	for peer_i in range(max_peers):
 		peer_has_channel_has_events[peer_i] = []
 		peer_has_channel_has_events[peer_i].resize(max_channels)
 		for channel_i in range(max_channels):
 			peer_has_channel_has_events[peer_i][channel_i] = []
 		client_has_relative_prop_has_last_tick[peer_i] = {}
+		clients_sees_entities[peer_i] = {}
+		clients_sees_new_entities[peer_i] = {}
 	
 	for i in range(tick_action_history_size):
 		tick_action_history.insert_at(i, {} as Dictionary)

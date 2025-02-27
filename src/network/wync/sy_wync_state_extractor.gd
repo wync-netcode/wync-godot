@@ -32,107 +32,105 @@ func on_process(_entities, _data, _delta: float):
 	
 static func wync_send_extracted_data(ctx: WyncCtx):
 
-	# TODO: iterate per each client, maybe make it configurable, cause some updates might be global
-	# Only run if there is at least one client (peer_id 0 is server)
-	if ctx.peers.size() <= 1:
-		return
-
 	var co_ticks = ctx.co_ticks
-	var client_id = 1 # FIXME: Remove hardcoded client_id
 
 	# build packet
 
-	var packet = WyncPktPropSnap.new()
-	packet.tick = co_ticks.ticks
-	
-	for entity_id_key in ctx.entity_has_props.keys():
-		var prop_ids_array = ctx.entity_has_props[entity_id_key] as Array
-		if not prop_ids_array.size():
-			continue
-		
-		var entity_snap = WyncPktPropSnap.EntitySnap.new()
-		entity_snap.entity_id = entity_id_key
-		
-		for prop_id in prop_ids_array:
-			var prop = WyncUtils.get_prop(ctx, prop_id)
-			if prop == null:
-				continue
-			prop = prop as WyncEntityProp
-			# don't extract input values
-			# FIXME: should events be extracted? game event yes, but other player events?
-			# Maybe we need an option to what events to share.
-			# NOTE: what about a setting like: NEVER, TO_ALL, TO_ALL_EXCEPT_OWNER, ONLY_TO_SERVER
-			if prop.data_type in [WyncEntityProp.DATA_TYPE.INPUT,
-				WyncEntityProp.DATA_TYPE.EVENT]:
-				continue
+	for client_id: int in range(1, ctx.peers.size()):
 
-			# TODO: Allow EVENT props if it doesn't belong to a client
-			# TODO: TYPE_EVENT props should be sent in chunks, not here
-			# Allow auxiliar props to be synced
-			if prop.relative_syncable:
-				var prop_aux = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
-				if prop_aux == null:
+		var packet = WyncPktPropSnap.new()
+		packet.tick = co_ticks.ticks
+
+		#for entity_id_key in ctx.entity_has_props.keys():
+		for entity_id_key in ctx.clients_sees_entities[client_id].keys():
+
+			var prop_ids_array = ctx.entity_has_props[entity_id_key] as Array
+			if not prop_ids_array.size():
+				continue
+			
+			var entity_snap = WyncPktPropSnap.EntitySnap.new()
+			entity_snap.entity_id = entity_id_key
+			
+			for prop_id in prop_ids_array:
+				var prop = WyncUtils.get_prop(ctx, prop_id)
+				if prop == null:
 					continue
-				prop_id = prop.auxiliar_delta_events_prop_id
-				prop = prop_aux
+				prop = prop as WyncEntityProp
+				# don't extract input values
+				# FIXME: should events be extracted? game event yes, but other player events?
+				# Maybe we need an option to what events to share.
+				# NOTE: what about a setting like: NEVER, TO_ALL, TO_ALL_EXCEPT_OWNER, ONLY_TO_SERVER
+				if prop.data_type in [WyncEntityProp.DATA_TYPE.INPUT,
+					WyncEntityProp.DATA_TYPE.EVENT]:
+					continue
+
+				# TODO: Allow EVENT props if it doesn't belong to a client
+				# TODO: TYPE_EVENT props should be sent in chunks, not here
+				# Allow auxiliar props to be synced
+				if prop.relative_syncable:
+					var prop_aux = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
+					if prop_aux == null:
+						continue
+					prop_id = prop.auxiliar_delta_events_prop_id
+					prop = prop_aux
+				
+				# ===========================================================
+				# Save state history per tick
+				
+				var state = prop.confirmed_states.get_at(co_ticks.ticks)
+				var prop_snap = WyncPktPropSnap.PropSnap.new()
+				prop_snap.prop_id = prop_id
+				prop_snap.prop_value = WyncUtils.duplicate_any(state)
+				entity_snap.props.append(prop_snap)
+
 			
-			# ===========================================================
-			# Save state history per tick
-			
-			var state = prop.confirmed_states.get_at(co_ticks.ticks)
-			var prop_snap = WyncPktPropSnap.PropSnap.new()
-			prop_snap.prop_id = prop_id
-			prop_snap.prop_value = WyncUtils.duplicate_any(state)
-			entity_snap.props.append(prop_snap)
+			# process delta props separatedly for now
+			# --------------------------------------------------
 
-		
-		# process delta props separatedly for now
-		# --------------------------------------------------
+			for prop_id in prop_ids_array:
+				var prop = WyncUtils.get_prop(ctx, prop_id)
+				if prop == null:
+					continue
+				prop = prop as WyncEntityProp
+				if not prop.relative_syncable:
+					continue
+				if prop.timewarpable:
+					# TODO: currently not implemented
+					continue
 
-		for prop_id in prop_ids_array:
-			var prop = WyncUtils.get_prop(ctx, prop_id)
-			if prop == null:
-				continue
-			prop = prop as WyncEntityProp
-			if not prop.relative_syncable:
-				continue
-			if prop.timewarpable:
-				# TODO: currently not implemented
-				continue
+				# send fullsnapshot if client doesn't have history, or if it's too old
 
-			# send fullsnapshot if client doesn't have history, or if it's too old
-
-			var client_relative_props = ctx.client_has_relative_prop_has_last_tick[client_id] as Dictionary
-			if not client_relative_props.has(prop_id):
-				client_relative_props[prop_id] = -1
-			if client_relative_props[prop_id] >= ctx.delta_base_state_tick:
-				continue
-			client_relative_props[prop_id] = co_ticks.ticks
-			
-			# ===========================================================
-			# Save state history per tick
-			
-			var state = prop.getter.call() # getter already gives a copy
-			var prop_snap = WyncPktPropSnap.PropSnap.new()
-			prop_snap.prop_id = prop_id
-			prop_snap.prop_value = state
-			entity_snap.props.append(prop_snap)
-			
-			#Log.out(self, "wync: Found prop %s" % prop.name_id)
-			
-			
-		packet.snaps.append(entity_snap)
+				var client_relative_props = ctx.client_has_relative_prop_has_last_tick[client_id] as Dictionary
+				if not client_relative_props.has(prop_id):
+					client_relative_props[prop_id] = -1
+				if client_relative_props[prop_id] >= ctx.delta_base_state_tick:
+					continue
+				client_relative_props[prop_id] = co_ticks.ticks
+				
+				# ===========================================================
+				# Save state history per tick
+				
+				var state = prop.getter.call() # getter already gives a copy
+				var prop_snap = WyncPktPropSnap.PropSnap.new()
+				prop_snap.prop_id = prop_id
+				prop_snap.prop_value = state
+				entity_snap.props.append(prop_snap)
+				
+				#Log.out(self, "wync: Found prop %s" % prop.name_id)
+				
+				
+			packet.snaps.append(entity_snap)
 
 
-	# queue _out packets_ for delivery
+		# queue _out packets_ for delivery
 
-	for wync_peer_id: int in range(1, ctx.peers.size()):
+		for wync_peer_id: int in range(1, ctx.peers.size()):
 
-		var packet_dup = WyncUtils.duplicate_any(packet)
-		var result = WyncFlow.wync_wrap_packet_out(ctx, wync_peer_id, WyncPacket.WYNC_PKT_PROP_SNAP, packet_dup)
-		if result[0] == OK:
-			var packet_out = result[1] as WyncPacketOut
-			ctx.out_packets.append(packet_out)
+			var packet_dup = WyncUtils.duplicate_any(packet)
+			var result = WyncFlow.wync_wrap_packet_out(ctx, wync_peer_id, WyncPacket.WYNC_PKT_PROP_SNAP, packet_dup)
+			if result[0] == OK:
+				var packet_out = result[1] as WyncPacketOut
+				ctx.out_packets.append(packet_out)
 
 
 static func extract_data_to_tick(ctx: WyncCtx, co_ticks: CoTicks, save_on_tick: int = -1):

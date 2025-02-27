@@ -441,6 +441,12 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 	if (WyncUtils.is_client(ctx) && peer_id == ctx.my_peer_id):
 		WyncUtils.prop_set_predict(ctx, prop_channel)
 
+	# TODO: add as VIP prop
+
+	# add as local existing prop
+	if not WyncUtils.is_client(ctx):
+		WyncThrottle.wync_add_local_existing_entity(ctx, peer_id, entity_id)
+
 	return 0
 
 
