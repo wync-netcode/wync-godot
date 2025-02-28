@@ -34,10 +34,6 @@ func on_process(_entities, _data, _delta: float, p_node_root: Node = null):
 	
 static func wync_buffer_inputs(ctx: WyncCtx):
 	
-	var co_ticks = ctx.co_ticks
-	var co_predict_data = ctx.co_predict_data
-	var tick_curr = co_ticks.server_ticks
-
 	if not ctx.connected:
 		return
 
@@ -64,38 +60,5 @@ static func wync_buffer_inputs(ctx: WyncCtx):
 		if new_state == null:
 			Log.out("new_state == null :%s" % [new_state], Log.TAG_INPUT_BUFFER)
 			continue
-		
-		# Log.out(node_self, "Saving event state :%s" % [new_state])
-		# TODO: Should always run once per tick regardless of props
-		wync_tick_set_input(co_predict_data, ctx, prop_id, tick_curr, new_state)
-	
 
-static func wync_tick_set_input(
-	co_predict_data: CoPredictionData,
-	ctx: WyncCtx,
-	input_prop_id: int,
-	tick_curr: int,
-	input #: any
-	) -> void:
-	
-	var tick_pred = co_predict_data.target_tick
-	
-	# save tick relationship
-	
-	co_predict_data.set_tick_predicted(tick_pred, tick_curr)
-	#Log.out(self, "debug1 | set_tick_predicted tick_pred(%s) tick_curr(%s)" % [tick_pred, tick_curr])
-	
-	# NOTE, are we assuming our max step skip is 2?
-	# Compensate for UP smooth tick_offset transition
-	# check if previous input is missing -> then duplicate
-	if not co_predict_data.get_tick_predicted(tick_pred-1):
-		co_predict_data.set_tick_predicted(tick_pred-1, tick_curr)
-		#Log.out(self, "debug1 | duplicated tick_pred(%s to %s) tick_curr(%s)" % [tick_pred, tick_pred-1, tick_curr])
-	
-	# save input to actual prop
-	
-	var input_prop = ctx.props[input_prop_id] as WyncEntityProp
-	if input_prop == null:
-		return
-	
-	input_prop.confirmed_states.insert_at(tick_curr, input)
+		input_prop.confirmed_states.insert_at(ctx.co_predict_data.target_tick, new_state)

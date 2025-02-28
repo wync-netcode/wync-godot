@@ -12,7 +12,6 @@ func on_process(_entities, _data, _delta: float):
 
 	# throttle send rate
 	# TODO: make this configurable
-
 	#if co_ticks.ticks % 10 != 0:
 		#return
 	
@@ -30,9 +29,13 @@ func on_process(_entities, _data, _delta: float):
 	wync_send_extracted_data(ctx)
 	
 	
+## This service writes state (ctx.client_has_relative_prop_has_last_tick)
 static func wync_send_extracted_data(ctx: WyncCtx):
 
 	var co_ticks = ctx.co_ticks
+
+	var data_size_limit = ctx.out_packets_size_remaining_chars
+	var data_size = 0
 
 	# build packet
 
@@ -40,8 +43,8 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 
 		var packet = WyncPktPropSnap.new()
 		packet.tick = co_ticks.ticks
+		data_size += HashUtils.calculate_object_data_size(packet)
 
-		#for entity_id_key in ctx.entity_has_props.keys():
 		for entity_id_key in ctx.clients_sees_entities[client_id].keys():
 
 			var prop_ids_array = ctx.entity_has_props[entity_id_key] as Array
@@ -73,7 +76,7 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 						continue
 					prop_id = prop.auxiliar_delta_events_prop_id
 					prop = prop_aux
-				
+
 				# ===========================================================
 				# Save state history per tick
 				
@@ -81,6 +84,13 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 				var prop_snap = WyncPktPropSnap.PropSnap.new()
 				prop_snap.prop_id = prop_id
 				prop_snap.prop_value = WyncUtils.duplicate_any(state)
+
+				# size check
+				var snap_size = HashUtils.calculate_object_data_size(prop_snap)
+				if (data_size + snap_size) > data_size_limit:
+					break
+				data_size += snap_size
+				
 				entity_snap.props.append(prop_snap)
 
 			
@@ -105,7 +115,6 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 					client_relative_props[prop_id] = -1
 				if client_relative_props[prop_id] >= ctx.delta_base_state_tick:
 					continue
-				client_relative_props[prop_id] = co_ticks.ticks
 				
 				# ===========================================================
 				# Save state history per tick
@@ -114,23 +123,30 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 				var prop_snap = WyncPktPropSnap.PropSnap.new()
 				prop_snap.prop_id = prop_id
 				prop_snap.prop_value = state
+
+				# size check
+				var snap_size = HashUtils.calculate_object_data_size(prop_snap)
+				if (data_size + snap_size) > data_size_limit:
+					break
+
+				data_size += snap_size
 				entity_snap.props.append(prop_snap)
-				
-				#Log.out(self, "wync: Found prop %s" % prop.name_id)
-				
+
+				# commit state write
+				client_relative_props[prop_id] = co_ticks.ticks
+
+				if (prop_id == 15):
+					Log.outc(ctx, "sending fullsnap for blocks(15)")
 				
 			packet.snaps.append(entity_snap)
 
-
 		# queue _out packets_ for delivery
 
-		for wync_peer_id: int in range(1, ctx.peers.size()):
-
-			var packet_dup = WyncUtils.duplicate_any(packet)
-			var result = WyncFlow.wync_wrap_packet_out(ctx, wync_peer_id, WyncPacket.WYNC_PKT_PROP_SNAP, packet_dup)
-			if result[0] == OK:
-				var packet_out = result[1] as WyncPacketOut
-				ctx.out_packets.append(packet_out)
+		var packet_dup = WyncUtils.duplicate_any(packet)
+		var result = WyncFlow.wync_wrap_packet_out(ctx, client_id, WyncPacket.WYNC_PKT_PROP_SNAP, packet_dup)
+		if result[0] == OK:
+			var packet_out = result[1] as WyncPacketOut
+			WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, true)
 
 
 static func extract_data_to_tick(ctx: WyncCtx, co_ticks: CoTicks, save_on_tick: int = -1):

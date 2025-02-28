@@ -38,3 +38,4 @@ func get_at(i: int):# -> any
 func clear() -> void:
 	head_pointer = 0
 	buffer.clear()
+	buffer.resize(size)

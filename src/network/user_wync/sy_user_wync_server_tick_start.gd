@@ -11,6 +11,9 @@ func on_process(_entities, _data, _delta: float):
 	var ctx = single_wync.ctx as WyncCtx
 
 	# tick start
+
+	WyncThrottle.wync_set_data_limit_chars_for_out_packets(ctx, 1000)
+
 	WyncFlow.wync_server_tick_start(ctx)
 	
 	# for now, share all entities with all clients
@@ -31,4 +34,3 @@ func on_process(_entities, _data, _delta: float):
 
 				WyncThrottle.wync_client_now_can_see_entity(ctx, peer_id, actor_id)
 				WyncThrottle.wync_add_local_existing_entity(ctx, peer_id, actor_id)
-

@@ -9,17 +9,15 @@ const label: StringName = StringName("SyWyncStateExtractorDeltaSync")
 
 
 func on_process(_entities, _data, _delta: float):
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var ctx = single_wync.ctx as WyncCtx
-
-	send_event_ids_to_peers(ctx)
-	queue_event_data_to_be_synced_to_peers(ctx)
+	#send_event_ids_to_peers(ctx)
+	#queue_delta_event_data_to_be_synced_to_peers(ctx)
+	pass
 
 
 # --------------------------------------------------------------------------------
-# Service 1: Send all event_ids to clients
+# Service 1: Send all _delta event_ ids to clients
 # TODO: For now all clients know about this prop, later we can filter
-
+# This service doesn't write state
 
 static func send_event_ids_to_peers(ctx: WyncCtx):
 
@@ -81,17 +79,19 @@ static func send_event_ids_to_peers(ctx: WyncCtx):
 			var result = WyncFlow.wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_INPUTS, packet_dup)
 			if result[0] == OK:
 				var packet_out = result[1] as WyncPacketOut
-				ctx.out_packets.append(packet_out)
+				WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, false)
 
 
 # --------------------------------------------------------------------------------
-# Service 2: For each peer collect what _event data_ they need
-# collect what event_ids need their _event data_ synced depending on peer
+# Service 2: For each peer collect what _delta event data_ they need
+# collect what event_ids need their _delta event data_ synced depending on peer
+# This service writes state
 
-
-static func queue_event_data_to_be_synced_to_peers(ctx: WyncCtx):
+static func queue_delta_event_data_to_be_synced_to_peers(ctx: WyncCtx):
 
 	var co_ticks = ctx.co_ticks
+	var data_size_limit = ctx.out_packets_size_remaining_chars
+	var data_size = 0
 
 	for entity_id: int in ctx.tracked_entities.keys():
 
@@ -140,8 +140,26 @@ static func queue_event_data_to_be_synced_to_peers(ctx: WyncCtx):
 					if input is not Array[int]:
 						Log.err("we don't have an input for this tick %s" % [tick], Log.TAG_DELTA_EVENT)
 						continue
+
+					# necessary space for this whole tick
+					var tick_size = 0
 					
 					for event_id: int in input:
-						event_set[event_id] = true
 
-				delta_prop_last_tick[prop_id] = co_ticks.ticks
+						if WyncDeltaSyncUtils.event_is_healthy(ctx, event_id) != OK:
+							# FATAL
+							assert(false)
+
+						event_set[event_id] = true
+						var event = ctx.events[event_id] as WyncEvent
+						var event_size = HashUtils.calculate_object_data_size(event)
+						tick_size += event_size
+
+					# size check 
+					if ((data_size + tick_size) > data_size_limit):
+						break
+
+					# committing
+					delta_prop_last_tick[prop_id] = tick
+					WyncThrottle.wync_ocuppy_space_towards_packets_data_size_limit(ctx, tick_size)
+					data_size += tick_size

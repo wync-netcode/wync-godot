@@ -10,6 +10,8 @@ static func wync_xtrap_preparation(ctx: WyncCtx) -> int:
 	ctx.xtrap_is_local_tick_duplicated = false
 	ctx.xtrap_prev_local_tick = null # Optional<int>
 	ctx.xtrap_local_tick = null # Optional<int>
+	ctx.first_tick_predicted = ctx.last_tick_received +1
+
 	return OK
 
 
@@ -19,13 +21,6 @@ static func wync_xtrap_tick_init(ctx: WyncCtx, tick: int) -> int:
 	# --------------------------------------------------
 	# ALL INPUT/EVENT PROPS, no excepcion for now
 	# TODO: identify which I own and which belong to my foes'
-	
-	ctx.xtrap_prev_local_tick = ctx.xtrap_local_tick
-	ctx.xtrap_local_tick = ctx.co_predict_data.get_tick_predicted(tick)
-	if ctx.xtrap_local_tick == null || ctx.xtrap_local_tick is not int:
-		# this indicates we should skip this tick. Maybe terminate the loop?
-		return 1
-	ctx.xtrap_is_local_tick_duplicated = ctx.xtrap_prev_local_tick == ctx.xtrap_local_tick
 
 	# set events inputs to corresponding value depending on tick
 	# TODO: could this be generalized with 'wync_input_props_set_tick_value' ?
@@ -41,8 +36,7 @@ static func wync_xtrap_tick_init(ctx: WyncCtx, tick: int) -> int:
 			WyncEntityProp.DATA_TYPE.EVENT]:
 			continue
 
-		# using ctx.xtrap_local_tick for predicted states INPUT,EVENT
-		var input_snap = prop.confirmed_states.get_at(ctx.xtrap_local_tick)
+		var input_snap = prop.confirmed_states.get_at(tick)
 
 		# honor no duplication
 		if (prop.data_type == WyncEntityProp.DATA_TYPE.EVENT
@@ -108,6 +102,7 @@ static func wync_xtrap_tick_end(ctx: WyncCtx, tick: int):
 			
 		var aux_prop = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
 		if aux_prop == null:
+			assert(false)
 			continue
 		aux_prop = aux_prop as WyncEntityProp
 		
@@ -115,10 +110,11 @@ static func wync_xtrap_tick_end(ctx: WyncCtx, tick: int):
 		aux_prop.confirmed_states_undo.insert_at(tick, undo_events)
 		#Log.out("for SyWyncLatestValue | saving undo_events for tick %s" % [tick], Log.TAG_XTRAP)
 
+	ctx.last_tick_predicted = tick
+
 
 static func wync_xtrap_termination(ctx: WyncCtx):
 	SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(ctx)
-	ctx.co_predict_data.delta_prop_last_tick_predicted = ctx.co_predict_data.target_tick
 	ctx.currently_on_predicted_tick = false
 
 

@@ -14,10 +14,12 @@ func on_process(_entities, _data, _delta: float):
 	
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var ctx = single_wync.ctx as WyncCtx
-	wync_send_inputs (ctx)
+	wync_client_send_inputs (ctx)
 	
 
-static func wync_send_inputs (ctx: WyncCtx):
+## This system writes state (ctx.peers_events_to_sync) but it's naturally redundant
+## So think about it as if it didn't write state
+static func wync_client_send_inputs (ctx: WyncCtx):
 
 	var co_predict_data = ctx.co_predict_data
 	var tick_pred = co_predict_data.target_tick
@@ -44,17 +46,15 @@ static func wync_send_inputs (ctx: WyncCtx):
 		var buffered_inputs = input_prop.confirmed_states
 
 		# prepare packet
+		# NOTE: Data size limit could be imposed at this level too
 
 		var pkt_inputs = WyncPktInputs.new()
 
 		for i in range(tick_pred - CoNetBufferedInputs.AMOUNT_TO_SEND, tick_pred +1):
-			var tick_local = co_predict_data.get_tick_predicted(i)
-			if not tick_local:
-				#Log.out(self, "we don't have an input for this tick %s" % [i])
-				continue
-			var input = buffered_inputs.get_at(tick_local)
+			var input = buffered_inputs.get_at(i)
 			if input == null:
-				#Log.out(self, "we don't have an input for this tick %s" % [i])
+				# TODO: Implement input duplication on frame skip
+				Log.outc(ctx, "we don't have an input for this tick %s" % [i])
 				continue
 			
 			var tick_input_wrap = WyncPktInputs.NetTickDataDecorator.new()
@@ -85,4 +85,6 @@ static func wync_send_inputs (ctx: WyncCtx):
 		var result = WyncFlow.wync_wrap_packet_out(ctx, WyncCtx.SERVER_PEER_ID, WyncPacket.WYNC_PKT_INPUTS, pkt_inputs)
 		if result[0] == OK:
 			var packet_out = result[1] as WyncPacketOut
-			ctx.out_packets.append(packet_out)
+			var err = WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, false)
+			if err != OK: # Out of space
+				break

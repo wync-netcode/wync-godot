@@ -13,9 +13,14 @@ var xtrap_local_tick: Variant = null # Optional<int>
 
 var current_tick_nete_latency_ms: int
 
-## outgoing packets
+## outgoing packets =============================
 
-var out_packets: Array[WyncPacketOut]
+const OK_BUT_COULD_NOT_FIT_ALL_PACKETS = 1
+
+## can be used to limit the production of packets
+var out_packets_size_remaining_chars: int 
+var out_reliable_packets: Array[WyncPacketOut]
+var out_unreliable_packets: Array[WyncPacketOut]
 
 ## Extra structures =============================
 
@@ -165,6 +170,10 @@ var tick_action_history: RingBuffer = RingBuffer.new(tick_action_history_size)
 var currently_on_predicted_tick: bool = false
 var current_predicted_tick: int = 0 # only for debugging
 
+# tick markers for the last prediction cycle
+var first_tick_predicted: int = 1
+var last_tick_predicted: int = 0
+
 
 
 # * Only add/remove _entity ids_ when a packet is confirmed sent (WYNC_EXTRACT_WRITE)
@@ -176,6 +185,9 @@ var clients_sees_entities: Array[Dictionary]
 # * Every frame we check.. 
 # Array <client_id: int, Set[entity_id: int]>
 var clients_sees_new_entities: Array[Dictionary]
+# Array <client_id: int, Set[entity_id: int]>
+var clients_no_longer_sees_entities: Array[Dictionary]
+
 
 # TODO: Move to WyncUtils
 func _init() -> void:
@@ -183,6 +195,8 @@ func _init() -> void:
 	client_has_relative_prop_has_last_tick.resize(max_peers) # NOTE: index 0 not used
 	clients_sees_entities.resize(max_peers)
 	clients_sees_new_entities.resize(max_peers)
+	clients_no_longer_sees_entities.resize(max_peers)
+
 	for peer_i in range(max_peers):
 		peer_has_channel_has_events[peer_i] = []
 		peer_has_channel_has_events[peer_i].resize(max_channels)
@@ -191,6 +205,7 @@ func _init() -> void:
 		client_has_relative_prop_has_last_tick[peer_i] = {}
 		clients_sees_entities[peer_i] = {}
 		clients_sees_new_entities[peer_i] = {}
+		clients_no_longer_sees_entities[peer_i] = {}
 	
 	for i in range(tick_action_history_size):
 		tick_action_history.insert_at(i, {} as Dictionary)

@@ -18,3 +18,7 @@ static func object_to_dictionary(object: Object) -> Dictionary:
 			continue
 		dict[property.name] = object.get(property.name)
 	return dict
+
+
+static func calculate_object_data_size(object: Object) -> int:
+	return JsonClassConverter.class_to_json_string(object).length()

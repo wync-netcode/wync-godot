@@ -29,8 +29,8 @@ static func wync_server_tick_end(ctx: WyncCtx):
 
 	SyWyncStateExtractorDeltaSync.send_event_ids_to_peers(ctx)
 
-	SyWyncStateExtractorDeltaSync.queue_event_data_to_be_synced_to_peers(ctx)
-
+	# these two must be called in this order:
+	SyWyncStateExtractorDeltaSync.queue_delta_event_data_to_be_synced_to_peers(ctx)
 	SyWyncSendEventData.wync_send_event_data (ctx)
 
 	WyncThrottle.wync_system_send_entities_to_spawn(ctx)
@@ -80,10 +80,13 @@ static func wync_client_tick_middle(ctx: WyncCtx):
 
 	SyWyncLatestValue.wync_reset_props_to_latest_value(ctx)
 
+	# Xtrap
+	#Log.outc(ctx, "debug_pred_delta_event XTRAP START")
+
 
 static func wync_client_tick_end(ctx: WyncCtx):
 
-	SyWyncSendInputs.wync_send_inputs(ctx)
+	SyWyncSendInputs.wync_client_send_inputs(ctx)
 
 	SyWyncSendEventData.wync_send_event_data(ctx)
 
@@ -158,7 +161,8 @@ static func wync_try_to_connect(ctx: WyncCtx) -> int:
 	var packet_data = WyncPktJoinReq.new()
 	var result = wync_wrap_packet_out(ctx, WyncCtx.SERVER_PEER_ID, WyncPacket.WYNC_PKT_JOIN_REQ, packet_data)
 	if result[0] == OK:
-		ctx.out_packets.append(result[1])
+		var packet_out = result[1] as WyncPacketOut
+		WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, false)
 	return OK
 
 
@@ -209,6 +213,7 @@ static func wync_handle_pkt_event_data(ctx: WyncCtx, data: Variant) -> int:
 	return OK
 
 
+## This systems writes state
 static func wync_handle_pkt_join_req(ctx: WyncCtx, data: Variant, from_nete_peer_id: int) -> int:
 
 	if data is not WyncPktJoinReq:
@@ -232,7 +237,7 @@ static func wync_handle_pkt_join_req(ctx: WyncCtx, data: Variant, from_nete_peer
 	packet.wync_client_id = wync_client_id
 	var result = wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_JOIN_RES, packet)
 	if result[0] == OK:
-		ctx.out_packets.append(result[1])
+		WyncThrottle.wync_try_to_queue_out_packet(ctx, result[1], true)
 	
 	# NOTE: Maybe move this elsewhere, the client could ask this any time
 	# FIXME Harcoded: client 0 -> entity 0 (player)
@@ -241,12 +246,12 @@ static func wync_handle_pkt_join_req(ctx: WyncCtx, data: Variant, from_nete_peer
 	packet_info = make_client_info_packet(ctx, wync_client_id, 0, "input")
 	result = wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_RES_CLIENT_INFO, packet_info)
 	if result[0] == OK:
-		ctx.out_packets.append(result[1])
+		WyncThrottle.wync_try_to_queue_out_packet(ctx, result[1], true)
 
 	packet_info = make_client_info_packet(ctx, wync_client_id, 0, "events")
 	result = wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_RES_CLIENT_INFO, packet_info)
 	if result[0] == OK:
-		ctx.out_packets.append(result[1])
+		WyncThrottle.wync_try_to_queue_out_packet(ctx, result[1], true)
 	
 	# let client own it's global events
 	# NOTE: Maybe move this where all channels are defined
@@ -257,7 +262,7 @@ static func wync_handle_pkt_join_req(ctx: WyncCtx, data: Variant, from_nete_peer
 		packet_info = make_client_info_packet(ctx, wync_client_id, global_events_entity_id, "channel_0")
 		result = wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_RES_CLIENT_INFO, packet_info)
 		if result[0] == OK:
-			ctx.out_packets.append(result[1])
+			WyncThrottle.wync_try_to_queue_out_packet(ctx, result[1], true)
 	
 	else:
 		Log.err("Global Event Entity (id %s) for peer_id %s NOT FOUND" % [global_events_entity_id, wync_client_id], Log.TAG_WYNC_CONNECT)
@@ -405,11 +410,22 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 			local_prop.just_received_new_state = true
 			var delta_props_last_tick = ctx.client_has_relative_prop_has_last_tick[ctx.my_peer_id] as Dictionary
 			delta_props_last_tick[prop.prop_id] = data.tick
-			Log.out("delta sync debug1 | ser_tick(%s) delta_prop_last_tick %s" % [ctx.co_ticks.server_ticks, delta_props_last_tick], Log.TAG_LATEST_VALUE)
-				
-			# TODO: reset event buffer, clean events that should already be applied by this tick
-			# Reset it but only for one prop
-			# SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(ctx)
+			#Log.out("debug_pred_delta_event | ser_tick(%s) delta_prop_last_tick %s" % [ctx.co_ticks.server_ticks, delta_props_last_tick], Log.TAG_LATEST_VALUE)
+
+			# clean up predicted data TODO
+
+			if WyncUtils.prop_is_predicted(ctx, prop.prop_id):
+
+				# get aux_prop and clean the confirmed_states_undo
+				var aux_prop = WyncUtils.get_prop(ctx, local_prop.auxiliar_delta_events_prop_id)
+				for j in range(ctx.first_tick_predicted, ctx.last_tick_predicted +1):
+					aux_prop.confirmed_states.insert_at(j, [] as Array[int])
+					aux_prop.confirmed_states_undo.insert_at(j, [] as Array[int])
+
+				# debugging: save canonic state to compare it later
+				var state_dup = WyncUtils.duplicate_any(local_prop.getter.call())
+				local_prop.confirmed_states.insert_at(0, state_dup)
+
 
 	# update last tick received
 	ctx.last_tick_received = max(ctx.last_tick_received, data.tick)

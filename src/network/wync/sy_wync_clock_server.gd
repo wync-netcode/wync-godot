@@ -18,6 +18,8 @@ func on_process(_entities, _data, _delta: float):
 	#wync_server_sync_clock(ctx)
 	
 	
+## This service doesn't write state
+
 static func wync_server_sync_clock(ctx: WyncCtx):
 	# throttle send rate
 
@@ -40,4 +42,4 @@ static func wync_server_sync_clock(ctx: WyncCtx):
 		var result = WyncFlow.wync_wrap_packet_out(ctx, wync_peer_id, WyncPacket.WYNC_PKT_CLOCK, packet_dup)
 		if result[0] == OK:
 			var packet_out = result[1] as WyncPacketOut
-			ctx.out_packets.append(packet_out)
+			WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, false)

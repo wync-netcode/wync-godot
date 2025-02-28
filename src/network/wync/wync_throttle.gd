@@ -47,30 +47,17 @@ static func wync_system_send_entities_to_spawn(ctx: WyncCtx, _commit: bool = tru
 		var res = WyncFlow.wync_wrap_packet_out(ctx, client_id, WyncPacket.WYNC_PKT_SPAWN, packet)
 		if res[0] == OK:
 			var pkt_out = res[1] as WyncPacketOut
-			ctx.out_packets.append(pkt_out)
+			WyncThrottle.wync_try_to_queue_out_packet(ctx, pkt_out, true)
 		
 	return OK
 
 
-static func wync_confirm_client_can_see_entity(ctx: WyncCtx, client_id: int, entity_id: int):
+## Calls all the systems that produce packets to send whilst respecting the data limit
 
-	var entity_set = ctx.clients_sees_entities[client_id]
-	entity_set[entity_id] = true
-
-	for prop_id: int in ctx.entity_has_props[entity_id]:
-		var prop = WyncUtils.get_prop(ctx, prop_id)
-		if prop == null:
-			Log.err("Couldn't find prop(%s) in entity(%s)" % [prop_id, entity_id])
-			continue
-		prop = prop as WyncEntityProp
-
-		if prop.relative_syncable:
-			var delta_prop_last_tick = ctx.client_has_relative_prop_has_last_tick[client_id] as Dictionary
-			delta_prop_last_tick[prop_id] = -1
-
-	# remove from new entities
-	var new_entity_set = ctx.clients_sees_new_entities[client_id] as Dictionary
-	new_entity_set.erase(entity_id)
+static func wync_system_gather_reliable_packets(ctx: WyncCtx):
+	# TODO
+	Log.out("Final space left (%s chars)" % [ctx.out_packets_size_remaining_chars])
+	pass
 
 
 # Utils
@@ -150,3 +137,67 @@ static func wync_add_local_existing_entity \
 
 	var new_entity_set = ctx.clients_sees_new_entities[client_id] as Dictionary
 	new_entity_set.erase(entity_id)
+
+
+static func wync_confirm_client_can_see_entity(ctx: WyncCtx, client_id: int, entity_id: int):
+
+	var entity_set = ctx.clients_sees_entities[client_id]
+	entity_set[entity_id] = true
+
+	for prop_id: int in ctx.entity_has_props[entity_id]:
+		var prop = WyncUtils.get_prop(ctx, prop_id)
+		if prop == null:
+			Log.err("Couldn't find prop(%s) in entity(%s)" % [prop_id, entity_id])
+			continue
+		prop = prop as WyncEntityProp
+
+		if prop.relative_syncable:
+			var delta_prop_last_tick = ctx.client_has_relative_prop_has_last_tick[client_id] as Dictionary
+			delta_prop_last_tick[prop_id] = -1
+
+	# remove from new entities
+	var new_entity_set = ctx.clients_sees_new_entities[client_id] as Dictionary
+	new_entity_set.erase(entity_id)
+
+
+## Call every time before gathering packets
+static func wync_set_data_limit_chars_for_out_packets(ctx: WyncCtx, data_limit_chars: int):
+	ctx.out_packets_size_remaining_chars = data_limit_chars
+
+
+## In case we can't queue a packet stop generatin' packets
+## @argument dont_occuppy: bool. Used for inserting packets which size was already reserved
+## @returns int: Error
+static func wync_try_to_queue_out_packet \
+	(ctx: WyncCtx, out_packet: WyncPacketOut, already_commited: bool, dont_ocuppy: bool = false) -> int:
+
+	var packet_size = HashUtils.calculate_object_data_size(out_packet)
+	if packet_size >= ctx.out_packets_size_remaining_chars:
+		if already_commited:
+			Log.err("(%s) COMMITED anyways, Packet too big (%s), remaining data (%s), d(%s)" %
+			[WyncPacket.PKT_NAMES[out_packet.data.packet_type_id],
+			packet_size,
+			ctx.out_packets_size_remaining_chars,
+			packet_size-ctx.out_packets_size_remaining_chars])
+		else:
+			Log.err("(%s) DROPPED, Packet too big (%s), remaining data (%s), d(%s)" %
+			[WyncPacket.PKT_NAMES[out_packet.data.packet_type_id],
+			packet_size,
+			ctx.out_packets_size_remaining_chars,
+			packet_size-ctx.out_packets_size_remaining_chars])
+			return 1
+
+	if not dont_ocuppy:
+		ctx.out_packets_size_remaining_chars -= packet_size
+	
+	ctx.out_reliable_packets.append(out_packet)
+
+	Log.outc(ctx, "queued packet %s, remaining data (%s)" %
+	[WyncPacket.PKT_NAMES[out_packet.data.packet_type_id], ctx.out_packets_size_remaining_chars])
+	return OK
+
+
+## Just like the function above, except this just "ocuppies" space without queuing anything
+## Used for preserving space for queuing event data.
+static func wync_ocuppy_space_towards_packets_data_size_limit(ctx: WyncCtx, chars: int):
+	ctx.out_packets_size_remaining_chars -= chars
