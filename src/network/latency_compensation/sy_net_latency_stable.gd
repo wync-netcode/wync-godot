@@ -10,7 +10,7 @@ func on_process(_entities, _data, _delta: float):
 
 	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
 	if not co_loopback:
-		Log.err(self, "Couldn't find singleton CoTransportLoopback")
+		Log.err("Couldn't find singleton CoTransportLoopback", Log.TAG_LATENCY)
 		return
 	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
@@ -32,7 +32,7 @@ func on_process(_entities, _data, _delta: float):
 			accum += lat
 		mean = ceil(float(accum) / counter)
 		
-		Log.out(self, "latencyme mean diff %s %s %s >? %s" % [co_predict_data.latency_mean, mean, abs(mean - co_predict_data.latency_mean), co_predict_data.latency_std_dev])
+		Log.out("latencyme mean diff %s %s %s >? %s" % [co_predict_data.latency_mean, mean, abs(mean - co_predict_data.latency_mean), co_predict_data.latency_std_dev], Log.TAG_LATENCY)
 		
 		# if new mean is outside range, then update everything
 		# NOTE: Currently this doesn't cover the case of a highly volatile std_dev (i.e. that is stable then unstable). However this case is so rare it might be not worth even supporting it. Although it should'nt be too hard.
@@ -53,4 +53,4 @@ func on_process(_entities, _data, _delta: float):
 			# NOTE: Allow for choosing a latency stabilization strategy:
 			# e.g. none (for using directly what the transport tells), std_dev, or 95th Qu
 			
-			Log.out(self, "latencyme stable updated to %s | mean %s | stddev %s | acum %s" % [co_predict_data.latency_stable, co_predict_data.latency_mean, co_predict_data.latency_std_dev, accum])
+			Log.out("latencyme stable updated to %s | mean %s | stddev %s | acum %s" % [co_predict_data.latency_stable, co_predict_data.latency_mean, co_predict_data.latency_std_dev, accum], Log.TAG_LATENCY)

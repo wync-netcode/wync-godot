@@ -13,7 +13,7 @@ func _ready():
 func on_process(_entities, _data, _delta: float):
 	var single_server = ECS.get_singleton_entity(self, "EnSingleServer")
 	if not single_server:
-		Log.err(self, "No single_client")
+		Log.err("No single_client", Log.TAG_WYNC_CONNECT)
 		return
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
@@ -37,7 +37,7 @@ func on_process(_entities, _data, _delta: float):
 		
 		var wync_client_id = WyncUtils.is_peer_registered(wync_ctx, pkt.from_peer)
 		if wync_client_id != -1:
-			Log.out(self, "Client %s already setup in Wync as %s" % [pkt.from_peer, wync_client_id])
+			Log.out("Client %s already setup in Wync as %s" % [pkt.from_peer, wync_client_id], Log.TAG_WYNC_CONNECT)
 			continue
 		wync_client_id = WyncUtils.peer_register(wync_ctx, pkt.from_peer)
 		
@@ -71,7 +71,7 @@ func on_process(_entities, _data, _delta: float):
 			co_io.out_packets.append(packet)
 		
 		else:
-			Log.err(self, "Global Event Entity (id %s) for peer_id %s NOT FOUND" % [global_events_entity_id, wync_client_id])
+			Log.err("Global Event Entity (id %s) for peer_id %s NOT FOUND" % [global_events_entity_id, wync_client_id], Log.TAG_WYNC_CONNECT)
 		
 
 func make_client_info_packet(
@@ -86,7 +86,7 @@ func make_client_info_packet(
 	packet_data.prop_id = prop_id
 	
 	WyncUtils.prop_set_client_owner(wync_ctx, prop_id, wync_client_id)
-	Log.out(self, "assigned (entity %s: prop %s) to client %s" % [packet_data.entity_id, prop_id, wync_client_id])
+	Log.out("assigned (entity %s: prop %s) to client %s" % [packet_data.entity_id, prop_id, wync_client_id], Log.TAG_WYNC_CONNECT)
 	
 	var packet = NetPacket.new()
 	packet.data = packet_data

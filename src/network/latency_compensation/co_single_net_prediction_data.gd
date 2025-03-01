@@ -13,6 +13,9 @@ var target_tick: int = 0 # co_ticks.ticks + tick_offset
 ## fixed timestamp for current tick
 ## It's the point of reference for other ticks
 var current_tick_timestamp: int = 0
+# only used for rollback for _predicted delta props_
+# might be superseeded by buffer_predicted_tick (look at the bottom)
+var delta_prop_last_tick_predicted: int = 0 
 
 # For calculating clock_offset_mean
 

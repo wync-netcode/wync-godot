@@ -252,6 +252,7 @@ func _init():
 
 	if ProjectSettings.has_setting("logger/level"):
 		set_logger_level(_get_logger_level_by_name(ProjectSettings.get_setting("logger/level")))
+	set_logger_level(Logger.LOG_LEVEL_NONE)
 
 	if ProjectSettings.has_setting("logger/format"):
 		set_logger_format(_get_logger_format_by_name(ProjectSettings.get_setting("logger/format")))

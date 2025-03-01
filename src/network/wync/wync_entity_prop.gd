@@ -10,9 +10,10 @@ enum DATA_TYPE {
 	INT,
 	FLOAT,
 	VECTOR2,
-	INPUT, # a.k.a. any
+	INPUT, # can store Variant
 	ANY,
-	EVENT
+	EVENT,
+	STRING
 }
 
 static var INTERPOLABLE_DATA_TYPES: Array[DATA_TYPE] = [
@@ -22,13 +23,14 @@ static var INTERPOLABLE_DATA_TYPES: Array[DATA_TYPE] = [
 
 var name_id: String
 var data_type: DATA_TYPE
-var getter: Callable
-var setter: Callable
+var getter: Callable #: func() -> Variant
+var setter: Callable #: func(Variant) -> void
+var getter_pointer: Callable #: func() -> VariantPointer # for relative sync props
 
 # Optional properties:
 # TODO: Move these elsewhere
 
-var dirty: bool # new state was received from the server
+var just_received_new_state: bool # new state was received from the server
 var interpolated: bool
 var interpolated_state # : any
 
@@ -63,9 +65,30 @@ var lerp_right_local_tick: int
 var lerp_left_confirmed_state_tick: int
 var lerp_right_confirmed_state_tick: int
 
-# DEPRECATED: Now global events aren't tied to a regular entity
-# but insted they're tied to the singleton Client entity that is 
-# assigned to each Peer
-# global events
-#var push_to_global_event: bool = false
-#var global_event_channel: int = 0
+## Whether when we skip ticks we want to duplicated it
+## (useful for _input events_, e.g movement, shooting. Do not confuse with INPUT props)
+## Only applies to EVENT props
+var allow_duplication_on_tick_skip: bool = true
+
+# Related to relative syncronization
+# --------------------------------------------------
+
+var relative_syncable: bool = false
+var is_auxiliar_prop: bool = false
+
+# What blueprint does this prop obeys? This dictates relative sync events
+var delta_blueprint_id: int = -1
+
+# if relative_syncable point to auxiliar prop
+# if is_auxiliar_prop point to delta prop
+var auxiliar_delta_events_prop_id: int = -1
+
+# A place to insert current delta events
+var current_delta_events: Array[int]
+
+# A place to insert current undo delta events
+var current_undo_delta_events: Array[int]
+
+# Exclusive to auxiliar props, here we store undo event_ids
+# Ring <tick: id, data: Array[int]>
+var confirmed_states_undo: RingBuffer = RingBuffer.new(10)

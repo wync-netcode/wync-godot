@@ -70,7 +70,7 @@ static func simulate_shoot_weapon(node_ctx: Node, entity: Entity):
 	if not is_projectile:
 		var raycast_ent = ECS.get_singleton_entity(node_ctx, "EnRaycastSingleton")
 		if not raycast_ent:
-			Log.err(node_ctx, "SyShootWeapon | E: Couldn't find singleton EnRaycastSingleton")
+			Log.err("SyShootWeapon | E: Couldn't find singleton EnRaycastSingleton")
 			return
 		var raycast_co = raycast_ent.get_component(CoRaycast.label) as CoRaycast
 		raycast = raycast_co as Node as RayCast2D
@@ -85,7 +85,7 @@ static func simulate_shoot_weapon(node_ctx: Node, entity: Entity):
 
 	# fire one of the pellets with perfect accuracy
 
-	Log.out(node_ctx, "SyShootWeapon | is_projectile %s %s" % [is_projectile, weapon.weapon_id])
+	Log.out("SyShootWeapon | is_projectile %s %s" % [is_projectile, weapon.weapon_id])
 	if pellets > 1:
 		pellets -= 1
 		if not is_projectile:
@@ -131,10 +131,10 @@ static func bullet_raycast(node_ctx: Node, weapon_id: int, raycast: RayCast2D, a
 	if entity == null:
 		return
 	if entity.has_component(CoHealth.label) == null:
-		Log.err(node_ctx, "SyShootWeapon | entity doesn't have CoHealth %s" % [entity])
+		Log.err("SyShootWeapon | entity doesn't have CoHealth %s" % [entity])
 		return
 	var damage = StaticData.entity.Weapons[weapon_id].damage
-	Log.out(node_ctx, "SyShootWeapon | DAMAGE entity: %s for damage: %s" % [entity, damage])
+	Log.out("SyShootWeapon | DAMAGE entity: %s for damage: %s" % [entity, damage])
 	HealthUtils.generate_health_damage_event(entity, damage, 0)
 
 	# visual effect
@@ -150,14 +150,14 @@ static func bullet_raycast_get_entity(node_ctx: Node, raycast: RayCast2D, angle:
 	
 	if raycast.is_colliding():
 		var collider_node = raycast.get_collider() as Node2D
-		Log.out(node_ctx, "SyShootWeapon | raycast collided with node %s" % [collider_node])
+		Log.out("SyShootWeapon | raycast collided with node %s" % [collider_node])
 
 		if collider_node is Component:
 			var collider_entity = ECSUtils.get_entity_from_component(collider_node as Component) 
 			if collider_entity == null:
-				Log.err(node_ctx, "SyShootWeapon | couldn't find entity for component %s" % [collider_node])
+				Log.err("SyShootWeapon | couldn't find entity for component %s" % [collider_node])
 			return collider_entity
 		else:
-			Log.err(node_ctx, "SyShootWeapon | collider_node is not a Component %s" % [collider_node])
+			Log.err("SyShootWeapon | collider_node is not a Component %s" % [collider_node])
 
 	return null

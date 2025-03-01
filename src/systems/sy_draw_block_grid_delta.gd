@@ -1,6 +1,6 @@
 extends System
-class_name SyDrawBlockGrid
-const label: StringName = StringName("SyDrawBlockGrid")
+class_name SyDrawBlockGridDelta
+const label: StringName = StringName("SyDrawBlockGridDelta")
 
 const TILE_LENGTH_PIXELS = 30
 
@@ -26,9 +26,12 @@ func _draw() -> void:
 		if _system == null || !_system.enabled:
 			return
 	
-	var en_block_grid = ECS.get_singleton_entity(self, "EnBlockGrid")
+	var en_block_grid = ECS.get_singleton_entity(self, "EnBlockGridDelta")
 	if en_block_grid:
-		draw_block_grid(en_block_grid, "EnBlockGrid", Vector2i(3, 0))
+		draw_block_grid(en_block_grid, "EnBlockGridDelta", Vector2i(3, 1))
+	en_block_grid = ECS.get_singleton_entity(self, "EnBlockGridDeltaPredicted")
+	if en_block_grid:
+		draw_block_grid(en_block_grid, "EnBlockGridDeltaPredicted", Vector2i(3, 2))
 
 
 func draw_block_grid(entity: Entity, singleton_grid_name: String, offset: Vector2i):
@@ -72,47 +75,16 @@ func draw_block_grid(entity: Entity, singleton_grid_name: String, offset: Vector
 				
 				var event = GameInfo.EVENT_NONE
 				if Input.is_action_just_pressed("p1_mouse1"):
-					event = GameInfo.EVENT_PLAYER_BLOCK_BREAK
+					event = GameInfo.EVENT_PLAYER_BLOCK_BREAK_DELTA
 				elif Input.is_action_just_pressed("p1_mouse2"):
-					event = GameInfo.EVENT_PLAYER_BLOCK_PLACE
+					event = GameInfo.EVENT_PLAYER_BLOCK_PLACE_DELTA
 				if event != GameInfo.EVENT_NONE:
 					color = Color.RED
 					color.a = 0.5
 					node2d.draw_rect(block_rect, color, true)
-					Log.out("EVENT MOUSE CLICK %s" % Vector2i(i,j), Log.TAG_GAME_EVENT)
+					Log.out("debug1 | EVENT MOUSE CLICK %s" % Vector2i(i,j), Log.TAG_GAME_EVENT)
 					
 					generate_block_grid_event(singleton_grid_name, event, Vector2i(i,j))
-
-
-static func draw_block(node2d: Node2D, sprite_rect: Rect2, block: CoBlockGrid.BlockData):
-	match block.id:
-		CoBlockGrid.BLOCK.AIR:
-			node2d.draw_line(sprite_rect.position, sprite_rect.end, Color.AQUAMARINE, 3)
-		CoBlockGrid.BLOCK.DIRT:
-			node2d.draw_rect(sprite_rect, Color.SADDLE_BROWN, true)
-			node2d.draw_rect(sprite_rect, Color.BLACK, false)
-		CoBlockGrid.BLOCK.STONE:
-			node2d.draw_rect(sprite_rect, Color.DARK_GRAY, true)
-			node2d.draw_rect(sprite_rect, Color.BLACK, false)
-		CoBlockGrid.BLOCK.GOLD:
-			node2d.draw_rect(sprite_rect, Color.GOLDENROD, true)
-			node2d.draw_rect(sprite_rect, Color.BLACK, false)
-		CoBlockGrid.BLOCK.DIAMOND:
-			node2d.draw_rect(sprite_rect, Color.MEDIUM_TURQUOISE, true) # Color.DARK_RED
-			"""
-			var tnt_stripe_rect = Rect2(sprite_rect)
-			tnt_stripe_rect.position.y += tnt_stripe_rect.size.y / 3
-			tnt_stripe_rect.size.y /= 3
-			node2d.draw_rect(tnt_stripe_rect, Color.WHITE, true)"""
-			node2d.draw_rect(sprite_rect, Color.BLACK, false)
-			pass
-	
-	# on fire
-	if block.on_fire:
-		var fire_rect = Rect2(sprite_rect)
-		fire_rect.position.x += fire_rect.size.x * 0.7
-		fire_rect.size *= 1.0 - 0.7
-		node2d.draw_rect(fire_rect, Color.MEDIUM_VIOLET_RED, true)
 
 
 func on_process(_entities, _data, _delta):
@@ -139,8 +111,6 @@ func generate_block_grid_event(
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
-	if not wync_ctx.connected:
-		return
 	
 	# FIXME: harcoded entity with id 0
 	var player_entity_id = 0
@@ -164,11 +134,12 @@ func generate_block_grid_event(
 	
 	# first register the event to Wync
 	var event_id = WyncEventUtils.instantiate_new_event(wync_ctx, event_type_id, 2)
+	if event_id == null: return
 	WyncEventUtils.event_add_arg(wync_ctx, event_id, 0, WyncEntityProp.DATA_TYPE.STRING, block_grid_id)
 	WyncEventUtils.event_add_arg(wync_ctx, event_id, 1, WyncEntityProp.DATA_TYPE.VECTOR2, event_data)
 	event_id = WyncEventUtils.event_wrap_up(wync_ctx, event_id)
 	if (event_id == null):
-		Log.err("Error WyncEventUtils.event_wrap_up(wync_ctx, event_id)", Log.TAG_GAME_EVENT)
+		Log.err("Error WyncEventUtils.event_wrap_up(wync_ctx, event_id) got(%s)" % [event_id], Log.TAG_GAME_EVENT)
 		return
 	
 	var _event = wync_ctx.events[event_id] as WyncEvent
@@ -185,4 +156,4 @@ func generate_block_grid_event(
 	)
 	
 	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
-	Log.out("ticks(%s|%s) co_wync_events.events %s:%s:%s" % [co_ticks.ticks, co_predict_data.target_tick, co_wync_events, co_wync_events.events.size(), co_wync_events.events], Log.TAG_GAME_EVENT)
+	Log.out("debug1 lo_ticks(%s) ser_ticks(%s) target(%s) co_wync_events.events %s:%s:%s" % [co_ticks.ticks, co_ticks.server_ticks, co_predict_data.target_tick, co_wync_events, co_wync_events.events.size(), co_wync_events.events], Log.TAG_GAME_EVENT)

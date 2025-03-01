@@ -15,7 +15,7 @@ func on_process(_entities, _data, _delta: float):
 
 	var en_client = ECS.get_singleton_entity(self, "EnSingleClient")
 	if not en_client:
-		Log.err(self, "Couldn't find singleton EnSingleClient")
+		Log.err("Couldn't find singleton EnSingleClient", Log.TAG_CLOCK)
 		return
 	var co_io = en_client.get_component(CoIOPackets.label) as CoIOPackets
 	if co_io.in_packets.size() == 0:
@@ -62,7 +62,7 @@ func on_process(_entities, _data, _delta: float):
 
 		var server_ticks = %CoTicks.ticks -1
 		
-		Log.out(self, "Servertime %s, real %s, d %s | ticks %s, real %s, d %s | latency %s | clock %s | %s | %s | %s" % [
+		Log.out("Servertime %s, real %s, d %s | ticks %s, real %s, d %s | latency %s | clock %s | %s | %s | %s" % [
 			int(current_server_time),
 			Time.get_ticks_msec(),
 			str(Time.get_ticks_msec() - current_server_time).pad_zeros(2).pad_decimals(1),
@@ -74,4 +74,4 @@ func on_process(_entities, _data, _delta: float):
 			str(time_since_packet_sent).pad_decimals(2),
 			str(time_since_packet_sent / (1000.0 / physics_fps)).pad_decimals(2),
 			co_ticks.server_ticks_offset,
-		])
+		], Log.TAG_CLOCK)

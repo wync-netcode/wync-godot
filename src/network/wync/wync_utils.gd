@@ -29,6 +29,7 @@ static func prop_register(
 	prop.setter = setter
 
 	# TODO: Dynamic sized buffer for all owned predicted props?
+	# TODO: Only do this if this prop is predicted, move to prop_set_predict ?
 	if (data_type == WyncEntityProp.DATA_TYPE.INPUT ||
 		data_type == WyncEntityProp.DATA_TYPE.EVENT):
 		prop.confirmed_states = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE)
@@ -76,6 +77,7 @@ static func prop_is_interpolated(ctx: WyncCtx, prop_id: int) -> bool:
 	var prop = ctx.props[prop_id] as WyncEntityProp
 	return prop.interpolated
 
+# server only
 static func prop_set_timewarpable(ctx: WyncCtx, prop_id: int) -> bool:
 	if prop_id > ctx.props.size() -1:
 		return false
@@ -84,11 +86,21 @@ static func prop_set_timewarpable(ctx: WyncCtx, prop_id: int) -> bool:
 	prop.confirmed_states = RingBuffer.new(ctx.max_tick_history)
 	return true
 
+# server only
 static func prop_is_timewarpable(ctx: WyncCtx, prop_id: int) -> bool:
 	if prop_id > ctx.props.size() -1:
 		return false
 	var prop = ctx.props[prop_id] as WyncEntityProp
 	return prop.timewarpable
+
+## Only for INPUT / EVENT props
+static func prop_set_prediction_duplication(ctx: WyncCtx, prop_id: int, duplication: bool) -> bool:
+	if prop_id > ctx.props.size() -1:
+		return false
+	var prop = ctx.props[prop_id] as WyncEntityProp
+	prop.allow_duplication_on_tick_skip = duplication
+	return prop.timewarpable
+
 
 """
 static func prop_set_push_to_global_event(ctx: WyncCtx, prop_id: int, channel: int) -> int:
@@ -286,6 +298,7 @@ static func peer_register(ctx: WyncCtx, peer_data: int = -1) -> int:
 	var peer_id = ctx.peers.size()
 	ctx.peers.append(peer_data)
 	ctx.client_owns_prop[peer_id] = []
+	ctx.client_has_relative_prop_has_last_tick[peer_id] = {}
 	
 	if !is_client(ctx):
 		ctx.client_has_info[peer_id] = WyncClientInfo.new()
@@ -298,6 +311,20 @@ static func server_setup(ctx: WyncCtx) -> int:
 	ctx.peers.resize(1)
 	ctx.peers[ctx.my_peer_id] = -1
 	ctx.connected = true
+
+	# setup event caching
+	ctx.events_hash_to_id.init(ctx.max_amount_cache_events)
+	ctx.to_peers_i_sent_events = []
+	ctx.to_peers_i_sent_events.resize(ctx.max_peers)
+	for i in range(ctx.max_peers):
+		ctx.to_peers_i_sent_events[i] = FIFOMap.new()
+		ctx.to_peers_i_sent_events[i].init(ctx.max_amount_cache_events)
+
+	# setup relative synchronization
+	ctx.peers_events_to_sync = []
+	ctx.peers_events_to_sync.resize(ctx.max_peers)
+	for i in range(ctx.max_peers):
+		ctx.peers_events_to_sync[i] = {} as Dictionary
 
 	# setup peer channels
 	WyncUtils.setup_peer_global_events(ctx, ctx.my_peer_id)
@@ -312,11 +339,20 @@ static func client_setup_my_client(ctx: WyncCtx, peer_id: int) -> bool:
 	ctx.my_peer_id = peer_id
 	ctx.client_owns_prop[peer_id] = []
 
-	ctx.events_hash_to_id.init(WyncCtx.MAX_AMOUNT_CACHE_EVENTS)
-	ctx.events_sent.init(WyncCtx.MAX_AMOUNT_CACHE_EVENTS)
+	# setup event caching
+	ctx.events_hash_to_id.init(ctx.max_amount_cache_events)
+	ctx.to_peers_i_sent_events = []
+	ctx.to_peers_i_sent_events.resize(1)
+	ctx.to_peers_i_sent_events[ctx.SERVER_PEER_ID] = FIFOMap.new()
+	ctx.to_peers_i_sent_events[ctx.SERVER_PEER_ID].init(ctx.max_amount_cache_events)
+
+	# setup relative synchronization
+	ctx.peers_events_to_sync = []
+	ctx.peers_events_to_sync.resize(1)
+	ctx.peers_events_to_sync[ctx.SERVER_PEER_ID] = {} as Dictionary
 	
 	# setup server global events
-	WyncUtils.setup_peer_global_events(ctx, 0)
+	WyncUtils.setup_peer_global_events(ctx, ctx.SERVER_PEER_ID)
 	# setup own global events
 	WyncUtils.setup_peer_global_events(ctx, ctx.my_peer_id)
 	return true

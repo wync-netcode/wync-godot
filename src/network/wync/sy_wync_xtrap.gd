@@ -15,9 +15,10 @@ func _ready():
 
 func on_process(entities, _data, delta: float):
 
+	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
 	if not co_loopback:
-		Log.err(self, "Couldn't find singleton CoTransportLoopback")
+		Log.err("Couldn't find singleton CoTransportLoopback", Log.TAG_XTRAP)
 		return
 	
 	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
@@ -26,6 +27,8 @@ func on_process(entities, _data, delta: float):
 	var wync_ctx = single_wync.ctx as WyncCtx
 
 	var target_tick = co_predict_data.target_tick
+
+	Log.out("debug1 | xtrap (init) lo_tick(%s) ser_ticks(%s) offset(%s) target_tick(%s)" % [co_ticks.ticks, co_ticks.server_ticks, co_predict_data.tick_offset, target_tick], Log.TAG_XTRAP)
 	
 	# get physics space to later sync transforms to physics server
 	# sync physics after 'SyWyncLatestValue'
@@ -37,21 +40,33 @@ func on_process(entities, _data, delta: float):
 	# prediction loop
 	# FIXME: using last_confirmed_tick is UB
 	# FIXME: not all props will have the same 'last_confirmed_tick'
-	
+
 	var last_confirmed_tick = wync_ctx.last_tick_received
 	if last_confirmed_tick == 0:
 		return
+
+	wync_ctx.currently_on_predicted_tick = true
+	# NOTE: defer: wync_ctx.currently_on_predicted_tick = false
+	
+	# We can detect a local_tick is duplicated by checking is the same as te previous,
+	# Then we can honor the config wheter to allow duplication or not for each prop
+	var is_local_tick_duplicated = false
+	var prev_local_tick: Variant = null # Optional<int>
+	var local_tick: Variant = null # Optional<int>
 	
 	for tick in range(last_confirmed_tick +1, target_tick +1):
+		wync_ctx.current_predicted_tick = tick
 		
 		# set events inputs to corresponding value depending on tick
 		# --------------------------------------------------
 		# ALL INPUT/EVENT PROPS, no excepcion for now
 		# TODO: identify which I own and which belong to my foes'
 		
-		var local_tick = co_predict_data.get_tick_predicted(tick)
+		prev_local_tick = local_tick
+		local_tick = co_predict_data.get_tick_predicted(tick)
 		if local_tick == null || local_tick is not int:
 			continue
+		is_local_tick_duplicated = prev_local_tick == local_tick
 		
 		for prop_id: int in range(wync_ctx.props.size()):
 			
@@ -63,17 +78,31 @@ func on_process(entities, _data, delta: float):
 			if prop.data_type not in [WyncEntityProp.DATA_TYPE.INPUT,
 				WyncEntityProp.DATA_TYPE.EVENT]:
 				continue
-		
+
 			# using local_tick for predicted states INPUT,EVENT
 			var input_snap = prop.confirmed_states.get_at(local_tick)
+
+			# honor no duplication
+			if (prop.data_type == WyncEntityProp.DATA_TYPE.EVENT
+				&& is_local_tick_duplicated):
+
+				if (not prop.allow_duplication_on_tick_skip):
+
+					# set default value, in the future we might support INPUT type as well
+					input_snap = [] as Array[int]
+				
 			if input_snap == null:
 				continue
-			
 			prop.setter.call(input_snap)
+
 			# INPUT/EVENTs don't need integration functions
+
+		# clearing delta events before predicting, predicted delta events will be
+		# polled and cached at the end of the predicted tick
+		SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(wync_ctx)
 		
+		# START USER PREDICTION FUNCTIONS --------------------------------------
 		# Prediction / Extrapolation:
-		# --------------------------------------------------
 		# Run user provided simulation functions
 		# TODO: Better way to receive simulate functions?
 		
@@ -93,7 +122,9 @@ func on_process(entities, _data, delta: float):
 		
 		SyActorEvents.client_simulate_events(self)
 		
-		# bookkeeping
+		# END USER PREDICTION FUNCTIONS ----------------------------------------
+		
+		# wync bookkeeping
 		# --------------------------------------------------
 
 		for entity: Entity in entities:
@@ -126,9 +157,36 @@ func on_process(entities, _data, delta: float):
 		
 			props_update_predicted_states_ticks(wync_ctx, wync_ctx.entity_has_props[co_actor.id], target_tick)
 		
+		# extract / poll for generated predicted _undo delta events_
+		
+		for prop_id: int in range(wync_ctx.props.size()):
+			var prop = WyncUtils.get_prop(wync_ctx, prop_id)
+			if prop == null:
+				continue
+			prop = prop as WyncEntityProp
+			if not prop.relative_syncable:
+				continue
+			if not WyncUtils.prop_is_predicted(wync_ctx, prop_id):
+				continue
+				
+			var aux_prop = WyncUtils.get_prop(wync_ctx, prop.auxiliar_delta_events_prop_id)
+			if aux_prop == null:
+				continue
+			aux_prop = aux_prop as WyncEntityProp
+			
+			var undo_events = aux_prop.current_undo_delta_events.duplicate(true)
+			aux_prop.confirmed_states_undo.insert_at(tick, undo_events)
+			#Log.out("for SyWyncLatestValue | saving undo_events for tick %s" % [tick], Log.TAG_XTRAP)
+		
 		# sync transforms to physics server
 		RapierPhysicsServer2D.space_step(space, 0)
 		RapierPhysicsServer2D.space_flush_queries(space)
+
+	SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(wync_ctx)
+	co_predict_data.delta_prop_last_tick_predicted = target_tick
+
+	# "defer"
+	wync_ctx.currently_on_predicted_tick = false
 
 
 static func props_update_predicted_states_data(ctx: WyncCtx, props_ids: Array) -> void:

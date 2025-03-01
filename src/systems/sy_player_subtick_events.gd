@@ -23,7 +23,7 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 	
 	# poll once per tick
 	if co_wync_events.last_tick_polled == co_ticks.ticks:
-		Log.out(self, "skipping")
+		Log.out("skipping", Log.TAG_SUBTICK_EVENT)
 		return
 	co_wync_events.last_tick_polled = co_ticks.ticks
 		
@@ -36,7 +36,7 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 	#var last_tick_rendered_left = ClockUtils.convert_local_ticks_to_server_ticks(co_ticks, co_ticks.last_tick_rendered_left)
 	var last_tick_rendered_left = co_ticks.last_tick_rendered_left
 	var lerp_delta: float = co_ticks.lerp_delta_accumulator_ms / frame_ms # range [0.0, 1.0]
-	Log.out(self, "SyActorEvents lerp_delta %s | %s | tick_left %s" % [lerp_delta, co_ticks.lerp_delta_accumulator_ms, last_tick_rendered_left])
+	Log.out("SyActorEvents lerp_delta %s | %s | tick_left %s" % [lerp_delta, co_ticks.lerp_delta_accumulator_ms, last_tick_rendered_left], Log.TAG_SUBTICK_EVENT)
 	
 	var event_id = WyncEventUtils.instantiate_new_event(wync_ctx, GameInfo.EVENT_PLAYER_SHOOT, 2)
 	WyncEventUtils.event_add_arg(wync_ctx, event_id, 0, WyncEntityProp.DATA_TYPE.INT, last_tick_rendered_left)
@@ -99,7 +99,7 @@ static func debug_show_timewarpable_lerped_positions(node_ctx: Node, wync_ctx: W
 				var right = right_value as Vector2
 				interpolated_value = lerp(left, right, factor)
 			_:
-				Log.out(node_ctx, "W: data type not interpolable")
+				Log.out("W: data type not interpolable", Log.TAG_SUBTICK_EVENT)
 				pass
 
 	DebugPlayerTrail.spawn(node_ctx, interpolated_value, 0.9, 2.5)

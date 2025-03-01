@@ -10,12 +10,10 @@ func __on_process_entity(entity: Entity, _data, _delta: float):
 	var co_io = entity.get_component(CoIOPackets.label) as CoIOPackets
 	var single_actors = ECS.get_singleton_entity(self, "EnSingleActors")
 	if not single_actors:
-		Log.err(self, "E: Couldn't find singleton EnSingleActors")
 		return
 	var co_actors = single_actors.get_component(CoSingleActors.label) as CoSingleActors
 	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
 	if not co_loopback:
-		Log.err(self, "E: Couldn't find singleton CoTransportLoopback")
 		return
 	var co_snapshots = entity.get_component(CoSnapshots.label) as CoSnapshots
 	var curr_time = Time.get_ticks_msec()

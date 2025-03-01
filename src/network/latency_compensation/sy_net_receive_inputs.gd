@@ -14,13 +14,13 @@ func on_process(entities, _data, _delta: float):
 
 	var en_server = ECS.get_singleton_entity(self, "EnSingleServer")
 	if not en_server:
-		Log.err(self, "Couldn't find singleton EnSingleServer")
+		Log.err("Couldn't find singleton EnSingleServer", Log.TAG_INPUT_RECEIVE)
 		return
 	var co_io_packets = en_server.get_component(CoIOPackets.label) as CoIOPackets
 
 	var single_actors = ECS.get_singleton_entity(self, "EnSingleActors")
 	if not single_actors:
-		Log.err(self, "Couldn't find singleton EnSingleActors")
+		Log.err("Couldn't find singleton EnSingleActors", Log.TAG_INPUT_RECEIVE)
 		return
 	var co_actors = single_actors.get_component(CoSingleActors.label) as CoSingleActors
 
@@ -44,11 +44,11 @@ func on_process(entities, _data, _delta: float):
 
 		var actor_entity = co_actors.actors[actor_id] as Entity
 		if not actor_entity:
-			Log.err(self, "Couldn't find actor with id %s" % actor_id)
+			Log.err("Couldn't find actor with id %s" % actor_id, Log.TAG_INPUT_RECEIVE)
 			continue
 
 		if not actor_entity.has_component(CoNetBufferedInputs.label):
-			Log.err(self, "Actor doesn't have component CoNetBufferedInputs")
+			Log.err("Actor doesn't have component CoNetBufferedInputs", Log.TAG_INPUT_RECEIVE)
 			continue
 		var co_buffered_inputs = actor_entity.get_component(CoNetBufferedInputs.label) as CoNetBufferedInputs
 

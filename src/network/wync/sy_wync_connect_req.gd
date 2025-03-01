@@ -15,7 +15,7 @@ func _ready():
 func on_process(_entities, _data, _delta: float):
 	var single_client = ECS.get_singleton_entity(self, "EnSingleClient")
 	if not single_client:
-		Log.err(self, "No single_client")
+		Log.err("No single_client", Log.TAG_WYNC_CONNECT)
 		return
 	var co_client = single_client.get_component(CoClient.label) as CoClient
 	if co_client.state != CoClient.STATE.CONNECTED:
@@ -46,7 +46,7 @@ func on_process(_entities, _data, _delta: float):
 		co_io.in_packets.remove_at(k)
 		
 		if not data.approved:
-			Log.err(self, "Connection DENIED for peer %s" % [co_io.peer_id])
+			Log.err("Connection DENIED for peer %s" % [co_io.peer_id], Log.TAG_WYNC_CONNECT)
 			continue
 			
 		# setup client stuff
@@ -56,4 +56,4 @@ func on_process(_entities, _data, _delta: float):
 		wync_ctx.my_peer_id = data.wync_client_id
 		WyncUtils.client_setup_my_client(wync_ctx, data.wync_client_id)
 
-		Log.out(self, "client wync %s connected" % [co_io.peer_id])
+		Log.out("client wync %s connected" % [co_io.peer_id], Log.TAG_WYNC_CONNECT)
