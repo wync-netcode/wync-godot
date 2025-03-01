@@ -77,6 +77,7 @@ func on_process(_entities, _data, _delta: float):
 
 		net_inputs.amount = net_inputs.inputs.size()
 		net_inputs.prop_id = prop_id
+		#Log.out(self, "INPUT Sending prop %s" % [input_prop.name_id]) 
 
 		# prepare peer packet and send (queue)
 

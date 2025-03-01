@@ -21,7 +21,6 @@ func on_process(_entities, _data, _delta: float):
 	
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
-	
 
 	# save tick data from packets
 
@@ -30,11 +29,7 @@ func on_process(_entities, _data, _delta: float):
 		var data = pkt.data as WyncPktPropSnap
 		if not data:
 			continue
-			
-		# consume
 		co_io.in_packets.remove_at(k)
-		
-		#Log.out(self, "consume | co_io.in_packets.size() %s" % (co_io.in_packets.size()+1))
 		
 		for snap: WyncPktPropSnap.EntitySnap in data.snaps:
 			
@@ -49,9 +44,11 @@ func on_process(_entities, _data, _delta: float):
 				if not local_prop:
 					continue
 				
-				var tick_data = NetTickData.new()
-				tick_data.tick = data.tick
-				tick_data.arrived_at_tick = co_ticks.ticks
-				tick_data.data = prop.prop_value
-				local_prop.confirmed_states.push(tick_data)
+				# NOTE: two tick datas could have arrive at the same tick
+				local_prop.last_ticks_received.push(data.tick)
+				local_prop.confirmed_states.insert_at(data.tick, prop.prop_value)
+				local_prop.arrived_at_tick.insert_at(data.tick, co_ticks.ticks)
 				local_prop.dirty = true
+
+		# update last tick received
+		wync_ctx.last_tick_received = max(wync_ctx.last_tick_received, data.tick)

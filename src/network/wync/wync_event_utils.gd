@@ -129,7 +129,7 @@ static func publish_global_event_as_client \
 	return 0
 
 
-static func publish_globa_event_as_server \
+static func publish_global_event_as_server \
 	(ctx: WyncCtx, channel: int, event_id: int) -> int:
 	if (channel < 0 || channel > ctx.max_channels):
 		return 5
@@ -152,6 +152,10 @@ static func global_event_consume \
 	# NOTE: What about the duplicated state
 	# on the user's event container?
 	#return 0 if ctx.events.erase(event_id) else 1
+
+
+# ==================================================================
+# Action functions, not related to Events
 
 
 static func action_already_ran_on_tick(ctx: WyncCtx, predicted_tick: int, action_id: String) -> bool:

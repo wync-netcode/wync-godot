@@ -1,19 +1,41 @@
 class_name Log
 
 
-static func out(caller: Node, msg: String):
+## @argument caller: Node or Object
+static func out(caller, msg: String):
+	var name = ""
+	var script_name = ""
 	var script = caller.get_script()
 
-	if script && script.get_global_name().length() && script.get_global_name() != caller.name:
-		print("%s:%s | %s" % [caller.name, script.get_global_name(), msg])
-	else:
-		print("%s | %s" % [caller.name, msg])
+	if script != null:
+		script_name = script.get_global_name()
+		if script_name.length():
+			name = script.get_global_name()
+
+	if caller is Node:
+		if script_name != caller.name:
+			if name.length():
+				name += ":"
+			name += caller.name
+	
+	print("%s | %s" % [name, msg])
 
 
-static func err(caller: Node, msg: String):
+## @argument caller: Node or Object
+static func err(caller, msg: String):
+	var name = ""
+	var script_name = ""
 	var script = caller.get_script()
 
-	if script && script.get_global_name().length():
-		printerr("%s:%s | %s" % [caller.name, script.get_global_name(), msg])
-	else:
-		printerr("%s | %s" % [caller.name, script.get_global_name(), msg])
+	if script != null:
+		script_name = script.get_global_name()
+		if script_name.length():
+			name = script.get_global_name()
+
+	if caller is Node:
+		if script_name != caller.name:
+			if name.length():
+				name += ":"
+			name += caller.name
+	
+	printerr("%s | %s" % [name, msg])

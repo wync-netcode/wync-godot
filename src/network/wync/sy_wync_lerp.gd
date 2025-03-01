@@ -2,6 +2,9 @@ extends System
 class_name SyWyncLerp
 const label: StringName = StringName("SyWyncLerp")
 
+## Runs each draw loop; interpolates confirmed state and predicted state
+## See also 'SyWyncLerpPrecompute'
+
 
 func _ready():
 	components = [
@@ -12,108 +15,131 @@ func _ready():
 	super()
 	
 
-func on_process(entities, _data, _delta: float):
-
+func on_process(_entities, _data, _delta: float):
 	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
 	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
 
-	var curr_time = ClockUtils.time_get_ticks_msec(co_ticks)
-	var physics_fps = Engine.physics_ticks_per_second
-	
-	# define target time to render
-	var frame = (1000.0 / physics_fps)
-	var pkt_inter_arrival_time = ((1000.0 / physics_fps) * 10) # NOTE: This will be important later
-	var target_time = curr_time - co_predict_data.lerp_ms
+	# TODO: Move this elsewhere
+	co_ticks.lerp_delta_accumulator_ms += int(_delta * 1000)
+
+	interpolate_all(wync_ctx, co_ticks, co_predict_data)
 
 
-	for entity: Entity in entities:
-		
-		target_time = curr_time - co_predict_data.lerp_ms
+## interpolates confirmed states and predicted states
+static func interpolate_all(wync_ctx: WyncCtx, co_ticks: CoTicks, co_predict_data: CoSingleNetPredictionData):
 
-		var co_actor = entity.get_component(CoActor.label) as CoActor
-		if not WyncUtils.is_entity_tracked(wync_ctx, co_actor.id):
+	var curr_tick_time = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, co_ticks.ticks)
+	var curr_time = curr_tick_time + co_ticks.lerp_delta_accumulator_ms
+	var target_time_conf = curr_time - co_predict_data.lerp_ms
+	var target_time_pred = curr_time
+
+	# then interpolate them 
+
+	var left_timestamp_ms: int
+	var right_timestamp_ms: int
+	var left_value: Variant
+	var right_value: Variant
+	var factor: float
+
+	for prop_id: int in range(wync_ctx.props.size()):
+		var prop = WyncUtils.get_prop(wync_ctx, prop_id)
+		if prop == null:
 			continue
-			
-		# interpolate props
+		prop = prop as WyncEntityProp
+		if not prop.interpolated:
+			continue
 
-		for prop_id in wync_ctx.entity_has_props[co_actor.id]:
-			var prop = wync_ctx.props[prop_id]
-			if prop is not WyncEntityProp:
-				continue
-			prop = prop as WyncEntityProp
-			
-			# is prop interpolable (aka numeric, Vector2)
-			
-			if not prop.interpolated:
-				continue
-			if prop.data_type not in WyncEntityProp.INTERPOLABLE_DATA_TYPES:
-				continue
+		# NOTE: opportunity to optimize this by not recalculating this each loop
 
-			# find two snapshots
+		left_timestamp_ms = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, prop.lerp_left_local_tick)
+		right_timestamp_ms = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, prop.lerp_right_local_tick)
 
-			var snap_left: NetTickData = null
-			var snap_right: NetTickData = null
-			var found_snapshots = false
-			var using_confirmed_state = false
-			
-			if WyncUtils.prop_is_predicted(wync_ctx, prop_id):
+		if prop.lerp_use_confirmed_state:
+			left_value = prop.confirmed_states.get_at(prop.lerp_left_confirmed_state_tick)
+			right_value = prop.confirmed_states.get_at(prop.lerp_right_confirmed_state_tick)
+		else:
+			left_value = prop.pred_prev.data
+			right_value = prop.pred_curr.data
+		if left_value == null:
+			continue
 
-				if prop.pred_prev.data != null:
-					snap_left = prop.pred_prev
-					snap_right = prop.pred_curr
-					found_snapshots = true
-					target_time = curr_time + co_predict_data.tick_offset * (1000.0 / physics_fps)
+		# NOTE: Maybe check for value integrity
 
-			# else fall back to using confirmed state
-			
-			if not found_snapshots:
-				target_time = curr_time - co_predict_data.lerp_ms
-				var snaps = WyncUtils.find_closest_two_snapshots_from_prop(target_time, prop, co_ticks, co_predict_data)
-
-				if snaps.size() == 2:
-					snap_left = snaps[0] as NetTickData
-					snap_right = snaps[1] as NetTickData
-					using_confirmed_state = true
-					found_snapshots = true
-
-			if not found_snapshots:
-				#Log.out(self, "lerppast NOTFOUND left: %s | target: %s | right: %s | curr: %s" % [0, target_time, 0, curr_time])
-				continue
-
-			# interpolate between the two
-
-			var left_timestamp = 0
-			var right_timestamp = 0
-
-			if using_confirmed_state:
-				left_timestamp = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, snap_left.arrived_at_tick)
-				right_timestamp = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, snap_right.arrived_at_tick)
+		if abs(left_timestamp_ms - right_timestamp_ms) < 0.000001:
+			prop.interpolated_state = right_value
+		else:
+			if prop.lerp_use_confirmed_state:
+				factor = clampf(
+				(float(target_time_conf) - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms),
+				0, 1)
 			else:
-				# TODO: Why a difference of two ticks?
-				left_timestamp = ClockUtils.get_predicted_tick_local_time_msec(snap_left.tick+1, co_ticks, co_predict_data)
-				right_timestamp = ClockUtils.get_predicted_tick_local_time_msec(snap_right.tick+1, co_ticks, co_predict_data)
-			
-			if abs(left_timestamp - right_timestamp) < 0.000001:
-				prop.interpolated_state = snap_right.data
-			else:
-				var factor = clampf(
-					(float(target_time) - left_timestamp) / (right_timestamp - left_timestamp),
-					0, 1)
-				
-				match prop.data_type:
-					WyncEntityProp.DATA_TYPE.FLOAT:
-						var left_pos = snap_left.data as float
-						var right_pos = snap_right.data as float
-						prop.interpolated_state = lerp(left_pos, right_pos, factor)
-					WyncEntityProp.DATA_TYPE.VECTOR2:
-						var left_pos = snap_left.data as Vector2
-						var right_pos = snap_right.data as Vector2
-						prop.interpolated_state = left_pos.lerp(right_pos, factor)
-					_:
-						Log.out(self, "W: data type not interpolable")
-						pass
-					
-				
-				#Log.out(self, "leftardiff %s | left: %s | target: %s | right: %s | factor %s ||| target_time_offset %s" % [target_time - left_timestamp, left_timestamp, target_time, right_timestamp, factor, co_predict_data.target_time_offset])
+				factor = clampf(
+				(float(target_time_pred) - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms),
+				0, 1)
+				#Log.out(self, "left %s target %s right %s" % [left_timestamp_ms, target_time_pred, right_timestamp_ms])
+
+			match prop.data_type:
+				WyncEntityProp.DATA_TYPE.FLOAT:
+					var left = left_value as float
+					var right = right_value as float
+					prop.interpolated_state = lerp(left, right, factor)
+				WyncEntityProp.DATA_TYPE.VECTOR2:
+					var left = left_value as Vector2
+					var right = right_value as Vector2
+					prop.interpolated_state = lerp(left, right, factor)
+				_:
+					Log.out(wync_ctx, "Lerp | W: data type not interpolable")
+					pass
+
+
+## @argument tick_left: int. Base tick to restore state from
+static func confirmed_states_set_to_tick_interpolated (
+	wync_ctx: WyncCtx, prop_ids: Array[int], tick_left: int, lerp_delta: float,
+	co_ticks: CoTicks
+	):
+
+	if (tick_left >= co_ticks.ticks):
+		return
+
+	# then interpolate them 
+
+	var left_value: Variant
+	var right_value: Variant
+
+	for prop_id: int in prop_ids:
+		var prop = WyncUtils.get_prop(wync_ctx, prop_id)
+		if prop == null:
+			continue
+		prop = prop as WyncEntityProp
+
+		left_value = prop.confirmed_states.get_at(tick_left)
+		right_value = prop.confirmed_states.get_at(tick_left +1)
+		if left_value == null || right_value == null:
+			continue
+
+		var lerped_state = WyncUtils.lerp_any(left_value, right_value, lerp_delta)
+		Log.out(wync_ctx, "EVENT | curr_tick %s, event_tick %s | prop(%s)(%s) lerp_delta %s" % [co_ticks.ticks, tick_left, prop_id, prop.name_id, lerp_delta])
+		prop.interpolated_state = lerped_state
+		prop.setter.call(lerped_state)
+
+
+static func confirmed_states_set_to_tick (
+	wync_ctx: WyncCtx, prop_ids: Array[int], tick: int,
+	co_ticks: CoTicks
+	):
+
+	if (tick > co_ticks.ticks):
+		return
+
+	for prop_id: int in prop_ids:
+		var prop = WyncUtils.get_prop(wync_ctx, prop_id)
+		if prop == null:
+			continue
+		prop = prop as WyncEntityProp
+
+		var tick_value = prop.confirmed_states.get_at(tick)
+		if tick_value == null:
+			continue
+		prop.setter.call(tick_value)

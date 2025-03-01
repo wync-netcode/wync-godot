@@ -13,3 +13,4 @@ func on_process(_entities, _data, _delta: float):
 	if co_ticks:
 		co_ticks.ticks += 1
 		co_ticks.server_ticks += 1
+		co_ticks.lerp_delta_accumulator_ms = 0

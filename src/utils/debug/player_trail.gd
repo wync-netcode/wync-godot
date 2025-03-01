@@ -1,13 +1,26 @@
 extends CollisionShape2D
 class_name DebugPlayerTrail
 
+var max_alive_secs: float = 0
+var time_alive_secs: float = 0
+var use_draw_loop: bool = false
 
 func _physics_process(_delta: float) -> void:
-	self.queue_free()
+	time_alive_secs += _delta
+	if time_alive_secs >= max_alive_secs:
+		self.queue_free()
 
 
-static func spawn(parent: Node, global_pos: Vector2, hue: float = 0):
+func _process(delta: float) -> void:
+	if use_draw_loop:
+		self.queue_free()
+
+
+static func spawn(parent: Node, global_pos: Vector2, hue: float = 0, max_alive_secs: float = 0, use_draw_loop: bool = false):
 	var inst = DebugPlayerTrail.new()
+	inst.max_alive_secs = max_alive_secs
+	inst.use_draw_loop = use_draw_loop
+	
 	inst.shape = RectangleShape2D.new()
 	inst.shape.size = Vector2(26, 26)
 	inst.global_position = global_pos

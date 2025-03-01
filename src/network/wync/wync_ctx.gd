@@ -6,6 +6,7 @@ class_name WyncCtx
 const ENTITY_ID_GLOBAL_EVENTS = 777
 var max_peers = 24
 var max_channels = 12
+var max_tick_history = 60 # 1 second at 60 fps
 
 # Map<entity_id: int, unused_bool: bool>
 var tracked_entities: Dictionary
@@ -43,14 +44,21 @@ var peer_has_channel_has_events: Array[Array]
 ## Server only ==============================
 
 # peer[0] = -1: it's reserved for the server
-# Array<client_id: int> # NOTE: Should be Ring
+# Array<client_id: int, any_data: int> # NOTE: Should be Ring
 var peers: Array[int]
 
 # Map<client_id: int, prop_id: Array[int]>
 var client_owns_prop: Dictionary
 
+# Stores client metadata
+# Array<client_id: int, WyncClientInfo>
+var client_has_info: Array
+
 
 ## Client only ==============================
+
+# last tick received from the server
+var last_tick_received: int
 
 # Map<entity_id: int, sim_fun_id>
 var entity_has_integrate_fun: Dictionary
@@ -107,3 +115,5 @@ func _init() -> void:
 	
 	for i in range(tick_action_history_size):
 		tick_action_history.insert_at(i, {} as Dictionary)
+	
+	client_has_info.resize(max_peers)

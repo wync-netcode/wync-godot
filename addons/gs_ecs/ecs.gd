@@ -601,6 +601,11 @@ func _add_system_entities(world_id, system_name):
 	world_system_entities[world_id][system_name] = _entities
 
 
+func get_system_entities(world_id: int, system_label: StringName) -> Array:
+	_add_system_entities(world_id, system_label)
+	return world_system_entities[world_id][system_label]
+
+
 func entity_has_system_components(entity_id: int, system_label: StringName) -> bool:
 	for component_int in system_components[system_label]:
 		var comp_id = abs(component_int)
