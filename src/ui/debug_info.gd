@@ -40,6 +40,7 @@ func get_info_general() -> String:
 	lerp_ms: %s
 	server_tick: %s
 	delta_base_tick: %s
+	server_data_per_tick_sliding: %s/t
 	""" % \
 	[
 		Engine.physics_ticks_per_second,
@@ -49,7 +50,8 @@ func get_info_general() -> String:
 		co_wync_ctx_client.ctx.co_predict_data.tick_offset,
 		co_wync_ctx_client.ctx.co_predict_data.lerp_ms,
 		co_wync_ctx_server.ctx.co_ticks.ticks,
-		co_wync_ctx_server.ctx.delta_base_state_tick
+		co_wync_ctx_server.ctx.delta_base_state_tick,
+		co_wync_ctx_server.ctx.debug_data_per_tick_sliding_window_mean,
 	]
 	return text
 

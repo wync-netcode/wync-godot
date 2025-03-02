@@ -18,6 +18,7 @@ var current_tick_nete_latency_ms: int
 const OK_BUT_COULD_NOT_FIT_ALL_PACKETS = 1
 
 ## can be used to limit the production of packets
+var out_packets_size_limit: int 
 var out_packets_size_remaining_chars: int 
 var out_reliable_packets: Array[WyncPacketOut]
 var out_unreliable_packets: Array[WyncPacketOut]
@@ -222,6 +223,14 @@ var clients_no_longer_sees_entities: Array[Dictionary]
 # : Array[Array[int]]
 var debug_packets_received: Array[Array]
 
+# mean of how much data is being transmitted each tick
+var debug_data_per_tick_sliding_window_size: int = 10
+var debug_data_per_tick_sliding_window: RingBuffer
+var debug_data_per_tick_total_mean: float = 0
+var debug_data_per_tick_sliding_window_mean: float = 0
+var debug_data_per_tick_current: float = 0
+var debug_ticks_sent: int = 0
+
 
 # TODO: Move to WyncUtils
 func _init() -> void:
@@ -258,4 +267,6 @@ func _init() -> void:
 	for i in range(WyncPacket.WYNC_PKT_AMOUNT):
 		debug_packets_received[i] = [] as Array[int]
 		debug_packets_received[i].resize(18) # amount of props, also 0 is reserved for 'total'
+
+	debug_data_per_tick_sliding_window = RingBuffer.new(debug_data_per_tick_sliding_window_size)
 		

@@ -55,9 +55,25 @@ static func wync_system_send_entities_to_spawn(ctx: WyncCtx, _commit: bool = tru
 ## Calls all the systems that produce packets to send whilst respecting the data limit
 
 static func wync_system_gather_reliable_packets(ctx: WyncCtx):
-	# TODO
-	Log.out("Final space left (%s chars)" % [ctx.out_packets_size_remaining_chars])
-	pass
+	# TODO: gather packets
+
+	# calculate statistic data per tick
+
+	var data_sent = ctx.out_packets_size_limit - ctx.out_packets_size_remaining_chars
+	ctx.debug_data_per_tick_current = data_sent
+
+	ctx.debug_ticks_sent += 1
+	ctx.debug_data_per_tick_total_mean = (ctx.debug_data_per_tick_total_mean * (ctx.debug_ticks_sent -1) + data_sent) / float(ctx.debug_ticks_sent)
+
+	ctx.debug_data_per_tick_sliding_window.push(data_sent)
+	var data_sent_acc = 0
+	for i in range(ctx.debug_data_per_tick_sliding_window_size):
+		var value = ctx.debug_data_per_tick_sliding_window.get_at(i)
+		if value is int:
+			data_sent_acc += ctx.debug_data_per_tick_sliding_window.get_at(i)
+	ctx.debug_data_per_tick_sliding_window_mean = data_sent_acc / ctx.debug_data_per_tick_sliding_window_size
+
+	#Log.outc(ctx, "Final space left (%s chars) data sent (%s)" % [ctx.out_packets_size_remaining_chars, data_sent])
 
 
 static func wync_system_gather_unreliable_packets(ctx: WyncCtx):
@@ -222,6 +238,7 @@ static func wync_confirm_client_can_see_entity(ctx: WyncCtx, client_id: int, ent
 
 ## Call every time before gathering packets
 static func wync_set_data_limit_chars_for_out_packets(ctx: WyncCtx, data_limit_chars: int):
+	ctx.out_packets_size_limit = data_limit_chars
 	ctx.out_packets_size_remaining_chars = data_limit_chars
 
 
