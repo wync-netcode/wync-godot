@@ -215,6 +215,14 @@ var clients_sees_new_entities: Array[Dictionary]
 var clients_no_longer_sees_entities: Array[Dictionary]
 
 
+# debugging
+# --------------------------------------------------------------------------------
+
+# : Array <packet_id:int, Array <prop_id:int, amount: int> >
+# : Array[Array[int]]
+var debug_packets_received: Array[Array]
+
+
 # TODO: Move to WyncUtils
 func _init() -> void:
 	peer_has_channel_has_events.resize(max_peers)
@@ -245,3 +253,9 @@ func _init() -> void:
 		tick_action_history.insert_at(i, {} as Dictionary)
 	
 	client_has_info.resize(max_peers)
+
+	debug_packets_received.resize(WyncPacket.WYNC_PKT_AMOUNT)
+	for i in range(WyncPacket.WYNC_PKT_AMOUNT):
+		debug_packets_received[i] = [] as Array[int]
+		debug_packets_received[i].resize(18) # amount of props, also 0 is reserved for 'total'
+		

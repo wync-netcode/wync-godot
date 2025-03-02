@@ -34,7 +34,6 @@
 [ext_resource type="Script" path="res://src/network/user_wync/sy_user_wync_consume_packets.gd" id="22_jqrce"]
 [ext_resource type="PackedScene" uid="uid://4o33ca5n1fw6" path="res://src/entities/en_player.tscn" id="23_ewwho"]
 [ext_resource type="Script" path="res://src/systems/sy_actor_events.gd" id="24_ifjqp"]
-[ext_resource type="PackedScene" uid="uid://d170xboi2dsfr" path="res://src/ui/info.tscn" id="26_sokx8"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/co_flag_net_self_predict.gd" id="30_jafaw"]
 [ext_resource type="Script" path="res://src/network/latency_compensation/co_net_buffered_inputs.gd" id="31_10fi0"]
 [ext_resource type="Script" path="res://src/systems/sy_draw_block_grid.gd" id="31_vohxg"]
@@ -55,6 +54,7 @@
 [ext_resource type="Script" path="res://src/systems/sy_draw_block_grid_delta.gd" id="53_8nlkt"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_xtrap.gd" id="53_qmyp1"]
 [ext_resource type="Script" path="res://src/network/user_wync/sy_user_wync_flow_client_2.gd" id="59_na25t"]
+[ext_resource type="PackedScene" uid="uid://dr76xgr158sfu" path="res://src/ui/debug_info.tscn" id="60_cvsem"]
 [ext_resource type="Script" path="res://src/network/wync/sy_user_wync_lerp_set.gd" id="61_cqch1"]
 [ext_resource type="Script" path="res://src/systems/sy_player_subtick_input.gd" id="64_51gnu"]
 [ext_resource type="Script" path="res://src/systems/sy_player_subtick_events.gd" id="64_mfg3t"]
@@ -369,6 +369,40 @@ script = ExtResource("64_mfg3t")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
-[node name="ui" parent="CanvasLayer" instance=ExtResource("26_sokx8")]
-mouse_filter = 2
-metadata/_edit_lock_ = true
+[node name="debug_info" parent="CanvasLayer" instance=ExtResource("60_cvsem")]
+
+[node name="debug_info2" parent="CanvasLayer" instance=ExtResource("60_cvsem")]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -65.0
+offset_bottom = 0.0
+grow_vertical = 0
+theme_override_font_sizes/font_size = 9
+info_to_show = 1
+
+[node name="debug_info3" parent="CanvasLayer" instance=ExtResource("60_cvsem")]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -159.0
+offset_top = -65.0
+offset_right = 0.0
+offset_bottom = 0.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_font_sizes/font_size = 9
+info_to_show = 2
+
+[node name="debug_info4" parent="CanvasLayer" instance=ExtResource("60_cvsem")]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -159.0
+offset_right = 0.0
+offset_bottom = 65.0
+grow_horizontal = 0
+theme_override_font_sizes/font_size = 9
+info_to_show = 3

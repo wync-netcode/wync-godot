@@ -103,6 +103,9 @@ static func wync_client_tick_end(ctx: WyncCtx):
 
 static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_id: int) -> int:
 	#Log.outc(ctx, "tag1 | received packet %s %s" % [WyncPacket.PKT_NAMES[wync_pkt.packet_type_id], JsonClassConverter.class_to_json_string(wync_pkt.data)])
+
+	WyncDebug.log_packet_received(ctx, wync_pkt.packet_type_id)
+
 	match wync_pkt.packet_type_id:
 		WyncPacket.WYNC_PKT_JOIN_REQ:
 			wync_handle_pkt_join_req(ctx, wync_pkt.data, from_nete_peer_id)
@@ -327,6 +330,8 @@ static func wync_server_handle_pkt_inputs(ctx: WyncCtx, data: Variant, from_nete
 		return 2
 	data = data as WyncPktInputs
 
+	WyncDebug.packet_received_log_prop_id(ctx, WyncPacket.WYNC_PKT_INPUTS, data.prop_id)
+
 	# client and prop exists
 	var client_id = WyncUtils.is_peer_registered(ctx, from_nete_peer_id)
 	if client_id < 0:
@@ -367,6 +372,8 @@ static func wync_client_handle_pkt_inputs(ctx: WyncCtx, data: Variant) -> int:
 	if data is not WyncPktInputs:
 		return 2
 	data = data as WyncPktInputs
+
+	WyncDebug.packet_received_log_prop_id(ctx, WyncPacket.WYNC_PKT_INPUTS, data.prop_id)
 
 	var prop := WyncUtils.get_prop(ctx, data.prop_id)
 	if prop == null:
@@ -433,8 +440,10 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 	if data is not WyncPktSnap:
 		return 1
 	data = data as WyncPktSnap
-	
+
 	for snap_prop: WyncPktSnap.SnapProp in data.snaps:
+
+		WyncDebug.packet_received_log_prop_id(ctx, WyncPacket.WYNC_PKT_PROP_SNAP, snap_prop.prop_id)
 
 		var prop = WyncUtils.get_prop(ctx, snap_prop.prop_id)
 		if prop == null:
