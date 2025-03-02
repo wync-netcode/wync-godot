@@ -89,6 +89,10 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 			# sync events, including their data
 			# auxiliar props are included here... ?
 			elif prop.data_type == WyncEntityProp.DATA_TYPE.EVENT:
+				
+				# don't send if client owns this prop
+				if ctx.client_owns_prop[client_id].has(prop_id):
+					continue
 
 				# this includes _regular_ and _auxiliar_ props
 				var pkt_input := SyWyncStateExtractorDeltaSync.wync_prop_event_send_event_ids_to_peer (ctx, prop_id)
