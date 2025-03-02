@@ -54,7 +54,7 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 
 	# build packet
 
-	for pair: WyncCtx.PeerEntityPair in ctx.current_tick_entity_sync_order:
+	for pair: WyncCtx.PeerEntityPair in ctx.queue_entity_pairs_to_sync:
 		var client_id = pair.peer_id
 		var entity_id = pair.entity_id
 

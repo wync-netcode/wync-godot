@@ -23,12 +23,11 @@ static func wync_server_tick_end(ctx: WyncCtx):
 	SyWyncStateExtractor.extract_data_to_tick(ctx, ctx.co_ticks, ctx.co_ticks.ticks)
 
 	# send
-	SyWyncStateExtractorDeltaSync.wync_reset_events_to_sync(ctx)
-	WyncThrottle.wync_system_fill_entity_update_queue(ctx)
-	WyncThrottle.wync_compute_entity_sync_order(ctx)
 
-	#if ctx.co_ticks.ticks % 2 == 0:
+	WyncThrottle.wync_system_fill_entity_sync_queue(ctx)
+	WyncThrottle.wync_compute_entity_sync_order(ctx)
 	SyWyncStateExtractor.wync_send_extracted_data(ctx)
+
 	
 
 	#"""

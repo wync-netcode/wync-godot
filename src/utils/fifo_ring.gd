@@ -35,6 +35,7 @@ func push_head(item: int) -> int:
 	return OK
 
 
+## NOTE: should return a struct Tuple[Error, Value]
 ## @returns int. popped item
 func pop_tail() -> int:
 	if size <= 0:
@@ -70,3 +71,26 @@ func get_relative_to_head(pos: int) -> int:
 ## @returns Optional<Variant>
 func get_relative_to_tail(pos: int) -> int:
 	return ring[(tail + pos) % max_size]
+
+func clear() -> void:
+	tail = 0
+	head = 0
+	size = 0
+
+
+func has_item(item: int) -> bool:
+	if size == 0:
+		return false
+	if tail < head:
+		for i in range(tail, head +1):
+			if ring[i] == item:
+				return true
+	if tail > head:
+		for i in range(tail, max_size):
+			if ring[i] == item:
+				return true
+		for i in range(0, head +1):
+			if ring[i] == item:
+				return true
+	
+	return false

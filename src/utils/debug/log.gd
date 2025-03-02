@@ -22,6 +22,7 @@ enum {
 	TAG_TIMEWARP,
 	TAG_SUBTICK_EVENT,
 	TAG_THROTTLE,
+	TAG_SYNC_QUEUE,
 	# append up
 	TAG_COUNT,
 }
@@ -48,6 +49,7 @@ const tag_names: Dictionary = {
 	TAG_TIMEWARP: "Timewarp",
 	TAG_SUBTICK_EVENT: "Subtick-Event",
 	TAG_THROTTLE: "Throttle",
+	TAG_SYNC_QUEUE: "SYNC_QUEUE",
 }
 
 

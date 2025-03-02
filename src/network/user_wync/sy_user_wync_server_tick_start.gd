@@ -23,7 +23,7 @@ func on_process(_entities, _data, _delta: float):
 		var en_single_actors = ECS.get_singleton_entity(self, "EnSingleActors")
 		var co_actors = en_single_actors.get_component(CoSingleActors.label) as CoSingleActors
 
-		for peer_id in range(1, ctx.peers.size()):
+		for peer_id in range(0, ctx.peers.size()):
 			for actor_id in range(co_actors.actors.size()):
 				if co_actors.actors[actor_id] == null:
 					continue

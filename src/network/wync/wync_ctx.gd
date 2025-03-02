@@ -124,6 +124,7 @@ var client_has_relative_prop_has_last_tick: Array[Dictionary]
 #var peers_entities_to_sync
 #var peers_props_to_sync
 
+# TODO: DEPRECATE this data structure
 # Array<client_id: int, ordered_set<event_id> >
 var peers_events_to_sync: Array[Dictionary]
 
@@ -192,28 +193,30 @@ class PeerEntityPair:
 # Map <client_id: int, List[entity_id: int]>
 #var vip_props: Map
 
-# * Only refill the queue once it's emptied
-# * Queue entities for eventual synchronization
-# Array <client_id: int, FIFORing[entity_id: int]>
-var queue_clients_entities_to_sync: Array[FIFORing]
-
-# * Recomputed each tick we gather out packets
-# * TODO: Use FIFORing and preallocate all instances (pooling)
-# FIFORing < PeerEntityPair[peer: int, entity: int] > [100]
-var current_tick_entity_sync_order: Array[PeerEntityPair]
-
-
 # * Only add/remove _entity ids_ when a packet is confirmed sent (WYNC_EXTRACT_WRITE)
 # * Confirmed list of entities the client sees
 # Array <client_id: int, Set[entity_id: int]>
 var clients_sees_entities: Array[Dictionary]
-
 # Tener la garantía de que todo lo que está aquí se puede spawnear
 # * Every frame we check.. 
 # Array <client_id: int, Set[entity_id: int]>
 var clients_sees_new_entities: Array[Dictionary]
 # Array <client_id: int, Set[entity_id: int]>
 var clients_no_longer_sees_entities: Array[Dictionary]
+
+# * Only refill the queue once it's emptied
+# * Queue entities for eventual synchronization
+# Array <client_id: int, FIFORing[entity_id: int]>
+var queue_clients_entities_to_sync: Array[FIFORing]
+
+# Here, add what entities where synced last frame and to which client_id
+# Array <client_id: int, Set[entity_id: int]>
+var entities_synced_last_time: Array[Dictionary]
+
+# * Recomputed each tick we gather out packets
+# * TODO: Use FIFORing and preallocate all instances (pooling)
+# FIFORing < PeerEntityPair[peer: int, entity: int] > [100]
+var queue_entity_pairs_to_sync: Array[PeerEntityPair]
 
 
 # debugging
@@ -238,11 +241,12 @@ func _init() -> void:
 	client_has_relative_prop_has_last_tick.resize(max_peers) # NOTE: index 0 not used
 
 	queue_clients_entities_to_sync.resize(max_peers)
-	current_tick_entity_sync_order.resize(100)
+	queue_entity_pairs_to_sync.resize(100)
 
 	clients_sees_entities.resize(max_peers)
 	clients_sees_new_entities.resize(max_peers)
 	clients_no_longer_sees_entities.resize(max_peers)
+	entities_synced_last_time.resize(max_peers)
 
 	for peer_i in range(max_peers):
 		peer_has_channel_has_events[peer_i] = []
@@ -257,6 +261,7 @@ func _init() -> void:
 		clients_sees_entities[peer_i] = {}
 		clients_sees_new_entities[peer_i] = {}
 		clients_no_longer_sees_entities[peer_i] = {}
+		entities_synced_last_time[peer_i] = {}
 	
 	for i in range(tick_action_history_size):
 		tick_action_history.insert_at(i, {} as Dictionary)
