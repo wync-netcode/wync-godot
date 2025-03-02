@@ -16,24 +16,32 @@ static func wync_server_tick_start(ctx: WyncCtx):
 
 
 static func wync_server_tick_end(ctx: WyncCtx):
-
+	# move to gather reliable packets
 	SyWyncClockServer.wync_server_sync_clock(ctx)
 
-	# regular extractor
-
+	# extract
 	SyWyncStateExtractor.extract_data_to_tick(ctx, ctx.co_ticks, ctx.co_ticks.ticks)
 
+	# send
+	SyWyncStateExtractorDeltaSync.wync_reset_events_to_sync(ctx)
+	WyncThrottle.wync_system_fill_entity_update_queue(ctx)
+	WyncThrottle.wync_compute_entity_sync_order(ctx)
+
+	#if ctx.co_ticks.ticks % 2 == 0:
 	SyWyncStateExtractor.wync_send_extracted_data(ctx)
+	
 
-	# delta extractor
-
-	SyWyncStateExtractorDeltaSync.send_event_ids_to_peers(ctx)
-
-	# these two must be called in this order:
-	SyWyncStateExtractorDeltaSync.queue_delta_event_data_to_be_synced_to_peers(ctx)
-	SyWyncSendEventData.wync_send_event_data (ctx)
-
-	WyncThrottle.wync_system_send_entities_to_spawn(ctx)
+	#"""
+	# regular extractor
+	#SyWyncStateExtractor.extract_data_to_tick(ctx, ctx.co_ticks, ctx.co_ticks.ticks)
+	#SyWyncStateExtractor.wync_send_extracted_data(ctx)
+	## delta extractor
+	#SyWyncStateExtractorDeltaSync.wync_reset_events_to_sync(ctx)
+	## these two must be called in this order:
+	#SyWyncStateExtractorDeltaSync.queue_delta_event_data_to_be_synced_to_peers(ctx)
+	#SyWyncSendEventData.wync_send_event_data (ctx)
+	#WyncThrottle.wync_system_send_entities_to_spawn(ctx)
+	#"""
 
 	#TODO : WyncThrottle.wync_system_send_entities_updates(ctx)
 
@@ -94,6 +102,7 @@ static func wync_client_tick_end(ctx: WyncCtx):
 
 
 static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_id: int) -> int:
+	#Log.outc(ctx, "tag1 | received packet %s %s" % [WyncPacket.PKT_NAMES[wync_pkt.packet_type_id], JsonClassConverter.class_to_json_string(wync_pkt.data)])
 	match wync_pkt.packet_type_id:
 		WyncPacket.WYNC_PKT_JOIN_REQ:
 			wync_handle_pkt_join_req(ctx, wync_pkt.data, from_nete_peer_id)
@@ -102,8 +111,10 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 		WyncPacket.WYNC_PKT_EVENT_DATA:
 			wync_handle_pkt_event_data(ctx, wync_pkt.data)
 		WyncPacket.WYNC_PKT_INPUTS:
-			if not WyncUtils.is_client(ctx):
-				wync_handle_pkt_inputs(ctx, wync_pkt.data, from_nete_peer_id)
+			if WyncUtils.is_client(ctx):
+				wync_client_handle_pkt_inputs(ctx, wync_pkt.data)
+			else:
+				wync_server_handle_pkt_inputs(ctx, wync_pkt.data, from_nete_peer_id)
 		WyncPacket.WYNC_PKT_PROP_SNAP:
 			wync_handle_pkt_prop_snap(ctx, wync_pkt.data)
 		WyncPacket.WYNC_PKT_RES_CLIENT_INFO:
@@ -115,6 +126,10 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 			return -1
 
 	return OK
+
+
+static func wync_client_update_last_tick_received(ctx: WyncCtx, tick: int):
+	ctx.last_tick_received = max(ctx.last_tick_received, tick)
 
 
 static func wync_packet_type_exists(packet_type_id: int) -> bool:
@@ -142,6 +157,24 @@ static func wync_wrap_packet_out(ctx: WyncCtx, to_wync_peer_id: int, packet_type
 	var wync_pkt_out = WyncPacketOut.new()
 	wync_pkt_out.to_nete_peer_id = nete_peer_id
 	wync_pkt_out.data = wync_pkt
+
+	return [OK, wync_pkt_out]
+
+
+static func wync_wrap_packet_out_from_wync_pkt(ctx: WyncCtx, to_wync_peer_id: int, packet_type_id: int, data: WyncPacket) -> Array:
+
+	if not wync_packet_type_exists(packet_type_id):
+		Log.err("Invalid packet_type_id(%s)" % [packet_type_id])
+		return [1, null]
+
+	var nete_peer_id = WyncUtils.get_nete_peer_id_from_wync_peer_id(ctx, to_wync_peer_id)
+	if nete_peer_id == -1:
+		Log.err("Couldn't find a nete_peer_id for wync_peer_id(%s)" % [to_wync_peer_id])
+		return [2, null]
+
+	var wync_pkt_out = WyncPacketOut.new()
+	wync_pkt_out.to_nete_peer_id = nete_peer_id
+	wync_pkt_out.data = data
 
 	return [OK, wync_pkt_out]
 
@@ -287,7 +320,7 @@ static func make_client_info_packet(
 	return packet_data
 
 
-static func wync_handle_pkt_inputs(ctx: WyncCtx, data: Variant, from_nete_peer_id: int) -> int:
+static func wync_server_handle_pkt_inputs(ctx: WyncCtx, data: Variant, from_nete_peer_id: int) -> int:
 	if not ctx.connected:
 		return 1
 	if data is not WyncPktInputs:
@@ -328,6 +361,46 @@ static func wync_handle_pkt_inputs(ctx: WyncCtx, data: Variant, from_nete_peer_i
 	return OK
 
 
+static func wync_client_handle_pkt_inputs(ctx: WyncCtx, data: Variant) -> int:
+	if not ctx.connected:
+		return 1
+	if data is not WyncPktInputs:
+		return 2
+	data = data as WyncPktInputs
+
+	var prop := WyncUtils.get_prop(ctx, data.prop_id)
+	if prop == null:
+		Log.err("prop %s doesn't exists" % data.prop_id, Log.TAG_INPUT_RECEIVE)
+		return 4
+	
+	# save the input in the prop before simulation
+	# TODO: data.copy is not standarized
+	
+	var max_tick = -1
+	
+	for input: WyncPktInputs.NetTickDataDecorator in data.inputs:
+		var copy = WyncUtils.duplicate_any(input.data)
+		if copy == null:
+			Log.out("WARNING: input data can't be duplicated %s" % [input.data], Log.TAG_INPUT_RECEIVE)
+		var to_insert = copy if copy != null else input.data
+		
+		prop.confirmed_states.insert_at(input.tick, to_insert)
+		max_tick = max(max_tick, input.tick)
+
+	if prop.is_auxiliar_prop:
+		# TODO: See if this is necessary
+		#var delta_props_last_tick = ctx.client_has_relative_prop_has_last_tick[ctx.my_peer_id] as Dictionary
+		#delta_props_last_tick[data.prop_id] = max_tick
+
+		# notify _main delta prop_ about the updates
+		var delta_prop = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id) as WyncEntityProp
+		delta_prop.just_received_new_state = true
+
+	wync_client_update_last_tick_received(ctx, max_tick)
+
+	return OK
+
+
 # apply inputs / events to props
 # TODO: Better to separate receive/apply logic
 # NOTE: could this be merged with SyWyncLatestValue?
@@ -357,78 +430,70 @@ static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 
 static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 
-	if data is not WyncPktPropSnap:
+	if data is not WyncPktSnap:
 		return 1
-	data = data as WyncPktPropSnap
+	data = data as WyncPktSnap
 	
-	for snap: WyncPktPropSnap.EntitySnap in data.snaps:
-		
-		if not WyncUtils.is_entity_tracked(ctx, snap.entity_id):
-			Log.err("couldn't find entity (%s) skipping..." % [snap.entity_id], Log.TAG_LATEST_VALUE)
+	for snap_prop: WyncPktSnap.SnapProp in data.snaps:
+
+		var prop = WyncUtils.get_prop(ctx, snap_prop.prop_id)
+		if prop == null:
+			Log.err("couldn't find prop (%s) skipping..." % [snap_prop.prop_id], Log.TAG_LATEST_VALUE)
+			continue
+		prop = prop as WyncEntityProp
+		if prop.relative_syncable:
 			continue
 		
-		for prop: WyncPktPropSnap.PropSnap in snap.props:
+		# NOTE: two tick datas could have arrive at the same tick
+		prop.last_ticks_received.push(data.tick)
+		prop.confirmed_states.insert_at(data.tick, snap_prop.state)
+		prop.arrived_at_tick.insert_at(data.tick, ctx.co_ticks.ticks)
+		prop.just_received_new_state = true
 
-			var local_prop = WyncUtils.get_prop(ctx, prop.prop_id)
-			if local_prop == null:
-				Log.err("couldn't find prop (%s) skipping..." % [prop.prop_id], Log.TAG_LATEST_VALUE)
-				continue
-			local_prop = local_prop as WyncEntityProp
-			if local_prop.relative_syncable:
-				continue
-			
-			# NOTE: two tick datas could have arrive at the same tick
-			local_prop.last_ticks_received.push(data.tick)
-			local_prop.confirmed_states.insert_at(data.tick, prop.prop_value)
-			local_prop.arrived_at_tick.insert_at(data.tick, ctx.co_ticks.ticks)
-			local_prop.just_received_new_state = true
-
-			if local_prop.is_auxiliar_prop:
-				# notify _main delta prop_ about the updates
-				var delta_prop = WyncUtils.get_prop(ctx, local_prop.auxiliar_delta_events_prop_id) as WyncEntityProp
-				delta_prop.just_received_new_state = true
+		if prop.is_auxiliar_prop:
+			# notify _main delta prop_ about the updates
+			var delta_prop = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id) as WyncEntityProp
+			delta_prop.just_received_new_state = true
 
 
-		# process relative syncable separatedly for now to reason about them separatedly
+	# process relative syncable separatedly for now to reason about them separatedly
 
-		for prop: WyncPktPropSnap.PropSnap in snap.props:
-			
-			var local_prop = WyncUtils.get_prop(ctx, prop.prop_id)
-			if local_prop == null:
-				Log.err("couldn't find prop (%s) skipping..." % [prop.prop_id], Log.TAG_LATEST_VALUE)
-				continue
+	for snap_prop: WyncPktSnap.SnapProp in data.snaps:
+		
+		var prop = WyncUtils.get_prop(ctx, snap_prop.prop_id)
+		if prop == null:
+			Log.err("couldn't find prop (%s) skipping..." % [snap_prop.prop_id], Log.TAG_LATEST_VALUE)
+			continue
 
-			local_prop = local_prop as WyncEntityProp
-			if not local_prop.relative_syncable:
-				continue
+		prop = prop as WyncEntityProp
+		if not prop.relative_syncable:
+			continue
 
-			# TODO: overwrite real data, clear all delta events, etc.
-			# if a _predicted delta prop_ receives fullsnapshot cleanup must be done
-			# if a delta prop receives a fullsnapshot we have no other option but to comply
+		# TODO: overwrite real data, clear all delta events, etc.
+		# if a _predicted delta prop_ receives fullsnapshot cleanup must be done
+		# if a delta prop receives a fullsnapshot we have no other option but to comply
 
-			local_prop.setter.call(prop.prop_value)
-			local_prop.just_received_new_state = true
-			var delta_props_last_tick = ctx.client_has_relative_prop_has_last_tick[ctx.my_peer_id] as Dictionary
-			delta_props_last_tick[prop.prop_id] = data.tick
-			#Log.out("debug_pred_delta_event | ser_tick(%s) delta_prop_last_tick %s" % [ctx.co_ticks.server_ticks, delta_props_last_tick], Log.TAG_LATEST_VALUE)
+		prop.setter.call(snap_prop.state)
+		prop.just_received_new_state = true
+		var delta_props_last_tick = ctx.client_has_relative_prop_has_last_tick[ctx.my_peer_id] as Dictionary
+		delta_props_last_tick[snap_prop.prop_id] = data.tick
+		#Log.out("debug_pred_delta_event | ser_tick(%s) delta_prop_last_tick %s" % [ctx.co_ticks.server_ticks, delta_props_last_tick], Log.TAG_LATEST_VALUE)
 
-			# clean up predicted data TODO
+		# clean up predicted data TODO
 
-			if WyncUtils.prop_is_predicted(ctx, prop.prop_id):
+		if WyncUtils.prop_is_predicted(ctx, snap_prop.prop_id):
 
-				# get aux_prop and clean the confirmed_states_undo
-				var aux_prop = WyncUtils.get_prop(ctx, local_prop.auxiliar_delta_events_prop_id)
-				for j in range(ctx.first_tick_predicted, ctx.last_tick_predicted +1):
-					aux_prop.confirmed_states.insert_at(j, [] as Array[int])
-					aux_prop.confirmed_states_undo.insert_at(j, [] as Array[int])
+			# get aux_prop and clean the confirmed_states_undo
+			var aux_prop = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
+			for j in range(ctx.first_tick_predicted, ctx.last_tick_predicted +1):
+				aux_prop.confirmed_states.insert_at(j, [] as Array[int])
+				aux_prop.confirmed_states_undo.insert_at(j, [] as Array[int])
 
-				# debugging: save canonic state to compare it later
-				var state_dup = WyncUtils.duplicate_any(local_prop.getter.call())
-				local_prop.confirmed_states.insert_at(0, state_dup)
+			# debugging: save canonic state to compare it later
+			var state_dup = WyncUtils.duplicate_any(prop.getter.call())
+			prop.confirmed_states.insert_at(0, state_dup)
 
-
-	# update last tick received
-	ctx.last_tick_received = max(ctx.last_tick_received, data.tick)
+	wync_client_update_last_tick_received(ctx, data.tick)
 
 
 static func wync_handle_packet_res_client_info(ctx: WyncCtx, data: Variant):

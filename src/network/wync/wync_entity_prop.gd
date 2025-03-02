@@ -92,3 +92,8 @@ var current_undo_delta_events: Array[int]
 # Exclusive to auxiliar props, here we store undo event_ids
 # Ring <tick: id, data: Array[int]>
 var confirmed_states_undo: RingBuffer = RingBuffer.new(10)
+
+# Related to Throttling
+# --------------------------------------------------
+
+var reliable := true

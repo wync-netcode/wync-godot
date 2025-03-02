@@ -182,7 +182,7 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 		for tick: int in range(delta_props_last_tick[prop_id] +1, ctx.last_tick_received +1):
 			var delta_event_list = aux_prop.confirmed_states.get_at(tick)
 			if delta_event_list is not Array[int]:
-				Log.err("SyWyncLatestValue | delta sync | we don't have an input for this tick %s" % [tick], Log.TAG_LATEST_VALUE)
+				Log.errc(ctx, "SyWyncLatestValue | delta sync | we don't have an input for this tick %s" % [tick], Log.TAG_LATEST_VALUE)
 				break
 
 			# before applying any events:

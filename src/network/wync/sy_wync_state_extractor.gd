@@ -29,124 +29,206 @@ func on_process(_entities, _data, _delta: float):
 	wync_send_extracted_data(ctx)
 	
 	
+## Ideal loop
+## * Sync all VIP props
+## * Sync all other props
 ## This service writes state (ctx.client_has_relative_prop_has_last_tick)
 static func wync_send_extracted_data(ctx: WyncCtx):
 
-	var co_ticks = ctx.co_ticks
+	var data_used = 0
 
-	var data_size_limit = ctx.out_packets_size_remaining_chars
-	var data_size = 0
+	# TODO: Allocate a LIST OF PACKETS, because we're gonna be generating all kinds of packets:
+	# * On C use a custom byte buffer, it's only use locally so no need to make it complex
+	# 1. WyncPktSnap (each varies in size...)
+	# 2. WyncPktInputs (are all the same size, but their size is (User) configurable)
+	# 3. WyncPktEventData (varies in size)
+
+	# byte buffer
+	# Array < client_id: int, List < WyncPacket > >
+	# Array < client_id: int, Array < idx: int, WyncPacket > >
+	# Array[Array[WyncPacket]]
+	var clients_packet_buffer := [] as Array[Array]
+	clients_packet_buffer.resize(ctx.peers.size())
+	for client_id: int in range(1, ctx.peers.size()):
+		clients_packet_buffer[client_id] = [] as Array[WyncPacket]
 
 	# build packet
 
-	for client_id: int in range(1, ctx.peers.size()):
+	for pair: WyncCtx.PeerEntityPair in ctx.current_tick_entity_sync_order:
+		var client_id = pair.peer_id
+		var entity_id = pair.entity_id
 
-		var packet = WyncPktPropSnap.new()
-		packet.tick = co_ticks.ticks
-		data_size += HashUtils.calculate_object_data_size(packet)
+		var packet_buffer := clients_packet_buffer[client_id] as Array[WyncPacket]
+		var packet_snap := WyncPktSnap.new()
+		packet_snap.tick = ctx.co_ticks.ticks
 
-		for entity_id_key in ctx.clients_sees_entities[client_id].keys():
+		# TODO (1): Notify wync this entity was successfully updated
+		# wync_mark_entity_as_updated
+		# wync_remove_entity_from_update_queue(ctx, entity_id, client_id)
+		# TODO (2): Notify wync user has last tick
+		# client_prop_last_tick[prop_id] = co_ticks.tick
 
-			var prop_ids_array = ctx.entity_has_props[entity_id_key] as Array
-			if not prop_ids_array.size():
+		WyncThrottle.wync_remove_entity_from_sync_queue(ctx, client_id, entity_id)
+
+		# plan: fill all the data for the props, then see if it fits
+
+		var prop_ids_array = ctx.entity_has_props[entity_id] as Array
+		if not prop_ids_array.size():
+			continue
+
+		for prop_id in prop_ids_array:
+			var prop = WyncUtils.get_prop(ctx, prop_id)
+			if prop == null:
 				continue
+			prop = prop as WyncEntityProp
+
+			# ignore inputs
+			if prop.data_type == WyncEntityProp.DATA_TYPE.INPUT:
+				continue
+
+			# sync events, including their data
+			# auxiliar props are included here... ?
+			elif prop.data_type == WyncEntityProp.DATA_TYPE.EVENT:
+
+				# this includes _regular_ and _auxiliar_ props
+				var pkt_input := SyWyncStateExtractorDeltaSync.wync_prop_event_send_event_ids_to_peer (ctx, prop_id)
+				if not (pkt_input != null && pkt_input is WyncPktInputs):
+					Log.errc(ctx, "Couldn't create input packet")
+					assert(false)
+					continue
+
+				if pkt_input != null && pkt_input is WyncPktInputs:
+					# commit
+					var packet = WyncPacket.new()
+					packet.packet_type_id = WyncPacket.WYNC_PKT_INPUTS
+					packet.data = pkt_input
+					data_used += HashUtils.calculate_object_data_size(packet)
+					packet_buffer.append(packet)
+
+				# compile event ids
+				var event_ids := [] as Array[int]
+				event_ids.resize(pkt_input.inputs.size())
+				for input: WyncPktInputs.NetTickDataDecorator in pkt_input.inputs:
+					for event_id: int in input.data as Array[int]:
+						event_ids.append(event_id)
+
+				# get event data
+				var pkt_event_data = SyWyncSendEventData.wync_get_event_data_packet(ctx, client_id, event_ids)
+				if pkt_event_data.events.size() > 0:
+					# commit
+					var packet = WyncPacket.new()
+					packet.packet_type_id = WyncPacket.WYNC_PKT_EVENT_DATA
+					packet.data = pkt_event_data
+					data_used += HashUtils.calculate_object_data_size(packet)
+					packet_buffer.append(packet)
+
+				#Log.outc(ctx, "tag1 | this is my pkt_input %s" % [JsonClassConverter.class_to_json_string(pkt_input)])
+				#Log.outc(ctx, "tag1 | this is my pkt_event_data %s" % [JsonClassConverter.class_to_json_string(pkt_event_data)])
+
+			# relative syncable receives special treatment?
+			elif prop.relative_syncable:
+				if prop.timewarpable: # NOT supported: relative_syncable + timewarpable
+					continue
+				var snap_prop = _wync_sync_relative_prop_base_only(ctx, prop_id, client_id)
+				if snap_prop != null && snap_prop is WyncPktSnap.SnapProp:
+					packet_snap.snaps.append(snap_prop)
+
+			## regular declarative prop
+			else:
+
+				var snap_prop = _wync_sync_regular_prop(ctx, prop_id)
+				if snap_prop != null && snap_prop is WyncPktSnap.SnapProp:
+					#Log.outc(ctx, "tag1 | extracted this prop %s" % [HashUtils.object_to_dictionary(snap_prop)])
+					packet_snap.snaps.append(snap_prop)
+				else:
+					Log.outc(ctx, "tag1 | came empty handed")
+
+		# commit packet WyncPkySnap
+
+		if packet_snap.snaps.size() > 0:
+			var packet = WyncPacket.new()
+			packet.packet_type_id = WyncPacket.WYNC_PKT_PROP_SNAP
+			packet.data = packet_snap
+			data_used += HashUtils.calculate_object_data_size(packet)
+			packet_buffer.append(packet)
+			#Log.outc(ctx, "tag1 | appended to packet_snap %s" % [HashUtils.object_to_dictionary(packet_snap)])
+			#assert(false)
+
+		# exeeded size, stop
+
+		if (data_used >= ctx.out_packets_size_remaining_chars):
+			break
+
+	# queue _out packets_ for delivery
+
+	for client_id: int in range(1, ctx.peers.size()):
+		var packet_buffer := clients_packet_buffer[client_id] as Array[WyncPacket]
+
+		for packet: WyncPacket in packet_buffer:
+			var packet_dup = WyncUtils.duplicate_any(packet.data)
+
+			var result = WyncFlow.wync_wrap_packet_out(ctx, client_id, packet.packet_type_id, packet_dup)
+			if result[0] == OK:
+				var packet_out = result[1] as WyncPacketOut
+				WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, true)
+				#Log.outc(ctx, "tag1 | server packet out %s %s" % [WyncPacket.PKT_NAMES[packet_out.data.packet_type_id], HashUtils.object_to_dictionary(packet_out.data.data)])
+			else:
+				Log.errc(ctx, "tag1 | bad result here mate")
+
+
+static func _wync_sync_regular_prop(ctx: WyncCtx, prop_id: int) -> WyncPktSnap.SnapProp:
+
+	var prop = WyncUtils.get_prop(ctx, prop_id)
+	if prop == null:
+		return null
+	prop = prop as WyncEntityProp
+
+	# copy cached data
+	
+	var state = prop.confirmed_states.get_at(ctx.co_ticks.ticks)
+
+	# build packet
+
+	var prop_snap := WyncPktSnap.SnapProp.new()
+	prop_snap.prop_id = prop_id
+	prop_snap.state = WyncUtils.duplicate_any(state)
+
+	return prop_snap
+
 			
-			var entity_snap = WyncPktPropSnap.EntitySnap.new()
-			entity_snap.entity_id = entity_id_key
-			
-			for prop_id in prop_ids_array:
-				var prop = WyncUtils.get_prop(ctx, prop_id)
-				if prop == null:
-					continue
-				prop = prop as WyncEntityProp
-				# don't extract input values
-				# FIXME: should events be extracted? game event yes, but other player events?
-				# Maybe we need an option to what events to share.
-				# NOTE: what about a setting like: NEVER, TO_ALL, TO_ALL_EXCEPT_OWNER, ONLY_TO_SERVER
-				if prop.data_type in [WyncEntityProp.DATA_TYPE.INPUT,
-					WyncEntityProp.DATA_TYPE.EVENT]:
-					continue
+# process delta props separatedly for now
+# --------------------------------------------------
 
-				# TODO: Allow EVENT props if it doesn't belong to a client
-				# TODO: TYPE_EVENT props should be sent in chunks, not here
-				# Allow auxiliar props to be synced
-				if prop.relative_syncable:
-					var prop_aux = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
-					if prop_aux == null:
-						continue
-					prop_id = prop.auxiliar_delta_events_prop_id
-					prop = prop_aux
+static func _wync_sync_relative_prop_base_only(
+	ctx: WyncCtx,
+	prop_id: int,
+	client_id: int
+	) -> WyncPktSnap.SnapProp:
 
-				# ===========================================================
-				# Save state history per tick
-				
-				var state = prop.confirmed_states.get_at(co_ticks.ticks)
-				var prop_snap = WyncPktPropSnap.PropSnap.new()
-				prop_snap.prop_id = prop_id
-				prop_snap.prop_value = WyncUtils.duplicate_any(state)
+	var prop = WyncUtils.get_prop(ctx, prop_id)
+	if prop == null:
+		return null
+	prop = prop as WyncEntityProp
 
-				# size check
-				var snap_size = HashUtils.calculate_object_data_size(prop_snap)
-				if (data_size + snap_size) > data_size_limit:
-					break
-				data_size += snap_size
-				
-				entity_snap.props.append(prop_snap)
+	# send fullsnapshot if client doesn't have history, or if it's too old
 
-			
-			# process delta props separatedly for now
-			# --------------------------------------------------
+	var client_relative_props = ctx.client_has_relative_prop_has_last_tick[client_id] as Dictionary
+	if not client_relative_props.has(prop_id):
+		client_relative_props[prop_id] = -1
+	if client_relative_props[prop_id] >= ctx.delta_base_state_tick:
+		return null
+	
+	# ===========================================================
+	# Save state history per tick
+	
+	var state = prop.getter.call() # getter already gives a copy
+	var prop_snap = WyncPktSnap.SnapProp.new()
+	prop_snap.prop_id = prop_id
+	prop_snap.state = state
 
-			for prop_id in prop_ids_array:
-				var prop = WyncUtils.get_prop(ctx, prop_id)
-				if prop == null:
-					continue
-				prop = prop as WyncEntityProp
-				if not prop.relative_syncable:
-					continue
-				if prop.timewarpable:
-					# TODO: currently not implemented
-					continue
+	client_relative_props[prop_id] = ctx.co_ticks.ticks
 
-				# send fullsnapshot if client doesn't have history, or if it's too old
-
-				var client_relative_props = ctx.client_has_relative_prop_has_last_tick[client_id] as Dictionary
-				if not client_relative_props.has(prop_id):
-					client_relative_props[prop_id] = -1
-				if client_relative_props[prop_id] >= ctx.delta_base_state_tick:
-					continue
-				
-				# ===========================================================
-				# Save state history per tick
-				
-				var state = prop.getter.call() # getter already gives a copy
-				var prop_snap = WyncPktPropSnap.PropSnap.new()
-				prop_snap.prop_id = prop_id
-				prop_snap.prop_value = state
-
-				# size check
-				var snap_size = HashUtils.calculate_object_data_size(prop_snap)
-				if (data_size + snap_size) > data_size_limit:
-					break
-
-				data_size += snap_size
-				entity_snap.props.append(prop_snap)
-
-				# commit state write
-				client_relative_props[prop_id] = co_ticks.ticks
-
-				if (prop_id == 15):
-					Log.outc(ctx, "sending fullsnap for blocks(15)")
-				
-			packet.snaps.append(entity_snap)
-
-		# queue _out packets_ for delivery
-
-		var packet_dup = WyncUtils.duplicate_any(packet)
-		var result = WyncFlow.wync_wrap_packet_out(ctx, client_id, WyncPacket.WYNC_PKT_PROP_SNAP, packet_dup)
-		if result[0] == OK:
-			var packet_out = result[1] as WyncPacketOut
-			WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, true)
+	return prop_snap
 
 
 static func extract_data_to_tick(ctx: WyncCtx, co_ticks: CoTicks, save_on_tick: int = -1):

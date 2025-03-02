@@ -174,6 +174,32 @@ var current_predicted_tick: int = 0 # only for debugging
 var first_tick_predicted: int = 1
 var last_tick_predicted: int = 0
 
+# throttling
+# --------------------------------------------------------------------------------
+
+class PeerEntityPair:
+	var peer_id: int = -1
+	var entity_id: int = -1
+
+# Sync priorities:
+# * VIP
+# * Spawning
+# * Despawning
+# * Queue
+
+# TODO
+# Map <client_id: int, List[entity_id: int]>
+#var vip_props: Map
+
+# * Only refill the queue once it's emptied
+# * Queue entities for eventual synchronization
+# Array <client_id: int, FIFORing[entity_id: int]>
+var queue_clients_entities_to_sync: Array[FIFORing]
+
+# * Recomputed each tick we gather out packets
+# * TODO: Use FIFORing and preallocate all instances (pooling)
+# FIFORing < PeerEntityPair[peer: int, entity: int] > [100]
+var current_tick_entity_sync_order: Array[PeerEntityPair]
 
 
 # * Only add/remove _entity ids_ when a packet is confirmed sent (WYNC_EXTRACT_WRITE)
@@ -193,6 +219,10 @@ var clients_no_longer_sees_entities: Array[Dictionary]
 func _init() -> void:
 	peer_has_channel_has_events.resize(max_peers)
 	client_has_relative_prop_has_last_tick.resize(max_peers) # NOTE: index 0 not used
+
+	queue_clients_entities_to_sync.resize(max_peers)
+	current_tick_entity_sync_order.resize(100)
+
 	clients_sees_entities.resize(max_peers)
 	clients_sees_new_entities.resize(max_peers)
 	clients_no_longer_sees_entities.resize(max_peers)
@@ -203,6 +233,10 @@ func _init() -> void:
 		for channel_i in range(max_channels):
 			peer_has_channel_has_events[peer_i][channel_i] = []
 		client_has_relative_prop_has_last_tick[peer_i] = {}
+
+		#if peer_i != WyncCtx.SERVER_PEER_ID:
+		queue_clients_entities_to_sync[peer_i] = FIFORing.new()
+		queue_clients_entities_to_sync[peer_i].init(100)
 		clients_sees_entities[peer_i] = {}
 		clients_sees_new_entities[peer_i] = {}
 		clients_no_longer_sees_entities[peer_i] = {}

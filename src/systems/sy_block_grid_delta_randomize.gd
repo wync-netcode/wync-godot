@@ -8,7 +8,7 @@ func on_process(_entities, _data, _delta):
 	var game_ticks = Engine.get_physics_frames()
 	
 	if not (
-		(game_ticks > 10 && game_ticks <= 50)
+		(game_ticks > 10 && game_ticks <= 100)
 		#|| (co_ticks.ticks > 150 && co_ticks.ticks < 170)
 		):
 		return

@@ -42,6 +42,6 @@ var events: Array[EventData]
 func duplicate() -> WyncPktEventData:
 	var newi = WyncPktEventData.new()
 	newi.events = [] as Array[EventData]
-	for event in events:
+	for event in self.events:
 		newi.events.append(event.duplicate())
 	return newi

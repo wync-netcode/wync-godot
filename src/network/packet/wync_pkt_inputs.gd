@@ -7,11 +7,7 @@ class NetTickDataDecorator:
 	func duplicate() -> NetTickDataDecorator:
 		var newi = NetTickDataDecorator.new()
 		newi.tick = tick
-		if data is Object:
-			if data.has_method("copy"):
-				newi.data = data.copy()
-			elif data.has_method("duplicate"):
-				newi.data = data.duplicate()
+		newi.data = WyncUtils.duplicate_any(data)
 		return newi
 
 var prop_id: int = -1 # inputs to which prop
@@ -27,3 +23,22 @@ func duplicate() -> WyncPktInputs:
 	for input: NetTickDataDecorator in self.inputs:
 		newi.inputs.append(input.duplicate())
 	return newi
+
+"""
+# TODO: Use a different packet for event_ids
+class_name WyncPktEvents
+
+var prop_id: int
+var tick_head: int
+var amount: int
+var inputs: Array[int]
+
+
+func duplicate() -> WyncPktInputs:
+	var newi = WyncPktInputs.new()
+	newi.prop_id = self.prop_id
+	newi.tick_head = self.tick_head
+	newi.amount = self.amount
+	newi.inputs = self.inputs.duplicate(true)
+	return newi
+"""

@@ -60,6 +60,66 @@ static func wync_system_gather_reliable_packets(ctx: WyncCtx):
 	pass
 
 
+static func wync_system_gather_unreliable_packets(ctx: WyncCtx):
+	# call here the same functions as above but with the unreliable thingy
+	pass
+
+
+static func wync_remove_entity_from_sync_queue(ctx: WyncCtx, peer_id: int, entity_id: int):
+	var entity_queue := ctx.queue_clients_entities_to_sync[peer_id] as FIFORing
+	var saved_entity_id = entity_queue.pop_tail()
+	# FIXME
+	assert(saved_entity_id == entity_id)
+
+
+static func wync_system_fill_entity_update_queue(ctx: WyncCtx):
+
+	for client_id: int in range(1, ctx.peers.size()):
+
+		var entity_queue := ctx.queue_clients_entities_to_sync[client_id] as FIFORing
+		if entity_queue.size > 0:
+			continue
+
+		# refill
+
+		for entity_id_key in ctx.clients_sees_entities[client_id].keys():
+			if entity_queue.push_head(entity_id_key) != OK:
+				break
+
+
+static func wync_compute_entity_sync_order(ctx: WyncCtx):
+
+	# clear 
+	ctx.current_tick_entity_sync_order.clear()
+
+	# populate / compute
+
+	var entity_index = 0
+	var ran_out_of_entities = false
+
+	while (not ran_out_of_entities):
+		ran_out_of_entities = true
+
+		for client_id: int in range(1, ctx.peers.size()):
+			
+			var entity_id_keys = ctx.clients_sees_entities[client_id].keys()
+
+			# have it?
+			if entity_index >= entity_id_keys.size():
+				continue
+
+			var entity_id_key = entity_id_keys[entity_index]
+			var pair = WyncCtx.PeerEntityPair.new()
+			pair.peer_id = client_id
+			pair.entity_id = entity_id_key
+			ctx.current_tick_entity_sync_order.append(pair)
+
+			# enough to continue
+			ran_out_of_entities = false
+
+		entity_index += 1
+
+
 # Utils
 # ----------------------------------------------------------------------
 

@@ -32,7 +32,7 @@ func push_head(item: int) -> int:
 			head = 0
 	ring[head] = item
 	size += 1
-	return 0
+	return OK
 
 
 ## @returns int. popped item
@@ -51,12 +51,22 @@ func pop_tail() -> int:
 	return item
 
 
-"""UNUSED FUNC
-func get_item_at_pos(pos: int) -> int:
-	if size <= 0:
-		return -1
-	if pos <= size:
-		return -1
-	var actual_pos = (head + pos) % max_size
-	return ring[actual_pos]
-"""
+## TODO: maybe check for size?
+## @returns Optional<Variant>
+func get_head() -> int:
+	return ring[head]
+
+
+## @returns Optional<Variant>
+func get_tail() -> int:
+	return ring[tail]
+
+
+## @returns Optional<Variant>
+func get_relative_to_head(pos: int) -> int:
+	return ring[(head + pos) % size]
+
+
+## @returns Optional<Variant>
+func get_relative_to_tail(pos: int) -> int:
+	return ring[(tail + pos) % size]

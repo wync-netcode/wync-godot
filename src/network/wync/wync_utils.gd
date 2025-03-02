@@ -94,6 +94,14 @@ static func prop_is_timewarpable(ctx: WyncCtx, prop_id: int) -> bool:
 	var prop = ctx.props[prop_id] as WyncEntityProp
 	return prop.timewarpable
 
+# server only
+static func prop_set_reliability(ctx: WyncCtx, prop_id: int, reliable: bool) -> int:
+	if prop_id > ctx.props.size() -1:
+		return 1
+	var prop = ctx.props[prop_id] as WyncEntityProp
+	prop.reliable = reliable
+	return OK
+
 ## Only for INPUT / EVENT props
 static func prop_set_prediction_duplication(ctx: WyncCtx, prop_id: int, duplication: bool) -> bool:
 	if prop_id > ctx.props.size() -1:
