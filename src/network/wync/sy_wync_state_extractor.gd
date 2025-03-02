@@ -122,6 +122,11 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 					data_used += HashUtils.calculate_object_data_size(packet)
 					packet_buffer.append(packet)
 
+				# update last tick
+				# TODO: move this to it's own function
+				var delta_prop_last_tick = ctx.client_has_relative_prop_has_last_tick[client_id] as Dictionary
+				delta_prop_last_tick[prop.auxiliar_delta_events_prop_id] = ctx.co_ticks.ticks
+
 				#Log.outc(ctx, "tag1 | this is my pkt_input %s" % [JsonClassConverter.class_to_json_string(pkt_input)])
 				#Log.outc(ctx, "tag1 | this is my pkt_event_data %s" % [JsonClassConverter.class_to_json_string(pkt_event_data)])
 
