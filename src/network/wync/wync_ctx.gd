@@ -13,6 +13,10 @@ var xtrap_local_tick: Variant = null # Optional<int>
 
 var current_tick_nete_latency_ms: int
 
+# other config
+
+var physic_ticks_per_second: int = 60
+
 ## outgoing packets =============================
 
 const OK_BUT_COULD_NOT_FIT_ALL_PACKETS = 1

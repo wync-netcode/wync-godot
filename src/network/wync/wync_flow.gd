@@ -573,3 +573,6 @@ static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
 ## @argument latency_ms: int. Latency in milliseconds
 static func wync_client_set_current_latency (ctx: WyncCtx, latency_ms: int):
 	ctx.current_tick_nete_latency_ms = latency_ms
+
+static func wync_client_set_physics_ticks_per_second (ctx: WyncCtx, tps: int):
+	ctx.physic_ticks_per_second = tps

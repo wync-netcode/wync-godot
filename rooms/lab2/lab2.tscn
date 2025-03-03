@@ -21,8 +21,8 @@
 [ext_resource type="PackedScene" uid="uid://dp7hr35om6ih8" path="res://src/entities/en_ball.tscn" id="15_h11ql"]
 [ext_resource type="Script" path="res://src/systems/sy_health.gd" id="15_uanrs"]
 [ext_resource type="Script" path="res://src/systems/sy_projectile_movement.gd" id="16_5f1s6"]
+[ext_resource type="Script" path="res://src/network/user_wync/sy_user_wync_setup.gd" id="17_6g2b1"]
 [ext_resource type="Script" path="res://src/network/sy_nete_loopback_peer_register.gd" id="17_320aq"]
-[ext_resource type="Script" path="res://src/network/wync/setup_wync_server.gd" id="17_gxp01"]
 [ext_resource type="PackedScene" uid="uid://c3k6qrqk6sch4" path="res://src/entities/en_block_grid.tscn" id="17_y8ubi"]
 [ext_resource type="Script" path="res://src/network/sy_nete_loopback_connect_req.gd" id="19_56q07"]
 [ext_resource type="Script" path="res://src/network/sy_nete_loopback_caotic_latency.gd" id="19_ltwba"]
@@ -132,8 +132,9 @@ singleton = true
 
 [node name="SetupSystems" type="Node" parent="worlds/WorldServer"]
 
-[node name="SetupWyncServer" type="Node" parent="worlds/WorldServer/SetupSystems"]
-script = ExtResource("17_gxp01")
+[node name="SetupWync" type="Node" parent="worlds/WorldServer/SetupSystems"]
+script = ExtResource("17_6g2b1")
+setup_type = 0
 
 [node name="GroupPhysics" type="Node" parent="worlds/WorldServer"]
 script = ExtResource("32_wj45u")
@@ -283,6 +284,11 @@ singleton = true
 [node name="EnBlockGridDeltaPredicted" parent="worlds/WorldClient1/Entities" instance=ExtResource("17_y8ubi")]
 position = Vector2(387, 29)
 singleton = true
+
+[node name="SetupSystems" type="Node" parent="worlds/WorldClient1"]
+
+[node name="SetupWync" type="Node" parent="worlds/WorldClient1/SetupSystems"]
+script = ExtResource("17_6g2b1")
 
 [node name="GroupPhysics" type="Node" parent="worlds/WorldClient1"]
 script = ExtResource("32_wj45u")
