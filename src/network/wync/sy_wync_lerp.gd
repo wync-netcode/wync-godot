@@ -60,6 +60,8 @@ static func interpolate_all(wync_ctx: WyncCtx, co_ticks: CoTicks, co_predict_dat
 			left_value = prop.confirmed_states.get_at(prop.lerp_left_confirmed_state_tick)
 			right_value = prop.confirmed_states.get_at(prop.lerp_right_confirmed_state_tick)
 		else:
+			if prop.pred_prev == null:
+				continue
 			left_value = prop.pred_prev.data
 			right_value = prop.pred_curr.data
 		if left_value == null:

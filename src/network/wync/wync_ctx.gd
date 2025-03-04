@@ -17,6 +17,25 @@ var current_tick_nete_latency_ms: int
 
 var physic_ticks_per_second: int = 60
 
+## SUPERSEEDED?
+## client only
+## it's described in ticks between receiving updates from the server
+## So, 3 would mean it's 1 update every 4 ticks. 0 means updates every tick.
+var server_tick_rate: float = 0
+var server_tick_rate_sliding_window: RingBuffer
+var server_tick_rate_sliding_window_size: int = 10
+var tick_last_packet_received_from_server: int = 0
+
+## client only
+## it's described in ticks between receiving updates from the server
+## So, 3 would mean it's 1 update every 4 ticks. 0 means updates every tick.
+var low_priority_entity_update_rate: float = 0
+var low_priority_entity_update_rate_sliding_window: RingBuffer
+var low_priority_entity_update_rate_sliding_window_size: int = 10
+var low_priority_entity_tick_last_update: int = 0
+const ENTITY_ID_PROB_FOR_ENTITY_UPDATE_DELAY_TICKS = 699
+var PROP_ID_PROB = -1
+
 ## outgoing packets =============================
 
 const OK_BUT_COULD_NOT_FIT_ALL_PACKETS = 1
@@ -35,7 +54,7 @@ var co_predict_data: CoPredictionData = CoPredictionData.new()
 ## Server & Client ==============================
 
 const SERVER_PEER_ID = 0
-const ENTITY_ID_GLOBAL_EVENTS = 777
+const ENTITY_ID_GLOBAL_EVENTS = 700
 # NOTE: Rename to PRED_INPUT_BUFFER_SIZE
 const INPUT_BUFFER_SIZE = 60 * 12
 var max_amount_cache_events = 2 # it could be useful to have a different value for server cache
@@ -44,6 +63,9 @@ var max_channels = 12
 var max_tick_history = 60 # 1 second at 60 fps
 var max_prop_relative_sync_history_ticks = 20 # set to 1 to see if it's working alright 
 var max_delta_prop_predicted_ticks = 60 # 1000ms ping at 60fps 2000ms ping at 30fps
+
+# how many ticks in the past to keep state cache for a regular prop
+var REGULAR_PROP_CACHED_STATE_AMOUNT = 10
 
 # Map<entity_id: int, unused_bool: bool>
 var tracked_entities: Dictionary
@@ -176,9 +198,14 @@ var tick_action_history: RingBuffer = RingBuffer.new(tick_action_history_size)
 var currently_on_predicted_tick: bool = false
 var current_predicted_tick: int = 0 # only for debugging
 
-# tick markers for the last prediction cycle
+# tick markers for the prev prediction cycle
 var first_tick_predicted: int = 1
 var last_tick_predicted: int = 0
+# markers for the current prediction cycle
+var pred_intented_first_tick: int = 0
+
+## how many ticks before 'last_tick_received' to predict to compensate for throttling
+var max_prediction_tick_threeshold: int = 0
 
 # throttling
 # --------------------------------------------------------------------------------
@@ -275,7 +302,11 @@ func _init() -> void:
 	debug_packets_received.resize(WyncPacket.WYNC_PKT_AMOUNT)
 	for i in range(WyncPacket.WYNC_PKT_AMOUNT):
 		debug_packets_received[i] = [] as Array[int]
-		debug_packets_received[i].resize(18) # amount of props, also 0 is reserved for 'total'
+		debug_packets_received[i].resize(20) # amount of props, also 0 is reserved for 'total'
 
 	debug_data_per_tick_sliding_window = RingBuffer.new(debug_data_per_tick_sliding_window_size)
+
+	server_tick_rate_sliding_window = RingBuffer.new(server_tick_rate_sliding_window_size)
+
+	low_priority_entity_update_rate_sliding_window = RingBuffer.new(low_priority_entity_update_rate_sliding_window_size)
 		

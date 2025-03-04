@@ -43,12 +43,16 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 			continue
 		prop = prop as WyncEntityProp
 
+		# these are set on prediction tick start
+		if prop.data_type in [WyncEntityProp.DATA_TYPE.EVENT, WyncEntityProp.DATA_TYPE.INPUT]:
+			continue
+
 		if prop.relative_syncable:
 			prop_id_list_delta_sync.append(prop_id)
 			if WyncUtils.prop_is_predicted(ctx, prop_id):
 				prop_id_list_delta_sync_predicted.append(prop_id)
 		else:
-			if prop.just_received_new_state:
+			if prop.just_received_new_state || WyncUtils.prop_is_predicted(ctx, prop_id):
 				prop.just_received_new_state = false
 				prop_id_list.append(prop_id)
 		
@@ -139,8 +143,10 @@ static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: A
 		prop = prop as WyncEntityProp
 		
 		
-		var last_confirmed_tick = prop.last_ticks_received.get_relative(tick) as int
-		var last_confirmed = prop.confirmed_states.get_at(last_confirmed_tick)
+		var last_confirmed_tick = prop.last_ticks_received.get_relative(tick)
+		if last_confirmed_tick == null:
+			continue
+		var last_confirmed = prop.confirmed_states.get_at(last_confirmed_tick as int)
 		if last_confirmed == null:
 			continue
 		

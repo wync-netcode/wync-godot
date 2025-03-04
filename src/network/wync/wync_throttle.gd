@@ -291,8 +291,8 @@ static func wync_try_to_queue_out_packet \
 	
 	ctx.out_reliable_packets.append(out_packet)
 
-	Log.outc(ctx, "queued packet %s, remaining data (%s)" %
-	[WyncPacket.PKT_NAMES[out_packet.data.packet_type_id], ctx.out_packets_size_remaining_chars])
+	#Log.outc(ctx, "queued packet %s, remaining data (%s)" %
+	#[WyncPacket.PKT_NAMES[out_packet.data.packet_type_id], ctx.out_packets_size_remaining_chars])
 	return OK
 
 

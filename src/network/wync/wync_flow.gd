@@ -16,11 +16,19 @@ static func wync_server_tick_start(ctx: WyncCtx):
 
 
 static func wync_server_tick_end(ctx: WyncCtx):
+
+	# NOTE: maybe a way to extract data but only events, since that is unskippable?
+	# This function extracts regular props, plus _auxiliar delta event props_
+	# We need a function to extract data exclusively of events... Like the equivalent
+	# of the client's _input_bufferer_
+	SyWyncStateExtractor.extract_data_to_tick(ctx, ctx.co_ticks, ctx.co_ticks.ticks)
+
+	# basic throttling here
+	if ctx.co_ticks.ticks % 4 != 0:
+		return
+
 	# move to gather reliable packets
 	SyWyncClockServer.wync_server_sync_clock(ctx)
-
-	# extract
-	SyWyncStateExtractor.extract_data_to_tick(ctx, ctx.co_ticks, ctx.co_ticks.ticks)
 
 	# send
 
@@ -56,6 +64,11 @@ static func wync_client_tick_start(ctx: WyncCtx):
 	# after tick start
 
 	# sy_wync_receive_event_data.on_process([], null, _delta, self)
+
+	# NOTE: Maybe this one should be called AFTER consuming packets, and BEFORE xtrap
+	wync_system_calculate_prob_prop_rate(ctx)
+
+	wync_system_calculate_server_tick_rate(ctx)
 
 	SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(ctx)
 
@@ -101,9 +114,14 @@ static func wync_client_tick_end(ctx: WyncCtx):
 
 
 static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_id: int) -> int:
-	#Log.outc(ctx, "tag1 | received packet %s %s" % [WyncPacket.PKT_NAMES[wync_pkt.packet_type_id], JsonClassConverter.class_to_json_string(wync_pkt.data)])
 
+	# debug statistics
 	WyncDebug.log_packet_received(ctx, wync_pkt.packet_type_id)
+
+	# tick rate calculation	
+	if WyncUtils.is_client(ctx):
+		wync_report_update_received(ctx)
+		Log.outc(ctx, "tagtps | tag1 | tick(%s) received packet %s" % [ctx.co_ticks.ticks, WyncPacket.PKT_NAMES[wync_pkt.packet_type_id]])
 
 	match wync_pkt.packet_type_id:
 		WyncPacket.WYNC_PKT_JOIN_REQ:
@@ -118,6 +136,7 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 			else:
 				wync_server_handle_pkt_inputs(ctx, wync_pkt.data, from_nete_peer_id)
 		WyncPacket.WYNC_PKT_PROP_SNAP:
+			# TODO: this might be client only
 			wync_handle_pkt_prop_snap(ctx, wync_pkt.data)
 		WyncPacket.WYNC_PKT_RES_CLIENT_INFO:
 			wync_handle_packet_res_client_info(ctx, wync_pkt.data)
@@ -225,6 +244,8 @@ static func wync_handle_pkt_join_res(ctx: WyncCtx, data: Variant) -> int:
 	return OK
 
 
+# TODO: as the server, only receive event data from a client if they own a prop with it
+# There might not be a very performant way of doing that
 static func wync_handle_pkt_event_data(ctx: WyncCtx, data: Variant) -> int:
 
 	if data is not WyncPktEventData:
@@ -463,6 +484,10 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 			var delta_prop = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id) as WyncEntityProp
 			delta_prop.just_received_new_state = true
 
+		# update prob prop update rate
+		if snap_prop.prop_id == ctx.PROP_ID_PROB:
+			wync_try_to_update_prob_prop_rate(ctx)
+
 
 	# process relative syncable separatedly for now to reason about them separatedly
 
@@ -566,6 +591,67 @@ static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
 		str(time_since_packet_sent / (1000.0 / physics_fps)).pad_decimals(2),
 		co_ticks.server_ticks_offset,
 	], Log.TAG_CLOCK)
+
+
+## Call every time a packet is received
+static func wync_report_update_received(ctx: WyncCtx):
+	if ctx.tick_last_packet_received_from_server == ctx.co_ticks.ticks:
+		return
+
+	var tick_rate = ctx.co_ticks.ticks - ctx.tick_last_packet_received_from_server -1
+	ctx.server_tick_rate_sliding_window.push(tick_rate)
+	ctx.tick_last_packet_received_from_server = ctx.co_ticks.ticks
+
+
+## Call every time a WyncPktSnap contains _the prob_prop id_
+static func wync_try_to_update_prob_prop_rate(ctx: WyncCtx):
+	if ctx.low_priority_entity_tick_last_update == ctx.co_ticks.ticks:
+		return
+
+	var tick_rate = ctx.co_ticks.ticks - ctx.low_priority_entity_tick_last_update -1
+	ctx.low_priority_entity_update_rate_sliding_window.push(tick_rate)
+	ctx.low_priority_entity_tick_last_update = ctx.co_ticks.ticks
+
+
+## Call every physic tick
+static func wync_system_calculate_server_tick_rate(ctx: WyncCtx):
+	var accumulative = 0
+	var amount = 0
+	for i in range(ctx.server_tick_rate_sliding_window_size):
+		var value = ctx.server_tick_rate_sliding_window.get_at(i)
+		if value is not int:
+			continue
+		accumulative += value
+		amount += 1
+	if amount <= 0:
+		ctx.server_tick_rate = 0
+	else:
+		ctx.server_tick_rate = accumulative / float(amount)
+
+
+## Call every physic tick
+static func wync_system_calculate_prob_prop_rate(ctx: WyncCtx):
+	var accumulative = 0
+	var amount = 0
+	for i in range(ctx.low_priority_entity_update_rate_sliding_window_size):
+		var value = ctx.low_priority_entity_update_rate_sliding_window.get_at(i)
+		if value is not int:
+			continue
+		accumulative += value
+		amount += 1
+	if amount <= 0:
+		ctx.low_priority_entity_update_rate = 0
+	else:
+		ctx.low_priority_entity_update_rate = accumulative / float(amount)
+
+	# TODO: Move this elsewhere
+	# calculate prediction threeshold
+	# adding 1 of padding for good measure
+	ctx.max_prediction_tick_threeshold = int(ceil(ctx.low_priority_entity_update_rate)) + 1
+
+	# 'REGULAR_PROP_CACHED_STATE_AMOUNT -1' because for xtrap we need to set it
+	# to the value just before 'ctx.max_prediction_tick_threeshold -1'
+	ctx.max_prediction_tick_threeshold = min(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT-1, ctx.max_prediction_tick_threeshold)
 
 
 ## client only

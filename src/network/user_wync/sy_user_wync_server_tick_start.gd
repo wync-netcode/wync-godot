@@ -34,3 +34,7 @@ func on_process(_entities, _data, _delta: float):
 
 				WyncThrottle.wync_client_now_can_see_entity(ctx, peer_id, actor_id)
 				WyncThrottle.wync_add_local_existing_entity(ctx, peer_id, actor_id)
+			
+			# prob prop
+			WyncThrottle.wync_client_now_can_see_entity(ctx, peer_id, WyncCtx.ENTITY_ID_PROB_FOR_ENTITY_UPDATE_DELAY_TICKS)
+			WyncThrottle.wync_add_local_existing_entity(ctx, peer_id, WyncCtx.ENTITY_ID_PROB_FOR_ENTITY_UPDATE_DELAY_TICKS)

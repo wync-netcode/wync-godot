@@ -41,6 +41,8 @@ func get_info_general() -> String:
 	server_tick: %s
 	delta_base_tick: %s
 	server_data_per_tick_sliding: %s/t
+	(client)server_tick_rate %.2f (%.2f tps)
+	(client)prob_prop_rate %.2f
 	""" % \
 	[
 		Engine.physics_ticks_per_second,
@@ -52,6 +54,9 @@ func get_info_general() -> String:
 		co_wync_ctx_server.ctx.co_ticks.ticks,
 		co_wync_ctx_server.ctx.delta_base_state_tick,
 		co_wync_ctx_server.ctx.debug_data_per_tick_sliding_window_mean,
+		co_wync_ctx_client.ctx.server_tick_rate,
+		((1.0 / (co_wync_ctx_client.ctx.server_tick_rate + 1)) * Engine.physics_ticks_per_second),
+		co_wync_ctx_client.ctx.low_priority_entity_update_rate,
 	]
 	return text
 
@@ -60,7 +65,7 @@ static func get_info_packets_received_text(ctx: WyncCtx) -> String:
 	var name_length = 10
 	var number_length = 4
 
-	var prop_amount = 18
+	var prop_amount = 19
 	var text = ""
 	var prefix = "client_%s" % [ctx.my_peer_id] if WyncUtils.is_client(ctx) else "server"
 
