@@ -577,6 +577,7 @@ static func system_publish_global_events(ctx: WyncCtx, tick: int) -> void:
 # Miscellanious
 # ================================================================
 
+# TODO: being able to determine wether we're a client or not even before connecting
 static func is_client(ctx: WyncCtx, peer_id: int = -1) -> bool:
 	if peer_id >= 0:
 		return peer_id > 0

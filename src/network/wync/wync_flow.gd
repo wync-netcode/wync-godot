@@ -24,8 +24,8 @@ static func wync_server_tick_end(ctx: WyncCtx):
 	SyWyncStateExtractor.extract_data_to_tick(ctx, ctx.co_ticks, ctx.co_ticks.ticks)
 
 	# basic throttling here
-	if ctx.co_ticks.ticks % 4 != 0:
-		return
+	#if ctx.co_ticks.ticks % 4 != 0:
+		#return
 
 	# move to gather reliable packets
 	SyWyncClockServer.wync_server_sync_clock(ctx)
@@ -117,31 +117,40 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 
 	# debug statistics
 	WyncDebug.log_packet_received(ctx, wync_pkt.packet_type_id)
+	var is_client = WyncUtils.is_client(ctx)
 
 	# tick rate calculation	
-	if WyncUtils.is_client(ctx):
+	if is_client:
 		wync_report_update_received(ctx)
 		Log.outc(ctx, "tagtps | tag1 | tick(%s) received packet %s" % [ctx.co_ticks.ticks, WyncPacket.PKT_NAMES[wync_pkt.packet_type_id]])
 
 	match wync_pkt.packet_type_id:
 		WyncPacket.WYNC_PKT_JOIN_REQ:
-			wync_handle_pkt_join_req(ctx, wync_pkt.data, from_nete_peer_id)
+			if not is_client:
+				wync_handle_pkt_join_req(ctx, wync_pkt.data, from_nete_peer_id)
 		WyncPacket.WYNC_PKT_JOIN_RES:
+			# TODO: run only if it's is_client
 			wync_handle_pkt_join_res(ctx, wync_pkt.data)
 		WyncPacket.WYNC_PKT_EVENT_DATA:
 			wync_handle_pkt_event_data(ctx, wync_pkt.data)
 		WyncPacket.WYNC_PKT_INPUTS:
-			if WyncUtils.is_client(ctx):
+			if is_client:
 				wync_client_handle_pkt_inputs(ctx, wync_pkt.data)
 			else:
 				wync_server_handle_pkt_inputs(ctx, wync_pkt.data, from_nete_peer_id)
 		WyncPacket.WYNC_PKT_PROP_SNAP:
-			# TODO: this might be client only
-			wync_handle_pkt_prop_snap(ctx, wync_pkt.data)
+			if is_client:
+				# TODO: in the future we might support client authority
+				wync_handle_pkt_prop_snap(ctx, wync_pkt.data)
 		WyncPacket.WYNC_PKT_RES_CLIENT_INFO:
-			wync_handle_packet_res_client_info(ctx, wync_pkt.data)
+			if is_client:
+				wync_handle_packet_res_client_info(ctx, wync_pkt.data)
 		WyncPacket.WYNC_PKT_CLOCK:
-			wync_handle_pkt_clock(ctx, wync_pkt.data)
+			if is_client:
+				wync_handle_pkt_clock(ctx, wync_pkt.data)
+		WyncPacket.WYNC_PKT_CLIENT_SET_LERP_MS:
+			if not is_client:
+				wync_handle_packet_client_set_lerp_ms(ctx, wync_pkt.data, from_nete_peer_id)
 		_:
 			Log.err("wync packet_type_id(%s) not recognized skipping (%s)" % [wync_pkt.packet_type_id, wync_pkt.data])
 			return -1
@@ -204,6 +213,10 @@ static func wync_try_to_connect(ctx: WyncCtx) -> int:
 	if ctx.connected:
 		return OK
 
+	# throttle
+	if ctx.co_ticks.ticks % 5 != 0:
+		return OK
+
 	# try get server nete_peer_id
 	var server_nete_peer_id = WyncUtils.get_nete_peer_id_from_wync_peer_id(ctx, WyncCtx.SERVER_PEER_ID)
 	if server_nete_peer_id == -1:
@@ -212,11 +225,18 @@ static func wync_try_to_connect(ctx: WyncCtx) -> int:
 	# send connect req packet
 	# TODO: Move this elsewhere
 	
-	var packet_data = WyncPktJoinReq.new()
+	var packet_data := WyncPktJoinReq.new()
 	var result = wync_wrap_packet_out(ctx, WyncCtx.SERVER_PEER_ID, WyncPacket.WYNC_PKT_JOIN_REQ, packet_data)
 	if result[0] == OK:
 		var packet_out = result[1] as WyncPacketOut
-		WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, false)
+		WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, true)
+
+	var packet_data_lerp := WyncPktClientSetLerpMS.new()
+	packet_data_lerp.lerp_ms = ctx.co_predict_data.lerp_ms
+	result = wync_wrap_packet_out(ctx, WyncCtx.SERVER_PEER_ID, WyncPacket.WYNC_PKT_CLIENT_SET_LERP_MS, packet_data_lerp)
+	if result[0] == OK:
+		var packet_out = result[1] as WyncPacketOut
+		WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, true)
 	return OK
 
 
@@ -547,6 +567,24 @@ static func wync_handle_packet_res_client_info(ctx: WyncCtx, data: Variant):
 	Log.out("Prop %s ownership given to client %s" % [data.prop_id, ctx.my_peer_id], Log.TAG_WYNC_PEER_SETUP)
 
 
+static func wync_handle_packet_client_set_lerp_ms(ctx: WyncCtx, data: Variant, from_nete_peer_id: int) -> int:
+
+	if data is not WyncPktClientSetLerpMS:
+		return 1
+	data = data as WyncPktClientSetLerpMS
+
+	# client and prop exists
+	var client_id = WyncUtils.is_peer_registered(ctx, from_nete_peer_id)
+	if client_id < 0:
+		Log.err("client %s is not registered" % client_id, Log.TAG_INPUT_RECEIVE)
+		return 2
+
+	var client_info := ctx.client_has_info[client_id] as WyncClientInfo
+	client_info.lerp_ms = data.lerp_ms
+
+	return OK
+
+
 static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
 
 	if data is not WyncPktClock:
@@ -662,3 +700,10 @@ static func wync_client_set_current_latency (ctx: WyncCtx, latency_ms: int):
 
 static func wync_client_set_physics_ticks_per_second (ctx: WyncCtx, tps: int):
 	ctx.physic_ticks_per_second = tps
+
+static func wync_client_set_lerp_ms (ctx: WyncCtx, server_tick_rate: int, lerp_ms: int):
+	#var physics_fps: int = ctx.physic_ticks_per_second
+	#var server_update_rate: int = ceil((1.0 / (ctx.server_tick_rate + 1)) * physics_fps)
+	#ctx.lerp_ms = max(lerp_ms, (1000 / server_update_rate) * 2)
+
+	ctx.co_predict_data.lerp_ms = max(lerp_ms, ceil((1000.0 / server_tick_rate) * 2))

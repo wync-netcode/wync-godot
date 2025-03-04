@@ -35,7 +35,3 @@ var lerp_ms: int = 50
 
 func _init() -> void:
 	latency_buffer.resize(LATENCY_BUFFER_SIZE)
-	
-	# TODO: get server tick rate from server
-	var physics_fps = Engine.physics_ticks_per_second
-	lerp_ms = max(lerp_ms, (1000 / physics_fps) * 2)
