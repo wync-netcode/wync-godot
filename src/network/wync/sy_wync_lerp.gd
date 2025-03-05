@@ -43,7 +43,7 @@ static func interpolate_all(wync_ctx: WyncCtx, co_ticks: CoTicks, co_predict_dat
 	var right_value: Variant
 	var factor: float
 
-	for prop_id: int in range(wync_ctx.props.size()):
+	for prop_id: int in wync_ctx.active_prop_ids:
 		var prop = WyncUtils.get_prop(wync_ctx, prop_id)
 		if prop == null:
 			continue

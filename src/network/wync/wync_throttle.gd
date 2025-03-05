@@ -73,7 +73,8 @@ static func wync_system_gather_reliable_packets(ctx: WyncCtx):
 			data_sent_acc += ctx.debug_data_per_tick_sliding_window.get_at(i)
 	ctx.debug_data_per_tick_sliding_window_mean = data_sent_acc / ctx.debug_data_per_tick_sliding_window_size
 
-	#Log.outc(ctx, "Final space left (%s chars) data sent (%s)" % [ctx.out_packets_size_remaining_chars, data_sent])
+	#if not WyncUtils.is_client(ctx):
+		#Log.outc(ctx, "tagtps | tick(%s) Final space left (%s chars) data sent (%s)" % [ctx.co_ticks.ticks, ctx.out_packets_size_remaining_chars, data_sent])
 
 
 static func wync_system_gather_unreliable_packets(ctx: WyncCtx):
@@ -221,12 +222,15 @@ static func _wync_confirm_client_entity_visibility \
 ## because it assumes the client already has it.
 
 static func wync_add_local_existing_entity \
-		(ctx: WyncCtx, client_id: int, entity_id: int):
+		(ctx: WyncCtx, client_id: int, entity_id: int) -> int:
 
 	if WyncUtils.is_client(ctx):
-		return
+		return 1
 	if client_id == WyncCtx.SERVER_PEER_ID:
-		return
+		return 2
+	if not WyncUtils.is_entity_tracked(ctx, entity_id): # entity exists
+		Log.err("entity (%s) isn't tracked", Log.TAG_THROTTLE)
+		return 3
 
 	var entity_set = ctx.clients_sees_entities[client_id]
 	entity_set[entity_id] = true
@@ -235,6 +239,8 @@ static func wync_add_local_existing_entity \
 
 	var new_entity_set = ctx.clients_sees_new_entities[client_id] as Dictionary
 	new_entity_set.erase(entity_id)
+
+	return OK
 
 
 static func wync_confirm_client_can_see_entity(ctx: WyncCtx, client_id: int, entity_id: int):
@@ -273,11 +279,12 @@ static func wync_try_to_queue_out_packet \
 	var packet_size = HashUtils.calculate_object_data_size(out_packet)
 	if packet_size >= ctx.out_packets_size_remaining_chars:
 		if already_commited:
-			Log.err("(%s) COMMITED anyways, Packet too big (%s), remaining data (%s), d(%s)" %
-			[WyncPacket.PKT_NAMES[out_packet.data.packet_type_id],
-			packet_size,
-			ctx.out_packets_size_remaining_chars,
-			packet_size-ctx.out_packets_size_remaining_chars])
+			#Log.err("(%s) COMMITED anyways, Packet too big (%s), remaining data (%s), d(%s)" %
+			#[WyncPacket.PKT_NAMES[out_packet.data.packet_type_id],
+			#packet_size,
+			#ctx.out_packets_size_remaining_chars,
+			#packet_size-ctx.out_packets_size_remaining_chars])
+			pass
 		else:
 			Log.err("(%s) DROPPED, Packet too big (%s), remaining data (%s), d(%s)" %
 			[WyncPacket.PKT_NAMES[out_packet.data.packet_type_id],

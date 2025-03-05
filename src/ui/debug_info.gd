@@ -88,7 +88,7 @@ static func get_info_packets_received_text(ctx: WyncCtx) -> String:
 
 static func get_info_prop_identifiers(ctx: WyncCtx) -> String:
 	var text = ""
-	for i in range(ctx.props.size()):
+	for i in ctx.active_prop_ids:
 		var prop := WyncUtils.get_prop(ctx, i)
 		if prop == null:
 			continue

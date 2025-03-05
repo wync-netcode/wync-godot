@@ -110,8 +110,7 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 					packet_buffer.append(packet)
 
 				# compile event ids
-				var event_ids := [] as Array[int]
-				event_ids.resize(pkt_input.inputs.size())
+				var event_ids := [] as Array[int] # TODO: Use a C friendly expression
 				for input: WyncPktInputs.NetTickDataDecorator in pkt_input.inputs:
 					for event_id: int in input.data as Array[int]:
 						event_ids.append(event_id)
@@ -250,7 +249,9 @@ static func extract_data_to_tick(ctx: WyncCtx, co_ticks: CoTicks, save_on_tick: 
 		
 		for prop_id in prop_ids_array:
 			
-			var prop = ctx.props[prop_id] as WyncEntityProp
+			var prop := WyncUtils.get_prop(ctx, prop_id)
+			if prop == null:
+				continue
 			
 			# don't extract input values
 			# FIXME: should events be extracted? game event yes, but other player events? Maybe we need an option to what events to share.
@@ -262,9 +263,6 @@ static func extract_data_to_tick(ctx: WyncCtx, co_ticks: CoTicks, save_on_tick: 
 			# relative_syncable receives special treatment
 
 			if prop.relative_syncable:
-				var err = update_relative_syncable_prop(ctx, co_ticks, prop_id)
-				if err != OK:
-					Log.err("delta sync | update_relative_syncable_prop err(%s)" % [err])
 				
 				# Allow auxiliar props
 				var prop_aux = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
@@ -280,61 +278,11 @@ static func extract_data_to_tick(ctx: WyncCtx, co_ticks: CoTicks, save_on_tick: 
 
 ## This function must be ran each frame
 
-static func update_relative_syncable_prop(ctx: WyncCtx, co_ticks: CoTicks, prop_id: int) -> int:
-	var prop = WyncUtils.get_prop(ctx, prop_id)
-	if prop == null:
-		return 1
-	prop = prop as WyncEntityProp
-	if not prop.relative_syncable:
-		return 2
+static func update_delta_base_state_tick(ctx: WyncCtx) -> void:
 
 	# move base_state_tick forward
 
-	var new_base_tick = co_ticks.ticks - ctx.max_prop_relative_sync_history_ticks +1
+	var new_base_tick = ctx.co_ticks.ticks - ctx.max_prop_relative_sync_history_ticks +1
 	if not (ctx.delta_base_state_tick < new_base_tick):
-		return 3
+		return
 	ctx.delta_base_state_tick = new_base_tick
-	
-	# on new tick, clear all events?
-	return OK
-
-	"""
-
-	if prop.relative_change_real_tick.size <= 0:
-		return OK
-
-	# update / merge events
-
-	var oldest_event_tick = prop.relative_change_real_tick.get_tail()
-	
-	if oldest_event_tick != ctx.delta_base_state_tick:
-		#Log.err(ctx, "delta sync | not equal %s ==? %s" % [oldest_event_tick, ctx.delta_base_state_tick])
-		if oldest_event_tick < ctx.delta_base_state_tick:
-			Log.err(ctx, "delta sync | oldest event was skipped")
-			return 5
-		return 6
-
-	#Log.out(ctx, "delta sync | are equal %s ==? %s" % [oldest_event_tick, ctx.delta_base_state_tick])
-
-	# consume delta events
-	
-	var event_array = prop.relative_change_event_list.pop_tail()
-	prop.relative_change_real_tick.pop_tail()
-
-	if event_array is not Array[int]:
-		return 7
-
-	Log.out(ctx, "delta sync | gonna consume these events %s" % [event_array])
-
-	# NOTE: Actually applying the events to the base should be done if timewarpable
-	# (in that case we actually have a base)
-	#for event_id: int in event_array:
-		#WyncDeltaSyncUtils.merge_event_to_state_real_state(ctx, prop_id, event_id)
-		#pass
-
-	event_array.clear()
-	return OK
-	"""
-
-
-	

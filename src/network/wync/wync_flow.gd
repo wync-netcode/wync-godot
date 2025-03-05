@@ -16,6 +16,7 @@ static func wync_server_tick_start(ctx: WyncCtx):
 
 
 static func wync_server_tick_end(ctx: WyncCtx):
+	SyWyncStateExtractor.update_delta_base_state_tick(ctx)
 
 	# NOTE: maybe a way to extract data but only events, since that is unskippable?
 	# This function extracts regular props, plus _auxiliar delta event props_
@@ -122,7 +123,7 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 	# tick rate calculation	
 	if is_client:
 		wync_report_update_received(ctx)
-		Log.outc(ctx, "tagtps | tag1 | tick(%s) received packet %s" % [ctx.co_ticks.ticks, WyncPacket.PKT_NAMES[wync_pkt.packet_type_id]])
+		#Log.outc(ctx, "tagtps | tag1 | tick(%s) received packet %s" % [ctx.co_ticks.ticks, WyncPacket.PKT_NAMES[wync_pkt.packet_type_id]])
 
 	match wync_pkt.packet_type_id:
 		WyncPacket.WYNC_PKT_JOIN_REQ:
@@ -390,7 +391,9 @@ static func wync_server_handle_pkt_inputs(ctx: WyncCtx, data: Variant, from_nete
 	if not client_owns_prop:
 		return 5
 	
-	var input_prop = ctx.props[prop_id] as WyncEntityProp
+	var input_prop := WyncUtils.get_prop(ctx, prop_id)
+	if input_prop == null:
+		return 6
 	
 	# save the input in the prop before simulation
 	# TODO: data.copy is not standarized
@@ -458,8 +461,8 @@ static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 		for prop_id in ctx.client_owns_prop[client_id]:
 			if not WyncUtils.prop_exists(ctx, prop_id):
 				continue
-			var prop = ctx.props[prop_id] as WyncEntityProp
-			if not prop:
+			var prop := WyncUtils.get_prop(ctx, prop_id)
+			if prop == null:
 				continue
 			if (prop.data_type != WyncEntityProp.DATA_TYPE.INPUT &&
 				prop.data_type != WyncEntityProp.DATA_TYPE.EVENT):

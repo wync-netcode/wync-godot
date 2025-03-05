@@ -11,6 +11,33 @@ static func track_entity(ctx: WyncCtx, entity_id: int, entity_type_id: int):
 	ctx.entity_is_of_type[entity_id] = entity_type_id
 
 
+static func untrack_entity(ctx: WyncCtx, entity_id: int):
+	for prop_id: int in ctx.entity_has_props[entity_id]:
+		delete_prop(ctx, prop_id)
+
+	ctx.tracked_entities.erase(entity_id)
+	ctx.entity_has_props.erase(entity_id)
+	ctx.entity_is_of_type.erase(entity_id)
+
+
+static func delete_prop(ctx: WyncCtx, prop_id: int):
+	ctx.active_prop_ids.erase(prop_id)
+
+	var prop = WyncUtils.get_prop(ctx, prop_id)
+	if prop == null:
+		return
+
+	# delete all references to it
+
+	ctx.props[prop_id] = null
+
+	if prop.relative_syncable:
+		delete_prop(ctx, prop.auxiliar_delta_events_prop_id)
+
+	# free actual prop
+	prop.free()
+
+
 static func prop_register(
 	ctx: WyncCtx, 
 	entity_id: int,
@@ -21,6 +48,10 @@ static func prop_register(
 	) -> int:
 	
 	if not is_entity_tracked(ctx, entity_id):
+		return -1
+
+	var prop_id = WyncUtils.get_new_prop_id(ctx)
+	if prop_id == -1:
 		return -1
 		
 	var prop = WyncEntityProp.new()
@@ -44,12 +75,26 @@ static func prop_register(
 	else:
 		prop.confirmed_states = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT)
 	
-	var prop_id = ctx.props.size()
+	ctx.props[prop_id] = prop
+	ctx.active_prop_ids.push_back(prop_id)
+
 	var entity_props = ctx.entity_has_props[entity_id] as Array
-	ctx.props.append(prop)
 	entity_props.append(prop_id)
 	
 	return prop_id
+
+
+static func get_new_prop_id(ctx) -> int:
+	for i in range(ctx.MAX_PROPS):
+		
+		ctx.prop_id_cursor += 1
+		if ctx.prop_id_cursor >= ctx.MAX_PROPS:
+			ctx.prop_id_cursor = 0
+
+		if ctx.props[ctx.prop_id_cursor] == null:
+			return ctx.prop_id_cursor
+	
+	return -1
 
 
 # NOTE: rename to prop_enable_prediction
@@ -88,52 +133,52 @@ static func entity_has_delta_prop(ctx: WyncCtx, entity_id: int) -> bool:
 			return true
 	return false
 
-static func prop_set_interpolate(ctx: WyncCtx, prop_id: int) -> bool:
-	if prop_id > ctx.props.size() -1:
-		return false
-	var prop = ctx.props[prop_id] as WyncEntityProp
+static func prop_set_interpolate(ctx: WyncCtx, prop_id: int) -> int:
+	var prop := WyncUtils.get_prop(ctx, prop_id)
+	if prop == null:
+		return 1
 	if prop.data_type not in WyncEntityProp.INTERPOLABLE_DATA_TYPES:
-		return false
+		return 2
 	prop.interpolated = true
-	return true
+	return OK
 	
 static func prop_is_interpolated(ctx: WyncCtx, prop_id: int) -> bool:
-	if prop_id > ctx.props.size() -1:
+	var prop := WyncUtils.get_prop(ctx, prop_id)
+	if prop == null:
 		return false
-	var prop = ctx.props[prop_id] as WyncEntityProp
 	return prop.interpolated
 
 # server only
-static func prop_set_timewarpable(ctx: WyncCtx, prop_id: int) -> bool:
-	if prop_id > ctx.props.size() -1:
-		return false
-	var prop = ctx.props[prop_id] as WyncEntityProp
+static func prop_set_timewarpable(ctx: WyncCtx, prop_id: int) -> int:
+	var prop := WyncUtils.get_prop(ctx, prop_id)
+	if prop == null:
+		return 1
 	prop.timewarpable = true
 	prop.confirmed_states = RingBuffer.new(ctx.max_tick_history)
-	return true
+	return OK
 
 # server only
 static func prop_is_timewarpable(ctx: WyncCtx, prop_id: int) -> bool:
-	if prop_id > ctx.props.size() -1:
+	var prop := WyncUtils.get_prop(ctx, prop_id)
+	if prop == null:
 		return false
-	var prop = ctx.props[prop_id] as WyncEntityProp
 	return prop.timewarpable
 
 # server only
 static func prop_set_reliability(ctx: WyncCtx, prop_id: int, reliable: bool) -> int:
-	if prop_id > ctx.props.size() -1:
+	var prop := WyncUtils.get_prop(ctx, prop_id)
+	if prop == null:
 		return 1
-	var prop = ctx.props[prop_id] as WyncEntityProp
 	prop.reliable = reliable
 	return OK
 
 ## Only for INPUT / EVENT props
-static func prop_set_prediction_duplication(ctx: WyncCtx, prop_id: int, duplication: bool) -> bool:
-	if prop_id > ctx.props.size() -1:
-		return false
-	var prop = ctx.props[prop_id] as WyncEntityProp
-	prop.allow_duplication_on_tick_skip = duplication
-	return prop.timewarpable
+#static func prop_set_prediction_duplication(ctx: WyncCtx, prop_id: int, duplication: bool) -> bool:
+	#var prop := WyncUtils.get_prop(ctx, prop_id)
+	#if prop == null:
+		#return 1
+	#prop.allow_duplication_on_tick_skip = duplication
+	#return prop.timewarpable
 
 
 """
@@ -282,22 +327,17 @@ static func entity_get_integrate_fun(ctx: WyncCtx, entity_id: int):# -> optional
 
 
 static func prop_exists(ctx: WyncCtx, prop_id: int) -> bool:
-	if prop_id < 0 || prop_id > ctx.props.size() -1:
+	if prop_id < 0 || prop_id >= ctx.MAX_PROPS:
 		return false
 	var prop = ctx.props[prop_id]
-	if prop is not WyncEntityProp:
-		return false
-	return true
+	return prop is WyncEntityProp
 
 
 ## @returns Optional<WyncEntityProp>
 static func get_prop(ctx: WyncCtx, prop_id: int) -> WyncEntityProp:
-	if prop_id < 0 || prop_id > ctx.props.size() -1:
+	if prop_id < 0 || prop_id >= ctx.MAX_PROPS:
 		return null
-	var prop = ctx.props[prop_id]
-	if prop is not WyncEntityProp:
-		return null
-	return prop
+	return ctx.props[prop_id]
 
 
 ## @returns int:

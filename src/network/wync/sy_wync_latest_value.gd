@@ -37,7 +37,7 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 	var prop_id_list: Array[int] = []
 	var prop_id_list_delta_sync: Array[int] = []
 	var prop_id_list_delta_sync_predicted: Array[int] = []
-	for prop_id: int in ctx.props.size():
+	for prop_id: int in ctx.active_prop_ids:
 		var prop = WyncUtils.get_prop(ctx, prop_id)
 		if prop == null:
 			continue
@@ -67,7 +67,7 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 	
 	# --------------------------------------------------------------------------------
 	# debugging: compare states
-	for prop_id: int in range(ctx.props.size()):
+	for prop_id: int in ctx.active_prop_ids:
 		if prop_id != 15:
 			continue
 		var prop = WyncUtils.get_prop(ctx, prop_id)
@@ -96,7 +96,7 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 
 	# --------------------------------------------------------------------------------
 	# debugging: save the canonic state to later compare it with the rollback
-	for prop_id: int in range(ctx.props.size()):
+	for prop_id: int in ctx.active_prop_ids:
 		var prop = WyncUtils.get_prop(ctx, prop_id)
 		if prop == null:
 			continue

@@ -32,7 +32,7 @@ static func wync_lerp_precompute (ctx: WyncCtx):
 
 	# precompute which ticks we'll be interpolating
 
-	for prop_id: int in range(ctx.props.size()):
+	for prop_id: int in ctx.active_prop_ids:
 		var prop = WyncUtils.get_prop(ctx, prop_id)
 		if prop == null:
 			continue

@@ -70,8 +70,18 @@ var REGULAR_PROP_CACHED_STATE_AMOUNT = 10
 # Map<entity_id: int, unused_bool: bool>
 var tracked_entities: Dictionary
 
+
+const MAX_PROPS = 4096 # 2**16
+
 # Array<prop_id: int, WyncEntityProp>
 var props: Array[WyncEntityProp]
+
+var prop_id_cursor: int
+
+# SizedBufferList[int]
+# Set[int]
+var active_prop_ids: Array[int]
+
 
 # Map<entity_id: int, Array<prop_id>>
 var entity_has_props: Dictionary
@@ -268,6 +278,10 @@ var debug_ticks_sent: int = 0
 
 # TODO: Move to WyncUtils
 func _init() -> void:
+	props.resize(MAX_PROPS)
+	prop_id_cursor = 0
+	active_prop_ids = []
+
 	peer_has_channel_has_events.resize(max_peers)
 	client_has_relative_prop_has_last_tick.resize(max_peers) # NOTE: index 0 not used
 
