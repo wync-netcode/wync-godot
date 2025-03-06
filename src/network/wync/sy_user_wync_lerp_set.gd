@@ -38,7 +38,11 @@ func on_process(entities, _data, _delta: float):
 			&& co_renderer is Node2D):
 			co_renderer.global_position = prop.interpolated_state
 			
+			# simple
 			DebugPlayerTrail.spawn(self, co_renderer.global_position, 0.5, 0, true)
+
+			# long trail
+			#DebugPlayerTrail.spawn(self, co_renderer.global_position, wync_ctx.co_ticks.lerp_delta_accumulator_ms / 1000.0, 1, false, -10)
 				
 		
 		# 1. aim is currently interpolated by Wync

@@ -20,7 +20,7 @@ static func setup_entity_type(node_ctx: Node, entity: Entity, entity_type_id: in
 		GameInfo.ENTITY_TYPE_GRID_DELTA_PREDICTED:
 			setup_entity_block_grid_delta(node_ctx, entity, true)
 		GameInfo.ENTITY_TYPE_PROJECTILE:
-			# TODO
+			setup_entity_rocket(node_ctx, entity)
 			pass
 		_:
 			Log.err("setup_entity_type entity_type_id(%s) not recognized" % [entity_type_id])
@@ -33,8 +33,6 @@ static func setup_entity_ball(node_ctx: Node, entity: Entity):
 	var co_actor = entity.get_component(CoActor.label) as CoActor
 	var co_ball = entity.get_component(CoBall.label) as CoBall
 	var co_collider = entity.get_component(CoCollider.label) as CharacterBody2D
-	
-	# NOTE: Register just the ball for now
 	
 	WyncUtils.track_entity(wync_ctx, co_actor.id, GameInfo.ENTITY_TYPE_BALL)
 	var pos_prop_id = WyncUtils.prop_register(
@@ -88,6 +86,37 @@ static func setup_entity_ball(node_ctx: Node, entity: Entity):
 		
 		# time warp
 		WyncUtils.prop_set_timewarpable(wync_ctx, pos_prop_id) 
+
+
+static func setup_entity_rocket(node_ctx: Node, entity: Entity):
+	var single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
+	var wync_ctx = single_wync.ctx as WyncCtx
+
+	var co_actor = entity.get_component(CoActor.label) as CoActor
+	var entity_node = entity as Node as Node2D
+	
+	WyncUtils.track_entity(wync_ctx, co_actor.id, GameInfo.ENTITY_TYPE_PROJECTILE)
+	var pos_prop_id = WyncUtils.prop_register(
+		wync_ctx,
+		co_actor.id,
+		"position",
+		WyncEntityProp.DATA_TYPE.VECTOR2,
+		func() -> Vector2: return entity_node.global_position,
+		func(pos: Vector2): entity_node.global_position = pos,
+	)
+	
+	# integration function
+
+	var int_fun_id = WyncUtils.register_function(wync_ctx, entity_node.force_update_transform)
+	if int_fun_id < 0:
+		Log.err("Couldn't register integrate fun", Log.TAG_PROP_SETUP)
+	else:
+		WyncUtils.entity_set_integration_fun(wync_ctx, co_actor.id, int_fun_id)
+	
+	# interpolation
+
+	if WyncUtils.is_client(wync_ctx):
+		WyncUtils.prop_set_interpolate(wync_ctx, pos_prop_id)
 
 
 static func setup_entity_player(node_ctx: Node, entity: Entity):

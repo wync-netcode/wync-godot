@@ -12,12 +12,33 @@ static func track_entity(ctx: WyncCtx, entity_id: int, entity_type_id: int):
 
 
 static func untrack_entity(ctx: WyncCtx, entity_id: int):
+	if not WyncUtils.is_entity_tracked(ctx, entity_id):
+		return
+
+	Log.outc(ctx, "removing entity (%s)" % [entity_id])
+		
 	for prop_id: int in ctx.entity_has_props[entity_id]:
 		delete_prop(ctx, prop_id)
 
 	ctx.tracked_entities.erase(entity_id)
 	ctx.entity_has_props.erase(entity_id)
 	ctx.entity_is_of_type.erase(entity_id)
+	ctx.entity_has_integrate_fun.erase(entity_id)
+	ctx.entity_has_simulation_fun.erase(entity_id)
+
+	# remove from queues
+
+	for client_id: int in range(1, ctx.peers.size()):
+		var entity_queue := ctx.queue_clients_entities_to_sync[client_id] as FIFORing
+		entity_queue.ring.erase(entity_id)
+
+		# clients can still see it so it gets re added...
+
+		var seen_entities := ctx.clients_sees_entities[client_id] as Dictionary
+		seen_entities.erase(entity_id)
+
+
+	
 
 
 static func delete_prop(ctx: WyncCtx, prop_id: int):
@@ -35,7 +56,7 @@ static func delete_prop(ctx: WyncCtx, prop_id: int):
 		delete_prop(ctx, prop.auxiliar_delta_events_prop_id)
 
 	# free actual prop
-	prop.free()
+	# prop.free()
 
 
 static func prop_register(

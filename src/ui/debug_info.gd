@@ -88,13 +88,19 @@ static func get_info_packets_received_text(ctx: WyncCtx) -> String:
 
 static func get_info_prop_identifiers(ctx: WyncCtx) -> String:
 	var text = ""
-	for i in ctx.active_prop_ids:
-		var prop := WyncUtils.get_prop(ctx, i)
-		if prop == null:
-			continue
-		text += string_exact_length(str(i), 3)
-		text += prop.name_id
-		text += "\n"
+
+	for entity_id in ctx.tracked_entities.keys():
+
+		for i in ctx.entity_has_props[entity_id]:
+			var prop := WyncUtils.get_prop(ctx, i)
+			if prop == null:
+				continue
+			text += "%s %s %s\n" % [
+				string_exact_length(str(entity_id), 3),
+				string_exact_length(str(i), 3),
+				prop.name_id,
+			]
+
 	return text
 
 

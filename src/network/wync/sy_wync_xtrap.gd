@@ -43,7 +43,7 @@ func on_process(entities, _data, delta: float):
 			var co_actor = entity.get_component(CoActor.label) as CoActor
 			if dont_predict_entity_ids.has(co_actor.id):
 				continue
-		
+
 			if !WyncUtils.entity_is_predicted(ctx, co_actor.id):
 				continue
 			if ECS.entity_has_system_components(entity.id, SyActorMovement.label):
@@ -64,11 +64,14 @@ func on_process(entities, _data, delta: float):
 			var co_actor = entity.get_component(CoActor.label) as CoActor
 			if !WyncUtils.entity_is_predicted(ctx, co_actor.id):
 				continue
-			if tick == target_tick || tick == ctx.pred_intented_first_tick:
-				var progress = (float(tick) - ctx.last_tick_received) / (target_tick - ctx.last_tick_received)
-				var prop_position = WyncUtils.entity_get_prop(ctx, co_actor.id, "position")
-				if prop_position:
-					DebugPlayerTrail.spawn(self, prop_position.getter.call(), progress)
+
+			# (a). with condition: simple single trail
+			# (b). without condition: long trail
+			#if tick == target_tick || tick == ctx.pred_intented_first_tick:
+			var progress = (float(tick) - ctx.last_tick_received) / (target_tick - ctx.last_tick_received)
+			var prop_position = WyncUtils.entity_get_prop(ctx, co_actor.id, "position")
+			if prop_position:
+				DebugPlayerTrail.spawn(self, prop_position.getter.call(), progress, 0, false, -10)
 
 		# ------- END USER PREDICTION FUNCTIONS -------
 

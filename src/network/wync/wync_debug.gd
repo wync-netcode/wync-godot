@@ -14,4 +14,5 @@ static func packet_received_log_prop_id(ctx: WyncCtx, packet_type_id: int, prop_
 		Log.err("Invalid packet_type_id(%s)" % [packet_type_id])
 		return
 	var history = ctx.debug_packets_received[packet_type_id] as Array[int]
-	history[prop_id +1] += 1
+	if ((prop_id + 1) < history.size()):
+		history[prop_id +1] += 1

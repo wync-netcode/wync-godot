@@ -82,6 +82,7 @@ static func wync_system_gather_unreliable_packets(ctx: WyncCtx):
 	pass
 
 
+# TODO: rename
 static func wync_remove_entity_from_sync_queue(ctx: WyncCtx, peer_id: int, entity_id: int):
 	var synced_last_time = ctx.entities_synced_last_time[peer_id] as Dictionary
 	synced_last_time[entity_id] = true
@@ -105,6 +106,11 @@ static func wync_system_fill_entity_sync_queue(ctx: WyncCtx):
 		var everything_fitted = true
 
 		for entity_id_key in ctx.clients_sees_entities[client_id].keys():
+
+			# Clients can still see entities that we don't have. Not anymore?
+			if not WyncUtils.is_entity_tracked(ctx, entity_id_key):
+				continue
+
 			if not synced_last_time.has(entity_id_key) && not entity_queue.has_item(entity_id_key):
 				var err = entity_queue.push_head(entity_id_key)
 				if err != OK:
@@ -193,15 +199,15 @@ static func wync_client_no_longer_sees_entity(ctx: WyncCtx, client_id: int, enti
 	return OK
 
 
-static func _wync_confirm_client_entity_visibility \
-		(ctx: WyncCtx, client_id: int, entity_id: int, visible: bool):
+#static func _wync_confirm_client_entity_visibility \
+		#(ctx: WyncCtx, client_id: int, entity_id: int, visible: bool):
 	
-	var entity_set = ctx.clients_no_longer_sees_entities[client_id] as Dictionary
+	#var entity_set = ctx.clients_no_longer_sees_entities[client_id] as Dictionary
 
-	if visible:
-		entity_set[entity_id] = true
-	else:
-		entity_set.erase(entity_id)
+	#if visible:
+		#entity_set[entity_id] = true
+	#else:
+		#entity_set.erase(entity_id)
 	
 	
 ## Superseeded? All new entities can be reported with wync_client_now_can_see_entity

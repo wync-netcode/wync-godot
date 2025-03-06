@@ -282,7 +282,7 @@ static func wync_handle_pkt_event_data(ctx: WyncCtx, data: Variant) -> int:
 		wync_event.data.arg_data = event.arg_data # std::move(std::unique_pointer)
 		ctx.events[event.event_id] = wync_event
 	
-		Log.out("events | got this events %s" % [event.event_id], Log.TAG_EVENT_DATA)
+		#Log.out("events | got this events %s" % [event.event_id], Log.TAG_EVENT_DATA)
 		if event.event_id == 105:
 			print_debug("")
 		# NOTE: what if we already have this event data? Maybe it's better to receive it anyway?

@@ -69,6 +69,7 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 		# client_prop_last_tick[prop_id] = co_ticks.tick
 
 		WyncThrottle.wync_remove_entity_from_sync_queue(ctx, client_id, entity_id)
+		#if WyncUtils.is_entity_tracked(ctx, entity_id)
 
 		# plan: fill all the data for the props, then see if it fits
 
