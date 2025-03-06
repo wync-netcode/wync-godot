@@ -6,6 +6,7 @@ class_name WyncThrottle
 
 ## @argument commit: bool. Pass True if you're gonna send this message through the network,
 ## so that Wync can assume it will arrive
+## This system is not network throttled
 static func wync_system_send_entities_to_spawn(ctx: WyncCtx, _commit: bool = true) -> int:
 	var ids_to_spawn: Dictionary = {} # : Set<int>
 
@@ -37,7 +38,7 @@ static func wync_system_send_entities_to_spawn(ctx: WyncCtx, _commit: bool = tru
 			i += 1
 
 			packet.entity_ids[i] = entity_id
-			packet.entity_type_ids[i] = 999 # TODO: Need to create entity_types !!!
+			packet.entity_type_ids[i] = ctx.entity_is_of_type[entity_id]
 
 			# commit / confirm as _client can see it_
 
@@ -169,6 +170,16 @@ static func wync_compute_entity_sync_order(ctx: WyncCtx):
 # ----------------------------------------------------------------------
 
 
+static func wync_everyone_now_can_see_entity(ctx: WyncCtx, entity_id: int) -> void:
+	for peer_id in range(1, ctx.peers.size()):
+		wync_client_now_can_see_entity(ctx, peer_id, entity_id)
+
+
+static func wync_entity_set_spawn_data(ctx: WyncCtx, entity_id: int, data: Variant, _data_size: int):
+	assert(not ctx.entity_spawn_data.has(entity_id))
+	ctx.entity_spawn_data[entity_id] = data
+
+
 static func wync_client_now_can_see_entity(ctx: WyncCtx, client_id: int, entity_id: int) -> int:
 	# entity exists
 	if not WyncUtils.is_entity_tracked(ctx, entity_id):
@@ -249,6 +260,8 @@ static func wync_add_local_existing_entity \
 	return OK
 
 
+## TODO: this function is too similar to wync_add_local_existing_entity
+## Removes an entity from clients_sees_new_entities
 static func wync_confirm_client_can_see_entity(ctx: WyncCtx, client_id: int, entity_id: int):
 
 	var entity_set = ctx.clients_sees_entities[client_id]

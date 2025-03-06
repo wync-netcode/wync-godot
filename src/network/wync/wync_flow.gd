@@ -33,6 +33,8 @@ static func wync_server_tick_end(ctx: WyncCtx):
 
 	# send
 
+	WyncThrottle.wync_system_send_entities_to_spawn(ctx)
+
 	WyncThrottle.wync_system_fill_entity_sync_queue(ctx)
 	WyncThrottle.wync_compute_entity_sync_order(ctx)
 	SyWyncStateExtractor.wync_send_extracted_data(ctx)
@@ -48,7 +50,6 @@ static func wync_server_tick_end(ctx: WyncCtx):
 	## these two must be called in this order:
 	#SyWyncStateExtractorDeltaSync.queue_delta_event_data_to_be_synced_to_peers(ctx)
 	#SyWyncSendEventData.wync_send_event_data (ctx)
-	#WyncThrottle.wync_system_send_entities_to_spawn(ctx)
 	#"""
 
 	#TODO : WyncThrottle.wync_system_send_entities_updates(ctx)
@@ -154,6 +155,9 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 		WyncPacket.WYNC_PKT_CLIENT_SET_LERP_MS:
 			if not is_client:
 				wync_handle_packet_client_set_lerp_ms(ctx, wync_pkt.data, from_nete_peer_id)
+		WyncPacket.WYNC_PKT_SPAWN:
+			if is_client:
+				wync_handle_pkt_spawn(ctx, wync_pkt.data)
 		_:
 			Log.err("wync packet_type_id(%s) not recognized skipping (%s)" % [wync_pkt.packet_type_id, wync_pkt.data])
 			return -1
@@ -521,8 +525,6 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 		
 		var prop = WyncUtils.get_prop(ctx, snap_prop.prop_id)
 		if prop == null:
-			Log.errc(ctx, "couldn't find prop (%s) saving as dummy prop..." % [snap_prop.prop_id], Log.TAG_LATEST_VALUE)
-			WyncUtils.prop_register_update_dummy(ctx, snap_prop.prop_id, data.tick, 99, snap_prop.state)
 			continue
 
 		prop = prop as WyncEntityProp

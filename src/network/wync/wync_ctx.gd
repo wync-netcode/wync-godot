@@ -245,6 +245,9 @@ var clients_sees_new_entities: Array[Dictionary]
 # Array <client_id: int, Set[entity_id: int]>
 var clients_no_longer_sees_entities: Array[Dictionary]
 
+# Map <entity_id: int, data: Variant>
+var entity_spawn_data: Dictionary
+
 # * Only refill the queue once it's emptied
 # * Queue entities for eventual synchronization
 # Array <client_id: int, FIFORing[entity_id: int]>

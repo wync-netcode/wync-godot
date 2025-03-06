@@ -52,6 +52,32 @@ func pop_tail() -> int:
 	return item
 
 
+func remove_item(item_to_remove: int) -> int:
+	if size <= 0:
+		return 1
+
+	var ring_i = tail
+	for i in range(size):
+
+		var item = ring[ring_i]
+
+		if item == item_to_remove:
+			var item_head = ring[head]
+			ring[ring_i] = item_head
+			if size > 1:
+				head -= 1
+				if head < 0:
+					head = max_size -1
+			size -= 1
+			return OK
+
+		ring_i += 1
+		if ring_i >= max_size:
+			ring_i = 0
+
+	return 2
+
+
 ## TODO: maybe check for size?
 ## @returns Optional<Variant>
 func get_head() -> int:

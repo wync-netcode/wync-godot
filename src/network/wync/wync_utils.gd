@@ -25,20 +25,21 @@ static func untrack_entity(ctx: WyncCtx, entity_id: int):
 	ctx.entity_is_of_type.erase(entity_id)
 	ctx.entity_has_integrate_fun.erase(entity_id)
 	ctx.entity_has_simulation_fun.erase(entity_id)
+	ctx.entity_spawn_data.erase(entity_id)
 
 	# remove from queues
 
 	for client_id: int in range(1, ctx.peers.size()):
 		var entity_queue := ctx.queue_clients_entities_to_sync[client_id] as FIFORing
-		entity_queue.ring.erase(entity_id)
+		entity_queue.remove_item(entity_id)
 
 		# clients can still see it so it gets re added...
 
 		var seen_entities := ctx.clients_sees_entities[client_id] as Dictionary
 		seen_entities.erase(entity_id)
 
-
-	
+		var new_seen_entities := ctx.clients_sees_new_entities[client_id] as Dictionary
+		new_seen_entities.erase(entity_id)
 
 
 static func delete_prop(ctx: WyncCtx, prop_id: int):
