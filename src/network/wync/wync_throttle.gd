@@ -6,8 +6,10 @@ class_name WyncThrottle
 
 ## @argument commit: bool. Pass True if you're gonna send this message through the network,
 ## so that Wync can assume it will arrive
-## This system is not network throttled
+## This system is network throttled
+## Note: as it is the first clients have priority until the out buffer fills
 static func wync_system_send_entities_to_spawn(ctx: WyncCtx, _commit: bool = true) -> int:
+	var data_used = 0
 	var ids_to_spawn: Dictionary = {} # : Set<int>
 
 	for client_id in range(1, ctx.peers.size()):
@@ -39,16 +41,33 @@ static func wync_system_send_entities_to_spawn(ctx: WyncCtx, _commit: bool = tru
 
 			packet.entity_ids[i] = entity_id
 			packet.entity_type_ids[i] = ctx.entity_is_of_type[entity_id]
+			var entity_prop_ids = ctx.entity_has_props[entity_id]
+			assert(entity_prop_ids.size() > 0)
+			packet.entity_prop_id_start[i] = entity_prop_ids[0]
+			packet.entity_prop_id_end[i] = entity_prop_ids[entity_prop_ids.size() -1]
+
+			if ctx.entity_spawn_data.has(entity_id):
+				packet.entity_spawn_data[i] = WyncUtils.duplicate_any(ctx.entity_spawn_data[entity_id])
 
 			# commit / confirm as _client can see it_
 
 			wync_confirm_client_can_see_entity(ctx, client_id, entity_id)
+
+			data_used += HashUtils.calculate_object_data_size(packet)
+			if (data_used >= ctx.out_packets_size_remaining_chars):
+				break
+
+		if ((i + 1) != entity_amount):
+			packet.resize(i + 1)
 
 		# queue 
 		var res = WyncFlow.wync_wrap_packet_out(ctx, client_id, WyncPacket.WYNC_PKT_SPAWN, packet)
 		if res[0] == OK:
 			var pkt_out = res[1] as WyncPacketOut
 			WyncThrottle.wync_try_to_queue_out_packet(ctx, pkt_out, true)
+
+		if (data_used >= ctx.out_packets_size_remaining_chars):
+			break
 		
 	return OK
 

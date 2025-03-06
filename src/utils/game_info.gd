@@ -47,3 +47,8 @@ enum {
 
 class EntityProjectileSpawnData:
 	var weapon_id: int
+	
+	func duplicate() -> EntityProjectileSpawnData:
+		var newi = EntityProjectileSpawnData.new()
+		newi.weapon_id = weapon_id
+		return newi

@@ -38,6 +38,4 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 	# TODO: Server: On client connect setup these _map present_ entities
 	#WyncThrottle.wync_add_local_existing_entity(wync_ctx, wync_ctx.my_peer_id, co_actor.id)
 	
-	var flag = CoFlagWyncEntityTracked.new()
-	ECS.entity_add_component_node(entity, flag)
 	Log.out("wync: Registered entity %s with id %s" % [entity, co_actor.id], Log.TAG_PROP_SETUP)

@@ -26,7 +26,5 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 	
 	UserWyncUtils.setup_entity_type(self, entity, GameInfo.ENTITY_TYPE_PLAYER)
 		
-	var flag = CoFlagWyncEntityTracked.new()
-	ECS.entity_add_component_node(entity, flag)
 	var co_actor = entity.get_component(CoActor.label) as CoActor
 	Log.out("wync: Registered entity %s with id %s" % [entity, co_actor.id], Log.TAG_PROP_SETUP)

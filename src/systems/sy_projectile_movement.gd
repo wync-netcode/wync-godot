@@ -38,6 +38,7 @@ func on_process_entity(entity: Entity, _data, delta: float):
 	# dead by timer
 	if pro_data.ticks_alive >= floori(Engine.physics_ticks_per_second * 1):
 		explode = true
+		pass
 	pro_data.ticks_alive += 1
 
 	# explode

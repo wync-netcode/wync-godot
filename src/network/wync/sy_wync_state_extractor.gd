@@ -163,7 +163,7 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 			#Log.outc(ctx, "tag1 | appended to packet_snap %s" % [HashUtils.object_to_dictionary(packet_snap)])
 			#assert(false)
 
-		# exeeded size, stop
+		# exceeded size, stop
 
 		if (data_used >= ctx.out_packets_size_remaining_chars):
 			break

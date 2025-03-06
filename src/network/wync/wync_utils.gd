@@ -72,7 +72,21 @@ static func prop_register(
 	if not is_entity_tracked(ctx, entity_id):
 		return -1
 
-	var prop_id = WyncUtils.get_new_prop_id(ctx)
+	var prop_id = -1
+
+	# if it's pending to spawn then extract the prop_id
+	var entity_pending_to_spawn = false
+
+	if WyncUtils.is_client(ctx):
+		entity_pending_to_spawn = ctx.pending_entity_to_spawn_props.has(entity_id)
+		if entity_pending_to_spawn:
+			var entity_auth_props: Array[int] = ctx.pending_entity_to_spawn_props[entity_id]
+			prop_id = entity_auth_props[0] + entity_auth_props[2]
+			entity_auth_props[2] += 1
+
+	if not entity_pending_to_spawn:
+		prop_id = WyncUtils.get_new_prop_id(ctx)
+
 	if prop_id == -1:
 		return -1
 		
@@ -104,6 +118,23 @@ static func prop_register(
 	entity_props.append(prop_id)
 	
 	return prop_id
+
+
+static func finish_spawning_entity(ctx: WyncCtx, entity_id: int, pending_id) -> int:
+
+	var entity_to_spawn = ctx.out_pending_entities_to_spawn[pending_id]
+	entity_to_spawn.already_spawned = true
+
+	assert(ctx.pending_entity_to_spawn_props.has(entity_id))
+	var entity_auth_props: Array[int] = ctx.pending_entity_to_spawn_props[entity_id]
+	assert((entity_auth_props[1] - entity_auth_props[0]) == (entity_auth_props[2] - 1))
+
+	ctx.pending_entity_to_spawn_props.erase(entity_id)
+
+	Log.outc(ctx, "spawn, spawned entity %s" % [entity_id])
+
+	# TODO: apply dummy props, I guess
+	return OK
 
 
 ## Use everytime we get state from a prop we don't have

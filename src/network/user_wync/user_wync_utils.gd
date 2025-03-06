@@ -21,9 +21,11 @@ static func setup_entity_type(node_ctx: Node, entity: Entity, entity_type_id: in
 			setup_entity_block_grid_delta(node_ctx, entity, true)
 		GameInfo.ENTITY_TYPE_PROJECTILE:
 			setup_entity_rocket(node_ctx, entity)
-			pass
 		_:
 			Log.err("setup_entity_type entity_type_id(%s) not recognized" % [entity_type_id])
+
+	var flag = CoFlagWyncEntityTracked.new()
+	ECS.entity_add_component_node(entity, flag)
 
 
 static func setup_entity_ball(node_ctx: Node, entity: Entity):
@@ -104,14 +106,6 @@ static func setup_entity_rocket(node_ctx: Node, entity: Entity):
 		func() -> Vector2: return entity_node.global_position,
 		func(pos: Vector2): entity_node.global_position = pos,
 	)
-	
-	# integration function
-
-	var int_fun_id = WyncUtils.register_function(wync_ctx, entity_node.force_update_transform)
-	if int_fun_id < 0:
-		Log.err("Couldn't register integrate fun", Log.TAG_PROP_SETUP)
-	else:
-		WyncUtils.entity_set_integration_fun(wync_ctx, co_actor.id, int_fun_id)
 	
 	# interpolation
 
@@ -225,8 +219,6 @@ static func setup_entity_block_grid_predicted(node_ctx: Node, entity: Entity):
 		func(block_grid: CoBlockGrid): co_block_grid.set_from_instance(block_grid),
 	)
 	
-	var flag = CoFlagWyncEntityTracked.new()
-	ECS.entity_add_component_node(entity, flag)
 	Log.out("wync: Registered entity %s with id %s" % [entity, co_actor.id], Log.TAG_PROP_SETUP, Log.TAG_DEBUG2)
 
 
@@ -275,8 +267,6 @@ static func setup_entity_block_grid_delta(node_ctx: Node, entity: Entity, predic
 
 	#WyncDeltaSyncUtils.delta_sync_prop_extract_state(wync_ctx, blocks_prop)
 	
-	var flag = CoFlagWyncEntityTracked.new()
-	ECS.entity_add_component_node(entity, flag)
 	Log.out("wync: Registered entity %s with id %s" % [entity, co_actor.id], Log.TAG_PROP_SETUP, Log.TAG_DEBUG2)
 
 

@@ -245,8 +245,26 @@ var clients_sees_new_entities: Array[Dictionary]
 # Array <client_id: int, Set[entity_id: int]>
 var clients_no_longer_sees_entities: Array[Dictionary]
 
+# Note: One may want to update this spawn data as the entity evolves over time
+# Note: Spawn data should be small metadata just to setup an entity,
+#       For big data use _delta props_
 # Map <entity_id: int, data: Variant>
 var entity_spawn_data: Dictionary
+
+class PendingEntityToSpawn:
+	var already_spawned: bool
+	var entity_id: int
+	var entity_type_id: int
+	var spawn_data: Variant
+
+# Client only
+# List<PendingEntityToSpawn>
+var out_pending_entities_to_spawn: Array[PendingEntityToSpawn]
+
+# Internal list
+# Map <entity_id: int, Tripla[prop_start: int, prop_end: int, curr: int]
+var pending_entity_to_spawn_props: Dictionary
+
 
 # * Only refill the queue once it's emptied
 # * Queue entities for eventual synchronization

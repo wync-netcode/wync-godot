@@ -558,6 +558,34 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 	wync_client_update_last_tick_received(ctx, data.tick)
 
 
+static func wync_handle_pkt_spawn(ctx: WyncCtx, data: Variant):
+
+	if data is not WyncPktSpawn:
+		return 1
+	data = data as WyncPktSpawn
+
+	var entity_to_spawn: WyncCtx.PendingEntityToSpawn = null
+	for i: int in range(data.entity_amount):
+
+		var entity_id = data.entity_ids[i]
+		var entity_type_id = data.entity_type_ids[i]
+		var prop_start = data.entity_prop_id_start[i]
+		var prop_end = data.entity_prop_id_end[i]
+		var spawn_data = data.entity_spawn_data[i]
+
+		# "flag" it
+		ctx.pending_entity_to_spawn_props[entity_id] = [prop_start, prop_end, 0] as Array[int]
+
+		# queue it to user facing variable
+		entity_to_spawn = WyncCtx.PendingEntityToSpawn.new()
+		entity_to_spawn.already_spawned = false
+		entity_to_spawn.entity_id = entity_id
+		entity_to_spawn.entity_type_id = entity_type_id
+		entity_to_spawn.spawn_data = spawn_data
+
+		ctx.out_pending_entities_to_spawn.append(entity_to_spawn)
+
+
 static func _wync_add_new_dummy_prop(ctx: WyncCtx, prop_id: int, data: Variant):
 	pass
 	#var pos_prop_id = WyncUtils.prop_register(
@@ -730,6 +758,14 @@ static func wync_dummy_props_cleanup(ctx: WyncCtx):
 		# delete dummy prop
 
 		ctx.dummy_props.erase(prop_id)
+
+
+## Call after finishing spawning entities
+static func wync_system_spawned_props_cleanup(ctx: WyncCtx):
+	for i in range(ctx.out_pending_entities_to_spawn.size()-1, -1, -1):
+		var entity_to_spawn: WyncCtx.PendingEntityToSpawn = ctx.out_pending_entities_to_spawn[i]
+		if entity_to_spawn.already_spawned:
+			ctx.out_pending_entities_to_spawn.remove_at(i)
 
 
 ## client only
