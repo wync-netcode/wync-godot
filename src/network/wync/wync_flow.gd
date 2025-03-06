@@ -75,6 +75,8 @@ static func wync_client_tick_start(ctx: WyncCtx):
 
 	SyWyncTickStartAfter.predicted_props_clear_events(ctx)
 
+	WyncFlow.wync_dummy_props_cleanup(ctx) # before consuming
+
 	# SyUserWyncConsumePacketsSecond # consume packets would go after this function
 
 	WyncFlow.wync_try_to_connect(ctx)
@@ -490,7 +492,8 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 
 		var prop = WyncUtils.get_prop(ctx, snap_prop.prop_id)
 		if prop == null:
-			Log.err("couldn't find prop (%s) skipping..." % [snap_prop.prop_id], Log.TAG_LATEST_VALUE)
+			Log.errc(ctx, "couldn't find prop (%s) saving as dummy prop..." % [snap_prop.prop_id], Log.TAG_LATEST_VALUE)
+			WyncUtils.prop_register_update_dummy(ctx, snap_prop.prop_id, data.tick, 99, snap_prop.state)
 			continue
 		prop = prop as WyncEntityProp
 		if prop.relative_syncable:
@@ -518,7 +521,8 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 		
 		var prop = WyncUtils.get_prop(ctx, snap_prop.prop_id)
 		if prop == null:
-			Log.err("couldn't find prop (%s) skipping..." % [snap_prop.prop_id], Log.TAG_LATEST_VALUE)
+			Log.errc(ctx, "couldn't find prop (%s) saving as dummy prop..." % [snap_prop.prop_id], Log.TAG_LATEST_VALUE)
+			WyncUtils.prop_register_update_dummy(ctx, snap_prop.prop_id, data.tick, 99, snap_prop.state)
 			continue
 
 		prop = prop as WyncEntityProp
@@ -550,6 +554,18 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 			prop.confirmed_states.insert_at(0, state_dup)
 
 	wync_client_update_last_tick_received(ctx, data.tick)
+
+
+static func _wync_add_new_dummy_prop(ctx: WyncCtx, prop_id: int, data: Variant):
+	pass
+	#var pos_prop_id = WyncUtils.prop_register(
+		#ctx,
+		#co_actor.id,
+		#"position",
+		#WyncEntityProp.DATA_TYPE.VECTOR2,
+		#func() -> Vector2: return co_collider.global_position,
+		#func(pos: Vector2): co_collider.global_position = pos,
+	#)
 
 
 static func wync_handle_packet_res_client_info(ctx: WyncCtx, data: Variant):
@@ -693,6 +709,25 @@ static func wync_system_calculate_prob_prop_rate(ctx: WyncCtx):
 	# 'REGULAR_PROP_CACHED_STATE_AMOUNT -1' because for xtrap we need to set it
 	# to the value just before 'ctx.max_prediction_tick_threeshold -1'
 	ctx.max_prediction_tick_threeshold = min(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT-1, ctx.max_prediction_tick_threeshold)
+
+
+static func wync_dummy_props_cleanup(ctx: WyncCtx):
+	# run every few frames
+	if ctx.co_ticks.ticks % 10 != 0:
+		return
+
+	var curr_tick = ctx.co_ticks.server_ticks
+	var dummy: WyncCtx.DummyProp = null
+
+	for prop_id: int in ctx.dummy_props.keys():
+
+		dummy = ctx.dummy_props[prop_id]
+		if (curr_tick - dummy.last_tick) < WyncCtx.MAX_DUMMY_PROP_TICKS_ALIVE:
+			continue
+
+		# delete dummy prop
+
+		ctx.dummy_props.erase(prop_id)
 
 
 ## client only

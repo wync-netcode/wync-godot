@@ -105,6 +105,35 @@ static func prop_register(
 	return prop_id
 
 
+## Use everytime we get state from a prop we don't have
+## Dummy props will be naturally deleted over time
+static func prop_register_update_dummy(
+	ctx: WyncCtx, 
+	prop_id: int,
+	last_tick: int,
+	data_size: int,
+	data: Variant,
+	) -> int:
+
+	var dummy: WyncCtx.DummyProp = null
+
+	# check if a dummy exists
+
+	if ctx.dummy_props.has(prop_id):
+		dummy = ctx.dummy_props[prop_id]
+		# free old data
+	
+	else:
+		dummy = WyncCtx.DummyProp.new()
+		ctx.dummy_props[prop_id] = dummy
+
+	dummy.last_tick = last_tick
+	dummy.data_size = data_size
+	dummy.data = data
+
+	return OK
+
+
 static func get_new_prop_id(ctx) -> int:
 	for i in range(ctx.MAX_PROPS):
 		

@@ -259,6 +259,18 @@ var entities_synced_last_time: Array[Dictionary]
 # FIFORing < PeerEntityPair[peer: int, entity: int] > [100]
 var queue_entity_pairs_to_sync: Array[PeerEntityPair]
 
+# dummy props
+# --------------------------------------------------------------------------------
+
+class DummyProp:
+	var last_tick: int
+	var data_size: int
+	var data: Variant
+
+# Map <prop_id: int, DummyProp*>
+var dummy_props: Dictionary
+
+const MAX_DUMMY_PROP_TICKS_ALIVE: int = 100 # 1000
 
 # debugging
 # --------------------------------------------------------------------------------
@@ -323,4 +335,6 @@ func _init() -> void:
 	server_tick_rate_sliding_window = RingBuffer.new(server_tick_rate_sliding_window_size)
 
 	low_priority_entity_update_rate_sliding_window = RingBuffer.new(low_priority_entity_update_rate_sliding_window_size)
+
+	dummy_props = {}
 		

@@ -43,6 +43,7 @@ func get_info_general() -> String:
 	server_data_per_tick_sliding: %s/t
 	(client)server_tick_rate %.2f (%.2f tps)
 	(client)prob_prop_rate %.2f
+	(client)dummy_props %s
 	""" % \
 	[
 		Engine.physics_ticks_per_second,
@@ -57,6 +58,7 @@ func get_info_general() -> String:
 		co_wync_ctx_client.ctx.server_tick_rate,
 		((1.0 / (co_wync_ctx_client.ctx.server_tick_rate + 1)) * Engine.physics_ticks_per_second),
 		co_wync_ctx_client.ctx.low_priority_entity_update_rate,
+		co_wync_ctx_client.ctx.dummy_props.size()
 	]
 	return text
 
