@@ -17,6 +17,7 @@ func on_process(_entities, _data, _delta: float):
 	wync_client_send_inputs (ctx)
 	
 
+## TODO: either throttle or commit to the packet
 ## This system writes state (ctx.peers_events_to_sync) but it's naturally redundant
 ## So think about it as if it didn't write state
 static func wync_client_send_inputs (ctx: WyncCtx):

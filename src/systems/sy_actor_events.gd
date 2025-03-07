@@ -154,15 +154,17 @@ static func handle_events(node_ctx: Node, event_data: WyncEvent.EventData, peer_
 
 
 static func handle_event_player_block_break(node_ctx: Node, event: WyncEvent.EventData):
-	var singleton_name = event.arg_data[0] as String
-	var block_pos = event.arg_data[1] as Vector2i
+	var data = event.event_data as GameInfo.EventPlayerBlockBreak
+	var singleton_name = data.block_grid_id
+	var block_pos = data.pos
 	grid_block_break(node_ctx, singleton_name, block_pos)
 	# NOTE: this could use more safety
 
 
 static func handle_event_player_block_place(node_ctx: Node, event: WyncEvent.EventData):
-	var singleton_name = event.arg_data[0] as String
-	var block_pos = event.arg_data[1] as Vector2i
+	var data = event.event_data as GameInfo.EventPlayerBlockPlaceDelta
+	var singleton_name = data.block_grid_id
+	var block_pos = data.pos
 	grid_block_place(node_ctx, singleton_name, block_pos)
 
 	# NOTE: This event is a predicition of a Server Global event, so it has to be submitted
@@ -176,9 +178,12 @@ static func handle_event_player_block_place(node_ctx: Node, event: WyncEvent.Eve
 	var co_single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
 	var ctx = co_single_wync.ctx
 
-	var event_id = WyncEventUtils.instantiate_new_event(ctx, GameInfo.EVENT_PLAYER_BLOCK_BREAK, 2)
-	WyncEventUtils.event_add_arg(ctx, event_id, 0, WyncEntityProp.DATA_TYPE.STRING, singleton_name)
-	WyncEventUtils.event_add_arg(ctx, event_id, 1, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
+	var game_event = GameInfo.EventPlayerBlockBreak.new()
+	game_event.block_grid_id = singleton_name
+	game_event.pos = block_pos
+
+	var event_id = WyncEventUtils.instantiate_new_event(ctx, GameInfo.EVENT_PLAYER_BLOCK_BREAK)
+	WyncEventUtils.event_set_data(ctx, event_id, game_event)
 	event_id = WyncEventUtils.event_wrap_up(ctx, event_id)
 	
 	# Out of the two ways to predict 'event generated events' here we're chosing _Option number 2_:
@@ -191,8 +196,9 @@ static func handle_event_player_block_break_delta(node_ctx: Node, event: WyncEve
 	var ctx = single_wync.ctx as WyncCtx
 	var co_ticks = ctx.co_ticks
 
-	var singleton_name = event.arg_data[0] as String
-	var block_pos = event.arg_data[1] as Vector2i
+	var data = event.event_data as GameInfo.EventPlayerBlockBreakDelta
+	var singleton_name = data.block_grid_id
+	var block_pos = data.pos
 	
 	var en_block_grid = ECS.get_singleton_entity(node_ctx, singleton_name)
 	if not en_block_grid:
@@ -228,9 +234,12 @@ static func handle_event_player_block_break_delta(node_ctx: Node, event: WyncEve
 
 	# Commit a Delta Event here
 
-	var event_id = WyncEventUtils.instantiate_new_event(ctx, GameInfo.EVENT_DELTA_BLOCK_REPLACE, 2)
-	WyncEventUtils.event_add_arg(ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
-	WyncEventUtils.event_add_arg(ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, block_new_stage)
+	var game_event = GameInfo.EventDeltaBlockReplace.new()
+	game_event.pos = block_pos
+	game_event.block_id = block_new_stage
+
+	var event_id = WyncEventUtils.instantiate_new_event(ctx, GameInfo.EVENT_DELTA_BLOCK_REPLACE)
+	WyncEventUtils.event_set_data(ctx, event_id, game_event)
 	event_id = WyncEventUtils.event_wrap_up(ctx, event_id)
 
 	var err = WyncDeltaSyncUtils.delta_prop_push_event_to_current(
@@ -252,8 +261,9 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 	var ctx = single_wync.ctx as WyncCtx
 	var co_ticks = ctx.co_ticks
 
-	var singleton_name = event.arg_data[0] as String
-	var block_pos = event.arg_data[1] as Vector2i
+	var data = event.event_data as GameInfo.EventPlayerBlockPlaceDelta
+	var singleton_name = data.block_grid_id
+	var block_pos = data.pos
 	
 	var en_block_grid = ECS.get_singleton_entity(node_ctx, singleton_name)
 	if not en_block_grid:
@@ -287,10 +297,14 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 	if block_data.id < CoBlockGrid.BLOCK.DIAMOND: # upgrade block
 		block_new_stage = block_data.id +1
 
-	var event_id = WyncEventUtils.instantiate_new_event(ctx, GameInfo.EVENT_DELTA_BLOCK_REPLACE, 2)
-	WyncEventUtils.event_add_arg(ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
-	WyncEventUtils.event_add_arg(ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, block_new_stage)
+	var game_event = GameInfo.EventDeltaBlockReplace.new()
+	game_event.pos = block_pos
+	game_event.block_id = block_new_stage
+
+	var event_id = WyncEventUtils.instantiate_new_event(ctx, GameInfo.EVENT_DELTA_BLOCK_REPLACE)
+	WyncEventUtils.event_set_data(ctx, event_id, game_event)
 	event_id = WyncEventUtils.event_wrap_up(ctx, event_id)
+
 	var err = WyncDeltaSyncUtils.delta_prop_push_event_to_current(
 		ctx, blocks_prop_id, GameInfo.EVENT_DELTA_BLOCK_REPLACE, event_id, co_ticks)
 	if err != OK:
@@ -315,10 +329,14 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 			if block_data.id > block_new_stage: # downgrade block
 				block_new_stage = block_data.id -1
 
-			event_id = WyncEventUtils.instantiate_new_event(ctx, GameInfo.EVENT_DELTA_BLOCK_REPLACE, 2)
-			WyncEventUtils.event_add_arg(ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
-			WyncEventUtils.event_add_arg(ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, block_new_stage)
+			game_event = GameInfo.EventDeltaBlockReplace.new()
+			game_event.pos = block_pos
+			game_event.block_id = block_new_stage
+
+			event_id = WyncEventUtils.instantiate_new_event(ctx, GameInfo.EVENT_DELTA_BLOCK_REPLACE)
+			WyncEventUtils.event_set_data(ctx, event_id, game_event)
 			event_id = WyncEventUtils.event_wrap_up(ctx, event_id)
+
 			err = WyncDeltaSyncUtils.delta_prop_push_event_to_current(
 				ctx, blocks_prop_id, GameInfo.EVENT_DELTA_BLOCK_REPLACE, event_id, co_ticks)
 			if err != OK:
@@ -341,10 +359,14 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 	if block_data.id > block_new_stage: # downgrade block
 		block_new_stage = block_data.id -1
 
-	event_id = WyncEventUtils.instantiate_new_event(ctx, GameInfo.EVENT_DELTA_BLOCK_REPLACE, 2)
-	WyncEventUtils.event_add_arg(ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
-	WyncEventUtils.event_add_arg(ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, block_new_stage)
+	game_event = GameInfo.EventDeltaBlockReplace.new()
+	game_event.pos = block_pos
+	game_event.block_id = block_new_stage
+
+	event_id = WyncEventUtils.instantiate_new_event(ctx, GameInfo.EVENT_DELTA_BLOCK_REPLACE)
+	WyncEventUtils.event_set_data(ctx, event_id, game_event)
 	event_id = WyncEventUtils.event_wrap_up(ctx, event_id)
+
 	err = WyncDeltaSyncUtils.delta_prop_push_event_to_current(
 		ctx, blocks_prop_id, GameInfo.EVENT_DELTA_BLOCK_REPLACE, event_id, co_ticks)
 	if err != OK:
@@ -367,8 +389,9 @@ static func handle_event_player_shoot(node_ctx: Node, event: WyncEvent.EventData
 	var client_info = ctx.client_has_info[peer_id] as WyncClientInfo
 	
 	var lerp_ms: int = client_info.lerp_ms
-	var tick_left: int = event.arg_data[0] as int
-	var lerp_delta: float = event.arg_data[1] as float
+	var data = event.event_data as GameInfo.EventPlayerShoot
+	var tick_left: int = data.last_tick_rendered_left
+	var lerp_delta: float = data.lerp_delta
 	
 	# TODO: Lerp delta is not in this format
 	if lerp_delta < 0 || lerp_delta > 1000:

@@ -156,6 +156,8 @@ static func class_to_json(_class: Object) -> Dictionary:
 				dictionary[property_name] = var_to_str(property_value)
 			elif property["type"] == TYPE_COLOR:
 				dictionary[property_name] = property_value.to_html()
+			elif property_value is Object: # Is object without script
+				dictionary[property.name] = class_to_json(property_value)
 			else:
 				dictionary[property.name] = property_value
 	return dictionary

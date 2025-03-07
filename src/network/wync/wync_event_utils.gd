@@ -34,7 +34,6 @@ static func _get_new_event_id(ctx: WyncCtx) -> int:
 static func instantiate_new_event(
 	ctx: WyncCtx,
 	event_type_id: int,
-	arg_count: int
 	) -> Variant:
 	if not ctx.connected:
 		return null
@@ -43,31 +42,25 @@ static func instantiate_new_event(
 	var event = WyncEvent.new()
 	event.data = WyncEvent.EventData.new()
 	event.data.event_type_id = event_type_id
-	event.data.arg_count = arg_count
-	event.data.arg_data.resize(arg_count)
-	event.data.arg_data_type.resize(arg_count)
+	event.data.event_data = null
 
 	ctx.events[event_id] = event
 	return event_id
 
 
 ## @returns int. 0 -> ok, (int > 0) -> error
-static func event_add_arg(
+static func event_set_data(
 		ctx: WyncCtx,
 		event_id: int,
-		arg_id: int,
-		arg_data_type: int,
-		arg_data # : any
+		event_data: Variant,
+		#event_size: int
 	) -> int:
 	
 	var event = ctx.events[event_id]
 	if event is not WyncEvent:
 		return 1
 	event = event as WyncEvent
-	if arg_id >= event.data.arg_count:
-		return 2
-	event.data.arg_data_type[arg_id] = arg_data_type
-	event.data.arg_data[arg_id] = arg_data
+	event.data.event_data = event_data
 	return 0
 
 

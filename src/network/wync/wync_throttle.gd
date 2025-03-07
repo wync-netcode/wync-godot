@@ -359,7 +359,7 @@ static func wync_try_to_queue_out_packet \
 			#packet_size-ctx.out_packets_size_remaining_chars])
 			pass
 		else:
-			Log.err("(%s) DROPPED, Packet too big (%s), remaining data (%s), d(%s)" %
+			Log.errc(ctx, "(%s) DROPPED, Packet too big (%s), remaining data (%s), d(%s)" %
 			[WyncPacket.PKT_NAMES[out_packet.data.packet_type_id],
 			packet_size,
 			ctx.out_packets_size_remaining_chars,

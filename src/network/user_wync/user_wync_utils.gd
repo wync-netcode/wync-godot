@@ -317,8 +317,9 @@ static func blueprint_handle_event_delta_block_replace \
 		Log.err("EVENT_DELTA_BLOCK_REPLACE | Data is not CoBlockGrid", Log.TAG_DELTA_EVENT)
 		return [1, -1]
 	var co_block_grid = state as CoBlockGrid
-	var block_pos = event.arg_data[0] as Vector2i
-	var block_type = event.arg_data[1] as CoBlockGrid.BLOCK
+	var data = event.event_data as GameInfo.EventDeltaBlockReplace
+	var block_pos = data.pos
+	var block_type = data.block_id
 
 	# Shouldn't need to check because the user was who submitted the event
 	# But let's do it anyway to be safe
@@ -336,9 +337,12 @@ static func blueprint_handle_event_delta_block_replace \
 	if requires_undo:
 		var prev_block_type = block_data.id
 
-		event_id = WyncEventUtils.instantiate_new_event(ctx, GameInfo.EVENT_DELTA_BLOCK_REPLACE, 2)
-		WyncEventUtils.event_add_arg(ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
-		WyncEventUtils.event_add_arg(ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, prev_block_type)
+		var game_event = GameInfo.EventDeltaBlockReplace.new()
+		game_event.pos = block_pos
+		game_event.block_id = prev_block_type
+
+		event_id = WyncEventUtils.instantiate_new_event(ctx, GameInfo.EVENT_DELTA_BLOCK_REPLACE)
+		WyncEventUtils.event_set_data(ctx, event_id, game_event)
 		event_id = WyncEventUtils.event_wrap_up(ctx, event_id)
 		if (event_id == null):
 			Log.err("EVENT_DELTA_BLOCK_REPLACE | Error couldn't wrap up event", Log.TAG_DELTA_EVENT)

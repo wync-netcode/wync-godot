@@ -52,3 +52,56 @@ class EntityProjectileSpawnData:
 		var newi = EntityProjectileSpawnData.new()
 		newi.weapon_id = weapon_id
 		return newi
+
+## Events
+## --------------------------------------------------------------------------------
+
+class EventPlayerBlockBreak:
+	var block_grid_id: String
+	var pos: Vector2i
+
+	func duplicate() -> EventPlayerBlockBreak:
+		var newi = EventPlayerBlockBreak.new()
+		newi.block_grid_id = block_grid_id
+		newi.pos = pos
+		return newi
+
+class EventDeltaBlockReplace:
+	var pos: Vector2i
+	var block_id: int
+
+	func duplicate() -> EventDeltaBlockReplace:
+		var newi = EventDeltaBlockReplace.new()
+		newi.pos = pos
+		newi.block_id = block_id
+		return newi
+
+class EventPlayerBlockBreakDelta:
+	var block_grid_id: String
+	var pos: Vector2i
+
+	func duplicate() -> EventPlayerBlockBreakDelta:
+		var newi = EventPlayerBlockBreakDelta.new()
+		newi.block_grid_id = block_grid_id
+		newi.pos = pos
+		return newi
+
+class EventPlayerBlockPlaceDelta:
+	var block_grid_id: String
+	var pos: Vector2i
+
+	func duplicate() -> EventPlayerBlockPlaceDelta:
+		var newi = EventPlayerBlockPlaceDelta.new()
+		newi.block_grid_id = block_grid_id
+		newi.pos = pos
+		return newi
+
+class EventPlayerShoot:
+	var last_tick_rendered_left: int
+	var lerp_delta: float
+
+	func duplicate() -> EventPlayerShoot:
+		var newi = EventPlayerShoot.new()
+		newi.last_tick_rendered_left = last_tick_rendered_left
+		newi.lerp_delta = lerp_delta
+		return newi

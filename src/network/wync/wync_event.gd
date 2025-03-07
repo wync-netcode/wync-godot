@@ -1,20 +1,23 @@
 class_name WyncEvent
 
+
+var data: EventData
+
+
+func _init() -> void:
+	data = EventData.new()
+
+
 # NOTE: Do not confuse with WyncPktEventData.EventData
 # TODO: define data types somewhere + merge with WyncEntityProp
 
 class EventData:
 	var event_type_id: int
-	var arg_count: int
-	var arg_data_type: Array[int] 
-	var arg_data: Array[Variant]
+	var event_data: Variant
+	# var event_size?: int # first compare size before comparing data
 
-# data
-var data: EventData
-
-# metadata
-var prop_id: int = -1
-
-
-func _init() -> void:
-	data = EventData.new()
+	func duplicate() -> EventData:
+		var newi = EventData.new()
+		newi.event_type_id = event_type_id
+		newi.event_data = WyncUtils.duplicate_any(event_data)
+		return newi

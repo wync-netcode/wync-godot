@@ -57,13 +57,7 @@ static func wync_get_event_data_packet (ctx: WyncCtx, peer_id: int, event_ids: A
 		var event_data = WyncPktEventData.EventData.new()
 		event_data.event_id = event_id
 		event_data.event_type_id = wync_event.event_type_id
-		event_data.arg_count = wync_event.arg_count
-		event_data.arg_data_type = wync_event.arg_data_type.duplicate(true)
-		event_data.arg_data.resize(event_data.arg_count)
-		
-		for j in range(wync_event.arg_count):
-			event_data.arg_data[j] = WyncUtils.duplicate_any(wync_event.arg_data[j])
-		
+		event_data.event_data = WyncUtils.duplicate_any(wync_event.event_data)
 		packet.events.append(event_data)
 
 		# commit
@@ -114,13 +108,7 @@ static func wync_system_send_events_to_peer (ctx: WyncCtx, wync_peer_id: int) ->
 		var event_data = WyncPktEventData.EventData.new()
 		event_data.event_id = event_id
 		event_data.event_type_id = wync_event.event_type_id
-		event_data.arg_count = wync_event.arg_count
-		event_data.arg_data_type = wync_event.arg_data_type.duplicate(true)
-		event_data.arg_data.resize(event_data.arg_count)
-		
-		for j in range(wync_event.arg_count):
-			event_data.arg_data[j] = WyncUtils.duplicate_any(wync_event.arg_data[j])
-		
+		event_data.event_data = wync_event.event_data
 		data.events.append(event_data)
 
 		# confirm commit (these events are all aready commited)

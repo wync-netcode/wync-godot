@@ -37,9 +37,12 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 	var lerp_delta: float = co_ticks.lerp_delta_accumulator_ms / frame_ms # range [0.0, 1.0]
 	Log.out("SyActorEvents lerp_delta %s | %s | tick_left %s" % [lerp_delta, co_ticks.lerp_delta_accumulator_ms, last_tick_rendered_left], Log.TAG_SUBTICK_EVENT)
 	
-	var event_id = WyncEventUtils.instantiate_new_event(wync_ctx, GameInfo.EVENT_PLAYER_SHOOT, 2)
-	WyncEventUtils.event_add_arg(wync_ctx, event_id, 0, WyncEntityProp.DATA_TYPE.INT, last_tick_rendered_left)
-	WyncEventUtils.event_add_arg(wync_ctx, event_id, 1, WyncEntityProp.DATA_TYPE.FLOAT, lerp_delta)
+	var timewarp_event = GameInfo.EventPlayerShoot.new()
+	timewarp_event.last_tick_rendered_left = last_tick_rendered_left
+	timewarp_event.lerp_delta = lerp_delta
+
+	var event_id = WyncEventUtils.instantiate_new_event(wync_ctx, GameInfo.EVENT_PLAYER_SHOOT)
+	WyncEventUtils.event_set_data(wync_ctx, event_id, timewarp_event)
 	event_id = WyncEventUtils.event_wrap_up(wync_ctx, event_id)
 	
 	co_wync_events.events.append(event_id)

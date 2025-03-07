@@ -287,9 +287,7 @@ static func wync_handle_pkt_event_data(ctx: WyncCtx, data: Variant) -> int:
 		
 		var wync_event = WyncEvent.new()
 		wync_event.data.event_type_id = event.event_type_id
-		wync_event.data.arg_count = event.arg_count
-		wync_event.data.arg_data_type = event.arg_data_type.duplicate(true)
-		wync_event.data.arg_data = event.arg_data # std::move(std::unique_pointer)
+		wync_event.data.event_data = event.event_data
 		ctx.events[event.event_id] = wync_event
 	
 		#Log.out("events | got this events %s" % [event.event_id], Log.TAG_EVENT_DATA)

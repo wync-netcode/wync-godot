@@ -163,9 +163,22 @@ func generate_block_grid_event(
 		return
 	
 	# first register the event to Wync
-	var event_id = WyncEventUtils.instantiate_new_event(wync_ctx, event_type_id, 2)
-	WyncEventUtils.event_add_arg(wync_ctx, event_id, 0, WyncEntityProp.DATA_TYPE.STRING, block_grid_id)
-	WyncEventUtils.event_add_arg(wync_ctx, event_id, 1, WyncEntityProp.DATA_TYPE.VECTOR2, event_data)
+	var game_event = null
+	match event_type_id:
+		GameInfo.EVENT_PLAYER_BLOCK_BREAK_DELTA:
+			game_event = GameInfo.EventPlayerBlockBreakDelta.new()
+			game_event.block_grid_id = block_grid_id
+			game_event.pos = event_data as Vector2
+		GameInfo.EVENT_PLAYER_BLOCK_PLACE_DELTA:
+			game_event = GameInfo.EventPlayerBlockPlaceDelta.new()
+			game_event.block_grid_id = block_grid_id
+			game_event.pos = event_data as Vector2
+	
+	if game_event == null:
+		return
+
+	var event_id = WyncEventUtils.instantiate_new_event(wync_ctx, event_type_id)
+	WyncEventUtils.event_set_data(wync_ctx, event_id, game_event)
 	event_id = WyncEventUtils.event_wrap_up(wync_ctx, event_id)
 	if (event_id == null):
 		Log.err("Error WyncEventUtils.event_wrap_up(wync_ctx, event_id)", Log.TAG_GAME_EVENT)
@@ -173,8 +186,8 @@ func generate_block_grid_event(
 	
 	var _event = wync_ctx.events[event_id] as WyncEvent
 	if _event:
-		Log.out("TESTING event id(%s) hash: event_data %s arg_count %s arg_data %s" % [event_id, event_data, _event.data.arg_count, _event.data.arg_data], Log.TAG_GAME_EVENT)
-		Log.out("event %s hash %s" % [_event, HashUtils.hash_any(_event.data.arg_data)], Log.TAG_GAME_EVENT)
+		Log.out("TESTING event id(%s) hash: event_data %s arg_data %s" % [event_id, event_data, _event.data.event_data], Log.TAG_GAME_EVENT)
+		Log.out("event %s hash %s" % [_event, HashUtils.hash_any(_event.data.event_data)], Log.TAG_GAME_EVENT)
 	
 	# save the event id to component
 	#co_wync_events.events.append(event_id)

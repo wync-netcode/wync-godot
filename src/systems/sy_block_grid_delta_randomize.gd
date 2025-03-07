@@ -98,10 +98,12 @@ func insert_random_block_by_delta_event(wync_ctx: WyncCtx, en_block_grid: Entity
 		Log.err("Couldn't find prop [blocks] for entity %s" % [co_actor.id])
 
 	# Commit a Delta Event here
+	var game_event = GameInfo.EventDeltaBlockReplace.new()
+	game_event.pos = block_pos
+	game_event.block_id = block_type
 
-	var event_id = WyncEventUtils.instantiate_new_event(wync_ctx, GameInfo.EVENT_DELTA_BLOCK_REPLACE, 2)
-	WyncEventUtils.event_add_arg(wync_ctx, event_id, 0, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
-	WyncEventUtils.event_add_arg(wync_ctx, event_id, 1, WyncEntityProp.DATA_TYPE.INT, block_type)
+	var event_id = WyncEventUtils.instantiate_new_event(wync_ctx, GameInfo.EVENT_DELTA_BLOCK_REPLACE)
+	WyncEventUtils.event_set_data(wync_ctx, event_id, game_event)
 	event_id = WyncEventUtils.event_wrap_up(wync_ctx, event_id)
 
 	var err = WyncDeltaSyncUtils.delta_prop_push_event_to_current(wync_ctx, prop_blocks_id, GameInfo.EVENT_DELTA_BLOCK_REPLACE, event_id, co_ticks)

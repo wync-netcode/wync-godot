@@ -11,13 +11,7 @@ static func hash_any(any) -> int:
 
 
 static func object_to_dictionary(object: Object) -> Dictionary:
-	var dict = {}
-	var property_list = object.get_property_list()
-	for property in property_list:
-		if property.usage != PROPERTY_USAGE_SCRIPT_VARIABLE:
-			continue
-		dict[property.name] = object.get(property.name)
-	return dict
+	return JsonClassConverter.class_to_json(object)
 
 
 static func calculate_object_data_size(object: Object) -> int:
