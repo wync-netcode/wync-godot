@@ -48,7 +48,7 @@ func get_info_general() -> String:
 	[
 		Engine.physics_ticks_per_second,
 		Performance.get_monitor(Performance.TIME_FPS),
-		co_loopback.latency,
+		co_loopback.ctx.latency,
 		co_wync_ctx_client.ctx.co_predict_data.latency_stable,
 		co_wync_ctx_client.ctx.co_predict_data.tick_offset,
 		co_wync_ctx_client.ctx.co_predict_data.lerp_ms,

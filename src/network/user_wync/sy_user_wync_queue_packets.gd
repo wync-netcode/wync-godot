@@ -36,15 +36,14 @@ func on_process(_entities, _data, _delta: float):
 		
 		# queue
 		
-		var packet = NetPacket.new()
-		packet.packet_type_id = GameInfo.NETE_PKT_WYNC_PKT
-		packet.to_peer = pkt.to_nete_peer_id
+		var user_packet = UserNetPacket.new()
+		user_packet.packet_type_id = GameInfo.NETE_PKT_WYNC_PKT
 
 		# send contained WyncPacket
 		# no need to copy I guess
-		packet.data = pkt.data 
+		user_packet.data = pkt.data 
 
-		co_io.out_packets.append(packet)
+		Loopback.queue_packet(co_io.io_peer, pkt.to_nete_peer_id, user_packet)
 
 	# clear 
 	ctx.out_reliable_packets.clear()

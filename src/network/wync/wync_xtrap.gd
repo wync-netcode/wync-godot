@@ -56,7 +56,7 @@ static func wync_xtrap_tick_init(ctx: WyncCtx, tick: int) -> int:
 
 	# clearing delta events before predicting, predicted delta events will be
 	# polled and cached at the end of the predicted tick
-	SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(ctx)
+	WyncDeltaSyncUtils.auxiliar_props_clear_current_delta_events(ctx)
 
 	return OK
 
@@ -149,7 +149,7 @@ static func wync_xtrap_tick_end(ctx: WyncCtx, tick: int):
 
 
 static func wync_xtrap_termination(ctx: WyncCtx):
-	SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(ctx)
+	WyncDeltaSyncUtils.auxiliar_props_clear_current_delta_events(ctx)
 	ctx.currently_on_predicted_tick = false
 
 

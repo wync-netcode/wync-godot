@@ -19,4 +19,4 @@ func on_process_entity(entity, _data, _delta: float):
 	#		var pkt = co_io.in_packets[k] as NetPacket
 	#		Log.out(self, "%s:%s" % [pkt.data, HashUtils.object_to_dictionary(pkt.data)])
 
-	co_io.in_packets.clear()
+	co_io.io_peer.in_packets.clear()

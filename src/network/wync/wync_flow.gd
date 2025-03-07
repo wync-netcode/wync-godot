@@ -10,9 +10,9 @@ static func wync_server_tick_start(ctx: WyncCtx):
 
 	WyncFlow.wync_input_props_set_tick_value(ctx)
 
-	SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(ctx)
+	WyncDeltaSyncUtils.auxiliar_props_clear_current_delta_events(ctx)
 
-	SyWyncTickStartAfter.predicted_props_clear_events(ctx)
+	WyncDeltaSyncUtils.predicted_props_clear_events(ctx)
 
 
 static func wync_server_tick_end(ctx: WyncCtx):
@@ -73,9 +73,9 @@ static func wync_client_tick_start(ctx: WyncCtx):
 
 	wync_system_calculate_server_tick_rate(ctx)
 
-	SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(ctx)
+	WyncDeltaSyncUtils.auxiliar_props_clear_current_delta_events(ctx)
 
-	SyWyncTickStartAfter.predicted_props_clear_events(ctx)
+	WyncDeltaSyncUtils.predicted_props_clear_events(ctx)
 
 	WyncFlow.wync_dummy_props_cleanup(ctx) # before consuming
 
@@ -94,7 +94,7 @@ static func wync_client_tick_middle(ctx: WyncCtx):
 	# WyncFlow.wync_client_set_current_latency (single_wync.ctx, co_loopback.latency)
 	# wync_stabilize_latency (single_wync.ctx)
 
-	SyNetLatencyStable.wync_stabilize_latency(ctx)
+	WyncThrottle.wync_system_stabilize_latency(ctx)
 
 	SyNetPredictionTicks.wync_update_prediction_ticks(ctx)
 

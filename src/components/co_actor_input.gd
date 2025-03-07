@@ -10,9 +10,29 @@ var reload: bool
 var open_store: bool
 var switch_weapon_to: int = -1
 
+class PortableCopy:
+	var movement_dir_prev: Vector2
+	var movement_dir: Vector2
+	var aim: Vector2
+	var shoot: bool
+	var reload: bool
+	var open_store: bool
+	var switch_weapon_to: int = -1
 
-func copy() -> CoActorInput:
-	var newi = CoActorInput.new()
+	func copy() -> PortableCopy:
+		var newi = PortableCopy.new()
+		newi.movement_dir_prev = movement_dir_prev
+		newi.movement_dir = movement_dir
+		newi.aim = aim
+		newi.shoot = shoot
+		newi.reload = reload
+		newi.open_store = open_store
+		newi.switch_weapon_to = switch_weapon_to
+		return newi
+
+
+func copy() -> PortableCopy:
+	var newi = PortableCopy.new()
 	newi.movement_dir_prev = movement_dir_prev
 	newi.movement_dir = movement_dir
 	newi.aim = aim
@@ -23,11 +43,11 @@ func copy() -> CoActorInput:
 	return newi
 
 
-func copy_to_instance(ins: CoActorInput) -> void:
-	ins.movement_dir_prev = movement_dir_prev
-	ins.movement_dir = movement_dir
-	ins.aim = aim
-	ins.shoot = shoot
-	ins.reload = reload
-	ins.open_store = open_store
-	ins.switch_weapon_to = switch_weapon_to
+func set_from_instance(ins: PortableCopy) -> void:
+	movement_dir_prev = ins.movement_dir_prev
+	movement_dir = ins.movement_dir
+	aim = ins.aim
+	shoot = ins.shoot
+	reload = ins.reload
+	open_store = ins.open_store
+	switch_weapon_to = ins.switch_weapon_to

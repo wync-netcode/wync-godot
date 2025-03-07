@@ -12,7 +12,4 @@ func on_process_entity(_entity: Entity, _data, _delta: float):
 		print("E: Couldn't find singleton CoTransportLoopback")
 		return
 
-	if Engine.get_physics_frames() % (Engine.physics_ticks_per_second/2) == 0:
-		co_loopback._latency_mean += 1
-		if co_loopback._latency_mean > 600:
-			co_loopback._latency_mean = 0
+	Loopback.system_caotic_latency(co_loopback.ctx)

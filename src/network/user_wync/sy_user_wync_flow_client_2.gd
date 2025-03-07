@@ -16,7 +16,7 @@ func on_process(_entities, _data, _delta: float):
 		return
 	
 	# let wync know the latency
-	WyncFlow.wync_client_set_current_latency (single_wync.ctx, co_loopback.latency)
+	WyncFlow.wync_client_set_current_latency (single_wync.ctx, co_loopback.ctx.latency)
 	# TODO: set current time
 	#WyncFlow.wync_client_set_current_time_ms(ctx, my_game_time)
 

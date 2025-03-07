@@ -131,7 +131,7 @@ static func setup_entity_player(node_ctx: Node, entity: Entity):
 		co_actor.id,
 		"position",
 		WyncEntityProp.DATA_TYPE.VECTOR2,
-		func(): return co_collider.global_position,
+		func() -> Vector2: return co_collider.global_position,
 		func(pos: Vector2): co_collider.global_position = pos,
 	)
 	var vel_prop_id = WyncUtils.prop_register(
@@ -139,7 +139,7 @@ static func setup_entity_player(node_ctx: Node, entity: Entity):
 		co_actor.id,
 		"velocity",
 		WyncEntityProp.DATA_TYPE.VECTOR2,
-		func(): return co_collider.velocity,
+		func() -> Vector2: return co_collider.velocity,
 		func(vel: Vector2): co_collider.velocity = vel,
 	)
 	var input_prop_id = WyncUtils.prop_register(
@@ -147,8 +147,8 @@ static func setup_entity_player(node_ctx: Node, entity: Entity):
 		co_actor.id,
 		"input",
 		WyncEntityProp.DATA_TYPE.INPUT,
-		func(): return co_actor_input.copy(),
-		func(input: CoActorInput): input.copy_to_instance(co_actor_input),
+		func() -> CoActorInput.PortableCopy: return co_actor_input.copy(),
+		func(input: CoActorInput.PortableCopy): co_actor_input.set_from_instance(input),
 	)
 	
 	# We're gonna be using this prop to store "shoot" events for TimeWarping

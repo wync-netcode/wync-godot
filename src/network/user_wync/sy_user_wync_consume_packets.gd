@@ -22,14 +22,16 @@ func on_process(_entities, _data, _delta: float):
 	
 	if co_io == null:
 		Log.err("Couldn't find co_io_packets", Log.TAG_WYNC_CONNECT)
+	var io_peer = co_io.io_peer
 
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
 	
 	# check for packets
 
-	for k in range(co_io.in_packets.size()-1, -1, -1):
-		var pkt = co_io.in_packets[k] as NetPacket
+	for k in range(io_peer.in_packets.size()-1, -1, -1):
+		var loo_pkt = io_peer.in_packets[k] as Loopback.Packet
+		var pkt = loo_pkt.data as UserNetPacket
 
 		# check for magic number
 		if pkt.packet_type_id != GameInfo.NETE_PKT_WYNC_PKT:
@@ -42,7 +44,7 @@ func on_process(_entities, _data, _delta: float):
 			continue
 		var data = pkt.data as WyncPacket
 		
-		WyncFlow.wync_feed_packet(wync_ctx, data, pkt.from_peer)
+		WyncFlow.wync_feed_packet(wync_ctx, data, loo_pkt.from_peer)
 
 		# consume
-		co_io.in_packets.remove_at(k)
+		io_peer.in_packets.remove_at(k)

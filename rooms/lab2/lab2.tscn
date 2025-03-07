@@ -1,4 +1,4 @@
-[gd_scene load_steps=62 format=3 uid="uid://b8oeiuufqe32c"]
+[gd_scene load_steps=61 format=3 uid="uid://b8oeiuufqe32c"]
 
 [ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_1ps8v"]
 [ext_resource type="Script" path="res://data/StaticData.gd" id="2_2epi3"]
@@ -46,7 +46,6 @@
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_setup_sync_rocket.gd" id="40_chbf8"]
 [ext_resource type="Script" path="res://src/network/sy_nete_cleanup.gd" id="40_dopds"]
 [ext_resource type="Script" path="res://src/network/user_wync/sy_user_wync_server_tick_end.gd" id="44_crgrp"]
-[ext_resource type="Script" path="res://src/network/wync/sy_wync_clock_client.gd" id="45_6w0w5"]
 [ext_resource type="Script" path="res://src/network/user_wync/sy_user_wync_queue_packets.gd" id="46_8e2uo"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_setup_sync_ball.gd" id="49_4ofub"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_lerp.gd" id="49_dsdhr"]
@@ -366,9 +365,6 @@ script = ExtResource("32_wj45u")
 
 [node name="SyNeteLoopback" type="Node" parent="worlds/WorldClient1/GroupProcess"]
 script = ExtResource("21_rayuf")
-
-[node name="SyWyncClockClient" type="Node" parent="worlds/WorldClient1/GroupProcess"]
-script = ExtResource("45_6w0w5")
 
 [node name="SyWyncLerp" type="Node" parent="worlds/WorldClient1/GroupProcess"]
 script = ExtResource("49_dsdhr")

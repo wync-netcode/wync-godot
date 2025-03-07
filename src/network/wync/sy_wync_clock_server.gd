@@ -14,8 +14,7 @@ func on_process(_entities, _data, _delta: float):
 		print("E: Couldn't find singleton CoTransportLoopback")
 		return
 
-	WyncFlow.wync_client_set_current_latency(ctx, co_loopback.latency)
-	#wync_server_sync_clock(ctx)
+	WyncFlow.wync_client_set_current_latency(ctx, co_loopback.ctx.latency)
 	
 	
 ## This service doesn't write state
