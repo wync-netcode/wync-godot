@@ -42,24 +42,27 @@ static func setup_entity_ball(node_ctx: Node, entity: Entity):
 		co_actor.id,
 		"position",
 		WyncEntityProp.DATA_TYPE.VECTOR2,
-		func() -> Vector2: return co_collider.global_position,
-		func(pos: Vector2): co_collider.global_position = pos,
+		co_collider,
+		func(user_ctx: Variant) -> Vector2: return (user_ctx as CharacterBody2D).global_position,
+		func(user_ctx: Variant, pos: Vector2): (user_ctx as CharacterBody2D).global_position = pos,
 	)
 	var vel_prop_id = WyncUtils.prop_register(
 		wync_ctx,
 		co_actor.id,
 		"velocity",
 		WyncEntityProp.DATA_TYPE.VECTOR2,
-		func() -> Vector2: return co_collider.velocity,
-		func(vel: Vector2): co_collider.velocity = vel,
+		co_collider,
+		func(user_ctx: Variant) -> Vector2: return (user_ctx as CharacterBody2D).velocity,
+		func(user_ctx: Variant, vel: Vector2): (user_ctx as CharacterBody2D).velocity = vel,
 	)
 	var aim_prop_id = WyncUtils.prop_register(
 		wync_ctx,
 		co_actor.id,
 		"aim",
 		WyncEntityProp.DATA_TYPE.FLOAT,
-		func() -> float: return co_ball.aim_radians,
-		func(new_aim: float): co_ball.aim_radians = new_aim,
+		co_ball,
+		func(user_ctx: Variant) -> float: return (user_ctx as CoBall).aim_radians,
+		func(user_ctx: Variant, new_aim: float): (user_ctx as CoBall).aim_radians = new_aim,
 	)
 	
 	# integration function
@@ -103,8 +106,9 @@ static func setup_entity_rocket(node_ctx: Node, entity: Entity):
 		co_actor.id,
 		"position",
 		WyncEntityProp.DATA_TYPE.VECTOR2,
-		func() -> Vector2: return entity_node.global_position,
-		func(pos: Vector2): entity_node.global_position = pos,
+		entity_node,
+		func(user_ctx: Variant) -> Vector2: return (user_ctx as Node2D).global_position,
+		func(user_ctx: Variant, pos: Vector2): (user_ctx as Node2D).global_position = pos,
 	)
 	
 	# interpolation
@@ -131,24 +135,27 @@ static func setup_entity_player(node_ctx: Node, entity: Entity):
 		co_actor.id,
 		"position",
 		WyncEntityProp.DATA_TYPE.VECTOR2,
-		func() -> Vector2: return co_collider.global_position,
-		func(pos: Vector2): co_collider.global_position = pos,
+		co_collider,
+		func(user_ctx: Variant) -> Vector2: return (user_ctx as CharacterBody2D).global_position,
+		func(user_ctx: Variant, pos: Vector2): (user_ctx as CharacterBody2D).global_position = pos,
 	)
 	var vel_prop_id = WyncUtils.prop_register(
 		wync_ctx,
 		co_actor.id,
 		"velocity",
 		WyncEntityProp.DATA_TYPE.VECTOR2,
-		func() -> Vector2: return co_collider.velocity,
-		func(vel: Vector2): co_collider.velocity = vel,
+		co_collider,
+		func(user_ctx: Variant) -> Vector2: return (user_ctx as CharacterBody2D).velocity,
+		func(user_ctx: Variant, vel: Vector2): (user_ctx as CharacterBody2D).velocity = vel,
 	)
 	var input_prop_id = WyncUtils.prop_register(
 		wync_ctx,
 		co_actor.id,
 		"input",
 		WyncEntityProp.DATA_TYPE.INPUT,
-		func() -> CoActorInput.PortableCopy: return co_actor_input.copy(),
-		func(input: CoActorInput.PortableCopy): co_actor_input.set_from_instance(input),
+		co_actor_input,
+		func(user_ctx: Variant) -> CoActorInput.PortableCopy: return (user_ctx as CoActorInput).copy(),
+		func(user_ctx: Variant, input: CoActorInput.PortableCopy): (user_ctx as CoActorInput).set_from_instance(input),
 	)
 	
 	# We're gonna be using this prop to store "shoot" events for TimeWarping
@@ -158,12 +165,13 @@ static func setup_entity_player(node_ctx: Node, entity: Entity):
 		co_actor.id,
 		"events",
 		WyncEntityProp.DATA_TYPE.EVENT,
-		func():
-			return co_wync_events.events.duplicate(true),
-		func(events: Array):
-			co_wync_events.events.clear()
+		co_wync_events,
+		func(user_ctx: Variant):
+			return (user_ctx as CoWyncEvents).events.duplicate(true),
+		func(user_ctx: Variant, events: Array):
+			(user_ctx as CoWyncEvents).events.clear()
 			# NOTE: can't check cast like this `if events is not Array[int]:`
-			co_wync_events.events.append_array(events),
+			(user_ctx as CoWyncEvents).events.append_array(events),
 	)
 	co_wync_events.prop_id = events_prop_id
 		
@@ -215,8 +223,9 @@ static func setup_entity_block_grid_predicted(node_ctx: Node, entity: Entity):
 		co_actor.id,
 		"blocks",
 		WyncEntityProp.DATA_TYPE.ANY,
-		func() -> CoBlockGrid: return co_block_grid.make_duplicate(),
-		func(block_grid: CoBlockGrid): co_block_grid.set_from_instance(block_grid),
+		co_block_grid,
+		func(user_ctx: Variant) -> CoBlockGrid: return (user_ctx as CoBlockGrid).make_duplicate(),
+		func(user_ctx: Variant, block_grid: CoBlockGrid): (user_ctx as CoBlockGrid).set_from_instance(block_grid),
 	)
 	
 	Log.out("wync: Registered entity %s with id %s" % [entity, co_actor.id], Log.TAG_PROP_SETUP, Log.TAG_DEBUG2)
@@ -245,8 +254,9 @@ static func setup_entity_block_grid_delta(node_ctx: Node, entity: Entity, predic
 		wync_entity_id,
 		"blocks",
 		WyncEntityProp.DATA_TYPE.ANY,
-		func() -> CoBlockGrid: return co_block_grid.make_duplicate(),
-		func(block_grid: CoBlockGrid): co_block_grid.set_from_instance(block_grid),
+		co_block_grid,
+		func(user_ctx: Variant) -> CoBlockGrid: return (user_ctx as CoBlockGrid).make_duplicate(),
+		func(user_ctx: Variant, block_grid: CoBlockGrid): (user_ctx as CoBlockGrid).set_from_instance(block_grid),
 	)
 
 	# hook Prop to Blueprint
@@ -256,7 +266,7 @@ static func setup_entity_block_grid_delta(node_ctx: Node, entity: Entity, predic
 		wync_entity_id,
 		blocks_prop,
 		GameInfo.BLUEPRINT_ID_BLOCK_GRID_DELTA,
-		func() -> CoBlockGrid: return co_block_grid,
+		co_block_grid,
 		predicted
 	)
 	if err > 0:

@@ -230,7 +230,7 @@ static func _wync_sync_relative_prop_base_only(
 	# ===========================================================
 	# Save state history per tick
 	
-	var state = prop.getter.call() # getter already gives a copy
+	var state = prop.getter.call(prop.user_ctx_pointer) # getter already gives a copy
 	var prop_snap = WyncPktSnap.SnapProp.new()
 	prop_snap.prop_id = prop_id
 	prop_snap.state = state
@@ -274,7 +274,7 @@ static func extract_data_to_tick(ctx: WyncCtx, co_ticks: CoTicks, save_on_tick: 
 			# ===========================================================
 			# Save state history per tick
 			
-			prop.confirmed_states.insert_at(save_on_tick, prop.getter.call())
+			prop.confirmed_states.insert_at(save_on_tick, prop.getter.call(prop.user_ctx_pointer))
 
 
 ## This function must be ran each frame

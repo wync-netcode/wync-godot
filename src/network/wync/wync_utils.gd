@@ -65,6 +65,7 @@ static func prop_register(
 	entity_id: int,
 	name_id: String,
 	data_type: WyncEntityProp.DATA_TYPE,
+	user_ctx_pointer: Variant, # pointer
 	getter: Callable,
 	setter: Callable
 	) -> int:
@@ -93,6 +94,7 @@ static func prop_register(
 	var prop = WyncEntityProp.new()
 	prop.name_id = name_id
 	prop.data_type = data_type
+	prop.user_ctx_pointer = user_ctx_pointer
 	prop.getter = getter
 	prop.setter = setter
 
@@ -614,10 +616,11 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 		entity_id,
 		"channel_%d" % [channel_id],
 		WyncEntityProp.DATA_TYPE.EVENT,
-		func() -> Array: # getter
-			return ctx.peer_has_channel_has_events[peer_id][channel_id].duplicate(true),
-		func(input: Array): # setter
-			var event_array = ctx.peer_has_channel_has_events[peer_id][channel_id] as Array
+		ctx,
+		func(wync_ctx: Variant) -> Array: # getter
+			return (wync_ctx as WyncCtx).peer_has_channel_has_events[peer_id][channel_id].duplicate(true),
+		func(wync_ctx: Variant, input: Array): # setter
+			var event_array = (wync_ctx as WyncCtx).peer_has_channel_has_events[peer_id][channel_id] as Array
 			event_array.clear()
 			event_array.append_array(input),
 	)
@@ -649,10 +652,11 @@ static func setup_entity_prob_for_entity_update_delay_ticks(ctx: WyncCtx, peer_i
 		entity_id,
 		"entity_prob",
 		WyncEntityProp.DATA_TYPE.INT,
-		func() -> int: # getter
+		ctx,
+		func(p_ctx: Variant) -> int: # getter
 			# use any value that constantly changes, don't really need to read it
-			return ctx.co_ticks.ticks, 
-		func(_value: Variant): # setter
+			return (p_ctx as WyncCtx).co_ticks.ticks, 
+		func(_prob_ctx: Variant, _value: Variant): # setter
 			pass,
 	)
 	if prop_prob != -1:

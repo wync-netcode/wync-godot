@@ -56,7 +56,7 @@ static func wync_buffer_inputs(ctx: WyncCtx):
 			continue
 	
 		# Log.out(node_self, "gonna call getter for prop %s" % prop_id)
-		var new_state = input_prop.getter.call()
+		var new_state = input_prop.getter.call(input_prop.user_ctx_pointer)
 		if new_state == null:
 			Log.out("new_state == null :%s" % [new_state], Log.TAG_INPUT_BUFFER)
 			continue

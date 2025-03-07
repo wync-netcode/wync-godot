@@ -23,9 +23,10 @@ static var INTERPOLABLE_DATA_TYPES: Array[DATA_TYPE] = [
 
 var name_id: String
 var data_type: DATA_TYPE
-var getter: Callable #: func() -> Variant
-var setter: Callable #: func(Variant) -> void
-var getter_pointer: Callable #: func() -> VariantPointer # for relative sync props
+var user_ctx_pointer: Variant #: VariantPointer
+var getter: Callable #: func(user_ctx: Variant) -> Variant
+var setter: Callable #: func(user_ctx: Variant, new_state: Variant) -> void
+var state_pointer: Variant #: VariantPointer # for relative sync props
 
 # Optional properties:
 # TODO: Move these elsewhere

@@ -482,7 +482,7 @@ static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 			var input = prop.confirmed_states.get_at(ctx.co_ticks.ticks)
 			if input == null:
 				continue
-			prop.setter.call(input)
+			prop.setter.call(prop.user_ctx_pointer, input)
 			#Log.out(self, "input is %s,%s" % [input.movement_dir.x, input.movement_dir.y])
 
 	return OK
@@ -539,7 +539,7 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 		# if a _predicted delta prop_ receives fullsnapshot cleanup must be done
 		# if a delta prop receives a fullsnapshot we have no other option but to comply
 
-		prop.setter.call(snap_prop.state)
+		prop.setter.call(prop.user_ctx_pointer, snap_prop.state)
 		prop.just_received_new_state = true
 		var delta_props_last_tick = ctx.client_has_relative_prop_has_last_tick[ctx.my_peer_id] as Dictionary
 		delta_props_last_tick[snap_prop.prop_id] = data.tick
@@ -556,7 +556,7 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 				aux_prop.confirmed_states_undo.insert_at(j, [] as Array[int])
 
 			# debugging: save canonic state to compare it later
-			var state_dup = WyncUtils.duplicate_any(prop.getter.call())
+			var state_dup = WyncUtils.duplicate_any(prop.getter.call(prop.user_ctx_pointer))
 			prop.confirmed_states.insert_at(0, state_dup)
 
 	wync_client_update_last_tick_received(ctx, data.tick)

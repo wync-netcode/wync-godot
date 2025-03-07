@@ -71,7 +71,7 @@ func on_process(entities, _data, delta: float):
 			var progress = (float(tick) - ctx.last_tick_received) / (target_tick - ctx.last_tick_received)
 			var prop_position = WyncUtils.entity_get_prop(ctx, co_actor.id, "position")
 			if prop_position:
-				DebugPlayerTrail.spawn(self, prop_position.getter.call(), progress, 0, false, -10)
+				DebugPlayerTrail.spawn(self, prop_position.getter.call(prop_position.user_ctx_pointer), progress, 0, false, -10)
 
 		# ------- END USER PREDICTION FUNCTIONS -------
 

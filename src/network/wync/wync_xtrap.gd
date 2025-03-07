@@ -50,7 +50,7 @@ static func wync_xtrap_tick_init(ctx: WyncCtx, tick: int) -> int:
 			
 		if input_snap == null:
 			continue
-		prop.setter.call(input_snap)
+		prop.setter.call(prop.user_ctx_pointer, input_snap)
 
 		# INPUT/EVENTs don't need integration functions
 
@@ -175,7 +175,7 @@ static func props_update_predicted_states_data(ctx: WyncCtx, props_ids: Array) -
 		# (run on last two iterations)
 		
 		pred_prev.data = pred_curr.data
-		pred_curr.data = prop.getter.call()
+		pred_curr.data = prop.getter.call(prop.user_ctx_pointer)
 
 
 static func props_update_predicted_states_ticks(ctx: WyncCtx, props_ids: Array, target_tick: int) -> void:

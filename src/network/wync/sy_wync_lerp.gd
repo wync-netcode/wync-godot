@@ -124,7 +124,7 @@ static func confirmed_states_set_to_tick_interpolated (
 		var lerped_state = WyncUtils.lerp_any(left_value, right_value, lerp_delta)
 		Log.out("EVENT | curr_tick %s, event_tick %s | prop(%s)(%s) lerp_delta %s" % [co_ticks.ticks, tick_left, prop_id, prop.name_id, lerp_delta], Log.TAG_LERP)
 		prop.interpolated_state = lerped_state
-		prop.setter.call(lerped_state)
+		prop.setter.call(prop.user_ctx_pointer, lerped_state)
 
 
 static func confirmed_states_set_to_tick (
@@ -144,4 +144,4 @@ static func confirmed_states_set_to_tick (
 		var tick_value = prop.confirmed_states.get_at(tick)
 		if tick_value == null:
 			continue
-		prop.setter.call(tick_value)
+		prop.setter.call(prop.user_ctx_pointer, tick_value)

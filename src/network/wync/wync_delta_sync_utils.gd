@@ -58,7 +58,7 @@ static func prop_set_relative_syncable (
 	entity_id: int,
 	prop_id: int,
 	delta_blueprint_id: int,
-	getter_pointer: Callable,
+	state_pointer: Variant,
 	predictable: bool = false,
 	# timewarpable: bool # NOT PLANNED
 	) -> Error:
@@ -72,7 +72,7 @@ static func prop_set_relative_syncable (
 		return ERR_DOES_NOT_EXIST
 	
 	prop.relative_syncable = true
-	prop.getter_pointer = getter_pointer
+	prop.state_pointer = state_pointer
 	prop.delta_blueprint_id = delta_blueprint_id
 
 	# depending on the features and if it's server or client we'll need different things
@@ -96,12 +96,13 @@ static func prop_set_relative_syncable (
 		entity_id,
 		"auxiliar_delta_events",
 		WyncEntityProp.DATA_TYPE.EVENT,
-		func():
-			return prop.current_delta_events.duplicate(true),
-		func(events: Array):
-			prop.current_delta_events.clear()
+		prop,
+		func(prop_ctx: WyncEntityProp):
+			return prop_ctx.current_delta_events.duplicate(true),
+		func(prop_ctx: WyncEntityProp, events: Array):
+			prop_ctx.current_delta_events.clear()
 			# NOTE: somehow can't check cast like this `if events is not Array[int]:`
-			prop.current_delta_events.append_array(events),
+			prop_ctx.current_delta_events.append_array(events),
 	)
 	# FIXME: shouldn't we be setting the auxiliar as predicted?
 	# the main prop IS marked as predicted, however, auxiliar props are NOT marked
@@ -177,7 +178,7 @@ static func merge_event_to_state_real_state(ctx: WyncCtx, prop_id: int, event_id
 	if not prop.relative_syncable:
 		return 2
 
-	var state_pointer = prop.getter_pointer.call()
+	var state_pointer = prop.state_pointer.call()
 	if state_pointer == null:
 		return 3
 
@@ -217,7 +218,7 @@ static func merge_event_to_state_real_state \
 		if not aux_prop.is_auxiliar_prop:
 			return 4
 
-	var state_pointer = prop.getter_pointer.call()
+	var state_pointer = prop.state_pointer
 	if state_pointer == null:
 		return 5
 
@@ -271,7 +272,7 @@ static func delta_sync_prop_extract_state (ctx: WyncCtx, prop_id: int) -> int:
 	prop = prop as WyncEntityProp
 	if not prop.relative_syncable:
 		return 2
-	prop.confirmed_states.insert_at(0, prop.getter.call())
+	prop.confirmed_states.insert_at(0, prop.getter.call(prop.user_ctx_pointer))
 
 	# TODO: clear all events, they're all invalid now
 	# TODO: copy to state 1	
@@ -349,4 +350,4 @@ static func predicted_props_clear_events(ctx: WyncCtx):
 			continue
 		if not WyncUtils.prop_is_predicted(ctx, prop_id):
 			continue
-		prop.setter.call([] as Array[int])
+		prop.setter.call(prop.user_ctx_pointer, [] as Array[int])

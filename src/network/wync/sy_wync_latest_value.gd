@@ -71,7 +71,7 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 		prop = prop as WyncEntityProp
 		if not prop.relative_syncable || not WyncUtils.prop_is_predicted(ctx, prop_id):
 			continue
-		var restored = WyncUtils.duplicate_any(prop.getter.call())
+		var restored = WyncUtils.duplicate_any(prop.getter.call(prop.user_ctx_pointer))
 		var canonic = prop.confirmed_states.get_at(0)
 		if restored == null || canonic == null:
 			break
@@ -98,7 +98,7 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 		prop = prop as WyncEntityProp
 		if not prop.relative_syncable || not WyncUtils.prop_is_predicted(ctx, prop_id):
 			continue
-		var state_dup = WyncUtils.duplicate_any(prop.getter.call())
+		var state_dup = WyncUtils.duplicate_any(prop.getter.call(prop.user_ctx_pointer))
 		prop.confirmed_states.insert_at(0, state_dup)
 	# --------------------------------------------------------------------------------
 	
@@ -147,7 +147,7 @@ static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: A
 		
 		# TODO: check type before applying (shouldn't be necessary if we ensure we're filling the correct data)
 		# Log.out(ctx, "LatestValue | setted prop_name_id %s" % [prop.name_id])
-		prop.setter.call(last_confirmed)
+		prop.setter.call(prop.user_ctx_pointer, last_confirmed)
 
 
 # should be run on client each logic frame
