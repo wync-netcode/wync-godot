@@ -257,14 +257,26 @@ class PendingEntityToSpawn:
 	var entity_type_id: int
 	var spawn_data: Variant
 
-# Client only
-# List<PendingEntityToSpawn>
+## User facing var
+## Client only
+## List<PendingEntityToSpawn>
 var out_pending_entities_to_spawn: Array[PendingEntityToSpawn]
 
 # Internal list
 # Map <entity_id: int, Tripla[prop_start: int, prop_end: int, curr: int]
 var pending_entity_to_spawn_props: Dictionary
 
+## Despawned entities
+## List<entity_id: int>
+var despawned_entity_ids: Array[int]
+
+## User facing var
+## Client only
+## List<entity_id: int>
+var out_pending_entities_to_despawn: Array[int]
+
+
+## Queues
 
 # * Only refill the queue once it's emptied
 # * Queue entities for eventual synchronization

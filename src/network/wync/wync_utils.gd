@@ -33,13 +33,13 @@ static func untrack_entity(ctx: WyncCtx, entity_id: int):
 		var entity_queue := ctx.queue_clients_entities_to_sync[client_id] as FIFORing
 		entity_queue.remove_item(entity_id)
 
-		# clients can still see it so it gets re added...
-
-		var seen_entities := ctx.clients_sees_entities[client_id] as Dictionary
-		seen_entities.erase(entity_id)
-
 		var new_seen_entities := ctx.clients_sees_new_entities[client_id] as Dictionary
 		new_seen_entities.erase(entity_id)
+
+		# Note: don't remove from 'ctx.client_sees_entities' so that we can know
+		# who to send the despawn packet
+
+	ctx.despawned_entity_ids.append(entity_id)
 
 
 static func delete_prop(ctx: WyncCtx, prop_id: int):

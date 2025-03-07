@@ -61,3 +61,20 @@ static func actors_find_available_id(co_actors: CoSingleActors) -> int:
 	co_actors.cursor = cursor
 	return -1
 
+
+static func remove_actor(node_ctx: Node, actor_id: int):
+	var single_actors = ECS.get_singleton_entity(node_ctx, "EnSingleActors")
+	if not single_actors:
+		print("E: Couldn't find singleton EnSingleActors")
+		return
+	var co_actors = single_actors.get_component(CoSingleActors.label) as CoSingleActors
+
+	if actor_id >= co_actors.max_actors:
+		return
+
+	var entity = co_actors.actors[actor_id]
+	if entity == null:
+		return
+
+	co_actors.actors[actor_id] = null
+	co_actors.actor_count -= 1

@@ -45,11 +45,15 @@ func on_process_entity(entity: Entity, _data, delta: float):
 	if explode:
 		pro_data.alive = false
 		var co_actor = entity.get_component(CoActor.label) as CoActor
-		print("D: Projectile Exploded actor_id(%s)" % [co_actor.id])
-
-		# remove from Wync
 		var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 		var ctx = single_wync.ctx as WyncCtx
+
+		print("D: Projectile Exploded actor_id(%s)" % [co_actor.id])
+
+		# unregister
+		SyActorRegister.remove_actor(self, co_actor.id)
+
+		# remove from Wync
 		WyncUtils.untrack_entity(ctx, co_actor.id)
 
 		# remove from ECS

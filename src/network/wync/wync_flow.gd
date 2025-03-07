@@ -33,6 +33,7 @@ static func wync_server_tick_end(ctx: WyncCtx):
 
 	# send
 
+	WyncThrottle.wync_system_send_entities_to_despawn(ctx)
 	WyncThrottle.wync_system_send_entities_to_spawn(ctx)
 
 	WyncThrottle.wync_system_fill_entity_sync_queue(ctx)
@@ -158,6 +159,9 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 		WyncPacket.WYNC_PKT_SPAWN:
 			if is_client:
 				wync_handle_pkt_spawn(ctx, wync_pkt.data)
+		WyncPacket.WYNC_PKT_DESPAWN:
+			if is_client:
+				wync_handle_pkt_despawn(ctx, wync_pkt.data)
 		_:
 			Log.err("wync packet_type_id(%s) not recognized skipping (%s)" % [wync_pkt.packet_type_id, wync_pkt.data])
 			return -1
@@ -584,6 +588,24 @@ static func wync_handle_pkt_spawn(ctx: WyncCtx, data: Variant):
 		entity_to_spawn.spawn_data = spawn_data
 
 		ctx.out_pending_entities_to_spawn.append(entity_to_spawn)
+
+
+static func wync_handle_pkt_despawn(ctx: WyncCtx, data: Variant):
+
+	if data is not WyncPktDespawn:
+		return 1
+	data = data as WyncPktDespawn
+
+	for i: int in range(data.entity_amount):
+
+		var entity_id = data.entity_ids[i]
+		ctx.out_pending_entities_to_despawn.append(entity_id)
+
+		WyncUtils.untrack_entity(ctx, entity_id)
+
+
+static func wync_clear_entities_pending_to_despawn(ctx: WyncCtx):
+	ctx.out_pending_entities_to_despawn.clear()
 
 
 static func _wync_add_new_dummy_prop(ctx: WyncCtx, prop_id: int, data: Variant):

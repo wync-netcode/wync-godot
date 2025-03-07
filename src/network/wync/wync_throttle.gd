@@ -72,6 +72,41 @@ static func wync_system_send_entities_to_spawn(ctx: WyncCtx, _commit: bool = tru
 	return OK
 
 
+# This system is not throttled
+static func wync_system_send_entities_to_despawn(ctx: WyncCtx, _commit: bool = true) -> int:
+
+	for client_id in range(1, ctx.peers.size()):
+
+		var current_entities_set = ctx.clients_sees_entities[client_id] as Dictionary
+		var entity_id_list: Array[int] = []
+		var entity_amount = 0
+
+		for entity_id: int in ctx.despawned_entity_ids:
+			if current_entities_set.has(entity_id):
+				entity_id_list.append(entity_id)
+				entity_amount += 1
+
+				# ATTENTION: Removing entity here
+				current_entities_set.erase(entity_id)
+
+		if entity_amount == 0:
+			continue
+
+		var packet = WyncPktDespawn.new(entity_amount)
+		for i in range(entity_amount):
+			packet.entity_ids[i] = entity_id_list[i]
+
+		# queue 
+		var res = WyncFlow.wync_wrap_packet_out(ctx, client_id, WyncPacket.WYNC_PKT_DESPAWN, packet)
+		if res[0] == OK:
+			var pkt_out = res[1] as WyncPacketOut
+			WyncThrottle.wync_try_to_queue_out_packet(ctx, pkt_out, true)
+
+	ctx.despawned_entity_ids.clear()
+
+	return OK
+
+
 ## Calls all the systems that produce packets to send whilst respecting the data limit
 
 static func wync_system_gather_reliable_packets(ctx: WyncCtx):

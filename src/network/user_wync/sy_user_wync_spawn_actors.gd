@@ -7,28 +7,17 @@ const label: StringName = StringName("SyUserWyncSpawnActors")
 
 
 func on_process(_entities, _data, _delta: float):
-	var co_io = null # : CoIOPackets*
-	
-	var single_client = ECS.get_singleton_entity(self, "EnSingleClient")
-	if single_client:
-		var co_client = single_client.get_component(CoClient.label) as CoClient
-		if co_client.state != CoClient.STATE.CONNECTED:
-			return
-		co_io = single_client.get_component(CoIOPackets.label) as CoIOPackets
-	
-	if co_io == null:
-		var single_server = ECS.get_singleton_entity(self, "EnSingleServer")
-		if single_server:
-			co_io = single_server.get_component(CoIOPackets.label) as CoIOPackets
-	
-	if co_io == null:
-		Log.err("Couldn't find co_io_packets", Log.TAG_WYNC_CONNECT)
 
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var ctx = single_wync.ctx as WyncCtx
 
-	if ctx.out_pending_entities_to_spawn.size() <= 0:
-		return
+	if ctx.out_pending_entities_to_despawn.size() > 0:
+		despawn_actors(ctx)
+	if ctx.out_pending_entities_to_spawn.size() > 0:
+		spawn_actors(ctx)
+
+
+func spawn_actors(ctx: WyncCtx):
 
 	for i in range(ctx.out_pending_entities_to_spawn.size()):
 
@@ -46,3 +35,29 @@ func on_process(_entities, _data, _delta: float):
 
 	# wync cleanup
 	WyncFlow.wync_system_spawned_props_cleanup(ctx)
+
+
+func despawn_actors(ctx: WyncCtx):
+
+	var single_actors = ECS.get_singleton_entity(self, "EnSingleActors")
+	if not single_actors:
+		print("E: Couldn't find singleton EnSingleActors")
+		return
+	var co_actors = single_actors.get_component(CoSingleActors.label) as CoSingleActors
+
+	for entity_id: int in ctx.out_pending_entities_to_despawn:
+
+		# try to find the entity
+		if entity_id >= co_actors.max_actors:
+			continue
+
+		var entity = co_actors.actors[entity_id]
+		if entity == null:
+			continue
+
+		# free it
+
+		ECS.remove_entity(entity)
+		SyActorRegister.remove_actor(self, entity_id)
+
+	WyncFlow.wync_clear_entities_pending_to_despawn(ctx)
