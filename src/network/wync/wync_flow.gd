@@ -24,96 +24,36 @@ static func wync_server_tick_end(ctx: WyncCtx):
 	# of the client's _input_bufferer_
 	SyWyncStateExtractor.extract_data_to_tick(ctx, ctx.co_ticks, ctx.co_ticks.ticks)
 
-	# basic throttling here
-	#if ctx.co_ticks.ticks % 4 != 0:
-		#return
-
-	# move to gather reliable packets
-	SyWyncClockServer.wync_server_sync_clock(ctx)
-
-	# send
-
-	WyncThrottle.wync_system_send_entities_to_despawn(ctx)
-	WyncThrottle.wync_system_send_entities_to_spawn(ctx)
-
-	WyncThrottle.wync_system_fill_entity_sync_queue(ctx)
-	WyncThrottle.wync_compute_entity_sync_order(ctx)
-	SyWyncStateExtractor.wync_send_extracted_data(ctx)
-
-	
-
-	#"""
-	# regular extractor
-	#SyWyncStateExtractor.extract_data_to_tick(ctx, ctx.co_ticks, ctx.co_ticks.ticks)
-	#SyWyncStateExtractor.wync_send_extracted_data(ctx)
-	## delta extractor
-	#SyWyncStateExtractorDeltaSync.wync_reset_events_to_sync(ctx)
-	## these two must be called in this order:
-	#SyWyncStateExtractorDeltaSync.queue_delta_event_data_to_be_synced_to_peers(ctx)
-	#SyWyncSendEventData.wync_send_event_data (ctx)
-	#"""
-
-	#TODO : WyncThrottle.wync_system_send_entities_updates(ctx)
-
 
 static func wync_client_tick_start(ctx: WyncCtx):
-	
-	# before tick start
 
 	SyWyncBufferedInputs.wync_buffer_inputs(ctx)
 
 	SyTicks.wync_advance_ticks(ctx)
 
-	# after tick start
+	WyncThrottle.wync_system_stabilize_latency(ctx)
+	
+	SyNetPredictionTicks.wync_update_prediction_ticks(ctx)
 
-	# sy_wync_receive_event_data.on_process([], null, _delta, self)
 
+static func wync_client_tick_end(ctx: WyncCtx):
+
+	WyncDeltaSyncUtils.auxiliar_props_clear_current_delta_events(ctx)
+
+	WyncDeltaSyncUtils.predicted_props_clear_events(ctx)
+	
+	SyWyncBufferedInputs.wync_buffer_inputs(ctx)
+
+	SyWyncLatestValue.wync_reset_props_to_latest_value(ctx)
+	
 	# NOTE: Maybe this one should be called AFTER consuming packets, and BEFORE xtrap
 	wync_system_calculate_prob_prop_rate(ctx)
 
 	wync_system_calculate_server_tick_rate(ctx)
 
-	WyncDeltaSyncUtils.auxiliar_props_clear_current_delta_events(ctx)
+	WyncThrottle.wync_system_calculate_data_per_tick(ctx)
 
-	WyncDeltaSyncUtils.predicted_props_clear_events(ctx)
-
-	WyncFlow.wync_dummy_props_cleanup(ctx) # before consuming
-
-	# SyUserWyncConsumePacketsSecond # consume packets would go after this function
-
-	WyncFlow.wync_try_to_connect(ctx)
-
-	# SyWyncReceiveClientInfo
-
-
-static func wync_client_tick_middle(ctx: WyncCtx):
-
-	# SyUserWyncConsumePackets
-
-	# SyNetLatencyStable
-	# WyncFlow.wync_client_set_current_latency (single_wync.ctx, co_loopback.latency)
-	# wync_stabilize_latency (single_wync.ctx)
-
-	WyncThrottle.wync_system_stabilize_latency(ctx)
-
-	SyNetPredictionTicks.wync_update_prediction_ticks(ctx)
-
-	SyWyncBufferedInputs.wync_buffer_inputs(ctx)
-
-	# SyWyncSaveConfirmedStates
-	# WyncFlow.wync_handle_pkt_prop_snap(wync_ctx, data)
-
-	SyWyncLatestValue.wync_reset_props_to_latest_value(ctx)
-
-	# Xtrap
-	#Log.outc(ctx, "debug_pred_delta_event XTRAP START")
-
-
-static func wync_client_tick_end(ctx: WyncCtx):
-
-	SyWyncSendInputs.wync_client_send_inputs(ctx)
-
-	SyWyncSendEventData.wync_send_event_data(ctx)
+	WyncFlow.wync_dummy_props_cleanup(ctx)
 
 	SyWyncLerpPrecompute.wync_lerp_precompute(ctx)
 

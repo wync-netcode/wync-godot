@@ -12,7 +12,7 @@ func on_process(_entities, _data, _delta: float):
 
 	# tick start
 
-	WyncThrottle.wync_set_data_limit_chars_for_out_packets(ctx, 1000)
+	WyncThrottle.wync_set_data_limit_chars_for_out_packets(ctx, 10000)
 
 	WyncFlow.wync_server_tick_start(ctx)
 	

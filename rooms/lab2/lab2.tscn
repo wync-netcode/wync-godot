@@ -1,4 +1,4 @@
-[gd_scene load_steps=61 format=3 uid="uid://b8oeiuufqe32c"]
+[gd_scene load_steps=59 format=3 uid="uid://b8oeiuufqe32c"]
 
 [ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_1ps8v"]
 [ext_resource type="Script" path="res://data/StaticData.gd" id="2_2epi3"]
@@ -50,11 +50,9 @@
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_setup_sync_ball.gd" id="49_4ofub"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_lerp.gd" id="49_dsdhr"]
 [ext_resource type="Script" path="res://src/network/user_wync/sy_user_wync_flow_client_1.gd" id="52_cempw"]
-[ext_resource type="Script" path="res://src/network/user_wync/sy_user_wync_consume_packets_second.gd" id="52_e5cf6"]
 [ext_resource type="Script" path="res://src/systems/sy_draw_block_grid_delta.gd" id="53_8nlkt"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_xtrap.gd" id="53_qmyp1"]
 [ext_resource type="Script" path="res://src/network/user_wync/sy_user_wync_spawn_actors.gd" id="54_iu1o0"]
-[ext_resource type="Script" path="res://src/network/user_wync/sy_user_wync_flow_client_2.gd" id="59_na25t"]
 [ext_resource type="PackedScene" uid="uid://dr76xgr158sfu" path="res://src/ui/debug_info.tscn" id="60_cvsem"]
 [ext_resource type="Script" path="res://src/network/wync/sy_user_wync_lerp_set.gd" id="61_cqch1"]
 [ext_resource type="Script" path="res://src/systems/sy_player_subtick_input.gd" id="64_51gnu"]
@@ -117,7 +115,7 @@ script = ExtResource("31_10fi0")
 position = Vector2(100, 382)
 
 [node name="EnBallExtra" parent="worlds/WorldServer/Entities" instance=ExtResource("15_h11ql")]
-position = Vector2(308, 354)
+position = Vector2(340, 180)
 
 [node name="EnBlockGrid" parent="worlds/WorldServer/Entities" instance=ExtResource("17_y8ubi")]
 position = Vector2(358, 28)
@@ -298,6 +296,15 @@ script = ExtResource("17_6g2b1")
 [node name="GroupPhysics" type="Node" parent="worlds/WorldClient1"]
 script = ExtResource("32_wj45u")
 
+[node name="SyUserWyncFlowClient-Start" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
+script = ExtResource("52_cempw")
+
+[node name="SyUserWyncConsumePackets" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
+script = ExtResource("22_jqrce")
+
+[node name="SyUserWyncSpawnActors" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
+script = ExtResource("54_iu1o0")
+
 [node name="SystemsUser" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 
 [node name="SyActorRegister" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsUser"]
@@ -309,50 +316,29 @@ script = ExtResource("17_320aq")
 [node name="SyNeteLoopbackConnectReq" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsUser"]
 script = ExtResource("19_56q07")
 
-[node name="SystemsWyncStart" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
-
-[node name="SyUserWyncFlowClient-Start" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWyncStart"]
-script = ExtResource("52_cempw")
-
-[node name="SyUserWyncConsumePacketsSecond" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWyncStart"]
-script = ExtResource("52_e5cf6")
-
-[node name="SyWyncSetupSyncBall" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWyncStart"]
+[node name="SyWyncSetupSyncBall" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsUser"]
 script = ExtResource("49_4ofub")
 
-[node name="SyWyncSetupSyncPlayer" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWyncStart"]
+[node name="SyWyncSetupSyncPlayer" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsUser"]
 script = ExtResource("35_m1lky")
 
-[node name="SyWyncSetupSyncBlockGrid" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWyncStart"]
+[node name="SyWyncSetupSyncBlockGrid" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsUser"]
 script = ExtResource("38_g8ek6")
 
-[node name="SystemsGenInputs&Events(ButNoExeThem)" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
-
-[node name="SyPlayerInput" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsGenInputs&Events(ButNoExeThem)"]
+[node name="SyPlayerInput" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsUser"]
 script = ExtResource("10_47ome")
 
-[node name="SyDrawBlockGrid-Node2D" type="Node2D" parent="worlds/WorldClient1/GroupPhysics/SystemsGenInputs&Events(ButNoExeThem)"]
+[node name="SyDrawBlockGrid-Node2D" type="Node2D" parent="worlds/WorldClient1/GroupPhysics/SystemsUser"]
 script = ExtResource("31_vohxg")
 
-[node name="SyDrawBlockGridDelta-Node2D" type="Node2D" parent="worlds/WorldClient1/GroupPhysics/SystemsGenInputs&Events(ButNoExeThem)"]
+[node name="SyDrawBlockGridDelta-Node2D" type="Node2D" parent="worlds/WorldClient1/GroupPhysics/SystemsUser"]
 script = ExtResource("53_8nlkt")
-
-[node name="SystemsWyncMiddle" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
-
-[node name="SyUserWyncConsumePackets" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWyncMiddle"]
-script = ExtResource("22_jqrce")
-
-[node name="SyUserWyncFlowClient-Middle" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWyncMiddle"]
-script = ExtResource("59_na25t")
-
-[node name="SyWyncXtrap" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWyncMiddle"]
-script = ExtResource("53_qmyp1")
-
-[node name="SyUserWyncSpawnActors" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsWyncMiddle"]
-script = ExtResource("54_iu1o0")
 
 [node name="SyUserWyncFlowClient-End" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 script = ExtResource("65_f2cyv")
+
+[node name="SyWyncXtrap" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
+script = ExtResource("53_qmyp1")
 
 [node name="SyUserWyncQueuePackets" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 script = ExtResource("46_8e2uo")

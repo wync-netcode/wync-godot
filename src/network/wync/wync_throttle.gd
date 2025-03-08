@@ -110,9 +110,29 @@ static func wync_system_send_entities_to_despawn(ctx: WyncCtx, _commit: bool = t
 ## Calls all the systems that produce packets to send whilst respecting the data limit
 
 static func wync_system_gather_reliable_packets(ctx: WyncCtx):
-	# TODO: gather packets
 
-	# calculate statistic data per tick
+	if ctx.is_client:
+		WyncFlow.wync_try_to_connect(ctx)
+		SyWyncSendInputs.wync_client_send_inputs(ctx)
+		SyWyncSendEventData.wync_send_event_data(ctx)
+
+	else:
+		SyWyncClockServer.wync_server_sync_clock(ctx)
+		WyncThrottle.wync_system_send_entities_to_despawn(ctx)
+		WyncThrottle.wync_system_send_entities_to_spawn(ctx)
+
+		WyncThrottle.wync_system_fill_entity_sync_queue(ctx)
+		WyncThrottle.wync_compute_entity_sync_order(ctx)
+		SyWyncStateExtractor.wync_send_extracted_data(ctx)
+
+
+static func wync_system_gather_unreliable_packets(ctx: WyncCtx):
+	# call here the same functions as above but with the unreliable thingy
+	pass
+
+
+## calculate statistic data per tick
+static func wync_system_calculate_data_per_tick(ctx: WyncCtx):
 
 	var data_sent = ctx.out_packets_size_limit - ctx.out_packets_size_remaining_chars
 	ctx.debug_data_per_tick_current = data_sent
@@ -127,14 +147,6 @@ static func wync_system_gather_reliable_packets(ctx: WyncCtx):
 		if value is int:
 			data_sent_acc += ctx.debug_data_per_tick_sliding_window.get_at(i)
 	ctx.debug_data_per_tick_sliding_window_mean = data_sent_acc / ctx.debug_data_per_tick_sliding_window_size
-
-	#if not WyncUtils.is_client(ctx):
-		#Log.outc(ctx, "tagtps | tick(%s) Final space left (%s chars) data sent (%s)" % [ctx.co_ticks.ticks, ctx.out_packets_size_remaining_chars, data_sent])
-
-
-static func wync_system_gather_unreliable_packets(ctx: WyncCtx):
-	# call here the same functions as above but with the unreliable thingy
-	pass
 
 
 # TODO: rename

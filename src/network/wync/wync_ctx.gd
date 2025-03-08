@@ -176,6 +176,7 @@ var entity_has_integrate_fun: Dictionary
 # Array<prop_id: int>
 var props_to_predict: Array[int]
 
+var is_client: bool = false
 var my_peer_id: int = -1
 var my_nete_peer_id: int = -1
 

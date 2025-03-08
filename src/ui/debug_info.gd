@@ -38,12 +38,13 @@ func get_info_general() -> String:
 	Latency_stable: %s
 	tick_offset: %s
 	lerp_ms: %s
-	server_tick: %s
 	delta_base_tick: %s
+	server_tick: %s
+	(cl)target : %s
 	server_data_per_tick_sliding: %s/t
-	(client)server_tick_rate %.2f (%.2f tps)
-	(client)prob_prop_rate %.2f
-	(client)dummy_props %s
+	(cl)server_tick_rate %.2f (%.2f tps)
+	(cl)prob_prop_rate %.2f
+	(cl)dummy_props %s
 	""" % \
 	[
 		Engine.physics_ticks_per_second,
@@ -52,8 +53,9 @@ func get_info_general() -> String:
 		co_wync_ctx_client.ctx.co_predict_data.latency_stable,
 		co_wync_ctx_client.ctx.co_predict_data.tick_offset,
 		co_wync_ctx_client.ctx.co_predict_data.lerp_ms,
-		co_wync_ctx_server.ctx.co_ticks.ticks,
 		co_wync_ctx_server.ctx.delta_base_state_tick,
+		co_wync_ctx_server.ctx.co_ticks.ticks,
+		co_wync_ctx_client.ctx.co_predict_data.target_tick,
 		co_wync_ctx_server.ctx.debug_data_per_tick_sliding_window_mean,
 		co_wync_ctx_client.ctx.server_tick_rate,
 		((1.0 / (co_wync_ctx_client.ctx.server_tick_rate + 1)) * Engine.physics_ticks_per_second),

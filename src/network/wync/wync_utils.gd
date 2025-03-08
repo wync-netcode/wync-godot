@@ -465,6 +465,7 @@ static func peer_register(ctx: WyncCtx, peer_data: int = -1) -> int:
 
 static func server_setup(ctx: WyncCtx) -> int:
 	# peer id 0 reserved for server
+	ctx.is_client = false
 	ctx.my_peer_id = 0
 	ctx.peers.resize(1)
 	ctx.peers[ctx.my_peer_id] = -1
@@ -493,6 +494,11 @@ static func server_setup(ctx: WyncCtx) -> int:
 
 	# setup prob prop
 	return 0
+
+
+static func client_init(ctx: WyncCtx) -> int:
+	ctx.is_client = true
+	return OK
 	
 
 ## Client side function

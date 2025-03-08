@@ -62,7 +62,7 @@
 			"name": "UZI",
 			"pellet_count": 1,
 			"magazine_size": 120,
-			"spread_deg": 4,
+			"spread_deg": 0,
 			"shoot_delay": 5,
 			"reload_delay": 1000,
 			"bullet_type": 0,
