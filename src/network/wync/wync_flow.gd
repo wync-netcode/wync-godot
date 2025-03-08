@@ -607,32 +607,47 @@ static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
 		return 1
 	data = data as WyncPktClock
 
-	var co_predict_data = ctx.co_predict_data
 	var co_ticks = ctx.co_ticks
-	var curr_time = ClockUtils.time_get_ticks_msec(co_ticks)
-	var physics_fps = Engine.physics_ticks_per_second
-	var server_time_diff = (data.time + data.latency) - curr_time
+	var co_predict_data = ctx.co_predict_data
+	var curr_time = WyncUtils.clock_get_ms(ctx)
+	var physics_fps = ctx.physic_ticks_per_second
+	var curr_clock_offset = (data.time + data.latency) - curr_time
 
 	# calculate mean
-	
+	# Note: To improve accurace modify _server clock sync_ throttling or sliding window size
+
 	co_predict_data.clock_packets_received += 1
-	co_predict_data.clock_offset_accumulator += server_time_diff
-	co_predict_data.clock_offset_mean = (co_predict_data.clock_offset_mean * (co_predict_data.clock_packets_received-1) + server_time_diff) / co_predict_data.clock_packets_received
+	co_predict_data.clock_offset_sliding_window.push(curr_clock_offset)
+
+	var count: int = 0
+	var acc: float = 0
+	for i: int in range(co_predict_data.clock_offset_sliding_window.size):
+		var i_clock_offset = co_predict_data.clock_offset_sliding_window.get_at(i)
+		if i_clock_offset == 0:
+			continue
+
+		count += 1
+		acc += i_clock_offset
+
+	co_predict_data.clock_offset_mean = ceil(acc / count)
 	
 	# update ticks
 	
 	var current_server_time: float = curr_time + co_predict_data.clock_offset_mean
 	var time_since_packet_sent: float = current_server_time - data.time
+
+	# Note that at the beggining 'server_ticks' will be equal to 0
+
+	var cal_server_ticks = data.tick + ceil(time_since_packet_sent / (1000.0 / physics_fps))
+	var new_server_ticks_offset = cal_server_ticks - co_ticks.ticks
+
+	if (abs(new_server_ticks_offset - co_ticks.server_ticks_offset) == 1):
+		# to avoid fluctuations by one unit, always prefer the biggest value
+		co_ticks.server_ticks_offset = max(co_ticks.server_ticks_offset, new_server_ticks_offset)
+	else:
+		co_ticks.server_ticks_offset = new_server_ticks_offset
 	
-	if co_predict_data.clock_packets_received < 11:
-		co_ticks.server_ticks = data.tick \
-		+ round(time_since_packet_sent / (1000.0 / physics_fps))
-		co_ticks.server_ticks_offset = co_ticks.server_ticks - co_ticks.ticks
-		
-	elif not co_ticks.server_ticks_offset_initialized:
-		co_ticks.server_ticks_offset_initialized = true
-		co_ticks.server_ticks = co_ticks.ticks + co_ticks.server_ticks_offset
-		# TODO: Allow for updating co_ticks.server_ticks_offset every minute or so
+	co_ticks.server_ticks = co_ticks.ticks + co_ticks.server_ticks_offset
 
 	Log.out("Servertime %s, real %s, d %s | server_ticks_aprox %s | latency %s | clock %s | %s | %s | %s" % [
 		int(current_server_time),

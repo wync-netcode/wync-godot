@@ -30,7 +30,7 @@ func on_process(_entities, _data, _delta: float):
 ## interpolates confirmed states and predicted states
 static func interpolate_all(wync_ctx: WyncCtx, co_ticks: CoTicks, co_predict_data: CoPredictionData):
 
-	var curr_tick_time = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, co_ticks.ticks)
+	var curr_tick_time = WyncUtils.clock_get_tick_timestamp_ms(wync_ctx, co_ticks.ticks)
 	var curr_time = curr_tick_time + co_ticks.lerp_delta_accumulator_ms
 	var target_time_conf = curr_time - co_predict_data.lerp_ms
 	var target_time_pred = curr_time
@@ -53,8 +53,8 @@ static func interpolate_all(wync_ctx: WyncCtx, co_ticks: CoTicks, co_predict_dat
 
 		# NOTE: opportunity to optimize this by not recalculating this each loop
 
-		left_timestamp_ms = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, prop.lerp_left_local_tick)
-		right_timestamp_ms = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, prop.lerp_right_local_tick)
+		left_timestamp_ms = WyncUtils.clock_get_tick_timestamp_ms(wync_ctx, prop.lerp_left_local_tick)
+		right_timestamp_ms = WyncUtils.clock_get_tick_timestamp_ms(wync_ctx, prop.lerp_right_local_tick)
 
 		if prop.lerp_use_confirmed_state:
 			left_value = prop.confirmed_states.get_at(prop.lerp_left_confirmed_state_tick)

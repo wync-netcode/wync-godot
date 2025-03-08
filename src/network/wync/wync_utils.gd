@@ -337,7 +337,7 @@ static func find_closest_two_snapshots_from_prop_id(ctx: WyncCtx, target_time: i
 
 
 ## @returns tuple[int, int]. tick left, tick right
-static func find_closest_two_snapshots_from_prop(_ctx: WyncCtx, target_time: int, prop: WyncEntityProp, co_ticks: CoTicks, co_predict_data: CoPredictionData) -> Array:
+static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time: int, prop: WyncEntityProp, co_ticks: CoTicks, co_predict_data: CoPredictionData) -> Array:
 	
 	var snap_left = -1
 	var snap_right = -1
@@ -359,7 +359,7 @@ static func find_closest_two_snapshots_from_prop(_ctx: WyncCtx, target_time: int
 		if arrived_at_tick is not int:
 			continue
 
-		var snapshot_timestamp = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, arrived_at_tick)
+		var snapshot_timestamp = WyncUtils.clock_get_tick_timestamp_ms(ctx, arrived_at_tick)
 
 		if snapshot_timestamp > target_time:
 			snap_right = server_tick
@@ -761,3 +761,16 @@ static func duplicate_any(any): #-> Optional<any>
 
 static func lerp_any(left: Variant, right: Variant, weight: float):
 	return lerp(left, right, weight)
+
+
+static func clock_set_debug_time_offset(ctx: WyncCtx, time_offset_ms: int):
+	ctx.co_ticks.debug_time_offset_ms = time_offset_ms
+
+
+static func clock_get_ms(ctx: WyncCtx) -> int:
+	return Time.get_ticks_msec() + ctx.co_ticks.debug_time_offset_ms
+
+
+static func clock_get_tick_timestamp_ms(ctx: WyncCtx, ticks: int) -> int:
+	var frame = 1000.0 / Engine.physics_ticks_per_second
+	return ctx.co_predict_data.current_tick_timestamp + (ticks - ctx.co_ticks.ticks) * frame

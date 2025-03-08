@@ -113,7 +113,7 @@ limits/debugger/max_warnings_per_second=9999999
 
 [physics]
 
-common/physics_ticks_per_second=10
+common/physics_ticks_per_second=20
 2d/physics_engine="Rapier2D"
 
 [rendering]

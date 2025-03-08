@@ -38,6 +38,9 @@ func on_process(entities, _data, _delta: float):
 			&& co_renderer is Node2D):
 			co_renderer.global_position = prop.interpolated_state
 			
+			# it's up to the user to do extra interpolation if they want
+			#co_renderer.global_position = co_renderer.global_position.lerp(prop.interpolated_state, 0.8)
+			
 			# simple
 			DebugPlayerTrail.spawn(self, co_renderer.global_position, 0.5, 0, true)
 

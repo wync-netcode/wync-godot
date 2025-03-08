@@ -60,7 +60,7 @@ static func debug_show_timewarpable_lerped_positions(node_ctx: Node, wync_ctx: W
 	var co_ticks = wync_ctx.co_ticks
 	var co_predict_data = wync_ctx.co_predict_data
 	
-	var curr_tick_time = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, co_ticks.ticks)
+	var curr_tick_time = WyncUtils.clock_get_tick_timestamp_ms(wync_ctx, co_ticks.ticks)
 	var curr_time = curr_tick_time + co_ticks.lerp_delta_accumulator_ms
 	var target_time_conf = curr_time - co_predict_data.lerp_ms
 	
@@ -74,8 +74,8 @@ static func debug_show_timewarpable_lerped_positions(node_ctx: Node, wync_ctx: W
 
 	# NOTE: opportunity to optimize this by not recalculating this each loop
 
-	left_timestamp_ms = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, prop.lerp_left_local_tick)
-	right_timestamp_ms = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, prop.lerp_right_local_tick)
+	left_timestamp_ms = WyncUtils.clock_get_tick_timestamp_ms(wync_ctx, prop.lerp_left_local_tick)
+	right_timestamp_ms = WyncUtils.clock_get_tick_timestamp_ms(wync_ctx, prop.lerp_right_local_tick)
 
 	if (prop.confirmed_states_tick.get_at(prop.lerp_left_confirmed_state_tick) != prop.lerp_left_confirmed_state_tick
 	|| prop.confirmed_states_tick.get_at(prop.lerp_right_confirmed_state_tick) != prop.lerp_right_confirmed_state_tick

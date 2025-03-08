@@ -26,7 +26,7 @@ static func wync_lerp_precompute (ctx: WyncCtx):
 	var co_predict_data = ctx.co_predict_data
 	var co_ticks = ctx.co_ticks
 
-	var curr_tick_time = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, co_ticks.ticks)
+	var curr_tick_time = WyncUtils.clock_get_tick_timestamp_ms(ctx, co_ticks.ticks)
 	var curr_time = curr_tick_time + int(1000.0 / (Engine.physics_ticks_per_second * 2)) # half a physic frame
 	var target_time_conf = curr_time - co_predict_data.lerp_ms
 

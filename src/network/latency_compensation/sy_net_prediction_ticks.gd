@@ -16,14 +16,14 @@ static func wync_update_prediction_ticks (ctx: WyncCtx):
 	var co_predict_data = ctx.co_predict_data
 	var co_ticks = ctx.co_ticks
 	
-	var curr_time = ClockUtils.time_get_ticks_msec(co_ticks)
+	var curr_time = WyncUtils.clock_get_ms(ctx)
 	var physics_fps = Engine.physics_ticks_per_second
 
 	# Adjust tick_offset_desired periodically to compensate for unstable ping
 	
 	if co_ticks.ticks % 30 == 0:
 
-		co_predict_data.tick_offset_desired = ceil(co_predict_data.latency_stable / (1000.0 / physics_fps)) + 2
+		co_predict_data.tick_offset_desired = ceil(co_predict_data.latency_stable / (1000.0 / physics_fps)) + 1
 		
 		var target_tick = max(co_ticks.server_ticks + co_predict_data.tick_offset, co_predict_data.target_tick)
 		var target_time = curr_time + co_predict_data.tick_offset_desired * (1000.0 / physics_fps)

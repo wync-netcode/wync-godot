@@ -40,8 +40,10 @@ func get_info_general() -> String:
 	ticks_predi: %s
 	lerp_ms: %s
 	delta_base_tick: %s
-	server_tick: %s
+	  server_tick: %s
+	(cl)rver_tick: %s (d %s)
 	(cl)target : %s
+	client_tick: %s
 	server_rate_out: %s/t
 	client_rate_out: %s/t
 	(cl)server_tick_rate %.2f (%.2f tps)
@@ -58,7 +60,10 @@ func get_info_general() -> String:
 		co_wync_ctx_client.ctx.co_predict_data.lerp_ms,
 		co_wync_ctx_server.ctx.delta_base_state_tick,
 		co_wync_ctx_server.ctx.co_ticks.ticks,
+		co_wync_ctx_client.ctx.co_ticks.server_ticks,
+		co_wync_ctx_client.ctx.co_ticks.server_ticks -co_wync_ctx_server.ctx.co_ticks.ticks, 
 		co_wync_ctx_client.ctx.co_predict_data.target_tick,
+		co_wync_ctx_client.ctx.co_ticks.ticks,
 		co_wync_ctx_server.ctx.debug_data_per_tick_sliding_window_mean,
 		co_wync_ctx_client.ctx.debug_data_per_tick_sliding_window_mean,
 		co_wync_ctx_client.ctx.server_tick_rate,

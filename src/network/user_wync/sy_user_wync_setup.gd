@@ -27,8 +27,11 @@ func setup_client():
 	var co_wync_ctx = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var ctx = co_wync_ctx.ctx
 
+	ctx.co_ticks.ticks = 200
 	WyncUtils.client_init(ctx)
+	
 	WyncFlow.wync_client_set_physics_ticks_per_second(ctx, Engine.physics_ticks_per_second)
+	WyncUtils.clock_set_debug_time_offset(ctx, 1000)
 
 	# set server tick rate and lerp_ms
 	var server_tick_rate: int = ctx.physic_ticks_per_second

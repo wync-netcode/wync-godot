@@ -21,6 +21,7 @@ func on_process(_entities, _data, _delta: float):
 
 static func wync_server_sync_clock(ctx: WyncCtx):
 	# throttle send rate
+	# Note: How often we sync the clock will affect the client's slidding window
 
 	var physics_fps = Engine.physics_ticks_per_second
 	if ctx.co_ticks.ticks % int(physics_fps * 0.5) != 0:
@@ -30,7 +31,7 @@ static func wync_server_sync_clock(ctx: WyncCtx):
 
 	var packet = WyncPktClock.new()
 	packet.tick = ctx.co_ticks.ticks
-	packet.time = ClockUtils.time_get_ticks_msec(ctx.co_ticks)
+	packet.time = WyncUtils.clock_get_ms(ctx)
 	packet.latency = ctx.current_tick_nete_latency_ms # send raw latency
 
 	# queue for sending

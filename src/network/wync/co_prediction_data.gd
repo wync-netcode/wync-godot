@@ -12,13 +12,15 @@ var target_tick: int = 0 # co_ticks.ticks + tick_offset
 var current_tick_timestamp: int = 0
 
 # For calculating clock_offset_mean
+# TODO: Move this to co_ticks
 
-var clock_packets_received: int
+var clock_offset_sliding_window: RingBuffer = null
+var clock_offset_sliding_window_size: int = 5
 var clock_offset_mean: float
-var clock_offset_accumulator: int
 
 # To stabilize the latency
 # TODO: Determine if this should be here, i.e. if this is related to prediction
+# TODO: Rename the sliding window and use RingBuffer data structure
 
 var latency_stable: int
 var latency_mean: int
@@ -35,3 +37,6 @@ var lerp_ms: int = 50
 
 func _init() -> void:
 	latency_buffer.resize(LATENCY_BUFFER_SIZE)
+	clock_offset_sliding_window = RingBuffer.new(clock_offset_sliding_window_size)
+	for i in range(clock_offset_sliding_window_size):
+		clock_offset_sliding_window.push(0)
