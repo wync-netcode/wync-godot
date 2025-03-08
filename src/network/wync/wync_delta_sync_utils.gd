@@ -83,6 +83,7 @@ static func prop_set_relative_syncable (
 
 	# assuming no timewarpable
 	prop.confirmed_states = RingBuffer.new(1) # 1 for debugging purposes
+	prop.confirmed_states_tick = RingBuffer.new(1)
 
 	var need_undo_events = false
 	if WyncUtils.is_client(ctx) && predictable:
@@ -136,6 +137,7 @@ static func prop_set_auxiliar(ctx: WyncCtx, prop_id: int, auxiliar_pair: int, un
 	# undo events are only for prediction and timewarp
 	if undo_events:
 		prop.confirmed_states_undo = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE)
+		prop.confirmed_states_undo_tick = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE)
 	return OK
 
 
@@ -265,18 +267,18 @@ static func _merge_event_to_state \
 ## Use this function when you need to reset the state after you modified it to something
 ## you rather not represent with events
 
-static func delta_sync_prop_extract_state (ctx: WyncCtx, prop_id: int) -> int:
-	var prop = WyncUtils.get_prop(ctx, prop_id)
-	if prop == null:
-		return 1
-	prop = prop as WyncEntityProp
-	if not prop.relative_syncable:
-		return 2
-	prop.confirmed_states.insert_at(0, prop.getter.call(prop.user_ctx_pointer))
+#static func delta_sync_prop_extract_state (ctx: WyncCtx, prop_id: int) -> int:
+	#var prop = WyncUtils.get_prop(ctx, prop_id)
+	#if prop == null:
+		#return 1
+	#prop = prop as WyncEntityProp
+	#if not prop.relative_syncable:
+		#return 2
+	#prop.confirmed_states.insert_at(0, prop.getter.call(prop.user_ctx_pointer))
 
-	# TODO: clear all events, they're all invalid now
-	# TODO: copy to state 1	
-	return OK
+	## TODO: clear all events, they're all invalid now
+	## TODO: copy to state 1	
+	#return OK
 
 
 ## Logic Loops

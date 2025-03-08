@@ -44,7 +44,6 @@ static func wync_client_send_inputs (ctx: WyncCtx):
 			WyncEntityProp.DATA_TYPE.EVENT]:
 			Log.err("prop %s is not INPUT or EVENT" % prop_id, Log.TAG_INPUT_BUFFER)
 			continue
-		var buffered_inputs = input_prop.confirmed_states
 
 		# prepare packet
 		# NOTE: Data size limit could be imposed at this level too
@@ -52,7 +51,10 @@ static func wync_client_send_inputs (ctx: WyncCtx):
 		var pkt_inputs = WyncPktInputs.new()
 
 		for i in range(tick_pred - CoNetBufferedInputs.AMOUNT_TO_SEND, tick_pred +1):
-			var input = buffered_inputs.get_at(i)
+			if input_prop.confirmed_states_tick.get_at(i) != i:
+				Log.outc(ctx, "we don't have an input for this tick %s" % [i])
+				continue
+			var input = input_prop.confirmed_states.get_at(i)
 			if input == null:
 				# TODO: Implement input duplication on frame skip
 				Log.outc(ctx, "we don't have an input for this tick %s" % [i])

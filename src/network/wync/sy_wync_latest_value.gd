@@ -72,6 +72,8 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 		if not prop.relative_syncable || not WyncUtils.prop_is_predicted(ctx, prop_id):
 			continue
 		var restored = WyncUtils.duplicate_any(prop.getter.call(prop.user_ctx_pointer))
+		if prop.confirmed_states_tick.get_at(0) != 0:
+			break
 		var canonic = prop.confirmed_states.get_at(0)
 		if restored == null || canonic == null:
 			break
@@ -100,6 +102,7 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 			continue
 		var state_dup = WyncUtils.duplicate_any(prop.getter.call(prop.user_ctx_pointer))
 		prop.confirmed_states.insert_at(0, state_dup)
+		prop.confirmed_states_tick.insert_at(0, 0)
 	# --------------------------------------------------------------------------------
 	
 	
@@ -141,6 +144,8 @@ static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: A
 		var last_confirmed_tick = prop.last_ticks_received.get_relative(tick)
 		if last_confirmed_tick == null:
 			continue
+		if prop.confirmed_states_tick.get_at(last_confirmed_tick) != last_confirmed_tick:
+			continue
 		var last_confirmed = prop.confirmed_states.get_at(last_confirmed_tick as int)
 		if last_confirmed == null:
 			continue
@@ -181,6 +186,10 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 		# apply events in order
 
 		for tick: int in range(delta_props_last_tick[prop_id] +1, ctx.last_tick_received +1):
+			if aux_prop.confirmed_states_tick.get_at(tick) != tick:
+				Log.errc(ctx, "SyWyncLatestValue | delta sync | we don't have an input for this tick %s" % [tick], Log.TAG_LATEST_VALUE)
+				break
+				
 			var delta_event_list = aux_prop.confirmed_states.get_at(tick)
 			if delta_event_list is not Array[int]:
 				Log.errc(ctx, "SyWyncLatestValue | delta sync | we don't have an input for this tick %s" % [tick], Log.TAG_LATEST_VALUE)
@@ -251,6 +260,9 @@ static func predicted_delta_props_rollback_to_canonic_state \
 
 		for tick: int in range(ctx.last_tick_predicted, ctx.first_tick_predicted -1, -1):
 
+			if aux_prop.confirmed_states_undo_tick.get_at(tick) != tick:
+				assert(false)
+				break
 			var undo_event_id_list = aux_prop.confirmed_states_undo.get_at(tick)
 			if undo_event_id_list == null || undo_event_id_list is not Array[int]:
 				assert(false)

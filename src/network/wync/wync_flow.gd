@@ -353,6 +353,7 @@ static func wync_server_handle_pkt_inputs(ctx: WyncCtx, data: Variant, from_nete
 		var to_insert = copy if copy != null else input.data
 		
 		input_prop.confirmed_states.insert_at(input.tick, to_insert)
+		input_prop.confirmed_states_tick.insert_at(input.tick, input.tick)
 
 	return OK
 
@@ -383,6 +384,7 @@ static func wync_client_handle_pkt_inputs(ctx: WyncCtx, data: Variant) -> int:
 		var to_insert = copy if copy != null else input.data
 		
 		prop.confirmed_states.insert_at(input.tick, to_insert)
+		prop.confirmed_states_tick.insert_at(input.tick, input.tick)
 		max_tick = max(max_tick, input.tick)
 
 	if prop.is_auxiliar_prop:
@@ -416,10 +418,13 @@ static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 				prop.data_type != WyncEntityProp.DATA_TYPE.EVENT):
 				continue
 		
-			# FIXME: check the tick with a wrapper/decorator class for inputs to avoid using old values
+			if prop.confirmed_states_tick.get_at(ctx.co_ticks.ticks) != ctx.co_ticks.ticks:
+				continue
+
 			var input = prop.confirmed_states.get_at(ctx.co_ticks.ticks)
 			if input == null:
 				continue
+
 			prop.setter.call(prop.user_ctx_pointer, input)
 			#Log.out(self, "input is %s,%s" % [input.movement_dir.x, input.movement_dir.y])
 
@@ -448,6 +453,7 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 		# NOTE: two tick datas could have arrive at the same tick
 		prop.last_ticks_received.push(data.tick)
 		prop.confirmed_states.insert_at(data.tick, snap_prop.state)
+		prop.confirmed_states_tick.insert_at(data.tick, data.tick)
 		prop.arrived_at_tick.insert_at(data.tick, ctx.co_ticks.ticks)
 		prop.just_received_new_state = true
 
@@ -491,11 +497,14 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 			var aux_prop = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
 			for j in range(ctx.first_tick_predicted, ctx.last_tick_predicted +1):
 				aux_prop.confirmed_states.insert_at(j, [] as Array[int])
+				aux_prop.confirmed_states_tick.insert_at(j, j)
 				aux_prop.confirmed_states_undo.insert_at(j, [] as Array[int])
+				aux_prop.confirmed_states_undo_tick.insert_at(j, j)
 
 			# debugging: save canonic state to compare it later
 			var state_dup = WyncUtils.duplicate_any(prop.getter.call(prop.user_ctx_pointer))
 			prop.confirmed_states.insert_at(0, state_dup)
+			prop.confirmed_states_tick.insert_at(0, 0)
 
 	wync_client_update_last_tick_received(ctx, data.tick)
 

@@ -42,6 +42,9 @@ var timewarpable: bool
 # Ring <tick: id, data: Variant>
 var confirmed_states: RingBuffer = null
 
+## what tick corresponds to any saved state
+var confirmed_states_tick: RingBuffer = null
+
 ## On predicted entities, only the latest value is valid
 ## Last-In-First-Out (LIFO)
 ## LIFO Queue <arrival_order: int, server_tick: int>
@@ -99,6 +102,9 @@ var current_undo_delta_events: Array[int]
 # Exclusive to auxiliar props, here we store undo event_ids
 # Ring <tick: id, data: Array[int]>
 var confirmed_states_undo: RingBuffer = null
+
+## what tick corresponds to any saved state
+var confirmed_states_undo_tick: RingBuffer = null
 
 # Related to Throttling
 # --------------------------------------------------

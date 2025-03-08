@@ -194,6 +194,8 @@ static func _wync_sync_regular_prop(ctx: WyncCtx, prop_id: int) -> WyncPktSnap.S
 
 	# copy cached data
 	
+	if prop.confirmed_states_tick.get_at(ctx.co_ticks.ticks) != ctx.co_ticks.ticks:
+		return null
 	var state = prop.confirmed_states.get_at(ctx.co_ticks.ticks)
 
 	# build packet
@@ -275,6 +277,7 @@ static func extract_data_to_tick(ctx: WyncCtx, co_ticks: CoTicks, save_on_tick: 
 			# Save state history per tick
 			
 			prop.confirmed_states.insert_at(save_on_tick, prop.getter.call(prop.user_ctx_pointer))
+			prop.confirmed_states_tick.insert_at(save_on_tick, save_on_tick)
 
 
 ## This function must be ran each frame

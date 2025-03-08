@@ -37,6 +37,8 @@ static func wync_xtrap_tick_init(ctx: WyncCtx, tick: int) -> int:
 			WyncEntityProp.DATA_TYPE.EVENT]:
 			continue
 
+		if prop.confirmed_states_tick.get_at(tick) != tick:
+			continue
 		var input_snap = prop.confirmed_states.get_at(tick)
 
 		# honor no duplication
@@ -143,6 +145,7 @@ static func wync_xtrap_tick_end(ctx: WyncCtx, tick: int):
 			
 			var undo_events = aux_prop.current_undo_delta_events.duplicate(true)
 			aux_prop.confirmed_states_undo.insert_at(tick, undo_events)
+			aux_prop.confirmed_states_undo_tick.insert_at(tick, tick)
 			#Log.out("for SyWyncLatestValue | saving undo_events for tick %s" % [tick], Log.TAG_XTRAP)
 
 	ctx.last_tick_predicted = tick

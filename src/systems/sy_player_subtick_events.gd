@@ -77,6 +77,11 @@ static func debug_show_timewarpable_lerped_positions(node_ctx: Node, wync_ctx: W
 	left_timestamp_ms = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, prop.lerp_left_local_tick)
 	right_timestamp_ms = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, prop.lerp_right_local_tick)
 
+	if (prop.confirmed_states_tick.get_at(prop.lerp_left_confirmed_state_tick) != prop.lerp_left_confirmed_state_tick
+	|| prop.confirmed_states_tick.get_at(prop.lerp_right_confirmed_state_tick) != prop.lerp_right_confirmed_state_tick
+	):
+		return
+
 	left_value = prop.confirmed_states.get_at(prop.lerp_left_confirmed_state_tick)
 	right_value = prop.confirmed_states.get_at(prop.lerp_right_confirmed_state_tick)
 	if left_value == null:

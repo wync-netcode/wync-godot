@@ -54,6 +54,8 @@ static func wync_prop_event_send_event_ids_to_peer(ctx: WyncCtx, prop_id: int) -
 	var pkt_inputs = WyncPktInputs.new()
 
 	for tick in range(ctx.co_ticks.ticks - CoNetBufferedInputs.AMOUNT_TO_SEND, ctx.co_ticks.ticks +1):
+		if prop.confirmed_states_tick.get_at(tick) != tick:
+			continue
 		var input = prop.confirmed_states.get_at(tick)
 		if input == null:
 			Log.err("we don't have an input for this tick %s" % [tick], Log.TAG_DELTA_EVENT)
@@ -129,6 +131,10 @@ static func queue_delta_event_data_to_be_synced_to_peers(ctx: WyncCtx):
 				for tick: int in range(range_tick_start, co_ticks.ticks + 1):
 
 					# get _delta events_ for this tick
+					if aux_prop.confirmed_states_tick.get_at(tick) != tick:
+						Log.err("we don't have an input for this tick %s" % [tick], Log.TAG_DELTA_EVENT)
+						continue
+
 					var input = aux_prop.confirmed_states.get_at(tick)
 					if input is not Array[int]:
 						Log.err("we don't have an input for this tick %s" % [tick], Log.TAG_DELTA_EVENT)

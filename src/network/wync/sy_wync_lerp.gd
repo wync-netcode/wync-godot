@@ -96,6 +96,7 @@ static func interpolate_all(wync_ctx: WyncCtx, co_ticks: CoTicks, co_predict_dat
 					pass
 
 
+## timewarp, server only
 ## @argument tick_left: int. Base tick to restore state from
 static func confirmed_states_set_to_tick_interpolated (
 	wync_ctx: WyncCtx, prop_ids: Array[int], tick_left: int, lerp_delta: float,
@@ -116,6 +117,9 @@ static func confirmed_states_set_to_tick_interpolated (
 			continue
 		prop = prop as WyncEntityProp
 
+		if (prop.confirmed_states_tick.get_at(tick_left) != tick_left
+		|| prop.confirmed_states_tick.get_at(tick_left +1) != tick_left + 1):
+			continue
 		left_value = prop.confirmed_states.get_at(tick_left)
 		right_value = prop.confirmed_states.get_at(tick_left +1)
 		if left_value == null || right_value == null:
@@ -141,6 +145,8 @@ static func confirmed_states_set_to_tick (
 			continue
 		prop = prop as WyncEntityProp
 
+		if prop.confirmed_states_tick.get_at(tick) != tick:
+			continue
 		var tick_value = prop.confirmed_states.get_at(tick)
 		if tick_value == null:
 			continue

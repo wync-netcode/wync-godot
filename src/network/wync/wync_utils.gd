@@ -110,8 +110,10 @@ static func prop_register(
 	if (data_type == WyncEntityProp.DATA_TYPE.INPUT ||
 		data_type == WyncEntityProp.DATA_TYPE.EVENT):
 		prop.confirmed_states = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE)
+		prop.confirmed_states_tick = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE)
 	else:
 		prop.confirmed_states = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT)
+		prop.confirmed_states_tick = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT)
 	
 	ctx.props[prop_id] = prop
 	ctx.active_prop_ids.push_back(prop_id)
@@ -239,6 +241,7 @@ static func prop_set_timewarpable(ctx: WyncCtx, prop_id: int) -> int:
 		return 1
 	prop.timewarpable = true
 	prop.confirmed_states = RingBuffer.new(ctx.max_tick_history)
+	prop.confirmed_states_tick = RingBuffer.new(ctx.max_tick_history)
 	return OK
 
 # server only

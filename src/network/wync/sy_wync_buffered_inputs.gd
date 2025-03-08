@@ -62,3 +62,4 @@ static func wync_buffer_inputs(ctx: WyncCtx):
 			continue
 
 		input_prop.confirmed_states.insert_at(ctx.co_predict_data.target_tick, new_state)
+		input_prop.confirmed_states_tick.insert_at(ctx.co_predict_data.target_tick, ctx.co_predict_data.target_tick)

@@ -37,6 +37,7 @@ func get_info_general() -> String:
 	Latency: %s
 	Latency_stable: %s
 	tick_offset: %s
+	ticks_predi: %s
 	lerp_ms: %s
 	delta_base_tick: %s
 	server_tick: %s
@@ -52,6 +53,7 @@ func get_info_general() -> String:
 		co_loopback.ctx.latency,
 		co_wync_ctx_client.ctx.co_predict_data.latency_stable,
 		co_wync_ctx_client.ctx.co_predict_data.tick_offset,
+		(co_wync_ctx_client.ctx.last_tick_predicted -co_wync_ctx_client.ctx.first_tick_predicted),
 		co_wync_ctx_client.ctx.co_predict_data.lerp_ms,
 		co_wync_ctx_server.ctx.delta_base_state_tick,
 		co_wync_ctx_server.ctx.co_ticks.ticks,
