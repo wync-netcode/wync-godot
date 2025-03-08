@@ -125,6 +125,8 @@ static func wync_system_gather_reliable_packets(ctx: WyncCtx):
 		WyncThrottle.wync_compute_entity_sync_order(ctx)
 		SyWyncStateExtractor.wync_send_extracted_data(ctx)
 
+	WyncThrottle.wync_system_calculate_data_per_tick(ctx)
+
 
 static func wync_system_gather_unreliable_packets(ctx: WyncCtx):
 	# call here the same functions as above but with the unreliable thingy

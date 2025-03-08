@@ -51,8 +51,6 @@ static func wync_client_tick_end(ctx: WyncCtx):
 
 	wync_system_calculate_server_tick_rate(ctx)
 
-	WyncThrottle.wync_system_calculate_data_per_tick(ctx)
-
 	WyncFlow.wync_dummy_props_cleanup(ctx)
 
 	SyWyncLerpPrecompute.wync_lerp_precompute(ctx)

@@ -69,7 +69,8 @@ static func remove_actor(node_ctx: Node, actor_id: int):
 		return
 	var co_actors = single_actors.get_component(CoSingleActors.label) as CoSingleActors
 
-	if actor_id >= co_actors.max_actors:
+	# not registered
+	if actor_id < 0 || actor_id >= co_actors.max_actors:
 		return
 
 	var entity = co_actors.actors[actor_id]
