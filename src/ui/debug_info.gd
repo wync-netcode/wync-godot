@@ -48,7 +48,7 @@ func get_info_general() -> String:
 	client_rate_out: %s/t
 	(cl)server_tick_rate %.2f (%.2f tps)
 	(cl)prob_prop_rate %.2f
-	(cl)dummy_props %s
+	(cl)dummy_props %s (lost %s)
 	""" % \
 	[
 		Engine.physics_ticks_per_second,
@@ -69,7 +69,7 @@ func get_info_general() -> String:
 		co_wync_ctx_client.ctx.server_tick_rate,
 		((1.0 / (co_wync_ctx_client.ctx.server_tick_rate + 1)) * Engine.physics_ticks_per_second),
 		co_wync_ctx_client.ctx.low_priority_entity_update_rate,
-		co_wync_ctx_client.ctx.dummy_props.size()
+		co_wync_ctx_client.ctx.dummy_props.size(), co_wync_ctx_client.ctx.stat_lost_dummy_props
 	]
 	return text
 

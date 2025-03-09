@@ -304,6 +304,9 @@ class DummyProp:
 # Map <prop_id: int, DummyProp*>
 var dummy_props: Dictionary
 
+## Stat
+var stat_lost_dummy_props: int = 0
+
 const MAX_DUMMY_PROP_TICKS_ALIVE: int = 100 # 1000
 
 # debugging

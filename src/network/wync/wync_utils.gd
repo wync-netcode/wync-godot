@@ -137,7 +137,19 @@ static func finish_spawning_entity(ctx: WyncCtx, entity_id: int, pending_id) -> 
 
 	Log.outc(ctx, "spawn, spawned entity %s" % [entity_id])
 
-	# TODO: apply dummy props, I guess
+	# apply dummy props if any
+
+	for prop_id: int in ctx.entity_has_props[entity_id]:
+		if not ctx.dummy_props.has(prop_id):
+			continue
+		
+		var dummy_prop = ctx.dummy_props[prop_id] as WyncCtx.DummyProp
+		WyncFlow.prop_save_confirmed_state(ctx, prop_id, dummy_prop.last_tick, dummy_prop.data)
+
+		# clean up
+
+		ctx.dummy_props.erase(prop_id)
+
 	return OK
 
 
@@ -761,6 +773,9 @@ static func duplicate_any(any): #-> Optional<any>
 
 static func lerp_any(left: Variant, right: Variant, weight: float):
 	return lerp(left, right, weight)
+
+
+# Note: Set physics ticks is in WyncFlow
 
 
 static func clock_set_debug_time_offset(ctx: WyncCtx, time_offset_ms: int):

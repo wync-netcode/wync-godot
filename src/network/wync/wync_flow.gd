@@ -444,15 +444,24 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 			Log.errc(ctx, "couldn't find prop (%s) saving as dummy prop..." % [snap_prop.prop_id], Log.TAG_LATEST_VALUE)
 			WyncUtils.prop_register_update_dummy(ctx, snap_prop.prop_id, data.tick, 99, snap_prop.state)
 			continue
-		prop = prop as WyncEntityProp
-		if prop.relative_syncable:
-			continue
-		
+
+		prop_save_confirmed_state(ctx, snap_prop.prop_id, data.tick, snap_prop.state)
+
+	wync_client_update_last_tick_received(ctx, data.tick)
+
+
+static func prop_save_confirmed_state(ctx: WyncCtx, prop_id: int, tick: int, state: Variant) -> int:
+	var prop = WyncUtils.get_prop(ctx, prop_id)
+	if prop == null:
+		return 1
+	prop = prop as WyncEntityProp
+	if not prop.relative_syncable:
+	
 		# NOTE: two tick datas could have arrive at the same tick
-		prop.last_ticks_received.push(data.tick)
-		prop.confirmed_states.insert_at(data.tick, snap_prop.state)
-		prop.confirmed_states_tick.insert_at(data.tick, data.tick)
-		prop.arrived_at_tick.insert_at(data.tick, ctx.co_ticks.ticks)
+		prop.last_ticks_received.push(tick)
+		prop.confirmed_states.insert_at(tick, state)
+		prop.confirmed_states_tick.insert_at(tick, tick)
+		prop.arrived_at_tick.insert_at(tick, ctx.co_ticks.ticks)
 		prop.just_received_new_state = true
 
 		if prop.is_auxiliar_prop:
@@ -461,35 +470,23 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 			delta_prop.just_received_new_state = true
 
 		# update prob prop update rate
-		if snap_prop.prop_id == ctx.PROP_ID_PROB:
+		if prop_id == ctx.PROP_ID_PROB:
 			wync_try_to_update_prob_prop_rate(ctx)
 
 
-	# process relative syncable separatedly for now to reason about them separatedly
+	else:
 
-	for snap_prop: WyncPktSnap.SnapProp in data.snaps:
-		
-		var prop = WyncUtils.get_prop(ctx, snap_prop.prop_id)
-		if prop == null:
-			continue
-
-		prop = prop as WyncEntityProp
-		if not prop.relative_syncable:
-			continue
-
-		# TODO: overwrite real data, clear all delta events, etc.
-		# if a _predicted delta prop_ receives fullsnapshot cleanup must be done
 		# if a delta prop receives a fullsnapshot we have no other option but to comply
 
-		prop.setter.call(prop.user_ctx_pointer, snap_prop.state)
+		prop.setter.call(prop.user_ctx_pointer, state)
 		prop.just_received_new_state = true
 		var delta_props_last_tick = ctx.client_has_relative_prop_has_last_tick[ctx.my_peer_id] as Dictionary
-		delta_props_last_tick[snap_prop.prop_id] = data.tick
+		delta_props_last_tick[prop_id] = tick
 		#Log.out("debug_pred_delta_event | ser_tick(%s) delta_prop_last_tick %s" % [ctx.co_ticks.server_ticks, delta_props_last_tick], Log.TAG_LATEST_VALUE)
 
 		# clean up predicted data TODO
 
-		if WyncUtils.prop_is_predicted(ctx, snap_prop.prop_id):
+		if WyncUtils.prop_is_predicted(ctx, prop_id):
 
 			# get aux_prop and clean the confirmed_states_undo
 			var aux_prop = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
@@ -504,7 +501,7 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 			prop.confirmed_states.insert_at(0, state_dup)
 			prop.confirmed_states_tick.insert_at(0, 0)
 
-	wync_client_update_last_tick_received(ctx, data.tick)
+	return OK
 
 
 static func wync_handle_pkt_spawn(ctx: WyncCtx, data: Variant):
@@ -616,7 +613,6 @@ static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
 	# calculate mean
 	# Note: To improve accurace modify _server clock sync_ throttling or sliding window size
 
-	co_predict_data.clock_packets_received += 1
 	co_predict_data.clock_offset_sliding_window.push(curr_clock_offset)
 
 	var count: int = 0
@@ -740,6 +736,7 @@ static func wync_dummy_props_cleanup(ctx: WyncCtx):
 		# delete dummy prop
 
 		ctx.dummy_props.erase(prop_id)
+		ctx.stat_lost_dummy_props += 1
 
 
 ## Call after finishing spawning entities
