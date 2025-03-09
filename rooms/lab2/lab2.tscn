@@ -10,7 +10,7 @@
 [ext_resource type="Script" path="res://src/network/debug/co_state_log.gd" id="6_8qi11"]
 [ext_resource type="PackedScene" uid="uid://hmishy6acfrk" path="res://src/entities/en_raycast_singleton.tscn" id="8_ry87g"]
 [ext_resource type="Script" path="res://src/systems/sy_velocity.gd" id="9_rrivg"]
-[ext_resource type="Script" path="res://src/systems/sy_player_input.gd" id="10_47ome"]
+[ext_resource type="Script" path="res://src/systems/sy_player_input_additive.gd" id="10_47ome"]
 [ext_resource type="PackedScene" uid="uid://5n6bvvfq608d" path="res://src/entities/en_single_actors.tscn" id="10_k0r3w"]
 [ext_resource type="Script" path="res://src/systems/sy_actor_movement.gd" id="11_1eesg"]
 [ext_resource type="Script" path="res://src/components/co_single_world.gd" id="12_8x65i"]
@@ -49,13 +49,13 @@
 [ext_resource type="Script" path="res://src/network/user_wync/sy_user_wync_queue_packets.gd" id="46_8e2uo"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_setup_sync_ball.gd" id="49_4ofub"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_lerp.gd" id="49_dsdhr"]
-[ext_resource type="Script" path="res://src/network/user_wync/sy_user_wync_flow_client_1.gd" id="52_cempw"]
 [ext_resource type="Script" path="res://src/systems/sy_draw_block_grid_delta.gd" id="53_8nlkt"]
 [ext_resource type="Script" path="res://src/network/wync/sy_wync_xtrap.gd" id="53_qmyp1"]
 [ext_resource type="Script" path="res://src/network/user_wync/sy_user_wync_spawn_actors.gd" id="54_iu1o0"]
+[ext_resource type="Script" path="res://src/systems/sy_player_input_reset.gd" id="54_kat3r"]
 [ext_resource type="PackedScene" uid="uid://dr76xgr158sfu" path="res://src/ui/debug_info.tscn" id="60_cvsem"]
 [ext_resource type="Script" path="res://src/network/wync/sy_user_wync_lerp_set.gd" id="61_cqch1"]
-[ext_resource type="Script" path="res://src/systems/sy_player_subtick_input.gd" id="64_51gnu"]
+[ext_resource type="Script" path="res://src/systems/sy_player_subtick_input_additive.gd" id="64_51gnu"]
 [ext_resource type="Script" path="res://src/systems/sy_player_subtick_events.gd" id="64_mfg3t"]
 [ext_resource type="Script" path="res://src/network/user_wync/sy_user_wync_flow_client_3.gd" id="65_f2cyv"]
 
@@ -296,9 +296,6 @@ script = ExtResource("17_6g2b1")
 [node name="GroupPhysics" type="Node" parent="worlds/WorldClient1"]
 script = ExtResource("32_wj45u")
 
-[node name="SyUserWyncFlowClient-Start" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
-script = ExtResource("52_cempw")
-
 [node name="SyUserWyncConsumePackets" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 script = ExtResource("22_jqrce")
 
@@ -325,7 +322,7 @@ script = ExtResource("35_m1lky")
 [node name="SyWyncSetupSyncBlockGrid" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsUser"]
 script = ExtResource("38_g8ek6")
 
-[node name="SyPlayerInput" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsUser"]
+[node name="SyPlayerInputAdditive" type="Node" parent="worlds/WorldClient1/GroupPhysics/SystemsUser"]
 script = ExtResource("10_47ome")
 
 [node name="SyDrawBlockGrid-Node2D" type="Node2D" parent="worlds/WorldClient1/GroupPhysics/SystemsUser"]
@@ -346,6 +343,9 @@ script = ExtResource("46_8e2uo")
 [node name="SyNeteCleanup" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
 script = ExtResource("40_dopds")
 
+[node name="SyPlayerInputReset" type="Node" parent="worlds/WorldClient1/GroupPhysics"]
+script = ExtResource("54_kat3r")
+
 [node name="GroupProcess" type="Node" parent="worlds/WorldClient1"]
 script = ExtResource("32_wj45u")
 
@@ -358,7 +358,7 @@ script = ExtResource("49_dsdhr")
 [node name="SyUserWyncLerpSet" type="Node" parent="worlds/WorldClient1/GroupProcess"]
 script = ExtResource("61_cqch1")
 
-[node name="SyPlayerSubtickInput" type="Node" parent="worlds/WorldClient1/GroupProcess"]
+[node name="SyPlayerSubtickInputAdditive" type="Node" parent="worlds/WorldClient1/GroupProcess"]
 script = ExtResource("64_51gnu")
 
 [node name="SyPlayerSubtickEvents" type="Node" parent="worlds/WorldClient1/GroupProcess"]

@@ -1,3 +1,4 @@
+## DEPRECATED
 class_name SyUserWyncFlowClient1
 extends System
 const label: StringName = StringName("SyUserWyncFlowClient1")
@@ -7,6 +8,7 @@ const label: StringName = StringName("SyUserWyncFlowClient1")
 
 func on_process(_entities, _data, _delta: float):
 
+	"""
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var ctx = single_wync.ctx as WyncCtx
 	
@@ -18,6 +20,7 @@ func on_process(_entities, _data, _delta: float):
 	# let wync know the latency
 	WyncFlow.wync_client_set_current_latency (single_wync.ctx, co_loopback.ctx.latency)
 	
-	WyncThrottle.wync_set_data_limit_chars_for_out_packets(ctx, 5000)
+	WyncThrottle.wync_set_data_limit_chars_for_out_packets(ctx, 50000)
 
-	WyncFlow.wync_client_tick_start(ctx)
+	#WyncFlow.wync_client_tick_start(ctx)
+	"""

@@ -1,8 +1,8 @@
 extends System
-class_name SyPlayerInput
-const label: StringName = StringName("SyPlayerInput")
+class_name SyPlayerInputReset
+const label: StringName = StringName("SyPlayerInputReset")
 
-## TODO: Direccional movement inputs might be subtick too
+## Reset all inputs to defaults
 
 func _ready():
 	components = [

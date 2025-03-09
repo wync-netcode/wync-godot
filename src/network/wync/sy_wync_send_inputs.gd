@@ -82,6 +82,8 @@ static func wync_client_send_inputs (ctx: WyncCtx):
 		pkt_inputs.amount = pkt_inputs.inputs.size()
 		pkt_inputs.prop_id = prop_id
 		#Log.out(self, "INPUT Sending prop %s" % [input_prop.name_id]) 
+		#if input_prop.data_type == WyncEntityProp.DATA_TYPE.EVENT:
+			#Log.outc(ctx, "tic(%s) setted | sending prop (%s) (%s) " % [tick_pred, prop_id, pkt_inputs.inputs[0].data])
 
 		# prepare peer packet and send (queue)
 

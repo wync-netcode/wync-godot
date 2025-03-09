@@ -1,6 +1,8 @@
 class_name WyncFlow
 
 
+## Note. Before running this, make sure to receive packets from the network
+
 static func wync_server_tick_start(ctx: WyncCtx):
 	# before tick start
 
@@ -11,8 +13,6 @@ static func wync_server_tick_start(ctx: WyncCtx):
 	WyncFlow.wync_input_props_set_tick_value(ctx)
 
 	WyncDeltaSyncUtils.auxiliar_props_clear_current_delta_events(ctx)
-
-	WyncDeltaSyncUtils.predicted_props_clear_events(ctx)
 
 
 static func wync_server_tick_end(ctx: WyncCtx):
@@ -25,24 +25,17 @@ static func wync_server_tick_end(ctx: WyncCtx):
 	SyWyncStateExtractor.extract_data_to_tick(ctx, ctx.co_ticks, ctx.co_ticks.ticks)
 
 
-static func wync_client_tick_start(ctx: WyncCtx):
-
-	SyWyncBufferedInputs.wync_buffer_inputs(ctx)
-
-	SyTicks.wync_advance_ticks(ctx)
-
-	WyncThrottle.wync_system_stabilize_latency(ctx)
-	
-	SyNetPredictionTicks.wync_update_prediction_ticks(ctx)
-
-
 static func wync_client_tick_end(ctx: WyncCtx):
 
-	WyncDeltaSyncUtils.auxiliar_props_clear_current_delta_events(ctx)
-
-	WyncDeltaSyncUtils.predicted_props_clear_events(ctx)
+	SyTicks.wync_advance_ticks(ctx)
+	WyncThrottle.wync_system_stabilize_latency(ctx)
+	SyNetPredictionTicks.wync_update_prediction_ticks(ctx)
 	
 	SyWyncBufferedInputs.wync_buffer_inputs(ctx)
+
+	# CANNOT reset events BEFORE polling inputs, WHERE do we put this?
+	WyncDeltaSyncUtils.auxiliar_props_clear_current_delta_events(ctx)
+	WyncDeltaSyncUtils.predicted_props_clear_events(ctx)
 
 	SyWyncLatestValue.wync_reset_props_to_latest_value(ctx)
 	
@@ -66,6 +59,8 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 	if is_client:
 		wync_report_update_received(ctx)
 		#Log.outc(ctx, "tagtps | tag1 | tick(%s) received packet %s" % [ctx.co_ticks.ticks, WyncPacket.PKT_NAMES[wync_pkt.packet_type_id]])
+	#else:
+		#Log.outc(ctx, "setted | tick(%s) received packet %s" % [ctx.co_ticks.ticks, WyncPacket.PKT_NAMES[wync_pkt.packet_type_id]])
 
 	match wync_pkt.packet_type_id:
 		WyncPacket.WYNC_PKT_JOIN_REQ:
@@ -424,7 +419,7 @@ static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 				continue
 
 			prop.setter.call(prop.user_ctx_pointer, input)
-			#Log.out(self, "input is %s,%s" % [input.movement_dir.x, input.movement_dir.y])
+			#Log.outc(ctx, "(tick %s) setted input prop (%s) to %s" % [ctx.co_ticks.ticks, prop.name_id, input])
 
 	return OK
 
