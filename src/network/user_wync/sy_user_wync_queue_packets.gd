@@ -32,23 +32,24 @@ func on_process(_entities, _data, _delta: float):
 
 	# gather packets
 
-	WyncThrottle.wync_system_gather_reliable_packets(ctx)
+	WyncThrottle.wync_system_gather_packets(ctx)
 	
-	# queue _out packets_ for delivery
+	# queue packets for delivery
 
 	for pkt: WyncPacketOut in ctx.out_reliable_packets:
 		
-		# queue
+		var user_packet = UserNetPacket.new()
+		user_packet.packet_type_id = GameInfo.NETE_PKT_WYNC_PKT
+		user_packet.data = pkt.data 
+		Loopback.queue_reliable_packet(co_loopback.ctx, co_io.io_peer, pkt.to_nete_peer_id, user_packet)
+
+	for pkt: WyncPacketOut in ctx.out_unreliable_packets:
 		
 		var user_packet = UserNetPacket.new()
 		user_packet.packet_type_id = GameInfo.NETE_PKT_WYNC_PKT
-
-		# send contained WyncPacket
-		# no need to copy I guess
 		user_packet.data = pkt.data 
-
-		Loopback.queue_reliable_packet(co_loopback.ctx, co_io.io_peer, pkt.to_nete_peer_id, user_packet)
-		Log.outc(ctx, "queued this packet %s" % [user_packet.packet_type_id])
+		Loopback.queue_unreliable_packet(co_loopback.ctx, co_io.io_peer, pkt.to_nete_peer_id, user_packet)
 
 	# clear 
 	ctx.out_reliable_packets.clear()
+	ctx.out_unreliable_packets.clear()

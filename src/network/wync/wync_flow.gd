@@ -173,14 +173,16 @@ static func wync_try_to_connect(ctx: WyncCtx) -> int:
 	var result = wync_wrap_packet_out(ctx, WyncCtx.SERVER_PEER_ID, WyncPacket.WYNC_PKT_JOIN_REQ, packet_data)
 	if result[0] == OK:
 		var packet_out = result[1] as WyncPacketOut
-		WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, true)
+		WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.RELIABLE, true)
+
+	# TODO: Ser lerpms could be moved somewhere else, since it could be sent anytime
 
 	var packet_data_lerp := WyncPktClientSetLerpMS.new()
 	packet_data_lerp.lerp_ms = ctx.co_predict_data.lerp_ms
 	result = wync_wrap_packet_out(ctx, WyncCtx.SERVER_PEER_ID, WyncPacket.WYNC_PKT_CLIENT_SET_LERP_MS, packet_data_lerp)
 	if result[0] == OK:
 		var packet_out = result[1] as WyncPacketOut
-		WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, true)
+		WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.RELIABLE, true)
 	return OK
 
 
@@ -255,7 +257,7 @@ static func wync_handle_pkt_join_req(ctx: WyncCtx, data: Variant, from_nete_peer
 	packet.wync_client_id = wync_client_id
 	var result = wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_JOIN_RES, packet)
 	if result[0] == OK:
-		WyncThrottle.wync_try_to_queue_out_packet(ctx, result[1], true)
+		WyncThrottle.wync_try_to_queue_out_packet(ctx, result[1], WyncCtx.RELIABLE, true)
 	
 	# NOTE: Maybe move this elsewhere, the client could ask this any time
 	# FIXME Harcoded: client 0 -> entity 0 (player)
@@ -264,12 +266,12 @@ static func wync_handle_pkt_join_req(ctx: WyncCtx, data: Variant, from_nete_peer
 	packet_info = make_client_info_packet(ctx, wync_client_id, 0, "input")
 	result = wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_RES_CLIENT_INFO, packet_info)
 	if result[0] == OK:
-		WyncThrottle.wync_try_to_queue_out_packet(ctx, result[1], true)
+		WyncThrottle.wync_try_to_queue_out_packet(ctx, result[1], WyncCtx.RELIABLE, true)
 
 	packet_info = make_client_info_packet(ctx, wync_client_id, 0, "events")
 	result = wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_RES_CLIENT_INFO, packet_info)
 	if result[0] == OK:
-		WyncThrottle.wync_try_to_queue_out_packet(ctx, result[1], true)
+		WyncThrottle.wync_try_to_queue_out_packet(ctx, result[1], WyncCtx.RELIABLE, true)
 	
 	# let client own it's global events
 	# NOTE: Maybe move this where all channels are defined
@@ -280,7 +282,7 @@ static func wync_handle_pkt_join_req(ctx: WyncCtx, data: Variant, from_nete_peer
 		packet_info = make_client_info_packet(ctx, wync_client_id, global_events_entity_id, "channel_0")
 		result = wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_RES_CLIENT_INFO, packet_info)
 		if result[0] == OK:
-			WyncThrottle.wync_try_to_queue_out_packet(ctx, result[1], true)
+			WyncThrottle.wync_try_to_queue_out_packet(ctx, result[1], WyncCtx.RELIABLE, true)
 	
 	else:
 		Log.err("Global Event Entity (id %s) for peer_id %s NOT FOUND" % [global_events_entity_id, wync_client_id], Log.TAG_WYNC_CONNECT)

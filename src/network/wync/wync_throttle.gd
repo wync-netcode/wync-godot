@@ -64,7 +64,7 @@ static func wync_system_send_entities_to_spawn(ctx: WyncCtx, _commit: bool = tru
 		var res = WyncFlow.wync_wrap_packet_out(ctx, client_id, WyncPacket.WYNC_PKT_SPAWN, packet)
 		if res[0] == OK:
 			var pkt_out = res[1] as WyncPacketOut
-			WyncThrottle.wync_try_to_queue_out_packet(ctx, pkt_out, true)
+			WyncThrottle.wync_try_to_queue_out_packet(ctx, pkt_out, WyncCtx.RELIABLE, true)
 
 		if (data_used >= ctx.out_packets_size_remaining_chars):
 			break
@@ -100,7 +100,7 @@ static func wync_system_send_entities_to_despawn(ctx: WyncCtx, _commit: bool = t
 		var res = WyncFlow.wync_wrap_packet_out(ctx, client_id, WyncPacket.WYNC_PKT_DESPAWN, packet)
 		if res[0] == OK:
 			var pkt_out = res[1] as WyncPacketOut
-			WyncThrottle.wync_try_to_queue_out_packet(ctx, pkt_out, true)
+			WyncThrottle.wync_try_to_queue_out_packet(ctx, pkt_out, WyncCtx.RELIABLE, true)
 
 	ctx.despawned_entity_ids.clear()
 
@@ -109,28 +109,23 @@ static func wync_system_send_entities_to_despawn(ctx: WyncCtx, _commit: bool = t
 
 ## Calls all the systems that produce packets to send whilst respecting the data limit
 
-static func wync_system_gather_reliable_packets(ctx: WyncCtx):
+static func wync_system_gather_packets(ctx: WyncCtx):
 
 	if ctx.is_client:
-		WyncFlow.wync_try_to_connect(ctx)
-		SyWyncSendInputs.wync_client_send_inputs(ctx)
-		SyWyncSendEventData.wync_send_event_data(ctx)
+		WyncFlow.wync_try_to_connect(ctx)             # reliable
+		SyWyncSendInputs.wync_client_send_inputs(ctx) # unreliable
+		SyWyncSendEventData.wync_send_event_data(ctx) # reliable
 
 	else:
-		SyWyncClockServer.wync_server_sync_clock(ctx)
-		WyncThrottle.wync_system_send_entities_to_despawn(ctx)
-		WyncThrottle.wync_system_send_entities_to_spawn(ctx)
+		SyWyncClockServer.wync_server_sync_clock(ctx)          # unreliable
+		WyncThrottle.wync_system_send_entities_to_despawn(ctx) # reliable
+		WyncThrottle.wync_system_send_entities_to_spawn(ctx)   # reliable
 
 		WyncThrottle.wync_system_fill_entity_sync_queue(ctx)
 		WyncThrottle.wync_compute_entity_sync_order(ctx)
-		SyWyncStateExtractor.wync_send_extracted_data(ctx)
+		SyWyncStateExtractor.wync_send_extracted_data(ctx) # both reliable/unreliable
 
 	WyncThrottle.wync_system_calculate_data_per_tick(ctx)
-
-
-static func wync_system_gather_unreliable_packets(ctx: WyncCtx):
-	# call here the same functions as above but with the unreliable thingy
-	pass
 
 
 ## calculate statistic data per tick
@@ -360,8 +355,13 @@ static func wync_set_data_limit_chars_for_out_packets(ctx: WyncCtx, data_limit_c
 ## In case we can't queue a packet stop generatin' packets
 ## @argument dont_occuppy: bool. Used for inserting packets which size was already reserved
 ## @returns int: Error
-static func wync_try_to_queue_out_packet \
-	(ctx: WyncCtx, out_packet: WyncPacketOut, already_commited: bool, dont_ocuppy: bool = false) -> int:
+static func wync_try_to_queue_out_packet (
+	ctx: WyncCtx,
+	out_packet: WyncPacketOut,
+	reliable: bool,
+	already_commited: bool,
+	dont_ocuppy: bool = false,
+	) -> int:
 
 	var packet_size = HashUtils.calculate_object_data_size(out_packet)
 	if packet_size >= ctx.out_packets_size_remaining_chars:
@@ -383,7 +383,10 @@ static func wync_try_to_queue_out_packet \
 	if not dont_ocuppy:
 		ctx.out_packets_size_remaining_chars -= packet_size
 	
-	ctx.out_reliable_packets.append(out_packet)
+	if reliable:
+		ctx.out_reliable_packets.append(out_packet)
+	else:
+		ctx.out_unreliable_packets.append(out_packet)
 
 	#Log.outc(ctx, "queued packet %s, remaining data (%s)" %
 	#[WyncPacket.PKT_NAMES[out_packet.data.packet_type_id], ctx.out_packets_size_remaining_chars])

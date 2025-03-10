@@ -42,4 +42,4 @@ static func wync_server_sync_clock(ctx: WyncCtx):
 		var result = WyncFlow.wync_wrap_packet_out(ctx, wync_peer_id, WyncPacket.WYNC_PKT_CLOCK, packet_dup)
 		if result[0] == OK:
 			var packet_out = result[1] as WyncPacketOut
-			WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, false)
+			WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.UNRELIABLE, false)

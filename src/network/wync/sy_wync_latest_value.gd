@@ -250,11 +250,11 @@ static func predicted_delta_props_rollback_to_canonic_state \
 			continue
 		aux_prop = aux_prop as WyncEntityProp
 
-		Log.out("SyWyncLatestValue | server_ticks(%s) target_pred_tick(%s) last_tick_pred(%s)" % [
-			co_ticks.server_ticks,
-			co_predict_data.target_tick,
-			ctx.last_tick_predicted
-		], Log.TAG_LATEST_VALUE)
+		#Log.out("SyWyncLatestValue | server_ticks(%s) target_pred_tick(%s) last_tick_pred(%s)" % [
+			#co_ticks.server_ticks,
+			#co_predict_data.target_tick,
+			#ctx.last_tick_predicted
+		#], Log.TAG_LATEST_VALUE)
 
 		# apply events in order
 

@@ -1,5 +1,8 @@
 class_name WyncCtx
 
+const RELIABLE = true
+const UNRELIABLE = false
+
 ## extrapolation service ??
 
 # We can detect a local_tick is duplicated by checking is the same as te previous,

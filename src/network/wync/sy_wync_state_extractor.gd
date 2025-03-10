@@ -47,10 +47,13 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 	# Array < client_id: int, List < WyncPacket > >
 	# Array < client_id: int, Array < idx: int, WyncPacket > >
 	# Array[Array[WyncPacket]]
-	var clients_packet_buffer := [] as Array[Array]
-	clients_packet_buffer.resize(ctx.peers.size())
+	var clients_packet_buffer_reliable := [] as Array[Array]
+	var clients_packet_buffer_unreliable := [] as Array[Array]
+	clients_packet_buffer_reliable.resize(ctx.peers.size())
+	clients_packet_buffer_unreliable.resize(ctx.peers.size())
 	for client_id: int in range(1, ctx.peers.size()):
-		clients_packet_buffer[client_id] = [] as Array[WyncPacket]
+		clients_packet_buffer_reliable[client_id] = [] as Array[WyncPacket]
+		clients_packet_buffer_unreliable[client_id] = [] as Array[WyncPacket]
 
 	# build packet
 
@@ -58,9 +61,12 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 		var client_id = pair.peer_id
 		var entity_id = pair.entity_id
 
-		var packet_buffer := clients_packet_buffer[client_id] as Array[WyncPacket]
-		var packet_snap := WyncPktSnap.new()
-		packet_snap.tick = ctx.co_ticks.ticks
+		var reliable_buffer := clients_packet_buffer_reliable[client_id] as Array[WyncPacket]
+		var unreliable_buffer := clients_packet_buffer_unreliable[client_id] as Array[WyncPacket]
+		var reliable_snap := WyncPktSnap.new()
+		reliable_snap.tick = ctx.co_ticks.ticks
+		var unreliable_snap := WyncPktSnap.new()
+		unreliable_snap.tick = ctx.co_ticks.ticks
 
 		# TODO (1): Notify wync this entity was successfully updated
 		# wync_mark_entity_as_updated
@@ -108,7 +114,7 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 					packet.packet_type_id = WyncPacket.WYNC_PKT_INPUTS
 					packet.data = pkt_input
 					data_used += HashUtils.calculate_object_data_size(packet)
-					packet_buffer.append(packet)
+					unreliable_buffer.append(packet)
 
 				# compile event ids
 				var event_ids := [] as Array[int] # TODO: Use a C friendly expression
@@ -124,7 +130,7 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 					packet.packet_type_id = WyncPacket.WYNC_PKT_EVENT_DATA
 					packet.data = pkt_event_data
 					data_used += HashUtils.calculate_object_data_size(packet)
-					packet_buffer.append(packet)
+					reliable_buffer.append(packet)
 
 				# update last tick
 				# TODO: move this to it's own function
@@ -140,7 +146,7 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 					continue
 				var snap_prop = _wync_sync_relative_prop_base_only(ctx, prop_id, client_id)
 				if snap_prop != null && snap_prop is WyncPktSnap.SnapProp:
-					packet_snap.snaps.append(snap_prop)
+					reliable_snap.snaps.append(snap_prop)
 
 			## regular declarative prop
 			else:
@@ -148,20 +154,25 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 				var snap_prop = _wync_sync_regular_prop(ctx, prop_id)
 				if snap_prop != null && snap_prop is WyncPktSnap.SnapProp:
 					#Log.outc(ctx, "tag1 | extracted this prop %s" % [HashUtils.object_to_dictionary(snap_prop)])
-					packet_snap.snaps.append(snap_prop)
+					unreliable_snap.snaps.append(snap_prop)
 				else:
 					Log.outc(ctx, "tag1 | came empty handed")
 
-		# commit packet WyncPkySnap
+		# commit snap packet
 
-		if packet_snap.snaps.size() > 0:
+		if unreliable_snap.snaps.size() > 0:
 			var packet = WyncPacket.new()
 			packet.packet_type_id = WyncPacket.WYNC_PKT_PROP_SNAP
-			packet.data = packet_snap
+			packet.data = unreliable_snap
 			data_used += HashUtils.calculate_object_data_size(packet)
-			packet_buffer.append(packet)
-			#Log.outc(ctx, "tag1 | appended to packet_snap %s" % [HashUtils.object_to_dictionary(packet_snap)])
-			#assert(false)
+			unreliable_buffer.append(packet)
+
+		if reliable_snap.snaps.size() > 0:
+			var packet = WyncPacket.new()
+			packet.packet_type_id = WyncPacket.WYNC_PKT_PROP_SNAP
+			packet.data = reliable_snap
+			data_used += HashUtils.calculate_object_data_size(packet)
+			reliable_buffer.append(packet)
 
 		# exceeded size, stop
 
@@ -171,18 +182,28 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 	# queue _out packets_ for delivery
 
 	for client_id: int in range(1, ctx.peers.size()):
-		var packet_buffer := clients_packet_buffer[client_id] as Array[WyncPacket]
+		var reliable_buffer := clients_packet_buffer_reliable[client_id] as Array[WyncPacket]
+		var unreliable_buffer := clients_packet_buffer_unreliable[client_id] as Array[WyncPacket]
 
-		for packet: WyncPacket in packet_buffer:
+		for packet: WyncPacket in unreliable_buffer:
 			var packet_dup = WyncUtils.duplicate_any(packet.data)
 
 			var result = WyncFlow.wync_wrap_packet_out(ctx, client_id, packet.packet_type_id, packet_dup)
 			if result[0] == OK:
 				var packet_out = result[1] as WyncPacketOut
-				WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, true)
-				#Log.outc(ctx, "tag1 | server packet out %s %s" % [WyncPacket.PKT_NAMES[packet_out.data.packet_type_id], HashUtils.object_to_dictionary(packet_out.data.data)])
+				WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.UNRELIABLE, true)
 			else:
-				Log.errc(ctx, "tag1 | bad result here mate")
+				Log.errc(ctx, "error wrapping packet")
+
+		for packet: WyncPacket in reliable_buffer:
+			var packet_dup = WyncUtils.duplicate_any(packet.data)
+
+			var result = WyncFlow.wync_wrap_packet_out(ctx, client_id, packet.packet_type_id, packet_dup)
+			if result[0] == OK:
+				var packet_out = result[1] as WyncPacketOut
+				WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.RELIABLE, true)
+			else:
+				Log.errc(ctx, "error wrapping packet")
 
 
 static func _wync_sync_regular_prop(ctx: WyncCtx, prop_id: int) -> WyncPktSnap.SnapProp:

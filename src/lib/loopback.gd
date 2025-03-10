@@ -156,3 +156,17 @@ static func queue_reliable_packet(ctx: Context, io_peer: IOPeer, to_peer: int, d
 	io_peer.out_packets.append(pkt)
 
 
+static func queue_unreliable_packet(ctx: Context, io_peer: IOPeer, to_peer: int, data: Variant):
+	var pkt := Packet.new()
+	pkt.data = data
+	pkt.from_peer = io_peer.peer_id
+	pkt.to_peer = to_peer
+	pkt._reliable = false
+	# packet.deliver_time = it's defined later, not here
+
+	# simulate packet drop of UNRELIABLE packet
+	if (ctx.packet_loss_percentage > 0 &&
+		ctx.random_generator.randf() <= (ctx.packet_loss_percentage / 100.0)):
+		return
+
+	io_peer.out_packets.append(pkt)

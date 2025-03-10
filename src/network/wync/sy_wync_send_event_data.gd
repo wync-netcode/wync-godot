@@ -125,7 +125,7 @@ static func wync_system_send_events_to_peer (ctx: WyncCtx, wync_peer_id: int) ->
 	var result = WyncFlow.wync_wrap_packet_out(ctx, wync_peer_id, WyncPacket.WYNC_PKT_EVENT_DATA, packet_dup)
 	if result[0] == OK:
 		var packet_out = result[1] as WyncPacketOut
-		WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, true)
+		WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.RELIABLE, true)
 
 	Log.out("sent", Log.TAG_EVENT_DATA)
 
