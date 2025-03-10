@@ -148,6 +148,13 @@ var client_has_info: Array
 # 1. If a player has received info about this prop before
 # 2. What was the Last tick we sent prop data (relative sync event) to a client
 #    (Counts for both fullsnapshot and _delta events_)
+#
+# ctx.client_has_relative_prop_has_last_tick can only be modified on these events:
+# 1. (On server) The server sends a fullsnapshot aka 'base state'
+# 2. (On server) The client notifies the server about it (WYNC_PKT_DELTA_PROP_ACK)
+# 3. (On client) When we receive a fullsnapshot
+# 4. (On client) When we confidently apply a delta event forward
+#
 # Array[12] < client_id: int, Map<prop_id: int, tick: int> >
 var client_has_relative_prop_has_last_tick: Array[Dictionary]
 # each 10 frames and on prop creation. check for initialization

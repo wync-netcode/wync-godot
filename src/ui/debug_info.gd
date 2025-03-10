@@ -78,7 +78,7 @@ static func get_info_packets_received_text(ctx: WyncCtx) -> String:
 	var name_length = 10
 	var number_length = 4
 
-	var prop_amount = 19
+	var prop_amount = 20
 	var text = ""
 	var prefix = "client_%s" % [ctx.my_peer_id] if WyncUtils.is_client(ctx) else "server"
 

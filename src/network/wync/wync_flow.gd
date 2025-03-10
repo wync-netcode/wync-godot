@@ -95,6 +95,9 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 		WyncPacket.WYNC_PKT_DESPAWN:
 			if is_client:
 				wync_handle_pkt_despawn(ctx, wync_pkt.data)
+		WyncPacket.WYNC_PKT_DELTA_PROP_ACK:
+			if not is_client:
+				wync_handle_pkt_delta_prop_ack(ctx, wync_pkt.data, from_nete_peer_id)
 		_:
 			Log.err("wync packet_type_id(%s) not recognized skipping (%s)" % [wync_pkt.packet_type_id, wync_pkt.data])
 			return -1
@@ -475,6 +478,7 @@ static func prop_save_confirmed_state(ctx: WyncCtx, prop_id: int, tick: int, sta
 	else:
 
 		# if a delta prop receives a fullsnapshot we have no other option but to comply
+		# TODO: This might not be true on high _jitter_
 
 		prop.setter.call(prop.user_ctx_pointer, state)
 		prop.just_received_new_state = true
@@ -542,6 +546,44 @@ static func wync_handle_pkt_despawn(ctx: WyncCtx, data: Variant):
 		ctx.out_pending_entities_to_despawn.append(entity_id)
 
 		WyncUtils.untrack_entity(ctx, entity_id)
+
+
+static func wync_handle_pkt_delta_prop_ack(ctx: WyncCtx, data: Variant, from_nete_peer_id: int) -> int:
+
+	if data is not WyncPktDeltaPropAck:
+		return 1
+	data = data as WyncPktDeltaPropAck
+
+	# TODO: check client is healthy
+
+	var client_id = WyncUtils.is_peer_registered(ctx, from_nete_peer_id)
+	if client_id < 0:
+		Log.errc(ctx, "client %s is not registered" % client_id)
+		return 2
+
+	var client_relative_props = ctx.client_has_relative_prop_has_last_tick[client_id] as Dictionary
+
+	# update latest _delta prop_ acked tick
+
+	for i: int in range(data.prop_amount):
+		var prop_id: int = data.delta_prop_ids[i]
+		var last_tick: int = data.last_tick_received[i]
+
+		if last_tick > ctx.co_ticks.ticks:
+			continue
+
+		var prop := WyncUtils.get_prop(ctx, prop_id)
+		if not prop:
+			Log.outc(ctx, "W: Couldn't find this prop %s" % [prop_id])
+			continue
+
+		if not client_relative_props.has(prop_id):
+			Log.outc(ctx, "W: Client might no be 'seeing' this prop %s" % [prop_id])
+			continue
+
+		client_relative_props[prop_id] = last_tick
+
+	return OK
 
 
 static func wync_clear_entities_pending_to_despawn(ctx: WyncCtx):
@@ -743,6 +785,41 @@ static func wync_system_spawned_props_cleanup(ctx: WyncCtx):
 		var entity_to_spawn: WyncCtx.PendingEntityToSpawn = ctx.out_pending_entities_to_spawn[i]
 		if entity_to_spawn.already_spawned:
 			ctx.out_pending_entities_to_spawn.remove_at(i)
+
+
+static func wync_system_client_send_delta_prop_acks(ctx: WyncCtx):
+
+	var prop_amount = 0
+	var delta_prop_ids: Array[int] = []
+	var last_tick_received: Array[int] = []
+	var delta_props_last_tick = ctx.client_has_relative_prop_has_last_tick[ctx.my_peer_id] as Dictionary
+
+	for i in range(ctx.active_prop_ids.size()):
+		var prop_id = ctx.active_prop_ids[i]
+		var prop := WyncUtils.get_prop(ctx, prop_id)
+		assert(prop != null)
+		if not prop.relative_syncable:
+			continue
+		if not delta_props_last_tick.has(prop_id) || delta_props_last_tick[prop_id] == -1:
+			continue
+		var last_tick = delta_props_last_tick[prop_id]
+		delta_prop_ids.append(prop_id)
+		last_tick_received.append(last_tick)
+		prop_amount += 1
+
+	# build packet and queue
+	if prop_amount == 0:
+		return
+
+	var packet = WyncPktDeltaPropAck.new()
+	packet.prop_amount = prop_amount
+	packet.delta_prop_ids = delta_prop_ids
+	packet.last_tick_received = last_tick_received
+
+	var result = WyncFlow.wync_wrap_packet_out(ctx, WyncCtx.SERVER_PEER_ID, WyncPacket.WYNC_PKT_DELTA_PROP_ACK, packet)
+	if result[0] == OK:
+		var packet_out = result[1] as WyncPacketOut
+		WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.UNRELIABLE, false)
 
 
 ## client only

@@ -94,7 +94,7 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 				continue
 
 			# sync events, including their data
-			# auxiliar props are included here... ?
+			# (auxiliar props included)
 			elif prop.data_type == WyncEntityProp.DATA_TYPE.EVENT:
 				
 				# don't send if client owns this prop
@@ -131,11 +131,6 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 					packet.data = pkt_event_data
 					data_used += HashUtils.calculate_object_data_size(packet)
 					reliable_buffer.append(packet)
-
-				# update last tick
-				# TODO: move this to it's own function
-				var delta_prop_last_tick = ctx.client_has_relative_prop_has_last_tick[client_id] as Dictionary
-				delta_prop_last_tick[prop.auxiliar_delta_events_prop_id] = ctx.co_ticks.ticks
 
 				#Log.outc(ctx, "tag1 | this is my pkt_input %s" % [JsonClassConverter.class_to_json_string(pkt_input)])
 				#Log.outc(ctx, "tag1 | this is my pkt_event_data %s" % [JsonClassConverter.class_to_json_string(pkt_event_data)])
@@ -228,8 +223,8 @@ static func _wync_sync_regular_prop(ctx: WyncCtx, prop_id: int) -> WyncPktSnap.S
 	return prop_snap
 
 			
-# process delta props separatedly for now
-# --------------------------------------------------
+## Sends to clients the latest _base state_ of a delta prop
+## Assumes recepeit, send as reliable
 
 static func _wync_sync_relative_prop_base_only(
 	ctx: WyncCtx,

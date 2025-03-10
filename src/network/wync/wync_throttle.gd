@@ -115,6 +115,7 @@ static func wync_system_gather_packets(ctx: WyncCtx):
 		WyncFlow.wync_try_to_connect(ctx)             # reliable
 		SyWyncSendInputs.wync_client_send_inputs(ctx) # unreliable
 		SyWyncSendEventData.wync_send_event_data(ctx) # reliable
+		WyncFlow.wync_system_client_send_delta_prop_acks(ctx) # unreliable
 
 	else:
 		SyWyncClockServer.wync_server_sync_clock(ctx)          # unreliable

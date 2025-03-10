@@ -38,17 +38,6 @@ static func wync_prop_event_send_event_ids_to_peer(ctx: WyncCtx, prop_id: int) -
 		return null
 	prop = prop as WyncEntityProp
 
-	# NOTE: keeping this to make the separate version
-	#if not base_prop.relative_syncable:
-		#return null
-	#var aux_prop = WyncUtils.get_prop(ctx, base_prop.auxiliar_delta_events_prop_id)
-	#if aux_prop == null:
-		#return null
-	#aux_prop = aux_prop as WyncEntityProp
-	#if aux_prop.data_type != WyncEntityProp.DATA_TYPE.EVENT:
-		#Log.err("auxiliar prop id(%s) is not EVENT" % prop_id, Log.TAG_DELTA_EVENT)
-		#return null
-
 	# prepare packet
 
 	var pkt_inputs = WyncPktInputs.new()
@@ -78,10 +67,12 @@ static func wync_prop_event_send_event_ids_to_peer(ctx: WyncCtx, prop_id: int) -
 
 
 # --------------------------------------------------------------------------------
+# DEPRECATED
 # Service 2: For each peer collect what _delta event data_ they need
 # collect what event_ids need their _delta event data_ synced depending on peer
 # This service writes state
 
+"""
 static func queue_delta_event_data_to_be_synced_to_peers(ctx: WyncCtx):
 
 	var co_ticks = ctx.co_ticks
@@ -162,3 +153,4 @@ static func queue_delta_event_data_to_be_synced_to_peers(ctx: WyncCtx):
 					delta_prop_last_tick[prop_id] = tick
 					WyncThrottle.wync_ocuppy_space_towards_packets_data_size_limit(ctx, tick_size)
 					data_size += tick_size
+"""
