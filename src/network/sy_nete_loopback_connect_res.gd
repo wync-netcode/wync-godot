@@ -10,6 +10,10 @@ func _ready():
 	
 
 func on_process_entity(entity: Entity, _data, _delta: float):
+	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
+	if not co_loopback:
+		Log.err("Couldn't find singleton CoTransportLoopback")
+		return
 	var co_server = entity.get_component(CoServer.label) as CoServer
 	var co_io = entity.get_component(CoIOPackets.label) as CoIOPackets
 	var io_peer = co_io.io_peer
@@ -57,4 +61,4 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 		user_packet.packet_type_id = GameInfo.NETE_PKT_ANY
 		user_packet.data = packet_data
 
-		Loopback.queue_packet(io_peer, server_peer.peer_id, user_packet)
+		Loopback.queue_reliable_packet(co_loopback.ctx, io_peer, server_peer.peer_id, user_packet)

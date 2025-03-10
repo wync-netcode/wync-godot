@@ -38,7 +38,7 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 	var user_packet = UserNetPacket.new()
 	user_packet.packet_type_id = GameInfo.NETE_PKT_ANY
 	user_packet.data = packet_data
-	Loopback.queue_packet(io_peer, server_peer_id, user_packet)
+	Loopback.queue_reliable_packet(co_loopback.ctx, io_peer, server_peer_id, user_packet)
 	
 	# check for response packets
 

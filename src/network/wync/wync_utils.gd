@@ -456,6 +456,8 @@ static func prop_set_client_owner(ctx: WyncCtx, prop_id: int, client_id: int) ->
 	# NOTE: maybe don't check because this prop could be synced later
 	#if not prop_exists(ctx, prop_id):
 		#return false
+	if not ctx.client_owns_prop.has(client_id):
+		ctx.client_owns_prop[client_id] = []
 	ctx.client_owns_prop[client_id].append(prop_id)
 	return true
 
@@ -520,7 +522,10 @@ static func client_init(ctx: WyncCtx) -> int:
 
 static func client_setup_my_client(ctx: WyncCtx, peer_id: int) -> bool:
 	ctx.my_peer_id = peer_id
-	ctx.client_owns_prop[peer_id] = []
+
+	# we might have received WYNC_PKT_RES_CLIENT_INFO before
+	if not ctx.client_owns_prop.has(peer_id):
+		ctx.client_owns_prop[peer_id] = []
 
 	# setup event caching
 	ctx.events_hash_to_id.init(ctx.max_amount_cache_events)

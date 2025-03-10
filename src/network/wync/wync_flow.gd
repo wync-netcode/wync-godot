@@ -53,7 +53,7 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 
 	# debug statistics
 	WyncDebug.log_packet_received(ctx, wync_pkt.packet_type_id)
-	var is_client = WyncUtils.is_client(ctx)
+	var is_client = ctx.is_client
 
 	# tick rate calculation	
 	if is_client:
@@ -298,6 +298,7 @@ static func make_client_info_packet(
 	var packet_data = WyncPktResClientInfo.new()
 	packet_data.entity_id = entity_id
 	packet_data.prop_id = prop_id
+	packet_data.peer_id = wync_client_id
 	
 	WyncUtils.prop_set_client_owner(ctx, prop_id, wync_client_id)
 	Log.out("assigned (entity %s: prop %s) to client %s" % [packet_data.entity_id, prop_id, wync_client_id], Log.TAG_WYNC_CONNECT)
@@ -571,8 +572,8 @@ static func wync_handle_packet_res_client_info(ctx: WyncCtx, data: Variant):
 		#continue
 	
 	# set prop ownership
-	WyncUtils.prop_set_client_owner(ctx, data.prop_id, ctx.my_peer_id)
-	Log.out("Prop %s ownership given to client %s" % [data.prop_id, ctx.my_peer_id], Log.TAG_WYNC_PEER_SETUP)
+	WyncUtils.prop_set_client_owner(ctx, data.prop_id, data.peer_id)
+	Log.out("Prop %s ownership given to client %s" % [data.prop_id, data.peer_id], Log.TAG_WYNC_PEER_SETUP)
 
 
 static func wync_handle_packet_client_set_lerp_ms(ctx: WyncCtx, data: Variant, from_nete_peer_id: int) -> int:

@@ -6,8 +6,12 @@ const label: StringName = StringName("SyUserWyncQueuePackets")
 
 
 func on_process(_entities, _data, _delta: float):
+	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
+	if not co_loopback:
+		Log.err("Couldn't find singleton CoTransportLoopback")
+		return
+
 	var co_io = null # : CoIOPackets*
-	
 	var single_client = ECS.get_singleton_entity(self, "EnSingleClient")
 	if single_client:
 		var co_client = single_client.get_component(CoClient.label) as CoClient
@@ -43,7 +47,8 @@ func on_process(_entities, _data, _delta: float):
 		# no need to copy I guess
 		user_packet.data = pkt.data 
 
-		Loopback.queue_packet(co_io.io_peer, pkt.to_nete_peer_id, user_packet)
+		Loopback.queue_reliable_packet(co_loopback.ctx, co_io.io_peer, pkt.to_nete_peer_id, user_packet)
+		Log.outc(ctx, "queued this packet %s" % [user_packet.packet_type_id])
 
 	# clear 
 	ctx.out_reliable_packets.clear()
