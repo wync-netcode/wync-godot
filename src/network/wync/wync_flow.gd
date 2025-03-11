@@ -460,6 +460,7 @@ static func prop_save_confirmed_state(ctx: WyncCtx, prop_id: int, tick: int, sta
 	
 		# NOTE: two tick datas could have arrive at the same tick
 		prop.last_ticks_received.push(tick)
+		prop.last_ticks_received.sort()
 		prop.confirmed_states.insert_at(tick, state)
 		prop.confirmed_states_tick.insert_at(tick, tick)
 		prop.arrived_at_tick.insert_at(tick, ctx.co_ticks.ticks)

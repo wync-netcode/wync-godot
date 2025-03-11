@@ -210,7 +210,7 @@ var tick_action_history_size: int = 20
 # Ring < predicted_tick: int, Set <action_id: String> >
 # RingBuffer < tick: int, Dictionary <action_id: String, unused_bool: bool> >
 # RingBuffer [ Dictionary ]
-var tick_action_history: RingBuffer = RingBuffer.new(tick_action_history_size)
+var tick_action_history: RingBuffer = RingBuffer.new(tick_action_history_size, {})
 
 
 # prediction
@@ -227,6 +227,12 @@ var pred_intented_first_tick: int = 0
 
 ## how many ticks before 'last_tick_received' to predict to compensate for throttling
 var max_prediction_tick_threeshold: int = 0
+
+## precompile props for prediction ticks
+var present_input_prop_ids: Array[int] = []
+var present_delta_prop_ids: Array[int] = []
+var present_to_integrate_pred_entity_ids: Array[int] = []
+var present_pred_auxiliar_prop_ids: Array[int] = []
 
 # throttling
 # --------------------------------------------------------------------------------
@@ -377,11 +383,11 @@ func _init() -> void:
 		debug_packets_received[i] = [] as Array[int]
 		debug_packets_received[i].resize(20) # amount of props, also 0 is reserved for 'total'
 
-	debug_data_per_tick_sliding_window = RingBuffer.new(debug_data_per_tick_sliding_window_size)
+	debug_data_per_tick_sliding_window = RingBuffer.new(debug_data_per_tick_sliding_window_size, 0)
 
-	server_tick_rate_sliding_window = RingBuffer.new(server_tick_rate_sliding_window_size)
+	server_tick_rate_sliding_window = RingBuffer.new(server_tick_rate_sliding_window_size, 0)
 
-	low_priority_entity_update_rate_sliding_window = RingBuffer.new(low_priority_entity_update_rate_sliding_window_size)
+	low_priority_entity_update_rate_sliding_window = RingBuffer.new(low_priority_entity_update_rate_sliding_window_size, 0)
 
 	dummy_props = {}
 		

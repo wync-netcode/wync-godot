@@ -1,4 +1,4 @@
-[gd_scene load_steps=59 format=3 uid="uid://b8oeiuufqe32c"]
+[gd_scene load_steps=58 format=3 uid="uid://b8oeiuufqe32c"]
 
 [ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_1ps8v"]
 [ext_resource type="Script" path="res://data/StaticData.gd" id="2_2epi3"]
@@ -9,7 +9,6 @@
 [ext_resource type="Script" path="res://src/network/co_transport_loopback.gd" id="5_r2rkq"]
 [ext_resource type="Script" path="res://src/network/debug/co_state_log.gd" id="6_8qi11"]
 [ext_resource type="PackedScene" uid="uid://hmishy6acfrk" path="res://src/entities/en_raycast_singleton.tscn" id="8_ry87g"]
-[ext_resource type="Script" path="res://src/systems/sy_velocity.gd" id="9_rrivg"]
 [ext_resource type="Script" path="res://src/systems/sy_player_input_additive.gd" id="10_47ome"]
 [ext_resource type="PackedScene" uid="uid://5n6bvvfq608d" path="res://src/entities/en_single_actors.tscn" id="10_k0r3w"]
 [ext_resource type="Script" path="res://src/systems/sy_actor_movement.gd" id="11_1eesg"]
@@ -106,7 +105,7 @@ singleton = true
 [node name="Entities" type="Node" parent="worlds/WorldServer"]
 
 [node name="EnPlayer" parent="worlds/WorldServer/Entities" instance=ExtResource("23_ewwho")]
-position = Vector2(112, 209)
+position = Vector2(706, 376)
 
 [node name="CoNetBufferedInputs" type="Node" parent="worlds/WorldServer/Entities/EnPlayer"]
 script = ExtResource("31_10fi0")
@@ -150,9 +149,6 @@ script = ExtResource("20_cx4yn")
 
 [node name="SystemsGameplay" type="Node" parent="worlds/WorldServer/GroupPhysics"]
 
-[node name="SyVelocity" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsGameplay"]
-script = ExtResource("9_rrivg")
-
 [node name="SyActorMovement" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsGameplay"]
 script = ExtResource("11_1eesg")
 
@@ -186,6 +182,7 @@ script = ExtResource("53_8nlkt")
 
 [node name="SyBlockGridDeltaRandomize" type="Node" parent="worlds/WorldServer/GroupPhysics/SystemsGameplay"]
 script = ExtResource("33_bbvl4")
+ENABLED = false
 
 [node name="SystemsSetup" type="Node" parent="worlds/WorldServer/GroupPhysics"]
 
@@ -349,9 +346,6 @@ script = ExtResource("54_kat3r")
 [node name="GroupProcess" type="Node" parent="worlds/WorldClient1"]
 script = ExtResource("32_wj45u")
 
-[node name="SyNeteLoopback" type="Node" parent="worlds/WorldClient1/GroupProcess"]
-script = ExtResource("21_rayuf")
-
 [node name="SyWyncLerp" type="Node" parent="worlds/WorldClient1/GroupProcess"]
 script = ExtResource("49_dsdhr")
 
@@ -364,9 +358,18 @@ script = ExtResource("64_51gnu")
 [node name="SyPlayerSubtickEvents" type="Node" parent="worlds/WorldClient1/GroupProcess"]
 script = ExtResource("64_mfg3t")
 
+[node name="SyNeteLoopback" type="Node" parent="worlds/WorldClient1/GroupProcess"]
+script = ExtResource("21_rayuf")
+
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
 [node name="debug_info" parent="CanvasLayer" instance=ExtResource("60_cvsem")]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -159.0
+offset_right = 0.0
+grow_horizontal = 0
 
 [node name="debug_info2" parent="CanvasLayer" instance=ExtResource("60_cvsem")]
 anchors_preset = 2
@@ -376,7 +379,7 @@ offset_top = -65.0
 offset_bottom = 0.0
 grow_vertical = 0
 theme_override_font_sizes/font_size = 9
-info_to_show = 1
+info_to_show = 2
 
 [node name="debug_info3" parent="CanvasLayer" instance=ExtResource("60_cvsem")]
 anchors_preset = 3
@@ -391,15 +394,9 @@ offset_bottom = 0.0
 grow_horizontal = 0
 grow_vertical = 0
 theme_override_font_sizes/font_size = 9
-info_to_show = 2
+info_to_show = 3
 
 [node name="debug_info4" parent="CanvasLayer" instance=ExtResource("60_cvsem")]
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -159.0
-offset_right = 0.0
 offset_bottom = 65.0
-grow_horizontal = 0
 theme_override_font_sizes/font_size = 9
-info_to_show = 3
+info_to_show = 4

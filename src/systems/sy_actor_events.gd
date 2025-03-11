@@ -62,6 +62,8 @@ static func run_client_events(node_ctx: Node, ctx: WyncCtx, client_wync_peer_id:
 	
 	var channel_id = 0
 	var event_list: Array = ctx.peer_has_channel_has_events[client_wync_peer_id][channel_id]
+	if event_list.size() == 0:
+		return
 
 	# NOTE: shouldn't this be ran from beggining to end?
 	for i in range(event_list.size() -1, -1, -1):
@@ -89,8 +91,7 @@ static func run_server_events(node_ctx: Node, ctx: WyncCtx):
 	var event_list: Array = ctx.peer_has_channel_has_events[server_wync_peer_id][channel_id]
 	while(event_list.size() > 0):
 		var event_id = event_list[event_list.size() -1]
-		if not ctx.events.has(event_id):
-			continue
+		assert(ctx.events.has(event_id))
 		var event = ctx.events[event_id]
 		if event is not WyncEvent:
 			WyncEventUtils.global_event_consume(ctx, server_wync_peer_id, channel_id, event_id)

@@ -37,6 +37,4 @@ var lerp_ms: int = 50
 
 func _init() -> void:
 	latency_buffer.resize(LATENCY_BUFFER_SIZE)
-	clock_offset_sliding_window = RingBuffer.new(clock_offset_sliding_window_size)
-	for i in range(clock_offset_sliding_window_size):
-		clock_offset_sliding_window.push(0)
+	clock_offset_sliding_window = RingBuffer.new(clock_offset_sliding_window_size, 0)

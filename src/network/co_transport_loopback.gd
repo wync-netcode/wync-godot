@@ -10,4 +10,5 @@ func _ready():
 
 
 func _physics_process(_delta: float) -> void:
-	Loopback.system_fluctuate_latency(ctx)
+	if Engine.get_physics_frames() % Engine.physics_ticks_per_second == 0:
+		Loopback.system_fluctuate_latency(ctx)

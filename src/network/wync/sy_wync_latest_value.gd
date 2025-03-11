@@ -142,7 +142,7 @@ static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: A
 		
 		
 		var last_confirmed_tick = prop.last_ticks_received.get_relative(tick)
-		if last_confirmed_tick == null:
+		if last_confirmed_tick == -1:
 			continue
 		if prop.confirmed_states_tick.get_at(last_confirmed_tick) != last_confirmed_tick:
 			continue
@@ -261,6 +261,7 @@ static func predicted_delta_props_rollback_to_canonic_state \
 		for tick: int in range(ctx.last_tick_predicted, ctx.first_tick_predicted -1, -1):
 
 			if aux_prop.confirmed_states_undo_tick.get_at(tick) != tick:
+				# FIXME: this assertion was hit, but I couldn't repro it
 				assert(false)
 				break
 			var undo_event_id_list = aux_prop.confirmed_states_undo.get_at(tick)

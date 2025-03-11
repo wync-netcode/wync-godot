@@ -29,10 +29,13 @@ func on_process(entities, _data, delta: float):
 	if WyncXtrap.wync_xtrap_preparation(ctx) != OK:
 		return
 
+	WyncXtrap.wync_xtrap_tick_init_cache(ctx)
+	#WyncXtrap.auxiliar_props_clear_current_delta_events_cache(ctx)
+	WyncXtrap.wync_xtrap_tick_end_cache(ctx)
+
 	for tick in range(ctx.pred_intented_first_tick - ctx.max_prediction_tick_threeshold, target_tick +1):
 
-		if WyncXtrap.wync_xtrap_tick_init(ctx, tick) != OK:
-			continue
+		WyncXtrap.wync_xtrap_tick_init(ctx, tick)
 		var dont_predict_entity_ids = WyncXtrap.wync_xtrap_dont_predict_entities(ctx, tick)
 
 		# ------- START USER PREDICTION FUNCTIONS -------
@@ -44,12 +47,14 @@ func on_process(entities, _data, delta: float):
 			if dont_predict_entity_ids.has(co_actor.id):
 				continue
 
-			if !WyncUtils.entity_is_predicted(ctx, co_actor.id):
-				continue
-			if ECS.entity_has_system_components(entity.id, SyActorMovement.label):
+			#if !WyncUtils.entity_is_predicted(ctx, co_actor.id):
+				#continue
+			#if ECS.entity_has_system_components(entity.id, SyActorMovement.label):
+			if co_actor.id == 0:
 				SyActorMovement.simulate_movement(entity, delta)
 				SyActorMovement.simulate_particle_on_start_moving(entity, delta, tick)
-			if ECS.entity_has_system_components(entity.id, SyBallMovement.label):
+			if co_actor.id == 2:
+			#if ECS.entity_has_system_components(entity.id, SyBallMovement.label):
 				SyBallMovement.simulate_movement(entity, delta)
 		
 		# NOTE: This is also valid,
@@ -80,5 +85,6 @@ func on_process(entities, _data, delta: float):
 		# sync transforms to physics server
 		RapierPhysicsServer2D.space_step(space, 0)
 		RapierPhysicsServer2D.space_flush_queries(space)
+		pass
 
 	WyncXtrap.wync_xtrap_termination(ctx)

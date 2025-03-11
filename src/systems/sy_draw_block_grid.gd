@@ -116,8 +116,7 @@ static func draw_block(node2d: Node2D, sprite_rect: Rect2, block: CoBlockGrid.Bl
 
 
 func on_process(_entities, _data, _delta):
-	if (self as Node) is Node2D:
-		(self as Node as Node2D).queue_redraw()
+	(self as Node as Node2D).queue_redraw()
 
 
 func is_client_application() -> bool:

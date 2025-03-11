@@ -7,25 +7,23 @@ const label: StringName = StringName("SyUserWyncConsumePackets")
 
 func on_process(_entities, _data, _delta: float):
 	var co_io = null # : CoIOPackets*
+	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var wync_ctx = single_wync.ctx as WyncCtx
 	
-	var single_client = ECS.get_singleton_entity(self, "EnSingleClient")
-	if single_client:
-		var co_client = single_client.get_component(CoClient.label) as CoClient
-		if co_client.state != CoClient.STATE.CONNECTED:
-			return
-		co_io = single_client.get_component(CoIOPackets.label) as CoIOPackets
-	
-	if co_io == null:
+	if wync_ctx.is_client:
+		var single_client = ECS.get_singleton_entity(self, "EnSingleClient")
+		if single_client:
+			co_io = single_client.get_component(CoIOPackets.label) as CoIOPackets
+	else:
 		var single_server = ECS.get_singleton_entity(self, "EnSingleServer")
 		if single_server:
 			co_io = single_server.get_component(CoIOPackets.label) as CoIOPackets
-	
+	if co_io == null:
+		return
+		
 	if co_io == null:
 		Log.err("Couldn't find co_io_packets", Log.TAG_WYNC_CONNECT)
 	var io_peer = co_io.io_peer
-
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = single_wync.ctx as WyncCtx
 	
 	# check for packets
 
@@ -42,9 +40,8 @@ func on_process(_entities, _data, _delta: float):
 		if pkt.data is not WyncPacket:
 			Log.err("Magic number detect but Packet is not WyncPacket (%s)" % [WyncPacket])
 			continue
-		var data = pkt.data as WyncPacket
 		
-		WyncFlow.wync_feed_packet(wync_ctx, data, loo_pkt.from_peer)
+		WyncFlow.wync_feed_packet(wync_ctx, pkt.data, loo_pkt.from_peer)
 
 		# consume
 		io_peer.in_packets.remove_at(k)

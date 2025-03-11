@@ -29,6 +29,7 @@ func spawn_actors(ctx: WyncCtx):
 				var spawn_data = entity_to_spawn.spawn_data as GameInfo.EntityProjectileSpawnData
 				var entity = SyShootWeapon.launch_projectile(spawn_data.weapon_id, -1, self, Vector2.ZERO, 0)
 				var err = SyActorRegister.register_actor(self, entity, entity_to_spawn.entity_id)
+				# FIXME: assertion can be hit
 				assert(err == OK)
 				UserWyncUtils.setup_entity_type(self, entity, GameInfo.ENTITY_TYPE_PROJECTILE)
 				WyncUtils.finish_spawning_entity(ctx, entity_to_spawn.entity_id, i)

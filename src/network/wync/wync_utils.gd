@@ -100,8 +100,8 @@ static func prop_register(
 
 	# instantiate structs
 	# todo: some might not be necessary for all
-	prop.last_ticks_received = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT)
-	prop.arrived_at_tick = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT)
+	prop.last_ticks_received = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT, -1)
+	prop.arrived_at_tick = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT, -1)
 	prop.pred_curr = NetTickData.new()
 	prop.pred_prev = NetTickData.new()
 
@@ -109,11 +109,11 @@ static func prop_register(
 	# TODO: Only do this if this prop is predicted, move to prop_set_predict ?
 	if (data_type == WyncEntityProp.DATA_TYPE.INPUT ||
 		data_type == WyncEntityProp.DATA_TYPE.EVENT):
-		prop.confirmed_states = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE)
-		prop.confirmed_states_tick = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE)
+		prop.confirmed_states = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, null)
+		prop.confirmed_states_tick = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, -1)
 	else:
-		prop.confirmed_states = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT)
-		prop.confirmed_states_tick = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT)
+		prop.confirmed_states = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT, null)
+		prop.confirmed_states_tick = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT, -1)
 	
 	ctx.props[prop_id] = prop
 	ctx.active_prop_ids.push_back(prop_id)
@@ -252,8 +252,8 @@ static func prop_set_timewarpable(ctx: WyncCtx, prop_id: int) -> int:
 	if prop == null:
 		return 1
 	prop.timewarpable = true
-	prop.confirmed_states = RingBuffer.new(ctx.max_tick_history)
-	prop.confirmed_states_tick = RingBuffer.new(ctx.max_tick_history)
+	prop.confirmed_states = RingBuffer.new(ctx.max_tick_history, null)
+	prop.confirmed_states_tick = RingBuffer.new(ctx.max_tick_history, -1)
 	return OK
 
 # server only
@@ -356,7 +356,7 @@ static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time: int,
 	
 	for i in range(prop.last_ticks_received.size):
 		var server_tick = prop.last_ticks_received.get_relative(-i)
-		if server_tick is not int:
+		if server_tick == -1:
 			continue
 
 		# get snapshot from received ticks
@@ -368,7 +368,7 @@ static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time: int,
 
 		# get local tick
 		var arrived_at_tick = prop.arrived_at_tick.get_at(server_tick)
-		if arrived_at_tick is not int:
+		if arrived_at_tick == -1:
 			continue
 
 		var snapshot_timestamp = WyncUtils.clock_get_tick_timestamp_ms(ctx, arrived_at_tick)
@@ -404,14 +404,14 @@ static func entity_set_integration_fun(ctx: WyncCtx, entity_id: int, sim_fun_id:
 
 
 ## @returns optional<Callable>
-static func entity_get_sim_fun(ctx: WyncCtx, entity_id: int):# -> optional<Callable>
-	if not ctx.entity_has_simulation_fun.has(entity_id):
-		return null
-	var sim_fun_id = ctx.entity_has_simulation_fun[entity_id]
-	var sim_fun = ctx.simulation_functions[sim_fun_id]
-	if sim_fun is not Callable:
-		return null
-	return sim_fun
+#static func entity_get_sim_fun(ctx: WyncCtx, entity_id: int):# -> optional<Callable>
+	#if not ctx.entity_has_simulation_fun.has(entity_id):
+		#return null
+	#var sim_fun_id = ctx.entity_has_simulation_fun[entity_id]
+	#var sim_fun = ctx.simulation_functions[sim_fun_id]
+	#if sim_fun is not Callable:
+		#return null
+	#return sim_fun
 
 
 ## @returns optional<Callable>
@@ -420,8 +420,6 @@ static func entity_get_integrate_fun(ctx: WyncCtx, entity_id: int):# -> optional
 		return null
 	var sim_fun_id = ctx.entity_has_integrate_fun[entity_id]
 	var sim_fun = ctx.simulation_functions[sim_fun_id]
-	if sim_fun is not Callable:
-		return null
 	return sim_fun
 
 
@@ -593,7 +591,7 @@ static func entity_get_last_received_tick (ctx: WyncCtx, entity_id: int) -> int:
 			continue
 
 		var prop_last_tick = prop.last_ticks_received.get_relative(0)
-		if prop_last_tick is not int:
+		if prop_last_tick == -1:
 			continue
 
 		if last_tick == -1:

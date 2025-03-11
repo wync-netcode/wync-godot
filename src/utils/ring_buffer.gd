@@ -6,9 +6,18 @@ var head_pointer: int = 0
 
 
 ## Initializes ring buffer of specified size
-func _init(ar_size: int) -> void:
+func _init(ar_size: int, default_value: Variant) -> void:
 	size = ar_size
 	buffer.resize(size)
+
+	# fill
+	for i: int in range(size):
+		if typeof(default_value) == TYPE_ARRAY:
+			buffer[i] = (default_value as Array).duplicate(true)
+		elif typeof(default_value) == TYPE_DICTIONARY:
+			buffer[i] = (default_value as Dictionary).duplicate(true)
+		else:
+			buffer[i] = default_value
 
 
 ## Returns the item in position relative to head
@@ -39,3 +48,12 @@ func clear() -> void:
 	head_pointer = 0
 	buffer.clear()
 	buffer.resize(size)
+
+
+## sorts it and repositions head to latest
+func sort() -> void:
+	head_pointer = size -1
+	if typeof(buffer[0]) != TYPE_INT:
+		return
+	buffer.sort()
+

@@ -1,12 +1,14 @@
 extends Label
 
 enum INFO {
+	INFO_FPS,
 	INFO_GENERAL,
 	INFO_CLIENT_PACKET_LOG,
 	INFO_SERVER_PACKET_LOG,
 	INFO_PROPS,
 }
 @export var info_to_show: INFO = INFO.INFO_GENERAL
+@export var enabled: bool = true
 
 @onready var lblPhysicsFPS: Label = %lblPhysicsFPS
 @onready var lblRealFPS: Label = %lblRealFPS
@@ -17,9 +19,15 @@ enum INFO {
 @onready var co_wync_ctx_client: CoSingleWyncContext = %"CoSingleWyncContext-Client"
 
 
-func _process(_delta):
-	
+func _ready() -> void:
+	if not enabled:
+		self.queue_free()
+
+
+func _physics_process(delta: float) -> void:
 	match info_to_show:
+		INFO.INFO_FPS:
+			lblMain.text = str(Performance.get_monitor(Performance.TIME_FPS))
 		INFO.INFO_GENERAL:
 			lblMain.text = get_info_general()
 		INFO.INFO_CLIENT_PACKET_LOG:
@@ -34,7 +42,7 @@ func get_info_general() -> String:
 	var text = \
 	"""PhysicsFPS: %s
 	ScreenFPS: %s
-	Latency: %s
+	Latency: %s jit(%sms) loss(%s%%)
 	Latency_stable: %s
 	tick_offset: %s
 	ticks_predi: %s
@@ -53,7 +61,9 @@ func get_info_general() -> String:
 	[
 		Engine.physics_ticks_per_second,
 		Performance.get_monitor(Performance.TIME_FPS),
-		co_loopback.ctx.latency,
+		string_exact_length(str(co_loopback.ctx.latency), 3),
+		string_exact_length(str(co_loopback.ctx.jitter), 3),
+		string_exact_length(str(co_loopback.ctx.packet_loss_percentage), 3),
 		co_wync_ctx_client.ctx.co_predict_data.latency_stable,
 		co_wync_ctx_client.ctx.co_predict_data.tick_offset,
 		(co_wync_ctx_client.ctx.last_tick_predicted -co_wync_ctx_client.ctx.first_tick_predicted),
