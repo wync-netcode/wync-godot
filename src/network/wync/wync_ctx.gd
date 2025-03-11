@@ -26,7 +26,7 @@ var physic_ticks_per_second: int = 60
 ## So, 3 would mean it's 1 update every 4 ticks. 0 means updates every tick.
 var server_tick_rate: float = 0
 var server_tick_rate_sliding_window: RingBuffer
-var server_tick_rate_sliding_window_size: int = 10
+var server_tick_rate_sliding_window_size: int = 8
 var tick_last_packet_received_from_server: int = 0
 
 ## client only
@@ -34,7 +34,7 @@ var tick_last_packet_received_from_server: int = 0
 ## So, 3 would mean it's 1 update every 4 ticks. 0 means updates every tick.
 var low_priority_entity_update_rate: float = 0
 var low_priority_entity_update_rate_sliding_window: RingBuffer
-var low_priority_entity_update_rate_sliding_window_size: int = 10
+var low_priority_entity_update_rate_sliding_window_size: int = 8
 var low_priority_entity_tick_last_update: int = 0
 const ENTITY_ID_PROB_FOR_ENTITY_UPDATE_DELAY_TICKS = 699
 var PROP_ID_PROB = -1
@@ -59,16 +59,17 @@ var co_predict_data: CoPredictionData = CoPredictionData.new()
 const SERVER_PEER_ID = 0
 const ENTITY_ID_GLOBAL_EVENTS = 700
 # NOTE: Rename to PRED_INPUT_BUFFER_SIZE
-const INPUT_BUFFER_SIZE = 60 * 12
+const INPUT_BUFFER_SIZE = 2 ** 10 ## 1024
+const INPUT_AMOUNT_TO_SEND = 10
 var max_amount_cache_events = 2 # it could be useful to have a different value for server cache
 var max_peers = 24
 var max_channels = 12
-var max_tick_history = 60 # 1 second at 60 fps
+var max_tick_history = 64 # 1 second at 60 fps
 var max_prop_relative_sync_history_ticks = 20 # set to 1 to see if it's working alright 
 var max_delta_prop_predicted_ticks = 60 # 1000ms ping at 60fps 2000ms ping at 30fps
 
 # how many ticks in the past to keep state cache for a regular prop
-var REGULAR_PROP_CACHED_STATE_AMOUNT = 10
+var REGULAR_PROP_CACHED_STATE_AMOUNT = 8
 
 # Map<entity_id: int, unused_bool: bool>
 var tracked_entities: Dictionary
@@ -204,7 +205,7 @@ var entity_has_simulation_fun: Dictionary
 var connected: bool = false
 
 # This size should be the maximum amount of 'tick_offset' for prediction
-var tick_action_history_size: int = 20
+var tick_action_history_size: int = 32
 
 # did action already ran on tick?
 # Ring < predicted_tick: int, Set <action_id: String> >
@@ -333,7 +334,7 @@ const MAX_DUMMY_PROP_TICKS_ALIVE: int = 100 # 1000
 var debug_packets_received: Array[Array]
 
 # mean of how much data is being transmitted each tick
-var debug_data_per_tick_sliding_window_size: int = 10
+var debug_data_per_tick_sliding_window_size: int = 8
 var debug_data_per_tick_sliding_window: RingBuffer
 var debug_data_per_tick_total_mean: float = 0
 var debug_data_per_tick_sliding_window_mean: float = 0
@@ -367,7 +368,7 @@ func _init() -> void:
 
 		#if peer_i != WyncCtx.SERVER_PEER_ID:
 		queue_clients_entities_to_sync[peer_i] = FIFORing.new()
-		queue_clients_entities_to_sync[peer_i].init(100)
+		queue_clients_entities_to_sync[peer_i].init(128) # TODO: Make this user defined
 		clients_sees_entities[peer_i] = {}
 		clients_sees_new_entities[peer_i] = {}
 		clients_no_longer_sees_entities[peer_i] = {}

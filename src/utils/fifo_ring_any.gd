@@ -78,10 +78,10 @@ func get_tail() -> Variant:
 
 
 ## @returns Optional<Variant>
-func get_relative_to_head(pos: int) -> Variant:
-	return ring[(head + pos) % max_size]
+#func get_relative_to_head(pos: int) -> Variant:
+	#return ring[(head + pos) % max_size]
 
 
-## @returns Optional<Variant>
-func get_relative_to_tail(pos: int) -> Variant:
-	return ring[(tail + pos) % max_size]
+### @returns Optional<Variant>
+#func get_relative_to_tail(pos: int) -> Variant:
+	#return ring[(tail + pos) % max_size]

@@ -16,3 +16,9 @@ static func object_to_dictionary(object: Object) -> Dictionary:
 
 static func calculate_object_data_size(object: Object) -> int:
 	return JsonClassConverter.class_to_json_string(object).length()
+
+
+static func calculate_wync_packet_data_size(wync_packet_type_id: int) -> int:
+	if wync_packet_type_id > WyncPacket.WYNC_PKT_AMOUNT:
+		return 0
+	return WyncPacket.PKT_SIZES[wync_packet_type_id]

@@ -778,6 +778,11 @@ static func lerp_any(left: Variant, right: Variant, weight: float):
 	return lerp(left, right, weight)
 
 
+## denominator must be a power of 2
+static func fast_modulus(numerator: int, denominator: int) -> int:
+	return numerator & (denominator - 1)
+
+
 # Note: Set physics ticks is in WyncFlow
 
 

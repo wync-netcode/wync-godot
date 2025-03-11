@@ -6,20 +6,17 @@ const label: StringName = StringName("SyUserWyncQueuePackets")
 
 
 func on_process(_entities, _data, _delta: float):
+	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var ctx = single_wync.ctx as WyncCtx
 	var co_loopback = GlobalSingletons.singleton.get_component(CoTransportLoopback.label) as CoTransportLoopback
-	if not co_loopback:
-		Log.err("Couldn't find singleton CoTransportLoopback")
-		return
 
 	var co_io = null # : CoIOPackets*
-	var single_client = ECS.get_singleton_entity(self, "EnSingleClient")
-	if single_client:
-		var co_client = single_client.get_component(CoClient.label) as CoClient
-		if co_client.state != CoClient.STATE.CONNECTED:
-			return
-		co_io = single_client.get_component(CoIOPackets.label) as CoIOPackets
+	if ctx.is_client:
+		var single_client = ECS.get_singleton_entity(self, "EnSingleClient")
+		if single_client:
+			co_io = single_client.get_component(CoIOPackets.label) as CoIOPackets
 	
-	if co_io == null:
+	else:
 		var single_server = ECS.get_singleton_entity(self, "EnSingleServer")
 		if single_server:
 			co_io = single_server.get_component(CoIOPackets.label) as CoIOPackets
@@ -27,11 +24,8 @@ func on_process(_entities, _data, _delta: float):
 	if co_io == null:
 		Log.err("Couldn't find co_io_packets", Log.TAG_WYNC_CONNECT)
 
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var ctx = single_wync.ctx as WyncCtx
-
 	# gather packets
-
+	
 	WyncThrottle.wync_system_gather_packets(ctx)
 	
 	# queue packets for delivery

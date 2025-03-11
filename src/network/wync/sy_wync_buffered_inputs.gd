@@ -15,21 +15,6 @@ const label: StringName = StringName("SyWyncBufferedInputs")
 
 ## TODO: Handle special cases for events: non-repeat on tick (set data struct)
 
-func _ready():
-	components = [
-		CoActorInput.label,
-		CoFlagNetSelfPredict.label,
-		CoNetBufferedInputs.label,
-		CoFlagWyncEntityTracked.label]
-	super()
-	
-
-func on_process(_entities, _data, _delta: float, p_node_root: Node = null):
-
-	var node_root = self if p_node_root == null else p_node_root
-
-	var single_wync = ECS.get_singleton_component(node_root, CoSingleWyncContext.label) as CoSingleWyncContext
-	wync_buffer_inputs(single_wync.ctx)
 	
 	
 static func wync_buffer_inputs(ctx: WyncCtx):

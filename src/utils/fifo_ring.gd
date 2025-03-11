@@ -90,13 +90,13 @@ func get_tail() -> int:
 
 
 ## @returns Optional<Variant>
-func get_relative_to_head(pos: int) -> int:
-	return ring[(head + pos) % max_size]
+#func get_relative_to_head(pos: int) -> int:
+	#return ring[WyncUtils.fast_modulus(head + pos, max_size)]
 
 
 ## @returns Optional<Variant>
 func get_relative_to_tail(pos: int) -> int:
-	return ring[(tail + pos) % max_size]
+	return ring[WyncUtils.fast_modulus(tail + pos, max_size)]
 
 func clear() -> void:
 	tail = 0

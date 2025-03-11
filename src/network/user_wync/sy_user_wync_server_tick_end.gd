@@ -15,6 +15,8 @@ func on_process(_entities, _data, _delta: float):
 		print("E: Couldn't find singleton CoTransportLoopback")
 		return
 
+	WyncThrottle.wync_set_data_limit_chars_for_out_packets(ctx, 10000)
+
 	# set latency
 	WyncFlow.wync_client_set_current_latency(ctx, co_loopback.ctx.latency)
 	# TODO: set current time

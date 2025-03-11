@@ -6,11 +6,6 @@ const label: StringName = StringName("SyNetPredictionTicks")
 ## NOTE: What if we have different send rates for different entities as a LOD measure?
 	
 
-func on_process(_entities, _data, _delta: float):
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	wync_update_prediction_ticks (single_wync.ctx)
-
-
 static func wync_update_prediction_ticks (ctx: WyncCtx):
 	
 	var co_predict_data = ctx.co_predict_data
@@ -21,7 +16,7 @@ static func wync_update_prediction_ticks (ctx: WyncCtx):
 
 	# Adjust tick_offset_desired periodically to compensate for unstable ping
 	
-	if co_ticks.ticks % 30 == 0:
+	if WyncUtils.fast_modulus(co_ticks.ticks, 32) == 0:
 
 		co_predict_data.tick_offset_desired = ceil(co_predict_data.latency_stable / (1000.0 / physics_fps)) + 1
 		

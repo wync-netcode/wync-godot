@@ -12,13 +12,11 @@ func on_process(_entities, _data, _delta: float):
 
 	# tick start
 
-	WyncThrottle.wync_set_data_limit_chars_for_out_packets(ctx, 10000)
-
 	WyncFlow.wync_server_tick_start(ctx)
 	
 	# for now, share all entities with all clients
 	
-	if Engine.get_physics_frames() % 10 == 0:
+	if WyncUtils.fast_modulus(Engine.get_physics_frames(), 16) == 0:
 
 		var en_single_actors = ECS.get_singleton_entity(self, "EnSingleActors")
 		var co_actors = en_single_actors.get_component(CoSingleActors.label) as CoSingleActors

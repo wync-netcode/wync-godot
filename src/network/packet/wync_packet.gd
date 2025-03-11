@@ -16,7 +16,7 @@ enum {
 	WYNC_PKT_DESPAWN,
 	WYNC_PKT_AMOUNT,
 }
-const PKT_NAMES := [
+const PKT_NAMES: Array[String] = [
 	"WYNC_PKT_JOIN_REQ",
 	"WYNC_PKT_JOIN_RES",
 	"WYNC_PKT_RES_CLIENT_INFO",
@@ -31,6 +31,22 @@ const PKT_NAMES := [
 	"WYNC_PKT_SPAWN",
 	"WYNC_PKT_DESPAWN",
 	"WYNC_PKT_AMOUNT",
+]
+const PKT_SIZES: Array[int] = [
+	20,
+	40,
+	100,
+	32,
+	60,
+
+	300,
+	100,
+	500,
+	100,
+
+	500,
+	200,
+	0,
 ]
 
 var packet_type_id: int # : WYNC_PKT

@@ -113,11 +113,11 @@ static func run_local_entity_events(node_ctx: Node, entity: Entity):
 	# check if this event has an owner
 
 	if not WyncUtils.prop_exists(ctx, co_wync_events.prop_id):
-		Log.err("Couldn't find a Prop for this Event prop_id(%d)" % [co_wync_events.prop_id], Log.TAG_GAME_EVENT)
+		Log.errc(ctx, "Couldn't find a Prop for this Event prop_id(%d)" % [co_wync_events.prop_id], Log.TAG_GAME_EVENT)
 		return
 	var peer_id = WyncUtils.prop_get_peer_owner(ctx, co_wync_events.prop_id)
 	if peer_id == -1:
-		Log.err("Couldn't find owner for prop_id(%d)" % [co_wync_events.prop_id], Log.TAG_GAME_EVENT)
+		Log.errc(ctx, "Couldn't find owner for prop_id(%d)" % [co_wync_events.prop_id], Log.TAG_GAME_EVENT)
 		return
 	# NOTE: Maybe check if the peer is alive
 	

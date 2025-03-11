@@ -12,4 +12,4 @@ func on_process_entity(_entity: Entity, _data, _delta: float):
 		print("E: Couldn't find singleton CoTransportLoopback")
 		return
 
-	Loopback.system_caotic_latency(co_loopback.ctx)
+	#Loopback.system_caotic_latency(co_loopback.ctx)

@@ -42,7 +42,7 @@ static func wync_prop_event_send_event_ids_to_peer(ctx: WyncCtx, prop_id: int) -
 
 	var pkt_inputs = WyncPktInputs.new()
 
-	for tick in range(ctx.co_ticks.ticks - CoNetBufferedInputs.AMOUNT_TO_SEND, ctx.co_ticks.ticks +1):
+	for tick in range(ctx.co_ticks.ticks - WyncCtx.INPUT_AMOUNT_TO_SEND, ctx.co_ticks.ticks +1):
 		if prop.confirmed_states_tick.get_at(tick) != tick:
 			continue
 		var input = prop.confirmed_states.get_at(tick)

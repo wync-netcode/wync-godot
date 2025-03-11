@@ -15,7 +15,7 @@ var current_tick_timestamp: int = 0
 # TODO: Move this to co_ticks
 
 var clock_offset_sliding_window: RingBuffer = null
-var clock_offset_sliding_window_size: int = 5
+var clock_offset_sliding_window_size: int = 8
 var clock_offset_mean: float
 
 # To stabilize the latency

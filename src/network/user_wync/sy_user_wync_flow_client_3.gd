@@ -15,9 +15,10 @@ func on_process(_entities, _data, _delta: float):
 		Log.err("Couldn't find singleton CoTransportLoopback", Log.TAG_LATENCY)
 		return
 	
-	# let wync know the latency
-	WyncFlow.wync_client_set_current_latency (single_wync.ctx, co_loopback.ctx.latency)
 	
 	WyncThrottle.wync_set_data_limit_chars_for_out_packets(ctx, 50000)
+	
+	# let wync know the latency
+	WyncFlow.wync_client_set_current_latency (single_wync.ctx, co_loopback.ctx.latency)
 
 	WyncFlow.wync_client_tick_end(ctx)

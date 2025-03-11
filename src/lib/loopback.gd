@@ -5,11 +5,11 @@ class Context:
 	var peers: Array[IOPeer]  
 	## represent packets flying in the network
 	var packets: Array[Packet]
-	var _latency_mean: int = 100
+	var _latency_mean: int = 200
 	var _latency_std_dev: int = 5
 	var latency: int = _latency_mean  # (ms)
 	var jitter: int = 0  # (ms) how late/early a packet might be
-	var packet_loss_percentage: float = 10 # [0-100]
+	var packet_loss_percentage: float = 0 # [0-100]
 	var time_last_pkt_sent: int = 0
 	var jitter_unordered_packets: bool = false # Allows jitter to mangle packet order
 	var duplicated_packets_percentage: int = 0 # [0-100] Allows duplicated packets
@@ -50,10 +50,10 @@ static func system_send_receive(ctx: Context, io_peer: IOPeer, delta: float):
 
 	# ready to simulate
 
-	ctx.simulation_delta_acumulator += delta
-	if ctx.simulation_delta_acumulator * 1000 < ctx.simulate_every_ms:
-		return
-	ctx.simulation_delta_acumulator = 0
+	#ctx.simulation_delta_acumulator += delta
+	#if ctx.simulation_delta_acumulator * 1000 < ctx.simulate_every_ms:
+	#	return
+	#ctx.simulation_delta_acumulator = 0
 		
 	# look for pending packets to send
 
@@ -67,6 +67,7 @@ static func system_send_receive(ctx: Context, io_peer: IOPeer, delta: float):
 			# A transport with redundancy would just need 2.
 			pkt._deliver_time = curr_time + ctx.latency * 3
 
+		pkt._deliver_time += ctx.jitter * ctx.random_generator.randf_range(-1, 1)
 		ctx.packets.append(pkt)
 
 	io_peer.out_packets.clear()
@@ -108,12 +109,12 @@ static func system_send_receive(ctx: Context, io_peer: IOPeer, delta: float):
 		ctx.packets.remove_at(k)
 
 
-static func system_caotic_latency(ctx: Context):
+#static func system_caotic_latency(ctx: Context):
 
-	if Engine.get_physics_frames() % int(Engine.physics_ticks_per_second/2) == 0:
-		ctx._latency_mean += 1
-		if ctx._latency_mean > 600:
-			ctx._latency_mean = 0
+	#if Engine.get_physics_frames() % int(Engine.physics_ticks_per_second/2) == 0:
+		#ctx._latency_mean += 1
+		#if ctx._latency_mean > 600:
+			#ctx._latency_mean = 0
 
 
 static func register_io_peer(ctx: Context, io_peer: IOPeer):

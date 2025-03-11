@@ -53,7 +53,7 @@ static func wync_system_send_entities_to_spawn(ctx: WyncCtx, _commit: bool = tru
 
 			wync_confirm_client_can_see_entity(ctx, client_id, entity_id)
 
-			data_used += HashUtils.calculate_object_data_size(packet)
+			data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_SPAWN)
 			if (data_used >= ctx.out_packets_size_remaining_chars):
 				break
 
@@ -113,9 +113,9 @@ static func wync_system_gather_packets(ctx: WyncCtx):
 
 	if ctx.is_client:
 		WyncFlow.wync_try_to_connect(ctx)             # reliable
+		WyncFlow.wync_system_client_send_delta_prop_acks(ctx) # unreliable
 		SyWyncSendInputs.wync_client_send_inputs(ctx) # unreliable
 		SyWyncSendEventData.wync_send_event_data(ctx) # reliable
-		WyncFlow.wync_system_client_send_delta_prop_acks(ctx) # unreliable
 
 	else:
 		SyWyncClockServer.wync_server_sync_clock(ctx)          # unreliable
@@ -364,7 +364,7 @@ static func wync_try_to_queue_out_packet (
 	dont_ocuppy: bool = false,
 	) -> int:
 
-	var packet_size = HashUtils.calculate_object_data_size(out_packet)
+	var packet_size = HashUtils.calculate_wync_packet_data_size(out_packet.data.packet_type_id)
 	if packet_size >= ctx.out_packets_size_remaining_chars:
 		if already_commited:
 			#Log.err("(%s) COMMITED anyways, Packet too big (%s), remaining data (%s), d(%s)" %
@@ -404,10 +404,12 @@ static func wync_system_stabilize_latency (ctx: WyncCtx):
 
 	var co_predict_data = ctx.co_predict_data
 	var co_ticks = ctx.co_ticks
-	var physics_fps = Engine.physics_ticks_per_second
+	#var physics_fps = Engine.physics_ticks_per_second
 	
 	# Poll latency
-	if co_ticks.ticks % ceili(float(physics_fps) / 2) == 0:
+	#if co_ticks.ticks % ceili(float(physics_fps) / 2) == 0: # we couldn't precalcultate this...
+	#if co_ticks.ticks % ceili(float(physics_fps) / 2) == 0:
+	if WyncUtils.fast_modulus(co_ticks.ticks, 16) == 0:
 		co_predict_data.latency_buffer[co_predict_data.latency_buffer_head % co_predict_data.LATENCY_BUFFER_SIZE] = ctx.current_tick_nete_latency_ms
 		co_predict_data.latency_buffer_head += 1
 		

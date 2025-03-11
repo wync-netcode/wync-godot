@@ -113,7 +113,7 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 					var packet = WyncPacket.new()
 					packet.packet_type_id = WyncPacket.WYNC_PKT_INPUTS
 					packet.data = pkt_input
-					data_used += HashUtils.calculate_object_data_size(packet)
+					data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_INPUTS)
 					unreliable_buffer.append(packet)
 
 				# compile event ids
@@ -129,7 +129,7 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 					var packet = WyncPacket.new()
 					packet.packet_type_id = WyncPacket.WYNC_PKT_EVENT_DATA
 					packet.data = pkt_event_data
-					data_used += HashUtils.calculate_object_data_size(packet)
+					data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_EVENT_DATA)
 					reliable_buffer.append(packet)
 
 				#Log.outc(ctx, "tag1 | this is my pkt_input %s" % [JsonClassConverter.class_to_json_string(pkt_input)])
@@ -159,14 +159,14 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 			var packet = WyncPacket.new()
 			packet.packet_type_id = WyncPacket.WYNC_PKT_PROP_SNAP
 			packet.data = unreliable_snap
-			data_used += HashUtils.calculate_object_data_size(packet)
+			data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_PROP_SNAP)
 			unreliable_buffer.append(packet)
 
 		if reliable_snap.snaps.size() > 0:
 			var packet = WyncPacket.new()
 			packet.packet_type_id = WyncPacket.WYNC_PKT_PROP_SNAP
 			packet.data = reliable_snap
-			data_used += HashUtils.calculate_object_data_size(packet)
+			data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_PROP_SNAP)
 			reliable_buffer.append(packet)
 
 		# exceeded size, stop

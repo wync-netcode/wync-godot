@@ -34,6 +34,7 @@ static func wync_client_tick_end(ctx: WyncCtx):
 	SyWyncBufferedInputs.wync_buffer_inputs(ctx)
 
 	# CANNOT reset events BEFORE polling inputs, WHERE do we put this?
+	
 	WyncDeltaSyncUtils.auxiliar_props_clear_current_delta_events(ctx)
 	WyncDeltaSyncUtils.predicted_props_clear_events(ctx)
 
@@ -161,7 +162,8 @@ static func wync_try_to_connect(ctx: WyncCtx) -> int:
 		return OK
 
 	# throttle
-	if ctx.co_ticks.ticks % 5 != 0:
+	#if ctx.co_ticks.ticks % 5 != 0:
+	if WyncUtils.fast_modulus(ctx.co_ticks.ticks, 8) != 0:
 		return OK
 
 	# try get server nete_peer_id
@@ -762,7 +764,8 @@ static func wync_system_calculate_prob_prop_rate(ctx: WyncCtx):
 
 static func wync_dummy_props_cleanup(ctx: WyncCtx):
 	# run every few frames
-	if ctx.co_ticks.ticks % 10 != 0:
+	#if ctx.co_ticks.ticks % 10 != 0:
+	if WyncUtils.fast_modulus(ctx.co_ticks.ticks, 16) != 0:
 		return
 
 	var curr_tick = ctx.co_ticks.server_ticks

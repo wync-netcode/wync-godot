@@ -82,8 +82,8 @@ static func prop_set_relative_syncable (
 	# * delta prop, server side, timewarpable: base state, real state, delta event buffer
 
 	# assuming no timewarpable
-	prop.confirmed_states = RingBuffer.new(1, null) # 1 for debugging purposes
-	prop.confirmed_states_tick = RingBuffer.new(1, -1)
+	prop.confirmed_states = RingBuffer.new(2, null) # (actually just 1) for debugging purposes, should be 0
+	prop.confirmed_states_tick = RingBuffer.new(2, -1)
 
 	var need_undo_events = false
 	if WyncUtils.is_client(ctx) && predictable:
