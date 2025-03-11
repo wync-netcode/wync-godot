@@ -17,10 +17,38 @@ class BlockData:
 const LENGTH = 4 # 16 tiles
 var blocks: Array[Array] # Array[Array[BlockData]]
 
+class BlockGridPortable:
+	var blocks: Array[Array]
+
+	func _init() -> void:
+		blocks = []
+		blocks.resize(LENGTH)
+		for i in range(LENGTH):
+			blocks[i] = []
+			blocks[i].resize(LENGTH)
+			for j in range(LENGTH):
+				blocks[i][j] = BlockData.new()
+
+	func duplicate() -> BlockGridPortable:
+		var instance = BlockGridPortable.new()
+		for i in range(LENGTH):
+			for j in range(LENGTH):
+				instance.blocks[i][j].id = self.blocks[i][j].id
+				instance.blocks[i][j].on_fire = self.blocks[i][j].on_fire
+		return instance
+
+
+func make_duplicate() -> BlockGridPortable:
+	var instance = BlockGridPortable.new()
+	for i in range(LENGTH):
+		for j in range(LENGTH):
+			instance.blocks[i][j].id = self.blocks[i][j].id
+			instance.blocks[i][j].on_fire = self.blocks[i][j].on_fire
+	return instance
+
+
 func _init() -> void:
-	
 	# initialize two dimensional array
-	
 	blocks = []
 	blocks.resize(LENGTH)
 	for i in range(LENGTH):
@@ -46,18 +74,7 @@ func generate_random_blocks():
 				blocks[i][j].on_fire = true
 
 
-func make_duplicate() -> CoBlockGrid:
-	var instance = CoBlockGrid.new()
-	
-	for i in range(LENGTH):
-		for j in range(LENGTH):
-			instance.blocks[i][j].id = self.blocks[i][j].id
-			instance.blocks[i][j].on_fire = self.blocks[i][j].on_fire
-	
-	return instance
-
-
-func set_from_instance(block_grid: CoBlockGrid):
+func set_from_instance(block_grid: CoBlockGrid.BlockGridPortable):
 	for i in range(LENGTH):
 		for j in range(LENGTH):
 			self.blocks[i][j].id = block_grid.blocks[i][j].id

@@ -224,8 +224,8 @@ static func setup_entity_block_grid_predicted(node_ctx: Node, entity: Entity):
 		"blocks",
 		WyncEntityProp.DATA_TYPE.ANY,
 		co_block_grid,
-		func(user_ctx: Variant) -> CoBlockGrid: return (user_ctx as CoBlockGrid).make_duplicate(),
-		func(user_ctx: Variant, block_grid: CoBlockGrid): (user_ctx as CoBlockGrid).set_from_instance(block_grid),
+		func(user_ctx: Variant) -> CoBlockGrid.BlockGridPortable: return (user_ctx as CoBlockGrid).make_duplicate(),
+		func(user_ctx: Variant, block_grid: CoBlockGrid.BlockGridPortable): (user_ctx as CoBlockGrid).set_from_instance(block_grid),
 	)
 	
 	Log.out("wync: Registered entity %s with id %s" % [entity, co_actor.id], Log.TAG_PROP_SETUP, Log.TAG_DEBUG2)
@@ -255,8 +255,8 @@ static func setup_entity_block_grid_delta(node_ctx: Node, entity: Entity, predic
 		"blocks",
 		WyncEntityProp.DATA_TYPE.ANY,
 		co_block_grid,
-		func(user_ctx: Variant) -> CoBlockGrid: return (user_ctx as CoBlockGrid).make_duplicate(),
-		func(user_ctx: Variant, block_grid: CoBlockGrid): (user_ctx as CoBlockGrid).set_from_instance(block_grid),
+		func(user_ctx: Variant) -> CoBlockGrid.BlockGridPortable: return (user_ctx as CoBlockGrid).make_duplicate(),
+		func(user_ctx: Variant, block_grid: CoBlockGrid.BlockGridPortable): (user_ctx as CoBlockGrid).set_from_instance(block_grid),
 	)
 
 	# hook Prop to Blueprint
