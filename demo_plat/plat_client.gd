@@ -9,6 +9,9 @@ func _ready() -> void:
 	PlatNet.initialize_net_state(gs, true)
 	PlatNet.register_peer_myself(gs)
 
+	gs.wctx = WyncCtx.new()
+	PlatWync.setup_client(gs.wctx)
+
 	# loopback.register_peer()
 	PlatPrivate.initialize_game_state(gs)
 	#PlatPrivate.generate_world(gs)
@@ -26,6 +29,12 @@ func _physics_process(delta: float) -> void:
 	#PlatPublic.system_ball_movement(gs, self)
 	#PlatPublic.system_player_movement(gs, delta)
 	#PlatPublic.player_input_reset(gs, gs.players[0], self)
+
+
+	WyncThrottle.wync_set_data_limit_chars_for_out_packets(gs.wctx, 50000)
+	WyncThrottle.wync_system_gather_packets(gs.wctx)
+	PlatNet.queue_wync_packets(gs)
+
 	queue_redraw()
 
 

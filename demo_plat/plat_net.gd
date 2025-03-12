@@ -44,8 +44,8 @@ static func client_handle_connection_request_response(gs: Plat.GameState, data: 
 	# fill in wync nete_peer_ids
 	# wync setup should be done once we've stablished connection
 	
-	#WyncUtils.wync_set_my_nete_peer_id(wync_ctx, io_peer.peer_id)
-	#WyncUtils.wync_set_server_nete_peer_id(wync_ctx, co_client.server_peer)
+	WyncUtils.wync_set_my_nete_peer_id(gs.wctx, io_peer.peer_id)
+	WyncUtils.wync_set_server_nete_peer_id(gs.wctx, client.server_peer)
 	Log.out("client_peer_id %s connected to server_peer_id %s" % [io_peer.peer_id, client.server_peer], Log.TAG_NETE_CONNECT)
 
 
@@ -96,9 +96,35 @@ static func consume_loopback_packets(gs: Plat.GameState):
 		var user_pkt = pkt.data as UserNetPacket
 		var data = user_pkt.data
 
-		if data is NetePktJoinReq:
+		if user_pkt.packet_type_id == GameInfo.NETE_PKT_WYNC_PKT:
+			if data is WyncPacket:
+				WyncFlow.wync_feed_packet(gs.wctx, data, pkt.from_peer)
+		elif data is NetePktJoinReq:
 			if is_server: server_handle_connection_request(gs, data, pkt.from_peer)
 		elif data is NetePktJoinRes:
 			if is_client: client_handle_connection_request_response(gs, data, pkt.from_peer)
 			
 	io_peer.in_packets.clear()
+
+
+static func queue_wync_packets(gs: Plat.GameState):
+	# queue packets for delivery
+	var io_peer = gs.net.io_peer
+
+	for pkt: WyncPacketOut in gs.wctx.out_reliable_packets:
+		
+		var user_packet = UserNetPacket.new()
+		user_packet.packet_type_id = GameInfo.NETE_PKT_WYNC_PKT
+		user_packet.data = pkt.data 
+		Loopback.queue_reliable_packet(PlatGlobals.loopback_ctx, io_peer, pkt.to_nete_peer_id, user_packet)
+
+	for pkt: WyncPacketOut in gs.wctx.out_unreliable_packets:
+		
+		var user_packet = UserNetPacket.new()
+		user_packet.packet_type_id = GameInfo.NETE_PKT_WYNC_PKT
+		user_packet.data = pkt.data 
+		Loopback.queue_unreliable_packet(PlatGlobals.loopback_ctx, io_peer, pkt.to_nete_peer_id, user_packet)
+
+	# clear 
+	gs.wctx.out_reliable_packets.clear()
+	gs.wctx.out_unreliable_packets.clear()

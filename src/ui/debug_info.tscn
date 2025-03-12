@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://dr76xgr158sfu"]
 
 [ext_resource type="Theme" uid="uid://bltbaefhjv21d" path="res://default_theme.tres" id="1_0bqmk"]
-[ext_resource type="Script" path="res://src/ui/debug_info.gd" id="2_y81np"]
+[ext_resource type="Script" uid="uid://bdfo05ooi74ky" path="res://src/ui/debug_info.gd" id="2_y81np"]
 
 [node name="debug_info" type="Label"]
 offset_right = 159.0

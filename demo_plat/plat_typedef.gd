@@ -57,6 +57,7 @@ class GameState:
 
 	# misc
 	var net: NetState
+	var wctx: WyncCtx
 
 
 class NetState:
