@@ -1,11 +1,13 @@
 extends Label
+class_name DynamicDebugInfo
 
 enum INFO {
 	INFO_FPS,
 	INFO_GENERAL,
 	INFO_CLIENT_PACKET_LOG,
 	INFO_SERVER_PACKET_LOG,
-	INFO_PROPS,
+	INFO_PROPS_SERVER,
+	INFO_PROPS_CLIENT,
 }
 @export var info_to_show: INFO = INFO.INFO_GENERAL
 @export var enabled: bool = true
@@ -43,8 +45,10 @@ func _physics_process(_delta: float) -> void:
 			lblMain.text = get_info_packets_received_text(client_wctx)
 		INFO.INFO_SERVER_PACKET_LOG:
 			lblMain.text = get_info_packets_received_text(server_wctx)
-		INFO.INFO_PROPS:
+		INFO.INFO_PROPS_SERVER:
 			lblMain.text = get_info_prop_identifiers(server_wctx)
+		INFO.INFO_PROPS_CLIENT:
+			lblMain.text = get_info_prop_identifiers(client_wctx)
 
 
 func get_info_general() -> String:

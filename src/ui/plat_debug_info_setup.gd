@@ -7,5 +7,12 @@ extends Node
 
 func _ready():
 	PlatGlobals.initialize()
-	for child in get_children():
-		child.initialize(PlatGlobals.loopback_ctx, server.gs.wctx, client.gs.wctx)
+	recursively_initialize_debug_info(self)
+
+
+func recursively_initialize_debug_info(node: Node):
+	for child in node.get_children():
+		if child is DynamicDebugInfo:
+			child.initialize(PlatGlobals.loopback_ctx, server.gs.wctx, client.gs.wctx)
+		else:
+			recursively_initialize_debug_info(child)

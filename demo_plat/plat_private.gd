@@ -2,6 +2,12 @@ class_name PlatPrivate
 
 
 static func initialize_game_state(gs: Plat.GameState):
+	# actors
+
+	gs.balls.resize(Plat.BALL_AMOUNT)
+	gs.players.resize(Plat.PLAYER_AMOUNT)
+
+	# chunks
 	gs.chunks.resize(Plat.CHUNK_AMOUNT)
 
 	for k in range(Plat.CHUNK_AMOUNT):

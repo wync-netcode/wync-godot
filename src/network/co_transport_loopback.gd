@@ -9,6 +9,8 @@ func _ready():
 	ctx = Loopback.Context.new()
 
 
-func _physics_process(_delta: float) -> void:
-	if Engine.get_physics_frames() % Engine.physics_ticks_per_second == 0:
-		Loopback.system_fluctuate_latency(ctx)
+#func _physics_process(_delta: float) -> void:
+	
+	#if Engine.get_physics_frames() % 16 == 0:
+	#	Loopback.system_fluctuate_latency(ctx)
+	#pass

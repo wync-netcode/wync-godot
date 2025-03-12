@@ -457,6 +457,8 @@ static func prop_set_client_owner(ctx: WyncCtx, prop_id: int, client_id: int) ->
 	if not ctx.client_owns_prop.has(client_id):
 		ctx.client_owns_prop[client_id] = []
 	ctx.client_owns_prop[client_id].append(prop_id)
+
+	ctx.client_ownership_updated = true
 	return true
 
 
@@ -502,7 +504,7 @@ static func server_setup(ctx: WyncCtx) -> int:
 
 	# setup peer channels
 	WyncUtils.setup_peer_global_events(ctx, WyncCtx.SERVER_PEER_ID)
-	for i in range(1, 2):
+	for i in range(1, ctx.max_peers):
 		WyncUtils.setup_peer_global_events(ctx, i)
 
 	WyncUtils.setup_entity_prob_for_entity_update_delay_ticks(ctx, WyncCtx.SERVER_PEER_ID)
@@ -536,11 +538,16 @@ static func client_setup_my_client(ctx: WyncCtx, peer_id: int) -> bool:
 	ctx.peers_events_to_sync = []
 	ctx.peers_events_to_sync.resize(1)
 	ctx.peers_events_to_sync[ctx.SERVER_PEER_ID] = {} as Dictionary
+
+	# setup peer channels
+	WyncUtils.setup_peer_global_events(ctx, WyncCtx.SERVER_PEER_ID)
+	for i in range(1, ctx.max_peers):
+		WyncUtils.setup_peer_global_events(ctx, i)
 	
 	# setup server global events
-	WyncUtils.setup_peer_global_events(ctx, ctx.SERVER_PEER_ID)
+	#WyncUtils.setup_peer_global_events(ctx, ctx.SERVER_PEER_ID)
 	# setup own global events
-	WyncUtils.setup_peer_global_events(ctx, ctx.my_peer_id)
+	#WyncUtils.setup_peer_global_events(ctx, ctx.my_peer_id)
 	# setup prob prop
 	WyncUtils.setup_entity_prob_for_entity_update_delay_ticks(ctx, ctx.my_peer_id)
 	return true
@@ -797,3 +804,30 @@ static func clock_get_ms(ctx: WyncCtx) -> int:
 static func clock_get_tick_timestamp_ms(ctx: WyncCtx, ticks: int) -> int:
 	var frame = 1000.0 / Engine.physics_ticks_per_second
 	return ctx.co_predict_data.current_tick_timestamp + (ticks - ctx.co_ticks.ticks) * frame
+
+
+static func clear_peers_pending_to_setup(ctx: WyncCtx):
+	ctx.out_peer_pending_to_setup.clear()
+
+
+## Server only
+## Sends data
+static func wync_system_sync_client_ownership(ctx: WyncCtx):
+	if not ctx.client_ownership_updated:
+		return
+	ctx.client_ownership_updated = false
+
+	# update all clients about their prop ownership
+
+	for wync_client_id in range(1, ctx.peers.size()):
+		# TODO: Check peer health / is connected
+		for prop_id: int in ctx.client_owns_prop[wync_client_id] as Array[int]:
+
+			var packet = WyncPktResClientInfo.new()
+			packet.prop_id = prop_id
+			packet.peer_id = wync_client_id
+
+			var result = WyncFlow.wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_RES_CLIENT_INFO, packet)
+			if result[0] == OK:
+				var packet_out = result[1] as WyncPacketOut
+				WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.RELIABLE, true)

@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://c0ytsjda1qlcf" path="res://demo_plat/plat_server.gd" id="1_8i2rb"]
 [ext_resource type="Script" uid="uid://bdd6tve8scq67" path="res://demo_plat/plat_globals.gd" id="1_685w5"]
 [ext_resource type="Script" uid="uid://crcrj34k485a7" path="res://demo_plat/plat_client.gd" id="3_jpy0n"]
-[ext_resource type="Script" path="res://src/ui/plat_debug_info_setup.gd" id="4_vjyac"]
+[ext_resource type="Script" uid="uid://sc3wcybp83gb" path="res://src/ui/plat_debug_info_setup.gd" id="4_vjyac"]
 [ext_resource type="PackedScene" uid="uid://dr76xgr158sfu" path="res://src/ui/debug_info.tscn" id="5_mx31v"]
 
 [node name="Root" type="Node"]
@@ -45,7 +45,6 @@ offset_bottom = 0.0
 grow_vertical = 0
 theme_override_font_sizes/font_size = 9
 info_to_show = 2
-enabled = false
 
 [node name="debug_info3" parent="CanvasLayer" instance=ExtResource("5_mx31v")]
 anchors_preset = 3
@@ -61,10 +60,28 @@ grow_horizontal = 0
 grow_vertical = 0
 theme_override_font_sizes/font_size = 9
 info_to_show = 3
-enabled = false
 
-[node name="debug_info4" parent="CanvasLayer" instance=ExtResource("5_mx31v")]
-offset_bottom = 65.0
+[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer"]
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="debug_info4" parent="CanvasLayer/HBoxContainer" instance=ExtResource("5_mx31v")]
+layout_mode = 2
 theme_override_font_sizes/font_size = 9
+text = "Info Label
+Info Label
+Info Label
+Info Label
+Info Label
+Info Label
+Info Label
+Info Label
+Info Label
+Info Label"
 info_to_show = 4
-enabled = false
+
+[node name="debug_info5" parent="CanvasLayer/HBoxContainer" instance=ExtResource("5_mx31v")]
+layout_mode = 2
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 9
+info_to_show = 5

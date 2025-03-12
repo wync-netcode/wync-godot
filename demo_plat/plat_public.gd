@@ -9,12 +9,28 @@ static func spawn_ball(gs: Plat.GameState, origin: Vector2):
 	gs.balls.append(ball)
 
 
-static func spawn_player(gs: Plat.GameState, origin: Vector2):
+## @returns int. player actor id; -1 if couldn't spawn.
+static func spawn_player(gs: Plat.GameState, origin: Vector2, actor_id: int = -1) -> int:
+	# look for an available id
+	if actor_id == -1:
+		for i: int in range(Plat.PLAYER_AMOUNT):
+			if gs.players[i] == null:
+				actor_id = i
+				break
+
+	# check if provided id is available
+	else:
+		if gs.players[actor_id] != null:
+			return -1
+
 	var player = Plat.Player.new()
 	player.position = origin
 	player.size = Vector2(round(Plat.BLOCK_LENGTH_PIXELS * 0.66), Plat.BLOCK_LENGTH_PIXELS * 1.5)
 	player.input = Plat.PlayerInput.new()
-	gs.players.append(player)
+	gs.players[actor_id] = player
+	gs.actors_added_or_deleted = true
+
+	return actor_id
 
 
 static func block_is_solid(block: Plat.Block) -> bool:
@@ -23,6 +39,8 @@ static func block_is_solid(block: Plat.Block) -> bool:
 
 static func system_ball_movement(gs: Plat.GameState, node2d: Node2D):
 	for ball: Plat.Ball in gs.balls:
+		if ball == null:
+			continue
 		# velocity
 		ball.velocity.y -= Plat.BALL_GRAVITY
 		#ball.velocity.x = min(Plat.BALL_MAX_SPEED, abs(ball.velocity.x)) * sign(ball.velocity.x)
@@ -58,6 +76,8 @@ static func system_ball_movement(gs: Plat.GameState, node2d: Node2D):
 
 static func system_player_movement(gs: Plat.GameState, delta: float):
 	for player: Plat.Player in gs.players:
+		if player == null:
+			continue
 		
 		# horizontal movement ----------
 		# apply friction

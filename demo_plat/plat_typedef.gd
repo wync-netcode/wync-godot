@@ -1,8 +1,12 @@
 class_name Plat
 
+
+const BALL_AMOUNT := 4
+const PLAYER_AMOUNT := 4
+const CHUNK_AMOUNT := 5
+
 const CHUNK_WIDTH_BLOCKS := 5
 const CHUNK_HEIGHT_BLOCKS := 10
-const CHUNK_AMOUNT := 5
 const BLOCK_LENGTH_PIXELS := 24
 const BALL_GRAVITY := 1
 const BALL_MAX_SPEED := 3
@@ -41,6 +45,13 @@ class PlayerInput:
 	var aim: Vector2
 	var shoot: bool
 
+	func copy() -> PlayerInput:
+		var i = PlayerInput.new()
+		i.movement_dir = movement_dir
+		i.aim = aim
+		i.shoot = shoot
+		return i
+
 
 class Player:
 	var size: Vector2
@@ -54,10 +65,12 @@ class GameState:
 	var chunks: Array[Chunk]
 	var balls: Array[Ball]
 	var players: Array[Player]
+	var actors_added_or_deleted: bool
 
 	# misc
 	var net: NetState
 	var wctx: WyncCtx
+	#var wync_tracked_actors: Array[] # TODO
 
 
 class NetState:

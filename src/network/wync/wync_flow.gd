@@ -68,8 +68,8 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 			if not is_client:
 				wync_handle_pkt_join_req(ctx, wync_pkt.data, from_nete_peer_id)
 		WyncPacket.WYNC_PKT_JOIN_RES:
-			# TODO: run only if it's is_client
-			wync_handle_pkt_join_res(ctx, wync_pkt.data)
+			if is_client:
+				wync_handle_pkt_join_res(ctx, wync_pkt.data)
 		WyncPacket.WYNC_PKT_EVENT_DATA:
 			wync_handle_pkt_event_data(ctx, wync_pkt.data)
 		WyncPacket.WYNC_PKT_INPUTS:
@@ -263,54 +263,49 @@ static func wync_handle_pkt_join_req(ctx: WyncCtx, data: Variant, from_nete_peer
 	var result = wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_JOIN_RES, packet)
 	if result[0] == OK:
 		WyncThrottle.wync_try_to_queue_out_packet(ctx, result[1], WyncCtx.RELIABLE, true)
-	
-	# NOTE: Maybe move this elsewhere, the client could ask this any time
-	# FIXME Harcoded: client 0 -> entity 0 (player)
 
-	var packet_info: WyncPktResClientInfo
-	packet_info = make_client_info_packet(ctx, wync_client_id, 0, "input")
-	result = wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_RES_CLIENT_INFO, packet_info)
-	if result[0] == OK:
-		WyncThrottle.wync_try_to_queue_out_packet(ctx, result[1], WyncCtx.RELIABLE, true)
-
-	packet_info = make_client_info_packet(ctx, wync_client_id, 0, "events")
-	result = wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_RES_CLIENT_INFO, packet_info)
-	if result[0] == OK:
-		WyncThrottle.wync_try_to_queue_out_packet(ctx, result[1], WyncCtx.RELIABLE, true)
-	
-	# let client own it's global events
+	# let client own it's own global events
 	# NOTE: Maybe move this where all channels are defined
 
 	var global_events_entity_id = WyncCtx.ENTITY_ID_GLOBAL_EVENTS + wync_client_id
-	if WyncUtils.is_entity_tracked(ctx, global_events_entity_id):
+	var prop_id = WyncUtils.entity_get_prop_id(ctx, global_events_entity_id, "channel_0")
+	assert(prop_id != -1)
+	WyncUtils.prop_set_client_owner(ctx, prop_id, wync_client_id)
 
-		packet_info = make_client_info_packet(ctx, wync_client_id, global_events_entity_id, "channel_0")
-		result = wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_RES_CLIENT_INFO, packet_info)
-		if result[0] == OK:
-			WyncThrottle.wync_try_to_queue_out_packet(ctx, result[1], WyncCtx.RELIABLE, true)
+	#var global_events_entity_id = WyncCtx.ENTITY_ID_GLOBAL_EVENTS + wync_client_id
+	#if WyncUtils.is_entity_tracked(ctx, global_events_entity_id):
+
+		#var packet_info = make_client_info_packet(ctx, wync_client_id, global_events_entity_id, "channel_0")
+		#result = wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_RES_CLIENT_INFO, packet_info)
+		#if result[0] == OK:
+			#WyncThrottle.wync_try_to_queue_out_packet(ctx, result[1], WyncCtx.RELIABLE, true)
 	
-	else:
-		Log.err("Global Event Entity (id %s) for peer_id %s NOT FOUND" % [global_events_entity_id, wync_client_id], Log.TAG_WYNC_CONNECT)
+	#else:
+		#Log.err("Global Event Entity (id %s) for peer_id %s NOT FOUND" % [global_events_entity_id, wync_client_id], Log.TAG_WYNC_CONNECT)
+
+	# queue as pending for setup
+
+	ctx.out_peer_pending_to_setup.append(from_nete_peer_id)
 
 	return OK
 	
 
-static func make_client_info_packet(
-	ctx: WyncCtx,
-	wync_client_id: int,
-	entity_id: int,
-	prop_name: String) -> WyncPktResClientInfo:
+#static func make_client_info_packet(
+	#ctx: WyncCtx,
+	#wync_client_id: int,
+	#entity_id: int,
+	#prop_name: String) -> WyncPktResClientInfo:
 	
-	var prop_id = WyncUtils.entity_get_prop_id(ctx, entity_id, prop_name)
-	var packet_data = WyncPktResClientInfo.new()
-	packet_data.entity_id = entity_id
-	packet_data.prop_id = prop_id
-	packet_data.peer_id = wync_client_id
+	#var prop_id = WyncUtils.entity_get_prop_id(ctx, entity_id, prop_name)
+	#var packet_data = WyncPktResClientInfo.new()
+	##packet_data.entity_id = entity_id
+	#packet_data.prop_id = prop_id
+	#packet_data.peer_id = wync_client_id
 	
-	WyncUtils.prop_set_client_owner(ctx, prop_id, wync_client_id)
-	Log.out("assigned (entity %s: prop %s) to client %s" % [packet_data.entity_id, prop_id, wync_client_id], Log.TAG_WYNC_CONNECT)
+	#WyncUtils.prop_set_client_owner(ctx, prop_id, wync_client_id)
+	#Log.out("assigned (entity %s: prop %s) to client %s" % [packet_data.entity_id, prop_id, wync_client_id], Log.TAG_WYNC_CONNECT)
 	
-	return packet_data
+	#return packet_data
 
 
 static func wync_server_handle_pkt_inputs(ctx: WyncCtx, data: Variant, from_nete_peer_id: int) -> int:

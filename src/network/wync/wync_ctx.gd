@@ -60,9 +60,9 @@ const SERVER_PEER_ID = 0
 const ENTITY_ID_GLOBAL_EVENTS = 700
 # NOTE: Rename to PRED_INPUT_BUFFER_SIZE
 const INPUT_BUFFER_SIZE = 2 ** 10 ## 1024
-const INPUT_AMOUNT_TO_SEND = 10
+const INPUT_AMOUNT_TO_SEND = 20
 var max_amount_cache_events = 2 # it could be useful to have a different value for server cache
-var max_peers = 24
+var max_peers = 4
 var max_channels = 12
 var max_tick_history = 64 # 1 second at 60 fps
 var max_prop_relative_sync_history_ticks = 20 # set to 1 to see if it's working alright 
@@ -139,7 +139,10 @@ var delta_base_state_tick: int = -1
 var peers: Array[int]
 
 # Map<client_id: int, prop_id: Array[int]>
+# TODO: change to array
 var client_owns_prop: Dictionary
+
+var client_ownership_updated: bool
 
 # Stores client metadata
 # Array<client_id: int, WyncClientInfo>
@@ -309,6 +312,10 @@ var entities_synced_last_time: Array[Dictionary]
 # * TODO: Use FIFORing and preallocate all instances (pooling)
 # FIFORing < PeerEntityPair[peer: int, entity: int] > [100]
 var queue_entity_pairs_to_sync: Array[PeerEntityPair]
+
+## setup new connected peer
+## Array <order: int, nete_peer_id: int>
+var out_peer_pending_to_setup: Array[int]
 
 # dummy props
 # --------------------------------------------------------------------------------

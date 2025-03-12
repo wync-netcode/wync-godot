@@ -112,15 +112,16 @@ static func wync_system_send_entities_to_despawn(ctx: WyncCtx, _commit: bool = t
 static func wync_system_gather_packets(ctx: WyncCtx):
 
 	if ctx.is_client:
-		WyncFlow.wync_try_to_connect(ctx)             # reliable
+		WyncFlow.wync_try_to_connect(ctx)                     # reliable, commited
 		WyncFlow.wync_system_client_send_delta_prop_acks(ctx) # unreliable
-		SyWyncSendInputs.wync_client_send_inputs(ctx) # unreliable
-		SyWyncSendEventData.wync_send_event_data(ctx) # reliable
+		SyWyncSendInputs.wync_client_send_inputs(ctx)         # unreliable
+		SyWyncSendEventData.wync_send_event_data(ctx)         # reliable, commited
 
 	else:
 		SyWyncClockServer.wync_server_sync_clock(ctx)          # unreliable
-		WyncThrottle.wync_system_send_entities_to_despawn(ctx) # reliable
-		WyncThrottle.wync_system_send_entities_to_spawn(ctx)   # reliable
+		WyncThrottle.wync_system_send_entities_to_despawn(ctx) # reliable, commited
+		WyncThrottle.wync_system_send_entities_to_spawn(ctx)   # reliable, commited
+		WyncUtils.wync_system_sync_client_ownership(ctx)       # reliable, commited
 
 		WyncThrottle.wync_system_fill_entity_sync_queue(ctx)
 		WyncThrottle.wync_compute_entity_sync_order(ctx)
