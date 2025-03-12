@@ -8,6 +8,7 @@ static func draw_game(canvas: Node2D, gs: Plat.GameState):
 	)
 	draw_block_grid(canvas, gs, draw_offset)
 	draw_balls(canvas, gs, draw_offset)
+	draw_players(canvas, gs, draw_offset)
 
 
 static func draw_block_grid(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
@@ -64,3 +65,12 @@ static func draw_balls(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
 		ball_rect = Rect2(Vector2(ball.position.x, -ball.position.y) + Vector2(offset), ball.size)
 		canvas.draw_rect(ball_rect, color, true)
 		canvas.draw_rect(ball_rect, Color.BLACK, false)
+
+
+static func draw_players(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
+	var player_rect: Rect2
+	var color = Color.PINK
+	for player: Plat.Player in gs.players:
+		player_rect = Rect2(Vector2(player.position.x, -player.position.y) + Vector2(offset), player.size)
+		canvas.draw_rect(player_rect, color, true)
+		canvas.draw_rect(player_rect, Color.BLACK, false)

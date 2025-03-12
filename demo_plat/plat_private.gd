@@ -38,7 +38,7 @@ static func generate_world(gs: Plat.GameState):
 				if y <= 0:
 					block.type = Plat.BLOCK_TYPE_IRON
 
-	# generate walls
+	# walls
 	var chunk := gs.chunks[0]
 	for j in range(Plat.CHUNK_HEIGHT_BLOCKS):
 		var block = chunk.blocks[0][j] as Plat.Block
@@ -48,6 +48,13 @@ static func generate_world(gs: Plat.GameState):
 	for j in range(Plat.CHUNK_HEIGHT_BLOCKS):
 		var block = chunk.blocks[Plat.CHUNK_WIDTH_BLOCKS-1][j] as Plat.Block
 		block.type = Plat.BLOCK_TYPE_GOLD
+
+	# ceiling
+	chunk = gs.chunks[0]
+	for j in range(Plat.CHUNK_WIDTH_BLOCKS):
+		var block = chunk.blocks[j][Plat.CHUNK_HEIGHT_BLOCKS-1] as Plat.Block
+		block.type = Plat.BLOCK_TYPE_GOLD
+
 
 
 			
