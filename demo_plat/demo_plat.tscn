@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://40h8mrqmmmcf"]
+
+[ext_resource type="Script" uid="uid://c0ytsjda1qlcf" path="res://demo_plat/plat_server.gd" id="1_8i2rb"]
+[ext_resource type="Script" uid="uid://bdd6tve8scq67" path="res://demo_plat/plat_globals.gd" id="1_685w5"]
+
+[node name="Root" type="Node"]
+
+[node name="Globals" type="Node" parent="."]
+script = ExtResource("1_685w5")
+
+[node name="Server" type="Node2D" parent="."]
+script = ExtResource("1_8i2rb")
+
+[node name="Actors" type="Node" parent="Server"]
+
+[node name="Client" type="Node" parent="."]
+
+[node name="Actors" type="Node" parent="Client"]
+
+[node name="DemoPlat" type="Node2D" parent="."]
