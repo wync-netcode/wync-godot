@@ -45,7 +45,7 @@ static func system_fluctuate_latency(ctx: Context):
 	ctx.latency = max(0, ctx.latency)
 
 
-static func system_send_receive(ctx: Context, io_peer: IOPeer, delta: float):
+static func system_send_receive(ctx: Context):
 	var curr_time = Time.get_ticks_msec()
 
 	# ready to simulate
@@ -57,20 +57,21 @@ static func system_send_receive(ctx: Context, io_peer: IOPeer, delta: float):
 		
 	# look for pending packets to send
 
-	for pkt: Packet in io_peer.out_packets:
-		pkt.from_peer = io_peer.peer_id
-		pkt._deliver_time = curr_time + ctx.latency
+	for io_peer in ctx.peers:
+		for pkt: Packet in io_peer.out_packets:
+			pkt.from_peer = io_peer.peer_id
+			pkt._deliver_time = curr_time + ctx.latency
 
-		if pkt._simulate_ordered_packet_loss:
-			# 3 times latency: (1) first send, dropped; (2) confirming what was received;
-			# (3) resending it realizing it was dropped.
-			# A transport with redundancy would just need 2.
-			pkt._deliver_time = curr_time + ctx.latency * 3
+			if pkt._simulate_ordered_packet_loss:
+				# 3 times latency: (1) first send, dropped; (2) confirming what was received;
+				# (3) resending it realizing it was dropped.
+				# A transport with redundancy would just need 2.
+				pkt._deliver_time = curr_time + ctx.latency * 3
 
-		pkt._deliver_time += ctx.jitter * ctx.random_generator.randf_range(-1, 1)
-		ctx.packets.append(pkt)
+			pkt._deliver_time += ctx.jitter * ctx.random_generator.randf_range(-1, 1)
+			ctx.packets.append(pkt)
 
-	io_peer.out_packets.clear()
+		io_peer.out_packets.clear()
 
 	# look for packets ready to be received
 

@@ -22,4 +22,5 @@ func on_process_entity(entity: Entity, _data, delta: float):
 
 	var co_io_packets = entity.get_component(CoIOPackets.label) as CoIOPackets
 
-	Loopback.system_send_receive(co_loopback.ctx, co_io_packets.io_peer, delta)
+	#Loopback.system_send_receive(co_loopback.ctx, co_io_packets.io_peer, delta)
+	Loopback.system_send_receive(co_loopback.ctx)

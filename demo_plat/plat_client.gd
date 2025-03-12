@@ -17,7 +17,10 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	# loopback.handle_connection_requests()
+	if gs.net.client.state == Plat.Client.STATE.DISCONNECTED:
+		# TODO: throttle
+		PlatNet.client_send_connection_request(gs)
+	PlatNet.consume_loopback_packets(gs)
 
 	#PlatPublic.player_input_additive(gs, gs.players[0], self)
 	#PlatPublic.system_ball_movement(gs, self)
