@@ -33,8 +33,7 @@ static func setup_connect_client(gs: Plat.GameState):
 		# setup actor with wync
 		setup_sync_for_player_actor(gs, player_actor_id)
 
-		# give client authority over that entity
-
+		# give client authority over prop
 		for prop_name_id: String in ["input"]:
 			var prop_id = WyncUtils.entity_get_prop_id(ctx, player_actor_id, prop_name_id)
 			WyncUtils.prop_set_client_owner(ctx, prop_id, wync_peer_id)
@@ -174,3 +173,29 @@ static func update_what_the_clients_can_see(gs: Plat.GameState):
 			# Note: Move this to peer setup
 			WyncThrottle.wync_client_now_can_see_entity(ctx, peer_id, WyncCtx.ENTITY_ID_PROB_FOR_ENTITY_UPDATE_DELAY_TICKS)
 			WyncThrottle.wync_add_local_existing_entity(ctx, peer_id, WyncCtx.ENTITY_ID_PROB_FOR_ENTITY_UPDATE_DELAY_TICKS)
+
+
+static func find_out_what_player_i_control(gs: Plat.GameState):
+	if gs.i_control_player_id != -1:
+		return
+	if not gs.wctx.connected:
+		return
+
+	var ctx = gs.wctx
+	for prop_id: int in ctx.client_owns_prop[ctx.my_peer_id]:
+
+		var prop = WyncUtils.get_prop(ctx, prop_id)
+		if prop == null:
+			continue
+		var prop_name = prop.name_id
+		var entity_id = WyncUtils.prop_get_entity(ctx, prop_id)
+		var entity_type = ctx.entity_is_of_type[entity_id]
+
+		# find a prop that I own
+		# that is called "inputs"
+		# that is of type player
+
+		if (prop_name == "input" && entity_type == GameInfo.ENTITY_TYPE_PLAYER):
+			# NOTE: asssuming entity_id directly maps to gs.players[]
+			gs.i_control_player_id = entity_id
+			break

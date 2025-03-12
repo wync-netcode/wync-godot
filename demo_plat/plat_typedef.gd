@@ -66,6 +66,7 @@ class GameState:
 	var balls: Array[Ball]
 	var players: Array[Player]
 	var actors_added_or_deleted: bool
+	var i_control_player_id: int # players actor id
 
 	# misc
 	var net: NetState

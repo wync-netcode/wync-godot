@@ -325,6 +325,14 @@ static func entity_get_prop_id(ctx: WyncCtx, entity_id: int, prop_name_id: Strin
 	return -1
 
 
+## @returns int. entity_id; -1 if not found
+static func prop_get_entity(ctx: WyncCtx, prop_id: int) -> int:
+	for entity_id: int in ctx.tracked_entities.keys():
+		if ctx.entity_has_props[entity_id].has(prop_id):
+			return entity_id
+	return -1
+
+
 static func is_entity_tracked(ctx: WyncCtx, entity_id: int) -> bool:
 	return ctx.tracked_entities.has(entity_id)
 

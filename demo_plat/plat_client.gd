@@ -25,19 +25,19 @@ func _physics_process(delta: float) -> void:
 		PlatNet.client_send_connection_request(gs)
 	PlatNet.consume_loopback_packets(gs)
 	PlatWync.client_spawn_actors(gs, gs.wctx)
+	PlatWync.find_out_what_player_i_control(gs)
 
-	#PlatPublic.player_input_additive(gs, gs.players[0], self)
-	#PlatPublic.system_ball_movement(gs, self)
-	#PlatPublic.system_player_movement(gs, delta)
-	#PlatPublic.player_input_reset(gs, gs.players[0], self)
-
-
+	if gs.i_control_player_id != -1:
+		PlatPublic.player_input_additive(gs, gs.players[gs.i_control_player_id], self)
 	
 	WyncFlow.wync_client_set_current_latency(gs.wctx, PlatGlobals.loopback_ctx.latency)
 	WyncFlow.wync_client_tick_end(gs.wctx)
 	WyncThrottle.wync_set_data_limit_chars_for_out_packets(gs.wctx, 50000)
 	WyncThrottle.wync_system_gather_packets(gs.wctx)
 	PlatNet.queue_wync_packets(gs)
+
+	if gs.i_control_player_id != -1:
+		PlatPublic.player_input_reset(gs, gs.players[gs.i_control_player_id], self)
 
 	queue_redraw()
 

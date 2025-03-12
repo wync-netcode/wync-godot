@@ -18,7 +18,7 @@ static func wync_update_prediction_ticks (ctx: WyncCtx):
 	
 	if WyncUtils.fast_modulus(co_ticks.ticks, 32) == 0:
 
-		co_predict_data.tick_offset_desired = ceil(co_predict_data.latency_stable / (1000.0 / physics_fps)) + 1
+		co_predict_data.tick_offset_desired = ceil(co_predict_data.latency_stable / (1000.0 / physics_fps)) + 2
 		
 		var target_tick = max(co_ticks.server_ticks + co_predict_data.tick_offset, co_predict_data.target_tick)
 		var target_time = curr_time + co_predict_data.tick_offset_desired * (1000.0 / physics_fps)

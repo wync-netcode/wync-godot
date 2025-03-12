@@ -2,6 +2,9 @@ class_name PlatPrivate
 
 
 static func initialize_game_state(gs: Plat.GameState):
+
+	gs.i_control_player_id = -1
+
 	# actors
 
 	gs.balls.resize(Plat.BALL_AMOUNT)
