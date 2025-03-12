@@ -30,12 +30,6 @@ class Chunk:
 	var blocks: Array[Array] #: Array[Array[Block]]
 
 
-class GameState:
-	var chunks: Array[Chunk]
-	var balls: Array[Ball]
-	var players: Array[Player]
-
-
 class Ball:
 	var size: Vector2
 	var position: Vector2
@@ -54,3 +48,37 @@ class Player:
 	var velocity: Vector2
 	var input: PlayerInput
 
+
+class GameState:
+	# game world
+	var chunks: Array[Chunk]
+	var balls: Array[Ball]
+	var players: Array[Player]
+
+	# misc
+	var net: NetState
+
+
+class NetState:
+	var io_peer: Loopback.IOPeer
+	var is_client: bool
+	var server: Server
+	var client: Client
+
+
+class Server:
+	class Peer:
+		var identifier: int
+		var peer_id: int
+	var peer_count: int
+	var peers: Array[Server.Peer]
+
+
+class Client:
+	enum STATE {
+		DISCONNECTED,
+		CONNECTED
+	}
+	var state: Client.STATE = Client.STATE.DISCONNECTED
+	var identifier: int = -1
+	var server_peer: int = -1  # key to actual peer, represents the connection stub
