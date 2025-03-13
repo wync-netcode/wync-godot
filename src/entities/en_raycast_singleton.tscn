@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://hmishy6acfrk"]
 
-[ext_resource type="Script" path="res://addons/gs_ecs/entity.gd" id="1_jfgxl"]
+[ext_resource type="Script" uid="uid://bwursvt855sdm" path="res://addons/gs_ecs/entity.gd" id="1_jfgxl"]
 [ext_resource type="PackedScene" uid="uid://bl464xn7iw85q" path="res://src/components/co_raycast.tscn" id="2_riab4"]
 
 [node name="EnRaycastSingleton" type="Node2D"]

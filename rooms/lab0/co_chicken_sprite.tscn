@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://dyt8jekds2vq5"]
 
-[ext_resource type="Script" path="res://rooms/lab0/co_chicken_sprite.gd" id="1_b8x5x"]
+[ext_resource type="Script" uid="uid://duw8vutjjp7i1" path="res://rooms/lab0/co_chicken_sprite.gd" id="1_b8x5x"]
 [ext_resource type="Texture2D" uid="uid://b6vptyjhyt5ty" path="res://icon.svg" id="1_nxc0j"]
 
 [node name="CoChickenSprite" type="Node2D"]

@@ -1,8 +1,8 @@
 [gd_scene load_steps=5 format=3 uid="uid://c3k6qrqk6sch4"]
 
-[ext_resource type="Script" path="res://addons/gs_ecs/entity.gd" id="1_mobpy"]
-[ext_resource type="Script" path="res://src/components/co_actor.gd" id="3_5yi0k"]
-[ext_resource type="Script" path="res://src/components/co_block_grid.gd" id="3_v48um"]
+[ext_resource type="Script" uid="uid://bwursvt855sdm" path="res://addons/gs_ecs/entity.gd" id="1_mobpy"]
+[ext_resource type="Script" uid="uid://c61h07p07mp7g" path="res://src/components/co_actor.gd" id="3_5yi0k"]
+[ext_resource type="Script" uid="uid://csjxtst3ia0et" path="res://src/components/co_block_grid.gd" id="3_v48um"]
 [ext_resource type="Texture2D" uid="uid://b6vptyjhyt5ty" path="res://icon.svg" id="5_x2c84"]
 
 [node name="EnBlockGrid" type="Node2D"]

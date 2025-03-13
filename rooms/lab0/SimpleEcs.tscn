@@ -1,8 +1,10 @@
 [gd_scene load_steps=4 format=3 uid="uid://bd0kqtvl1crni"]
 
-[ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_y5ucr"]
+[ext_resource type="Script" uid="uid://8buuckn7446x" path="res://rooms/lab0/simple_ecs.gd" id="1_y5ucr"]
 [ext_resource type="PackedScene" uid="uid://dtqauu432ft04" path="res://rooms/lab0/en_chicken.tscn" id="2_qvpl2"]
-[ext_resource type="Script" path="res://rooms/lab0/sy_velocity.gd" id="3_copnk"]
+
+[sub_resource type="Resource" id="Resource_ko5ii"]
+metadata/__load_path__ = "res://rooms/lab0/sy_velocity.gd"
 
 [node name="SimpleEcs" type="Node2D"]
 script = ExtResource("1_y5ucr")
@@ -10,4 +12,4 @@ script = ExtResource("1_y5ucr")
 [node name="Chicken" parent="." instance=ExtResource("2_qvpl2")]
 
 [node name="VelocitySystem" type="Node" parent="."]
-script = ExtResource("3_copnk")
+script = SubResource("Resource_ko5ii")

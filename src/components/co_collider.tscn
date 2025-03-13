@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://crmc58c1fac1p"]
 
-[ext_resource type="Script" path="res://src/components/co_collider.gd" id="1_r2bk6"]
+[ext_resource type="Script" uid="uid://c67odjx2c6uqe" path="res://src/components/co_collider.gd" id="1_r2bk6"]
 
 [node name="CoCollider" type="CharacterBody2D"]
 collision_layer = 0

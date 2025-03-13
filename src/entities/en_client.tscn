@@ -1,9 +1,9 @@
 [gd_scene load_steps=5 format=3 uid="uid://dqillnt7k6deb"]
 
-[ext_resource type="Script" path="res://addons/gs_ecs/entity.gd" id="1_i8ogn"]
-[ext_resource type="Script" path="res://src/network/co_io_packets.gd" id="1_k7rwu"]
-[ext_resource type="Script" path="res://src/network/co_snapshots.gd" id="3_qd06p"]
-[ext_resource type="Script" path="res://src/network/co_client.gd" id="4_h2qou"]
+[ext_resource type="Script" uid="uid://bwursvt855sdm" path="res://addons/gs_ecs/entity.gd" id="1_i8ogn"]
+[ext_resource type="Script" uid="uid://dqupvlugtkb4f" path="res://src/network/co_io_packets.gd" id="1_k7rwu"]
+[ext_resource type="Script" uid="uid://1lan7yqxvb67" path="res://src/network/co_snapshots.gd" id="3_qd06p"]
+[ext_resource type="Script" uid="uid://bgk8vhskpbhrh" path="res://src/network/co_client.gd" id="4_h2qou"]
 
 [node name="EnSingleClient" type="Node"]
 script = ExtResource("1_i8ogn")

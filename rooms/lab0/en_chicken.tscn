@@ -1,9 +1,9 @@
 [gd_scene load_steps=5 format=3 uid="uid://dtqauu432ft04"]
 
-[ext_resource type="Script" path="res://addons/gs_ecs/entity.gd" id="1_xidsp"]
+[ext_resource type="Script" uid="uid://bwursvt855sdm" path="res://addons/gs_ecs/entity.gd" id="1_xidsp"]
 [ext_resource type="PackedScene" uid="uid://crmc58c1fac1p" path="res://src/components/co_collider.tscn" id="3_li3ee"]
 [ext_resource type="PackedScene" uid="uid://dyt8jekds2vq5" path="res://rooms/lab0/co_chicken_sprite.tscn" id="4_5y5g3"]
-[ext_resource type="Script" path="res://src/components/co_velocity.gd" id="4_acv5h"]
+[ext_resource type="Script" uid="uid://c48jlohle6tlq" path="res://src/components/co_velocity.gd" id="4_acv5h"]
 
 [node name="Chicken" type="Node2D"]
 script = ExtResource("1_xidsp")

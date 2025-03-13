@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://bl464xn7iw85q"]
 
-[ext_resource type="Script" path="res://src/components/co_raycast.gd" id="1_uvnq4"]
+[ext_resource type="Script" uid="uid://dhsys3ffxf2ej" path="res://src/components/co_raycast.gd" id="1_uvnq4"]
 
 [node name="CoRaycast" type="RayCast2D"]
 enabled = false

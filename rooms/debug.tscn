@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://dw363hxpjmwto"]
 
-[ext_resource type="Script" path="res://rooms/try_json.gd" id="1_fuys8"]
-[ext_resource type="Script" path="res://data/StaticData.gd" id="1_jgvjo"]
+[ext_resource type="Script" uid="uid://xgf76c8ksxsx" path="res://rooms/try_json.gd" id="1_fuys8"]
+[ext_resource type="Script" uid="uid://er6fwywo7pt2" path="res://data/StaticData.gd" id="1_jgvjo"]
 
 [node name="Debug" type="Node2D"]
 

@@ -1,10 +1,10 @@
 [gd_scene load_steps=9 format=3 uid="uid://c51bfdd3ckhnk"]
 
-[ext_resource type="Script" path="res://addons/gs_ecs/entity.gd" id="1_vs0dl"]
-[ext_resource type="Script" path="res://src/components/co_actor.gd" id="2_6fjdl"]
-[ext_resource type="Script" path="res://src/components/co_velocity.gd" id="3_sk7nh"]
+[ext_resource type="Script" uid="uid://bwursvt855sdm" path="res://addons/gs_ecs/entity.gd" id="1_vs0dl"]
+[ext_resource type="Script" uid="uid://c61h07p07mp7g" path="res://src/components/co_actor.gd" id="2_6fjdl"]
+[ext_resource type="Script" uid="uid://c48jlohle6tlq" path="res://src/components/co_velocity.gd" id="3_sk7nh"]
 [ext_resource type="PackedScene" uid="uid://2gtgr4u6tb0w" path="res://src/components/co_actor_renderer.tscn" id="5_nwrs4"]
-[ext_resource type="Script" path="res://src/components/co_projectile_data.gd" id="5_qmshh"]
+[ext_resource type="Script" uid="uid://dyhblyw20ws6" path="res://src/components/co_projectile_data.gd" id="5_qmshh"]
 [ext_resource type="Texture2D" uid="uid://b6vptyjhyt5ty" path="res://icon.svg" id="6_oy27i"]
 [ext_resource type="PackedScene" uid="uid://c2r10to1fm6gn" path="res://src/components/co_area.tscn" id="6_peyxx"]
 

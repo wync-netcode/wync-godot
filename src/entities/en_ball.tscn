@@ -1,13 +1,13 @@
 [gd_scene load_steps=10 format=3 uid="uid://dp7hr35om6ih8"]
 
-[ext_resource type="Script" path="res://addons/gs_ecs/entity.gd" id="1_kv4uu"]
+[ext_resource type="Script" uid="uid://bwursvt855sdm" path="res://addons/gs_ecs/entity.gd" id="1_kv4uu"]
 [ext_resource type="PackedScene" uid="uid://crmc58c1fac1p" path="res://src/components/co_collider.tscn" id="2_3hrmx"]
-[ext_resource type="Script" path="res://src/components/co_actor.gd" id="3_s1th0"]
-[ext_resource type="Script" path="res://src/components/co_velocity.gd" id="4_0alde"]
+[ext_resource type="Script" uid="uid://c61h07p07mp7g" path="res://src/components/co_actor.gd" id="3_s1th0"]
+[ext_resource type="Script" uid="uid://c48jlohle6tlq" path="res://src/components/co_velocity.gd" id="4_0alde"]
 [ext_resource type="PackedScene" uid="uid://2gtgr4u6tb0w" path="res://src/components/co_actor_renderer.tscn" id="5_tbma4"]
 [ext_resource type="Texture2D" uid="uid://b6vptyjhyt5ty" path="res://icon.svg" id="7_fvdoi"]
-[ext_resource type="Script" path="res://src/components/co_ball.gd" id="7_ikjho"]
-[ext_resource type="Script" path="res://src/components/co_health.gd" id="8_pfnjf"]
+[ext_resource type="Script" uid="uid://bdurcqtnxayla" path="res://src/components/co_ball.gd" id="7_ikjho"]
+[ext_resource type="Script" uid="uid://db3j7k81n03sb" path="res://src/components/co_health.gd" id="8_pfnjf"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_rkk3i"]
 size = Vector2(26, 26)

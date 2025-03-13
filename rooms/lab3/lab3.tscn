@@ -1,33 +1,58 @@
-[gd_scene load_steps=29 format=3 uid="uid://e4enao3jmf22"]
+[gd_scene load_steps=34 format=3 uid="uid://e4enao3jmf22"]
 
-[ext_resource type="Script" path="res://rooms/lab0/simple_ecs.gd" id="1_8726f"]
-[ext_resource type="Script" path="res://data/StaticData.gd" id="2_w1jha"]
+[ext_resource type="Script" uid="uid://8buuckn7446x" path="res://rooms/lab0/simple_ecs.gd" id="1_8726f"]
+[ext_resource type="Script" uid="uid://er6fwywo7pt2" path="res://data/StaticData.gd" id="2_w1jha"]
 [ext_resource type="PackedScene" uid="uid://br3o7pgduj72n" path="res://rooms/demo0/map_demo_0.tscn" id="3_wmj1m"]
-[ext_resource type="Script" path="res://src/utils/global_singletons.gd" id="4_xpm1l"]
-[ext_resource type="Script" path="res://src/network/co_transport_loopback.gd" id="5_hmn43"]
-[ext_resource type="Script" path="res://addons/gs_ecs/world.gd" id="6_odp22"]
+[ext_resource type="Script" uid="uid://cdpld7eaexl00" path="res://src/utils/global_singletons.gd" id="4_xpm1l"]
+[ext_resource type="Script" uid="uid://ch85vh5svhcst" path="res://src/network/co_transport_loopback.gd" id="5_hmn43"]
+[ext_resource type="Script" uid="uid://chkqyu06jlhl1" path="res://addons/gs_ecs/world.gd" id="6_odp22"]
 [ext_resource type="PackedScene" uid="uid://5n6bvvfq608d" path="res://src/entities/en_single_actors.tscn" id="8_kw7sn"]
 [ext_resource type="PackedScene" uid="uid://ex31s4wv3adg" path="res://src/entities/en_single_server.tscn" id="9_i26gw"]
 [ext_resource type="PackedScene" uid="uid://hmishy6acfrk" path="res://src/entities/en_raycast_singleton.tscn" id="10_kimqb"]
-[ext_resource type="Script" path="res://src/components/co_single_world.gd" id="11_qsqtq"]
-[ext_resource type="Script" path="res://src/systems/sy_velocity.gd" id="12_8kbcw"]
-[ext_resource type="Script" path="res://src/systems/sy_player_input.gd" id="13_m60h0"]
-[ext_resource type="Script" path="res://src/systems/sy_actor_movement.gd" id="14_xlqji"]
-[ext_resource type="Script" path="res://src/systems/sy_shoot_weapon.gd" id="15_csddj"]
-[ext_resource type="Script" path="res://src/systems/sy_reload_weapon.gd" id="16_vopm6"]
-[ext_resource type="Script" path="res://src/systems/sy_switch_weapon.gd" id="17_85rsx"]
-[ext_resource type="Script" path="res://src/systems/sy_health.gd" id="18_5mmd6"]
-[ext_resource type="Script" path="res://src/systems/sy_projectile_movement.gd" id="19_461pf"]
-[ext_resource type="Script" path="res://src/network/sy_ticks.gd" id="20_0bne6"]
-[ext_resource type="Script" path="res://src/systems/sy_actor_register.gd" id="21_hnbx7"]
-[ext_resource type="Script" path="res://src/network/sy_transport_loopback_peer_register.gd" id="22_632h5"]
-[ext_resource type="Script" path="res://src/network/sy_state_extractor.gd" id="23_w1ldw"]
-[ext_resource type="Script" path="res://src/network/sy_transport_loopback.gd" id="24_rg7ja"]
+[ext_resource type="Script" uid="uid://d0pd4wbel4pll" path="res://src/components/co_single_world.gd" id="11_qsqtq"]
+[ext_resource type="Script" uid="uid://bbwl7nukas8xi" path="res://src/systems/sy_velocity.gd" id="12_8kbcw"]
+[ext_resource type="Script" uid="uid://dgoq1jekogg2j" path="res://src/systems/sy_player_input_additive.gd" id="13_m60h0"]
+[ext_resource type="Script" uid="uid://bp8h65qilwwmj" path="res://src/systems/sy_actor_movement.gd" id="14_xlqji"]
+[ext_resource type="Script" uid="uid://uc0ks30tccu5" path="res://src/systems/sy_shoot_weapon.gd" id="15_csddj"]
+[ext_resource type="Script" uid="uid://cdwtafdybb40j" path="res://src/systems/sy_reload_weapon.gd" id="16_vopm6"]
+[ext_resource type="Script" uid="uid://bxx7fywolhbb8" path="res://src/systems/sy_switch_weapon.gd" id="17_85rsx"]
+[ext_resource type="Script" uid="uid://f3rruwpc4f5p" path="res://src/systems/sy_health.gd" id="18_5mmd6"]
+[ext_resource type="Script" uid="uid://dexg3hp1ug7gx" path="res://src/systems/sy_projectile_movement.gd" id="19_461pf"]
+[ext_resource type="Script" uid="uid://bue4w5djbbpvl" path="res://src/network/sy_ticks.gd" id="20_0bne6"]
+[ext_resource type="Script" uid="uid://dyy88ydkx2mij" path="res://src/systems/sy_actor_register.gd" id="21_hnbx7"]
 [ext_resource type="PackedScene" uid="uid://dqillnt7k6deb" path="res://src/entities/en_client.tscn" id="25_d2wxo"]
 [ext_resource type="PackedScene" uid="uid://4o33ca5n1fw6" path="res://src/entities/en_player.tscn" id="26_ph57h"]
-[ext_resource type="Script" path="res://src/network/sy_transport_loopback_connection.gd" id="27_844vy"]
-[ext_resource type="Script" path="res://src/network/sy_client_pkt_apply_raw.gd" id="28_sibuh"]
-[ext_resource type="PackedScene" uid="uid://d170xboi2dsfr" path="res://src/ui/info.tscn" id="30_372eq"]
+[ext_resource type="Script" uid="uid://djj6p6awejwdv" path="res://src/network/sy_client_pkt_apply_raw.gd" id="28_sibuh"]
+
+[sub_resource type="Resource" id="Resource_vq6sy"]
+metadata/__load_path__ = "res://src/network/sy_transport_loopback_peer_register.gd"
+
+[sub_resource type="Resource" id="Resource_o5yid"]
+metadata/__load_path__ = "res://src/network/sy_state_extractor.gd"
+
+[sub_resource type="Resource" id="Resource_hbcc8"]
+metadata/__load_path__ = "res://src/network/sy_transport_loopback.gd"
+
+[sub_resource type="Resource" id="Resource_mplwu"]
+metadata/__load_path__ = "res://src/network/sy_transport_loopback_peer_register.gd"
+
+[sub_resource type="Resource" id="Resource_mo0o0"]
+metadata/__load_path__ = "res://src/network/sy_transport_loopback_connection.gd"
+
+[sub_resource type="Resource" id="Resource_aqlet"]
+metadata/__load_path__ = "res://src/network/sy_transport_loopback.gd"
+
+[sub_resource type="Resource" id="Resource_r6etc"]
+metadata/__load_path__ = "res://src/network/sy_transport_loopback_peer_register.gd"
+
+[sub_resource type="Resource" id="Resource_pgwhv"]
+metadata/__load_path__ = "res://src/network/sy_transport_loopback_connection.gd"
+
+[sub_resource type="Resource" id="Resource_ublu0"]
+metadata/__load_path__ = "res://src/network/sy_transport_loopback.gd"
+
+[sub_resource type="Resource" id="Resource_55ahw"]
+metadata/__load_path__ = "res://src/ui/info.tscn"
 
 [node name="Lab3" type="Node2D"]
 script = ExtResource("1_8726f")
@@ -98,13 +123,13 @@ script = ExtResource("20_0bne6")
 script = ExtResource("21_hnbx7")
 
 [node name="SyTransportLoopbackPeerRegister" type="Node" parent="worlds/WorldServer/SystemsNetwork"]
-script = ExtResource("22_632h5")
+script = SubResource("Resource_vq6sy")
 
 [node name="SyStateExtractor" type="Node" parent="worlds/WorldServer/SystemsNetwork"]
-script = ExtResource("23_w1ldw")
+script = SubResource("Resource_o5yid")
 
 [node name="SyTransportLoopback" type="Node" parent="worlds/WorldServer/SystemsNetwork"]
-script = ExtResource("24_rg7ja")
+script = SubResource("Resource_hbcc8")
 
 [node name="WorldClient2" type="Node" parent="worlds"]
 script = ExtResource("6_odp22")
@@ -172,13 +197,13 @@ ENABLED = false
 script = ExtResource("21_hnbx7")
 
 [node name="SyTransportLoopbackPeerRegister" type="Node" parent="worlds/WorldClient2/SystemsNetwork"]
-script = ExtResource("22_632h5")
+script = SubResource("Resource_mplwu")
 
 [node name="SyTransportLoopbackConnection" type="Node" parent="worlds/WorldClient2/SystemsNetwork"]
-script = ExtResource("27_844vy")
+script = SubResource("Resource_mo0o0")
 
 [node name="SyTransportLoopback" type="Node" parent="worlds/WorldClient2/SystemsNetwork"]
-script = ExtResource("24_rg7ja")
+script = SubResource("Resource_aqlet")
 
 [node name="SyClientPktApplyRaw" type="Node" parent="worlds/WorldClient2/SystemsNetwork"]
 script = ExtResource("28_sibuh")
@@ -246,13 +271,13 @@ ENABLED = false
 script = ExtResource("21_hnbx7")
 
 [node name="SyTransportLoopbackPeerRegister" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
-script = ExtResource("22_632h5")
+script = SubResource("Resource_r6etc")
 
 [node name="SyTransportLoopbackConnection" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
-script = ExtResource("27_844vy")
+script = SubResource("Resource_pgwhv")
 
 [node name="SyTransportLoopback" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
-script = ExtResource("24_rg7ja")
+script = SubResource("Resource_ublu0")
 
 [node name="SyClientPktApplyRaw" type="Node" parent="worlds/WorldClient1/SystemsNetwork"]
 script = ExtResource("28_sibuh")
@@ -260,4 +285,4 @@ ENABLED = false
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
-[node name="ui" parent="CanvasLayer" instance=ExtResource("30_372eq")]
+[node name="ui" parent="CanvasLayer"]
