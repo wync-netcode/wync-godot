@@ -60,11 +60,18 @@ class Player:
 	var input: PlayerInput
 
 
+class Trail:
+	var position: Vector2
+	var hue: float # [0.0 - 1.0]
+	var tick_duration: int
+
+
 class GameState:
 	# game world
 	var chunks: Array[Chunk]
 	var balls: Array[Ball]
 	var players: Array[Player]
+	var trails: Array[Trail]
 	var actors_added_or_deleted: bool
 	var i_control_player_id: int # players actor id
 

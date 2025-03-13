@@ -199,3 +199,45 @@ static func find_out_what_player_i_control(gs: Plat.GameState):
 			# NOTE: asssuming entity_id directly maps to gs.players[]
 			gs.i_control_player_id = entity_id
 			break
+
+
+static func extrapolate(gs: Plat.GameState, delta: float):
+
+	var ctx = gs.wctx
+	var target_tick = ctx.co_predict_data.target_tick
+
+	if WyncXtrap.wync_xtrap_preparation(ctx) != OK:
+		return
+
+	WyncXtrap.wync_xtrap_tick_init_cache(ctx)
+	WyncXtrap.wync_xtrap_tick_end_cache(ctx)
+
+	Log.outc(ctx, "starting prediction ==============================")
+	var base_tick = -1
+	for tick in range(ctx.pred_intented_first_tick - ctx.max_prediction_tick_threeshold, target_tick +1):
+		#Log.outc(ctx, "pred_tick %s" % [tick])
+		WyncXtrap.wync_xtrap_tick_init(ctx, tick)
+		var dont_predict_entity_ids = WyncXtrap.wync_xtrap_dont_predict_entities(ctx, tick)
+		#Log.outc(ctx, "dont_predict_entities %s" % [dont_predict_entity_ids])
+		PlatPublic.system_player_movement(gs, delta, dont_predict_entity_ids)
+
+		# debug trail
+		if base_tick == -1:
+			base_tick = tick
+		for player_id: int in range(gs.players.size()):
+			if not WyncUtils.is_entity_tracked(ctx, player_id):
+				continue
+			if not WyncUtils.entity_is_predicted(ctx, player_id):
+				continue
+			#var progress = (float(tick) - ctx.last_tick_received) / (target_tick - ctx.last_tick_received)
+			#var progress = float(tick - (target_tick - 28)) / 10
+			var progress = float(tick - base_tick) / 10
+			var prop_position = WyncUtils.entity_get_prop(ctx, player_id, "position")
+			if prop_position:
+				PlatPublic.spawn_trail(gs, prop_position.getter.call(prop_position.user_ctx_pointer), progress, 1)
+
+
+		WyncXtrap.wync_xtrap_tick_end(ctx, tick)
+	Log.outc(ctx, "debugging prediction range (%s : %s) d %s | server_ticks %s" % [ctx.pred_intented_first_tick, target_tick +1, (target_tick+1-ctx.pred_intented_first_tick), ctx.co_ticks.server_ticks])
+	
+	WyncXtrap.wync_xtrap_termination(ctx)

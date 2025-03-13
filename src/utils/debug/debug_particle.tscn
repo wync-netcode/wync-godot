@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://b15jflxsxigct"]
 
 [ext_resource type="Texture2D" uid="uid://b6vptyjhyt5ty" path="res://icon.svg" id="1_1pc51"]
-[ext_resource type="Script" path="res://src/utils/debug/debug_particle.gd" id="1_qe1wq"]
+[ext_resource type="Script" uid="uid://cnhq2573prf6n" path="res://src/utils/debug/debug_particle.gd" id="1_qe1wq"]
 
 [node name="DebugParticle" type="Node2D"]
 script = ExtResource("1_qe1wq")

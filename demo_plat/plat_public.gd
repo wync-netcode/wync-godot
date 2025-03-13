@@ -33,6 +33,24 @@ static func spawn_player(gs: Plat.GameState, origin: Vector2, actor_id: int = -1
 	return actor_id
 
 
+static func spawn_trail(gs: Plat.GameState, origin: Vector2, hue: float, tick_duration: int):
+	var trail = Plat.Trail.new()
+	trail.position = origin
+	trail.hue = hue
+	trail.tick_duration = tick_duration
+	gs.trails.append(trail)
+
+
+static func system_trail_lives(gs: Plat.GameState):
+	for trail_id: int in range(gs.trails.size()-1, -1, -1):
+		var trail := gs.trails[trail_id]
+		if trail == null:
+			gs.trails.remove_at(trail_id)
+		if trail.tick_duration <= 0:
+			gs.trails.remove_at(trail_id)
+		trail.tick_duration -= 1
+
+
 static func block_is_solid(block: Plat.Block) -> bool:
 	return block.type != Plat.BLOCK_TYPE_AIR
 
@@ -74,8 +92,12 @@ static func system_ball_movement(gs: Plat.GameState, node2d: Node2D):
 			ball.position.y = new_pos.y
 
 
-static func system_player_movement(gs: Plat.GameState, delta: float):
-	for player: Plat.Player in gs.players:
+static func system_player_movement(gs: Plat.GameState, delta: float, exclude_ids: Array[int]):
+	for player_id: int in range(Plat.PLAYER_AMOUNT):
+	#for player: Plat.Player in gs.players:
+		if exclude_ids.has(player_id):
+			continue
+		var player := gs.players[player_id]
 		if player == null:
 			continue
 		
@@ -164,6 +186,9 @@ static func system_player_movement(gs: Plat.GameState, delta: float):
 			player.position.y = new_pos.y
 		else: # allow it to fall / hit his head slowly
 			player.velocity.y /= 2
+
+		if gs.net.is_client:
+			Log.outc(gs.wctx, "emulated entity %s" % [player_id])
 
 
 static func player_input_additive(gs: Plat.GameState, player: Plat.Player, node2d: Node2D):

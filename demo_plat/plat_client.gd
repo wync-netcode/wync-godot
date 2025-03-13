@@ -14,9 +14,7 @@ func _ready() -> void:
 
 	# loopback.register_peer()
 	PlatPrivate.initialize_game_state(gs)
-	#PlatPrivate.generate_world(gs)
-	#PlatPublic.spawn_ball(gs, PlatUtils.GRID_CORD(5, 10))
-	#PlatPublic.spawn_player(gs, PlatUtils.GRID_CORD(7, 10))
+	PlatPrivate.generate_world(gs)
 
 
 func _physics_process(delta: float) -> void:
@@ -32,9 +30,13 @@ func _physics_process(delta: float) -> void:
 	
 	WyncFlow.wync_client_set_current_latency(gs.wctx, PlatGlobals.loopback_ctx.latency)
 	WyncFlow.wync_client_tick_end(gs.wctx)
+
+	PlatWync.extrapolate(gs, delta)
+
 	WyncThrottle.wync_set_data_limit_chars_for_out_packets(gs.wctx, 50000)
 	WyncThrottle.wync_system_gather_packets(gs.wctx)
 	PlatNet.queue_wync_packets(gs)
+	PlatPublic.system_trail_lives(gs)
 
 	if gs.i_control_player_id != -1:
 		PlatPublic.player_input_reset(gs, gs.players[gs.i_control_player_id], self)

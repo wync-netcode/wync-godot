@@ -8,6 +8,7 @@ static func draw_game(canvas: Node2D, gs: Plat.GameState):
 	)
 	draw_block_grid(canvas, gs, draw_offset)
 	draw_balls(canvas, gs, draw_offset)
+	draw_trails(canvas, gs, draw_offset)
 	draw_players(canvas, gs, draw_offset)
 
 
@@ -78,3 +79,12 @@ static func draw_players(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
 		player_rect = Rect2(Vector2(player.position.x, -player.position.y) + Vector2(offset), player.size)
 		canvas.draw_rect(player_rect, color, true)
 		canvas.draw_rect(player_rect, Color.BLACK, false)
+
+
+static func draw_trails(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
+	var trail_rect = Rect2(Vector2.ZERO, Vector2(round(Plat.BLOCK_LENGTH_PIXELS * 0.66), Plat.BLOCK_LENGTH_PIXELS * 1.5))
+	var color = Color.RED
+	for trail: Plat.Trail in gs.trails:
+		trail_rect.position = Vector2(trail.position.x, -trail.position.y) + Vector2(offset)
+		color.h = trail.hue
+		canvas.draw_rect(trail_rect, color, false)

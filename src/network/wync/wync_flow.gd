@@ -346,10 +346,11 @@ static func wync_server_handle_pkt_inputs(ctx: WyncCtx, data: Variant, from_nete
 		var copy = WyncUtils.duplicate_any(input.data)
 		if copy == null:
 			Log.out("WARNING: input data can't be duplicated %s" % [input.data], Log.TAG_INPUT_RECEIVE)
-		var to_insert = copy if copy != null else input.data
+		var to_insert = copy
 		
 		input_prop.confirmed_states.insert_at(input.tick, to_insert)
 		input_prop.confirmed_states_tick.insert_at(input.tick, input.tick)
+		#Log.outc(ctx, "couldn't find input | inserted input (%s) tick (%s) value (%s)" % [input_prop.name_id, input.tick, copy])
 
 	return OK
 
@@ -415,6 +416,7 @@ static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 				continue
 		
 			if prop.confirmed_states_tick.get_at(ctx.co_ticks.ticks) != ctx.co_ticks.ticks:
+				Log.errc(ctx, "couldn't find input (%s) for tick (%s)" % [prop.name_id, ctx.co_ticks.ticks])
 				continue
 
 			var input = prop.confirmed_states.get_at(ctx.co_ticks.ticks)
@@ -443,6 +445,10 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 			WyncUtils.prop_register_update_dummy(ctx, snap_prop.prop_id, data.tick, 99, snap_prop.state)
 			continue
 
+		# avoid flooding the buffer with old late state
+		var last_tick_received = prop.last_ticks_received.get_relative(0)
+		if not (data.tick > last_tick_received - ctx.REGULAR_PROP_CACHED_STATE_AMOUNT):
+			continue
 		prop_save_confirmed_state(ctx, snap_prop.prop_id, data.tick, snap_prop.state)
 
 	wync_client_update_last_tick_received(ctx, data.tick)
@@ -675,15 +681,15 @@ static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
 	var cal_server_ticks = data.tick + ceil(time_since_packet_sent / (1000.0 / physics_fps))
 	var new_server_ticks_offset = cal_server_ticks - co_ticks.ticks
 
-	if (abs(new_server_ticks_offset - co_ticks.server_ticks_offset) == 1):
-		# to avoid fluctuations by one unit, always prefer the biggest value
-		co_ticks.server_ticks_offset = max(co_ticks.server_ticks_offset, new_server_ticks_offset)
-	else:
-		co_ticks.server_ticks_offset = new_server_ticks_offset
+	# to avoid fluctuations by one unit, always prefer the biggest value
+	if (abs(new_server_ticks_offset - co_ticks.server_tick_offset) == 1):
+		new_server_ticks_offset = max(co_ticks.server_tick_offset, new_server_ticks_offset)
+	CoTicks.server_tick_offset_collection_add_value(co_ticks, new_server_ticks_offset)
+	co_ticks.server_tick_offset = CoTicks.server_tick_offset_collection_get_most_common(co_ticks)
 	
-	co_ticks.server_ticks = co_ticks.ticks + co_ticks.server_ticks_offset
+	co_ticks.server_ticks = co_ticks.ticks + co_ticks.server_tick_offset
 
-	Log.out("Servertime %s, real %s, d %s | server_ticks_aprox %s | latency %s | clock %s | %s | %s | %s" % [
+	Log.out("couldn't find input | Servertime %s, real %s, d %s | server_ticks_aprox %s | latency %s | clock %s | %s | %s | %s" % [
 		int(current_server_time),
 		Time.get_ticks_msec(),
 		str(Time.get_ticks_msec() - current_server_time).pad_zeros(2).pad_decimals(1),
@@ -692,7 +698,7 @@ static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
 		str(co_predict_data.clock_offset_mean).pad_decimals(2),
 		str(time_since_packet_sent).pad_decimals(2),
 		str(time_since_packet_sent / (1000.0 / physics_fps)).pad_decimals(2),
-		co_ticks.server_ticks_offset,
+		co_ticks.server_tick_offset,
 	], Log.TAG_CLOCK)
 
 

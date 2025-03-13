@@ -92,11 +92,13 @@ static func wync_xtrap_tick_end_cache(ctx: WyncCtx):
 
 
 static func wync_xtrap_tick_init(ctx: WyncCtx, tick: int):
+	# FIXME: shouldn't this be only events/inputs?
 	for prop_id: int in ctx.active_prop_ids:
 		var prop := ctx.props[prop_id]
 		if prop.confirmed_states_tick.get_at(tick) != tick:
 			continue
 		prop.setter.call(prop.user_ctx_pointer, prop.confirmed_states.get_at(tick))
+		#Log.outc(ctx, "tick init setted state for prop %s tick %s" % [prop.name_id, tick])
 
 	ctx.current_predicted_tick = tick
 
@@ -115,8 +117,8 @@ static func auxiliar_props_clear_current_delta_events(ctx: WyncCtx):
 
 # which entities shouldnt' be predicted in this tick:
 # * entities containing delta props
-# * entities with an already confirmed state for this tick
-# These props need their state reset to that tick
+# * entities with an already confirmed state for this tick or a higher tick
+# These props need their state reset to that tick. Why here this ???
 # * props that are predicted and already have a confirmed state for this tick
 static func wync_xtrap_dont_predict_entities(ctx: WyncCtx, tick: int) -> Array[int]:
 	var entity_ids := [] as Array[int]
@@ -127,9 +129,9 @@ static func wync_xtrap_dont_predict_entities(ctx: WyncCtx, tick: int) -> Array[i
 
 	# iterate each entity and determine if they shouldn't be predicted
 	for entity_id in ctx.tracked_entities.keys():
-		var entity_last_tick = WyncUtils.entity_get_last_received_tick(ctx, entity_id)
+		var entity_last_tick = WyncUtils.entity_get_last_received_tick_from_pred_props(ctx, entity_id)
 
-		# contains a delta prop
+		# contains a delta prop TODO: optimize this query
 		if WyncUtils.entity_has_delta_prop(ctx, entity_id):
 			entity_ids.append(entity_id)
 		

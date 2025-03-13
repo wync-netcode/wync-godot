@@ -57,18 +57,20 @@ func get_info_general() -> String:
 	ScreenFPS: %s
 	Latency: %s jit(%sms) loss(%s%%)
 	Latency_stable: %s
-	tick_offset: %s
-	ticks_predi: %s
+	(pred)tick_offset: %s
+	  predicted_ticks: %s
 	lerp_ms: %s
 	delta_base_tick: %s
 	  server_tick: %s
 	(cl)rver_tick: %s (d %s)
+	ser_tick_offs: %s
 	(cl)target : %s
 	client_tick: %s
 	server_rate_out: %s/t
 	client_rate_out: %s/t
 	(cl)server_tick_rate %.2f (%.2f tps)
-	(cl)prob_prop_rate %.2f
+	(cl)prob_prop_rate %.2f (latest %d)
+	(cl)max_pred_threeshold %d
 	(cl)dummy_props %s (lost %s)
 	""" % \
 	[
@@ -76,7 +78,7 @@ func get_info_general() -> String:
 		Performance.get_monitor(Performance.TIME_FPS),
 		string_exact_length(str(loopback_ctx.latency), 3),
 		string_exact_length(str(loopback_ctx.jitter), 3),
-		string_exact_length(str(loopback_ctx.packet_loss_percentage), 3),
+		loopback_ctx.packet_loss_percentage,
 		client_wctx.co_predict_data.latency_stable,
 		client_wctx.co_predict_data.tick_offset,
 		(client_wctx.last_tick_predicted -client_wctx.first_tick_predicted),
@@ -85,6 +87,7 @@ func get_info_general() -> String:
 		server_wctx.co_ticks.ticks,
 		client_wctx.co_ticks.server_ticks,
 		client_wctx.co_ticks.server_ticks -server_wctx.co_ticks.ticks, 
+		client_wctx.co_ticks.server_tick_offset,
 		client_wctx.co_predict_data.target_tick,
 		client_wctx.co_ticks.ticks,
 		server_wctx.debug_data_per_tick_sliding_window_mean,
@@ -92,6 +95,8 @@ func get_info_general() -> String:
 		client_wctx.server_tick_rate,
 		((1.0 / (client_wctx.server_tick_rate + 1)) * Engine.physics_ticks_per_second),
 		client_wctx.low_priority_entity_update_rate,
+		client_wctx.low_priority_entity_update_rate_sliding_window.get_relative(0),
+		client_wctx.max_prediction_tick_threeshold,
 		client_wctx.dummy_props.size(), client_wctx.stat_lost_dummy_props
 	]
 	return text

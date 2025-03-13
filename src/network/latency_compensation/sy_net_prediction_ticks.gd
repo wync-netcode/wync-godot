@@ -50,6 +50,9 @@ static func wync_update_prediction_ticks (ctx: WyncCtx):
 	co_predict_data.target_tick = max(co_ticks.server_ticks + co_predict_data.tick_offset, co_predict_data.target_tick)
 	co_predict_data.current_tick_timestamp = curr_time
 
+	if (co_predict_data.target_tick - _prev_target_tick != 1):
+		Log.outc(ctx, "couldn't find input | target tick changed badly %s %s" % [_prev_target_tick, co_predict_data.target_tick])
+
 	#Log.outc(ctx, "prev_target_tick %s, new_target_tick %s" % [_prev_target_tick, co_predict_data.target_tick])
 	
 	#Log.out(self, "ticks local %s | net %s %s %s" % [co_ticks.ticks, co_ticks.server_ticks, co_predict_data.target_tick, co_ticks.ticks + co_ticks.server_ticks_offset])

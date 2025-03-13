@@ -593,8 +593,10 @@ static func get_nete_peer_id_from_wync_peer_id (ctx: WyncCtx, wync_peer_id: int)
 	return -1
 
 
-# NOTE: maybe we could compute this every time we get an update?
-static func entity_get_last_received_tick (ctx: WyncCtx, entity_id: int) -> int:
+## TODO: maybe we could compute this every time we get an update?
+## Only predicted props
+## Exclude props I own (Or just exclude TYPE_INPUT?) What about events or delta props?
+static func entity_get_last_received_tick_from_pred_props (ctx: WyncCtx, entity_id: int) -> int:
 	if not is_entity_tracked(ctx, entity_id):
 		return -1
 
@@ -609,11 +611,15 @@ static func entity_get_last_received_tick (ctx: WyncCtx, entity_id: int) -> int:
 		if prop_last_tick == -1:
 			continue
 
+		if ctx.client_owns_prop[ctx.my_peer_id].has(prop_id):
+			continue
+
 		if last_tick == -1:
 			last_tick = prop_last_tick
 		else:
 			last_tick = min(last_tick, prop_last_tick)
 
+	#Log.outc(ctx, "entity_id %s last_tick %s" % [entity_id, last_tick])
 	return last_tick
 
 
