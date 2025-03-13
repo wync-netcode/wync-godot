@@ -15,21 +15,21 @@ func _ready():
 	super()
 	
 
-func on_process(_entities, _data, _delta: float):
+func on_process(_entities, _data, delta: float):
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
 	var co_predict_data = wync_ctx.co_predict_data
 	var co_ticks = wync_ctx.co_ticks
 
 	# TODO: Move this elsewhere
-	co_ticks.lerp_delta_accumulator_ms += int(_delta * 1000)
 
-	interpolate_all(wync_ctx, co_ticks, co_predict_data)
+	interpolate_all(wync_ctx, co_ticks, co_predict_data, delta)
 
 
 ## interpolates confirmed states and predicted states
-static func interpolate_all(wync_ctx: WyncCtx, co_ticks: CoTicks, co_predict_data: CoPredictionData):
+static func interpolate_all(wync_ctx: WyncCtx, co_ticks: CoTicks, co_predict_data: CoPredictionData, delta: float):
 
+	co_ticks.lerp_delta_accumulator_ms += int(delta * 1000)
 	var curr_tick_time = WyncUtils.clock_get_tick_timestamp_ms(wync_ctx, co_ticks.ticks)
 	var curr_time = curr_tick_time + co_ticks.lerp_delta_accumulator_ms
 	var target_time_conf = curr_time - co_predict_data.lerp_ms

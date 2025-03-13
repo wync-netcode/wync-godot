@@ -1,35 +1,88 @@
 class_name PlatPublic
 
 
-static func spawn_ball(gs: Plat.GameState, origin: Vector2):
+
+
+## @returns int. id or -1 if not found
+static func actor_find_available_id(gs: Plat.GameState) -> int:
+	var instance_id = -1
+	for i: int in range(Plat.ACTOR_AMOUNT):
+		if gs.actors[i] == null:
+			instance_id = i
+			break
+	return instance_id
+
+
+## @returns int. id or -1 if not found
+static func ball_find_available_id(gs: Plat.GameState) -> int:
+	var instance_id = -1
+	for i: int in range(Plat.BALL_AMOUNT):
+		if gs.balls[i] == null:
+			instance_id = i
+			break
+	return instance_id
+
+
+## @returns int. id or -1 if not found
+static func player_find_available_id(gs: Plat.GameState) -> int:
+	var instance_id = -1
+	for i: int in range(Plat.PLAYER_AMOUNT):
+		if gs.players[i] == null:
+			instance_id = i
+			break
+	return instance_id
+
+
+static func spawn_actor(gs: Plat.GameState, actor_id: int, actor_type: int, instance_id: int):
+	var actor = Plat.Actor.new()
+	actor.actor_type = Plat.ACTOR_TYPE_BALL
+	actor.instance_id = instance_id
+	gs.actors[actor_id] = actor
+
+
+## @returns int. actor_id or -1
+static func spawn_ball_server(gs: Plat.GameState, origin: Vector2) -> int:
+	var actor_id = actor_find_available_id(gs)
+	gs.actors_added_or_deleted = true
+	return spawn_ball(gs, origin, actor_id)
+
+
+## @returns int. actor_id or -1
+static func spawn_ball(gs: Plat.GameState, origin: Vector2, actor_id: int) -> int:
+	var ball_id = ball_find_available_id(gs)
+	if actor_id == -1 || ball_id == -1:
+		return -1
+
 	var ball = Plat.Ball.new()
+	ball.actor_id = actor_id
 	ball.position = origin
 	ball.size = Vector2(round(Plat.BLOCK_LENGTH_PIXELS * 0.66), Plat.BLOCK_LENGTH_PIXELS * 1.5)
 	ball.velocity.x = 3
-	gs.balls.append(ball)
+	gs.balls[ball_id] = ball
+	spawn_actor(gs, actor_id, Plat.ACTOR_TYPE_BALL, ball_id)
+	return actor_id
 
 
-## @returns int. player actor id; -1 if couldn't spawn.
-static func spawn_player(gs: Plat.GameState, origin: Vector2, actor_id: int = -1) -> int:
-	# look for an available id
-	if actor_id == -1:
-		for i: int in range(Plat.PLAYER_AMOUNT):
-			if gs.players[i] == null:
-				actor_id = i
-				break
+## @returns int. actor_id or -1
+static func spawn_player_server(gs: Plat.GameState, origin: Vector2) -> int:
+	var actor_id = actor_find_available_id(gs)
+	gs.actors_added_or_deleted = true
+	return spawn_player(gs, origin, actor_id)
 
-	# check if provided id is available
-	else:
-		if gs.players[actor_id] != null:
-			return -1
+
+## @returns int. actor_id or -1
+static func spawn_player(gs: Plat.GameState, origin: Vector2, actor_id: int) -> int:
+	var player_id = player_find_available_id(gs)
+	if actor_id == -1 || player_id == -1:
+		return -1
 
 	var player = Plat.Player.new()
+	player.actor_id = actor_id
 	player.position = origin
 	player.size = Vector2(round(Plat.BLOCK_LENGTH_PIXELS * 0.66), Plat.BLOCK_LENGTH_PIXELS * 1.5)
 	player.input = Plat.PlayerInput.new()
-	gs.players[actor_id] = player
-	gs.actors_added_or_deleted = true
-
+	gs.players[player_id] = player
+	spawn_actor(gs, actor_id, Plat.ACTOR_TYPE_PLAYER, player_id)
 	return actor_id
 
 
@@ -187,8 +240,8 @@ static func system_player_movement(gs: Plat.GameState, delta: float, exclude_ids
 		else: # allow it to fall / hit his head slowly
 			player.velocity.y /= 2
 
-		if gs.net.is_client:
-			Log.outc(gs.wctx, "emulated entity %s" % [player_id])
+		#if gs.net.is_client:
+			#Log.outc(gs.wctx, "emulated entity %s" % [player_id])
 
 
 static func player_input_additive(gs: Plat.GameState, player: Plat.Player, node2d: Node2D):

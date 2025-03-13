@@ -14,7 +14,9 @@ func _ready() -> void:
 
 	PlatPrivate.initialize_game_state(gs)
 	PlatPrivate.generate_world(gs)
-	PlatPublic.spawn_ball(gs, PlatUtils.GRID_CORD(5, 10))
+
+	var ball_actor_id = PlatPublic.spawn_ball_server(gs, PlatUtils.GRID_CORD(5, 10))
+	PlatWync.setup_sync_for_ball_actor(gs, ball_actor_id)
 	#PlatPublic.spawn_player(gs, PlatUtils.GRID_CORD(7, 10))
 
 

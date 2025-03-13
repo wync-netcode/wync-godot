@@ -28,32 +28,77 @@ static func setup_connect_client(gs: Plat.GameState):
 		assert(wync_peer_id != -1)
 
 		# spawn some entity
-		var player_actor_id = PlatPublic.spawn_player(gs, PlatUtils.GRID_CORD(5, 10))
+		var actor_id = PlatPublic.spawn_player_server(gs, PlatUtils.GRID_CORD(5, 10))
 
 		# setup actor with wync
-		setup_sync_for_player_actor(gs, player_actor_id)
+		setup_sync_for_player_actor(gs, actor_id)
 
 		# give client authority over prop
 		for prop_name_id: String in ["input"]:
-			var prop_id = WyncUtils.entity_get_prop_id(ctx, player_actor_id, prop_name_id)
+			var prop_id = WyncUtils.entity_get_prop_id(ctx, actor_id, prop_name_id)
 			WyncUtils.prop_set_client_owner(ctx, prop_id, wync_peer_id)
 
 	WyncUtils.clear_peers_pending_to_setup(ctx)
 
 
-static func setup_sync_for_player_actor(gs: Plat.GameState, player_id: int):
+static func setup_sync_for_ball_actor(gs: Plat.GameState, actor_id: int):
 	var wctx = gs.wctx
-	var player_actor := gs.players[player_id]
-	var actor_id := player_id
+	var actor := gs.actors[actor_id]
+	var ball_instance := gs.balls[actor.instance_id]
 
-	WyncUtils.track_entity(wctx, actor_id, GameInfo.ENTITY_TYPE_PLAYER)
+	WyncUtils.track_entity(wctx, actor_id, Plat.ACTOR_TYPE_BALL)
 
 	var pos_prop_id = WyncUtils.prop_register(
 		wctx,
 		actor_id,
 		"position",
 		WyncEntityProp.DATA_TYPE.VECTOR2,
-		player_actor,
+		ball_instance,
+		func(user_ctx: Variant) -> Vector2: return (user_ctx as Plat.Ball).position,
+		func(user_ctx: Variant, pos: Vector2): (user_ctx as Plat.Ball).position = pos,
+	)
+	var vel_prop_id = WyncUtils.prop_register(
+		wctx,
+		actor_id,
+		"velocity",
+		WyncEntityProp.DATA_TYPE.VECTOR2,
+		ball_instance,
+		func(user_ctx: Variant) -> Vector2: return (user_ctx as Plat.Ball).velocity,
+		func(user_ctx: Variant, vel: Vector2): (user_ctx as Plat.Ball).velocity = vel,
+	)
+
+	if WyncUtils.is_client(wctx):
+		# interpolation
+		
+		WyncUtils.prop_set_interpolate(wctx, pos_prop_id)
+		WyncUtils.prop_set_interpolate(wctx, vel_prop_id)
+		#WyncUtils.prop_set_interpolate(wctx, aim_prop_id) # TODO
+		
+		# setup extrapolation
+
+		#if co_actor.id % 2 == 0:
+			#WyncUtils.prop_set_predict(wctx, pos_prop_id)
+			#WyncUtils.prop_set_predict(wctx, vel_prop_id)
+	
+	# it is server
+	else:
+		# time warp
+		WyncUtils.prop_set_timewarpable(wctx, pos_prop_id) 
+
+
+static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
+	var wctx = gs.wctx
+	var actor := gs.actors[actor_id]
+	var player_instance := gs.players[actor.instance_id]
+
+	WyncUtils.track_entity(wctx, actor_id, Plat.ACTOR_TYPE_PLAYER)
+
+	var pos_prop_id = WyncUtils.prop_register(
+		wctx,
+		actor_id,
+		"position",
+		WyncEntityProp.DATA_TYPE.VECTOR2,
+		player_instance,
 		func(user_ctx: Variant) -> Vector2: return (user_ctx as Plat.Player).position,
 		func(user_ctx: Variant, pos: Vector2): (user_ctx as Plat.Player).position = pos,
 	)
@@ -62,7 +107,7 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, player_id: int):
 		actor_id,
 		"velocity",
 		WyncEntityProp.DATA_TYPE.VECTOR2,
-		player_actor,
+		player_instance,
 		func(user_ctx: Variant) -> Vector2: return (user_ctx as Plat.Player).velocity,
 		func(user_ctx: Variant, vel: Vector2): (user_ctx as Plat.Player).velocity = vel,
 	)
@@ -71,7 +116,7 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, player_id: int):
 		actor_id,
 		"input",
 		WyncEntityProp.DATA_TYPE.INPUT,
-		player_actor,
+		player_instance,
 		func(user_ctx: Variant) -> Plat.PlayerInput: return WyncUtils.duplicate_any((user_ctx as Plat.Player).input),
 		func(user_ctx: Variant, input: Plat.PlayerInput): (user_ctx as Plat.Player).input = input,
 	)
@@ -91,7 +136,6 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, player_id: int):
 	
 	# it is server
 	else:
-		
 		# time warp
 		WyncUtils.prop_set_timewarpable(wctx, pos_prop_id) 
 
@@ -116,16 +160,24 @@ static func client_spawn_actors(gs: Plat.GameState, ctx: WyncCtx):
 
 		match entity_to_spawn.entity_type_id:
 
-			GameInfo.ENTITY_TYPE_PLAYER:
+			Plat.ACTOR_TYPE_BALL:
 				#var spawn_data = entity_to_spawn.spawn_data as GameInfo.EntityProjectileSpawnData
 
 				# spawn some entity
-				var player_actor_id = PlatPublic.spawn_player(gs, PlatUtils.GRID_CORD(5, 10), entity_to_spawn.entity_id)
-				assert(player_actor_id != -1)
+				var actor_id = PlatPublic.spawn_ball(gs, PlatUtils.GRID_CORD(5, 10), entity_to_spawn.entity_id)
+				assert(actor_id != -1)
 
 				# setup actor with wync
-				setup_sync_for_player_actor(gs, player_actor_id)
+				setup_sync_for_ball_actor(gs, actor_id)
+				WyncUtils.finish_spawning_entity(ctx, entity_to_spawn.entity_id, i)
 
+			Plat.ACTOR_TYPE_PLAYER:
+				# spawn some entity
+				var actor_id = PlatPublic.spawn_player(gs, PlatUtils.GRID_CORD(5, 10), entity_to_spawn.entity_id)
+				assert(actor_id != -1)
+
+				# setup actor with wync
+				setup_sync_for_player_actor(gs, actor_id)
 				WyncUtils.finish_spawning_entity(ctx, entity_to_spawn.entity_id, i)
 
 	# wync cleanup
@@ -195,9 +247,13 @@ static func find_out_what_player_i_control(gs: Plat.GameState):
 		# that is called "inputs"
 		# that is of type player
 
-		if (prop_name == "input" && entity_type == GameInfo.ENTITY_TYPE_PLAYER):
-			# NOTE: asssuming entity_id directly maps to gs.players[]
-			gs.i_control_player_id = entity_id
+		if (prop_name == "input" && entity_type == Plat.ACTOR_TYPE_PLAYER):
+
+			# Note: asssuming wync's entity_id directly maps to gs.actors[]
+
+			var actor_id = entity_id
+			var actor := gs.actors[actor_id]
+			gs.i_control_player_id = actor.instance_id
 			break
 
 
@@ -241,3 +297,8 @@ static func extrapolate(gs: Plat.GameState, delta: float):
 	Log.outc(ctx, "debugging prediction range (%s : %s) d %s | server_ticks %s" % [ctx.pred_intented_first_tick, target_tick +1, (target_tick+1-ctx.pred_intented_first_tick), ctx.co_ticks.server_ticks])
 	
 	WyncXtrap.wync_xtrap_termination(ctx)
+
+
+static func set_interpolated_state(gs: Plat.GameState):
+
+	pass

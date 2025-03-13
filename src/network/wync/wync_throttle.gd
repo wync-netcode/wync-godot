@@ -441,6 +441,8 @@ static func wync_system_stabilize_latency (ctx: WyncCtx):
 					continue
 				accum += (lat - co_predict_data.latency_mean) ** 2
 			co_predict_data.latency_std_dev = ceil(sqrt(accum / counter)) 
+
+			# use 98th percentile (mean + 2*std_dev)
 			co_predict_data.latency_stable = co_predict_data.latency_mean + co_predict_data.latency_std_dev * 2
 			
 			# NOTE: Allow for choosing a latency stabilization strategy:
