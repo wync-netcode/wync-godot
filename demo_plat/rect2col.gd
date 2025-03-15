@@ -12,8 +12,8 @@ static func rect_collides_with_tile_map(
 	) -> bool:
 			
 	# convert to the tile coordinates system
-	var corner_topleft  = rect.position - chunks_offset
-	var corner_botright = rect.position + Vector2(rect.size.x, -rect.size.y) - chunks_offset
+	var corner_topleft  = rect.position + Vector2(0, rect.size.y)- chunks_offset
+	var corner_botright = rect.position + Vector2(rect.size.x, 0) - chunks_offset
 	
 	var rect_topleft_pos: Vector2i = Vector2i(
 		floor(corner_topleft.x / block_length_pixels),

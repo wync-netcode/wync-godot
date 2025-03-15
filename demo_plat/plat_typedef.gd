@@ -5,6 +5,7 @@ const ACTOR_AMOUNT := 20
 const BALL_AMOUNT := 4
 const PLAYER_AMOUNT := 4
 const CHUNK_AMOUNT := 5
+const ROCKET_AMOUNT := 30
 
 const CHUNK_WIDTH_BLOCKS := 5
 const CHUNK_HEIGHT_BLOCKS := 10
@@ -16,6 +17,7 @@ const PLAYER_FRICTION := 4
 const PLAYER_MAX_SPEED := 3.5
 const PLAYER_GRAVITY := 5
 const PLAYER_JUMP_SPEED := 2.7
+const ROCKET_SPEED := 4.5
 
 
 enum {
@@ -30,6 +32,7 @@ enum {
 	ACTOR_TYPE_BALL,
 	ACTOR_TYPE_PLAYER,
 	ACTOR_TYPE_CHUNK,
+	ACTOR_TYPE_ROCKET,
 	ACTOR_TYPE_AMOUNT,
 }
 
@@ -92,15 +95,24 @@ class Ball:
 	var velocity: Vector2
 
 
+class Rocket:
+	var actor_id: int
+	var size: Vector2
+	var position: Vector2
+	var direction: Vector2
+
+
 class GameState:
 	# game world
 	var actors: Array[Actor]   # Array[Actor*]
 	var chunks: Array[Chunk]   # Array[Chunk*]
 	var balls: Array[Ball]     # Array[Ball*]
 	var players: Array[Player] # Array[Player*]
+	var rockets: Array[Rocket] # Array[Rocket*]
 	var trails: Array[Trail]   # List[Trail]
 	var actors_added_or_deleted: bool
 	var i_control_player_id: int # players actor id
+	var camera_offset: Vector2
 
 	# misc
 	var net: NetState

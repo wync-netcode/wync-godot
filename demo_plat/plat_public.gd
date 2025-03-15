@@ -33,6 +33,16 @@ static func player_find_available_id(gs: Plat.GameState) -> int:
 	return instance_id
 
 
+## @returns int. id or -1 if not found
+static func rocket_find_available_id(gs: Plat.GameState) -> int:
+	var instance_id = -1
+	for i: int in range(Plat.ROCKET_AMOUNT):
+		if gs.rockets[i] == null:
+			instance_id = i
+			break
+	return instance_id
+
+
 static func spawn_actor(gs: Plat.GameState, actor_id: int, actor_type: int, instance_id: int):
 	var actor = Plat.Actor.new()
 	actor.actor_type = Plat.ACTOR_TYPE_BALL
@@ -86,6 +96,29 @@ static func spawn_player(gs: Plat.GameState, origin: Vector2, actor_id: int) -> 
 	return actor_id
 
 
+## @returns int. actor_id or -1
+static func spawn_rocket_server(gs: Plat.GameState, origin: Vector2, direction: Vector2) -> int:
+	var actor_id = actor_find_available_id(gs)
+	gs.actors_added_or_deleted = true
+	return spawn_rocket(gs, origin, direction, actor_id)
+
+
+## @returns int. actor_id or -1
+static func spawn_rocket(gs: Plat.GameState, origin: Vector2, direction: Vector2, actor_id: int) -> int:
+	var rocket_id = rocket_find_available_id(gs)
+	if actor_id == -1 || rocket_id == -1:
+		return -1
+
+	var rocket = Plat.Rocket.new()
+	rocket.actor_id = actor_id
+	rocket.position = origin
+	rocket.direction = direction
+	rocket.size = Vector2(round(Plat.BLOCK_LENGTH_PIXELS * 0.5), round(Plat.BLOCK_LENGTH_PIXELS * 0.5))
+	gs.rockets[rocket_id] = rocket
+	spawn_actor(gs, actor_id, Plat.ACTOR_TYPE_ROCKET, rocket_id)
+	return actor_id
+
+
 static func spawn_trail(gs: Plat.GameState, origin: Vector2, hue: float, tick_duration: int):
 	var trail = Plat.Trail.new()
 	trail.position = origin
@@ -108,7 +141,7 @@ static func block_is_solid(block: Plat.Block) -> bool:
 	return block.type != Plat.BLOCK_TYPE_AIR
 
 
-static func system_ball_movement(gs: Plat.GameState, node2d: Node2D):
+static func system_ball_movement(gs: Plat.GameState):
 	for ball: Plat.Ball in gs.balls:
 		if ball == null:
 			continue
@@ -244,14 +277,44 @@ static func system_player_movement(gs: Plat.GameState, delta: float, exclude_ids
 			#Log.outc(gs.wctx, "emulated entity %s" % [player_id])
 
 
+static func system_rocket_movement(gs: Plat.GameState):
+	for rocket: Plat.Rocket in gs.rockets:
+		if rocket == null:
+			continue
+		var new_pos = rocket.position + rocket.direction * Plat.ROCKET_SPEED
+		if Rect2Col.rect_collides_with_tile_map(
+			Rect2(new_pos, rocket.size),
+			gs.chunks,
+			Plat.CHUNK_WIDTH_BLOCKS,
+			Plat.CHUNK_HEIGHT_BLOCKS,
+			Plat.BLOCK_LENGTH_PIXELS,
+			Vector2.ZERO
+		):
+			#assert(false)
+			pass
+		else:
+			rocket.position = new_pos
+
+
+static func system_player_shoot_rocket(gs: Plat.GameState):
+	for player: Plat.Player in gs.players:
+		if player == null:
+			continue
+		if player.input.shoot == false:
+			continue
+		var player_center = player.position + Vector2(player.size.x, player.size.y) / 2
+		var direction = player_center.direction_to(player.input.aim)
+		spawn_rocket_server(gs, player_center, direction)
+
+
 static func player_input_additive(gs: Plat.GameState, player: Plat.Player, node2d: Node2D):
 	player.input.movement_dir = Vector2(
 		int(Input.is_action_pressed("p1_right")) - int(Input.is_action_pressed("p1_left")),
 		int(Input.is_action_pressed("p1_down")) - int(Input.is_action_pressed("p1_up")),
 	)
 	player.input.shoot = player.input.shoot || Input.is_action_pressed("p1_mouse1")
-	player.input.aim = node2d.get_global_mouse_position()
+	player.input.aim = PlatUtils.SCREEN_CORD_TO_GRID_CORD(gs, node2d.get_global_mouse_position())
 
 
-static func player_input_reset(gs: Plat.GameState, player: Plat.Player, node2d: Node2D):
+static func player_input_reset(gs: Plat.GameState, player: Plat.Player):
 	player.input.shoot = false

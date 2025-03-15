@@ -9,6 +9,11 @@ static func initialize_game_state(gs: Plat.GameState):
 	gs.balls.resize(Plat.BALL_AMOUNT)
 	gs.players.resize(Plat.PLAYER_AMOUNT)
 	gs.chunks.resize(Plat.CHUNK_AMOUNT)
+	gs.rockets.resize(Plat.ROCKET_AMOUNT)
+	gs.camera_offset = Vector2i(
+		10,
+		Plat.CHUNK_HEIGHT_BLOCKS * 1.2 * Plat.BLOCK_LENGTH_PIXELS,
+	)
 
 	# chunks
 

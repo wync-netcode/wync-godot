@@ -37,7 +37,7 @@ func _physics_process(delta: float) -> void:
 	PlatPublic.system_trail_lives(gs)
 
 	if gs.i_control_player_id != -1:
-		PlatPublic.player_input_reset(gs, gs.players[gs.i_control_player_id], self)
+		PlatPublic.player_input_reset(gs, gs.players[gs.i_control_player_id])
 
 
 func _process(delta: float) -> void:

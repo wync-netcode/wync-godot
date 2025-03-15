@@ -27,8 +27,10 @@ func _physics_process(delta: float) -> void:
 	PlatWync.setup_connect_client(gs)
 
 	#PlatPublic.player_input_additive(gs, gs.players[0], self)
-	PlatPublic.system_ball_movement(gs, self)
+	PlatPublic.system_ball_movement(gs)
 	PlatPublic.system_player_movement(gs, delta, [])
+	PlatPublic.system_rocket_movement(gs)
+	PlatPublic.system_player_shoot_rocket(gs)
 	#PlatPublic.player_input_reset(gs, gs.players[0], self)
 
 	PlatWync.update_what_the_clients_can_see(gs)

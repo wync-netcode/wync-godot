@@ -2,14 +2,11 @@ class_name PlatDraw
 
 
 static func draw_game(canvas: Node2D, gs: Plat.GameState):
-	var draw_offset = Vector2i(
-		10,
-		Plat.CHUNK_HEIGHT_BLOCKS * 1.2 * Plat.BLOCK_LENGTH_PIXELS,
-	)
-	draw_block_grid(canvas, gs, draw_offset)
-	draw_balls(canvas, gs, draw_offset)
-	draw_trails(canvas, gs, draw_offset)
-	draw_players(canvas, gs, draw_offset)
+	draw_block_grid(canvas, gs, gs.camera_offset)
+	draw_balls(canvas, gs, gs.camera_offset)
+	draw_trails(canvas, gs, gs.camera_offset)
+	draw_players(canvas, gs, gs.camera_offset)
+	draw_rockets(canvas, gs, gs.camera_offset)
 
 
 static func draw_block_grid(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
@@ -65,7 +62,7 @@ static func draw_balls(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
 	for ball: Plat.Ball in gs.balls:
 		if ball == null:
 			continue
-		ball_rect = Rect2(Vector2(ball.position.x, -ball.position.y) + Vector2(offset), ball.size)
+		ball_rect = Rect2(Vector2(ball.position.x, -ball.position.y -ball.size.y) + Vector2(offset), ball.size)
 		canvas.draw_rect(ball_rect, color, true)
 		canvas.draw_rect(ball_rect, Color.BLACK, false)
 
@@ -76,15 +73,25 @@ static func draw_players(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
 	for player: Plat.Player in gs.players:
 		if player == null:
 			continue
-		player_rect = Rect2(Vector2(player.position.x, -player.position.y) + Vector2(offset), player.size)
+		player_rect = Rect2(Vector2(player.position.x, -player.position.y -player.size.y) + Vector2(offset), player.size)
 		canvas.draw_rect(player_rect, color, true)
 		canvas.draw_rect(player_rect, Color.BLACK, false)
+
+
+static func draw_rockets(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
+	var rect: Rect2
+	for rocket: Plat.Rocket in gs.rockets:
+		if rocket == null:
+			continue
+		rect = Rect2(Vector2(rocket.position.x, -rocket.position.y -rocket.size.y) + Vector2(offset), rocket.size)
+		canvas.draw_rect(rect, Color.GOLD, true)
+		canvas.draw_rect(rect, Color.BLACK, false)
 
 
 static func draw_trails(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
 	var trail_rect = Rect2(Vector2.ZERO, Vector2(round(Plat.BLOCK_LENGTH_PIXELS * 0.66), Plat.BLOCK_LENGTH_PIXELS * 1.5))
 	var color = Color.RED
 	for trail: Plat.Trail in gs.trails:
-		trail_rect.position = Vector2(trail.position.x, -trail.position.y) + Vector2(offset)
+		trail_rect.position = Vector2(trail.position.x, -trail.position.y -trail_rect.size.y) + Vector2(offset)
 		color.h = trail.hue
 		canvas.draw_rect(trail_rect, color, false)
