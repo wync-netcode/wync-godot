@@ -18,82 +18,10 @@ func _ready():
 func on_process(_entities, _data, delta: float):
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
-	var co_predict_data = wync_ctx.co_predict_data
-	var co_ticks = wync_ctx.co_ticks
 
 	# TODO: Move this elsewhere
 
-	interpolate_all(wync_ctx, co_ticks, co_predict_data, delta)
-
-
-## interpolates confirmed states and predicted states
-static func interpolate_all(wync_ctx: WyncCtx, co_ticks: CoTicks, co_predict_data: CoPredictionData, delta: float):
-
-	co_ticks.lerp_delta_accumulator_ms += int(delta * 1000)
-	var curr_tick_time = WyncUtils.clock_get_tick_timestamp_ms(wync_ctx, co_ticks.ticks)
-	var curr_time = curr_tick_time + co_ticks.lerp_delta_accumulator_ms
-	var target_time_conf = curr_time - co_predict_data.lerp_ms
-	var target_time_pred = curr_time
-
-	# then interpolate them 
-
-	var left_timestamp_ms: int
-	var right_timestamp_ms: int
-	var left_value: Variant
-	var right_value: Variant
-	var factor: float
-
-	for prop_id: int in wync_ctx.active_prop_ids:
-		var prop = WyncUtils.get_prop(wync_ctx, prop_id)
-		if prop == null:
-			continue
-		prop = prop as WyncEntityProp
-		if not prop.interpolated:
-			continue
-
-		# NOTE: opportunity to optimize this by not recalculating this each loop
-
-		left_timestamp_ms = WyncUtils.clock_get_tick_timestamp_ms(wync_ctx, prop.lerp_left_local_tick)
-		right_timestamp_ms = WyncUtils.clock_get_tick_timestamp_ms(wync_ctx, prop.lerp_right_local_tick)
-
-		if prop.lerp_use_confirmed_state:
-			left_value = prop.confirmed_states.get_at(prop.lerp_left_confirmed_state_tick)
-			right_value = prop.confirmed_states.get_at(prop.lerp_right_confirmed_state_tick)
-		else:
-			if prop.pred_prev == null:
-				continue
-			left_value = prop.pred_prev.data
-			right_value = prop.pred_curr.data
-		if left_value == null:
-			continue
-
-		# NOTE: Maybe check for value integrity
-
-		if abs(left_timestamp_ms - right_timestamp_ms) < 0.000001:
-			prop.interpolated_state = right_value
-		else:
-			if prop.lerp_use_confirmed_state:
-				factor = clampf(
-				(float(target_time_conf) - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms),
-				0, 1)
-			else:
-				factor = clampf(
-				(float(target_time_pred) - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms),
-				0, 1)
-				#Log.out(self, "left %s target %s right %s" % [left_timestamp_ms, target_time_pred, right_timestamp_ms])
-
-			match prop.prop_type:
-				WyncEntityProp.PROP_TYPE.FLOAT:
-					var left = left_value as float
-					var right = right_value as float
-					prop.interpolated_state = lerp(left, right, factor)
-				WyncEntityProp.PROP_TYPE.VECTOR2:
-					var left = left_value as Vector2
-					var right = right_value as Vector2
-					prop.interpolated_state = lerp(left, right, factor)
-				_:
-					Log.out("Lerp | W: data type not interpolable", Log.TAG_LERP)
-					pass
+	WyncWrapper.wync_interpolate_all(wync_ctx, delta)
 
 
 ## timewarp, server only

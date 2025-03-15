@@ -47,7 +47,7 @@ static func wync_client_tick_end(ctx: WyncCtx):
 
 	WyncFlow.wync_dummy_props_cleanup(ctx)
 
-	#SyWyncLerpPrecompute.wync_lerp_precompute(ctx)
+	SyWyncLerpPrecompute.wync_lerp_precompute(ctx)
 
 
 static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_id: int) -> int:

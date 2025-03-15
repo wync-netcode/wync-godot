@@ -25,7 +25,7 @@ static func wync_server_sync_clock(ctx: WyncCtx):
 
 	#var physics_fps = Engine.physics_ticks_per_second
 	#if ctx.co_ticks.ticks % int(physics_fps * 0.5) != 0:
-	if WyncUtils.fast_modulus(ctx.co_ticks.ticks, 16):
+	if WyncUtils.fast_modulus(ctx.co_ticks.ticks, 16) != 0:
 		return
 	
 	# prepare packet

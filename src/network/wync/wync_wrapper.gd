@@ -192,3 +192,62 @@ static func xtrap_props_update_predicted_states_data(ctx: WyncCtx, props_ids: Ar
 		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
 		pred_prev.data = pred_curr.data
 		pred_curr.data = getter.call(user_ctx)
+
+
+## interpolates confirmed states and predicted states
+static func wync_interpolate_all(ctx: WyncCtx, delta: float):
+
+	var co_predict_data = ctx.co_predict_data
+	var co_ticks = ctx.co_ticks
+	co_ticks.lerp_delta_accumulator_ms += int(delta * 1000)
+	var curr_tick_time = WyncUtils.clock_get_tick_timestamp_ms(ctx, co_ticks.ticks)
+	var curr_time = curr_tick_time + co_ticks.lerp_delta_accumulator_ms
+	var target_time_conf = curr_time - co_predict_data.lerp_ms
+	var target_time_pred = curr_time
+
+	# then interpolate them 
+
+	var left_timestamp_ms: int
+	var right_timestamp_ms: int
+	var left_value: Variant
+	var right_value: Variant
+	var factor: float
+
+	for prop_id: int in ctx.active_prop_ids:
+		var prop = WyncUtils.get_prop(ctx, prop_id)
+		if prop == null:
+			continue
+		prop = prop as WyncEntityProp
+		if not prop.interpolated:
+			continue
+
+		# NOTE: opportunity to optimize this by not recalculating this each loop
+
+		left_timestamp_ms = WyncUtils.clock_get_tick_timestamp_ms(ctx, prop.lerp_left_local_tick)
+		right_timestamp_ms = WyncUtils.clock_get_tick_timestamp_ms(ctx, prop.lerp_right_local_tick)
+
+		if prop.lerp_use_confirmed_state:
+			left_value = prop.confirmed_states.get_at(prop.lerp_left_confirmed_state_tick)
+			right_value = prop.confirmed_states.get_at(prop.lerp_right_confirmed_state_tick)
+		else:
+			if prop.pred_prev == null:
+				continue
+			left_value = prop.pred_prev.data
+			right_value = prop.pred_curr.data
+		if left_value == null:
+			continue
+
+		# NOTE: Maybe check for value integrity
+
+		if abs(left_timestamp_ms - right_timestamp_ms) < 0.000001:
+			prop.interpolated_state = right_value
+		else:
+			if prop.lerp_use_confirmed_state:
+				factor = (float(target_time_conf) - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms)
+			else:
+				factor = (float(target_time_pred) - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms)
+
+			var lerp_func_id = ctx.wrapper.lerp_type_to_lerp_function[prop.user_data_type]
+			var lerp_func = ctx.wrapper.lerp_function[lerp_func_id]
+			prop.interpolated_state = lerp_func.call(left_value, right_value, clampf(factor, 0, 1))
+			#Log.outc(ctx, "deblerp | factor %.3f left %s target %s right %s" % [factor, left_timestamp_ms, target_time_conf, right_timestamp_ms])

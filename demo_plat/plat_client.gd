@@ -39,6 +39,10 @@ func _physics_process(delta: float) -> void:
 	if gs.i_control_player_id != -1:
 		PlatPublic.player_input_reset(gs, gs.players[gs.i_control_player_id], self)
 
+
+func _process(delta: float) -> void:
+	WyncWrapper.wync_interpolate_all(gs.wctx, delta)
+	PlatWync.set_interpolated_state(gs)
 	queue_redraw()
 
 

@@ -15,8 +15,8 @@ static func setup_client(ctx: WyncCtx):
 
 	# set server tick rate and lerp_ms
 	var server_tick_rate: int = ctx.physic_ticks_per_second
-	#var desired_lerp: int = ceil((1000.0 / server_tick_rate) * 6) # 6 ticks in the past
-	WyncFlow.wync_client_set_lerp_ms(ctx, server_tick_rate, 200)
+	var desired_lerp: int = ceil((1000.0 / server_tick_rate) * 5) # 6 ticks in the past
+	WyncFlow.wync_client_set_lerp_ms(ctx, server_tick_rate, desired_lerp)
 
 	WyncWrapper.wync_register_lerp_type(
 		ctx, Plat.LERP_TYPE_FLOAT,
@@ -364,6 +364,7 @@ static func set_interpolated_state(gs: Plat.GameState):
 		var prop = WyncUtils.entity_get_prop(ctx, actor_id, "position")
 		if prop == null || prop.interpolated_state == null:
 			continue
+		#Log.outc(gs.wctx, "deblerp | prop.interpolated_state %s" % [prop.interpolated_state])
 
 		match actor.actor_type:
 			Plat.ACTOR_TYPE_BALL:
@@ -372,6 +373,8 @@ static func set_interpolated_state(gs: Plat.GameState):
 			Plat.ACTOR_TYPE_PLAYER:
 				var ball := gs.balls[actor.instance_id]
 				ball.position = prop.interpolated_state
+			_:
+				assert(false)
 
 
 	#for entity: Entity in entities:
