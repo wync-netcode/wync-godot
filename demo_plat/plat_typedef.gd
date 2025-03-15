@@ -1,7 +1,7 @@
 class_name Plat
 
 
-const ACTOR_AMOUNT := 100
+const ACTOR_AMOUNT := 20
 const BALL_AMOUNT := 4
 const PLAYER_AMOUNT := 4
 const CHUNK_AMOUNT := 5

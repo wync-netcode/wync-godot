@@ -5,6 +5,7 @@ const label: StringName = StringName("SyWyncStateExtractor")
 ## Extracts state from actors
 
 
+"""
 func on_process(_entities, _data, _delta: float):
 
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
@@ -27,6 +28,7 @@ func on_process(_entities, _data, _delta: float):
 	# send data
 	
 	wync_send_extracted_data(ctx)
+"""
 	
 	
 ## Ideal loop
@@ -258,6 +260,7 @@ static func _wync_sync_relative_prop_base_only(
 	return prop_snap
 
 
+"""
 static func extract_data_to_tick(ctx: WyncCtx, co_ticks: CoTicks, save_on_tick: int = -1):
 	
 	for entity_id_key in ctx.entity_has_props.keys():
@@ -284,6 +287,7 @@ static func extract_data_to_tick(ctx: WyncCtx, co_ticks: CoTicks, save_on_tick: 
 			if prop.relative_syncable:
 				
 				# Allow auxiliar props
+				#prop_id = prop.auxiliar_delta_events_prop_id
 				var prop_aux = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
 				if prop_aux == null:
 					continue
@@ -292,8 +296,11 @@ static func extract_data_to_tick(ctx: WyncCtx, co_ticks: CoTicks, save_on_tick: 
 			# ===========================================================
 			# Save state history per tick
 			
+			#if prop_id != 14:
+				#continue
 			prop.confirmed_states.insert_at(save_on_tick, prop.getter.call(prop.user_ctx_pointer))
 			prop.confirmed_states_tick.insert_at(save_on_tick, save_on_tick)
+"""
 
 
 ## This function must be ran each frame

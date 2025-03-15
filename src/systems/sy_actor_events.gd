@@ -382,6 +382,9 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 # server only function
 static func handle_event_player_shoot(node_ctx: Node, event: WyncEvent.EventData, peer_id: int):
 	
+	pass
+
+	"""
 	var single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
 	var ctx = single_wync.ctx as WyncCtx
 	var co_ticks = ctx.co_ticks
@@ -471,6 +474,7 @@ static func handle_event_player_shoot(node_ctx: Node, event: WyncEvent.EventData
 	SyWyncLatestValue.integrate_state(ctx, ctx.tracked_entities.keys())
 	RapierPhysicsServer2D.space_step(space, 0)
 	RapierPhysicsServer2D.space_flush_queries(space)
+	"""
 
 
 

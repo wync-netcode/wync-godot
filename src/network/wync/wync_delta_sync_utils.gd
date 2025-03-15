@@ -352,4 +352,6 @@ static func predicted_props_clear_events(ctx: WyncCtx):
 			continue
 		if not WyncUtils.prop_is_predicted(ctx, prop_id):
 			continue
-		prop.setter.call(prop.user_ctx_pointer, [] as Array[int])
+		var setter = ctx.wrapper.prop_setter[prop_id]
+		var user_cxt = ctx.wrapper.prop_user_ctx[prop_id]
+		setter.call(user_cxt, [] as Array[int])

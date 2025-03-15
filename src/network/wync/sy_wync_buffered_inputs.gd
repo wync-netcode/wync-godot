@@ -17,6 +17,7 @@ const label: StringName = StringName("SyWyncBufferedInputs")
 
 	
 	
+"""
 static func wync_buffer_inputs(ctx: WyncCtx):
 	
 	if not ctx.connected:
@@ -44,7 +45,9 @@ static func wync_buffer_inputs(ctx: WyncCtx):
 		var new_state = input_prop.getter.call(input_prop.user_ctx_pointer)
 		if new_state == null:
 			Log.out("new_state == null :%s" % [new_state], Log.TAG_INPUT_BUFFER)
+			assert(false)
 			continue
 
 		input_prop.confirmed_states.insert_at(ctx.co_predict_data.target_tick, new_state)
 		input_prop.confirmed_states_tick.insert_at(ctx.co_predict_data.target_tick, ctx.co_predict_data.target_tick)
+"""

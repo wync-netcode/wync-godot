@@ -55,7 +55,7 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 
 	#Log.outc(ctx, "debug_pred_delta_event LATEST START")
 
-	reset_all_state_to_confirmed_tick_relative(ctx, prop_id_list, 0)
+	WyncWrapper.reset_all_state_to_confirmed_tick_relative(ctx, prop_id_list, 0)
 	predicted_delta_props_rollback_to_canonic_state(ctx, prop_id_list_delta_sync_predicted, co_ticks, co_predict_data)
 
 	#Log.outc(ctx, "debug_pred_delta_event LATEST END")
@@ -132,6 +132,7 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 		#prop.setter.call(last_confirmed.data)
 
 
+"""
 static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: Array[int], tick: int):
 	
 	for prop_id: int in prop_ids:
@@ -153,6 +154,9 @@ static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: A
 		# TODO: check type before applying (shouldn't be necessary if we ensure we're filling the correct data)
 		# Log.out(ctx, "LatestValue | setted prop_name_id %s" % [prop.name_id])
 		prop.setter.call(prop.user_ctx_pointer, last_confirmed)
+		if prop_id == 6:
+			Log.outc(ctx, "debugging set latest state prop_id %s to tick %s" % [prop_id, last_confirmed_tick])
+"""
 
 
 # should be run on client each logic frame

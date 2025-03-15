@@ -93,12 +93,7 @@ static func wync_xtrap_tick_end_cache(ctx: WyncCtx):
 
 static func wync_xtrap_tick_init(ctx: WyncCtx, tick: int):
 	# FIXME: shouldn't this be only events/inputs?
-	for prop_id: int in ctx.active_prop_ids:
-		var prop := ctx.props[prop_id]
-		if prop.confirmed_states_tick.get_at(tick) != tick:
-			continue
-		prop.setter.call(prop.user_ctx_pointer, prop.confirmed_states.get_at(tick))
-		#Log.outc(ctx, "tick init setted state for prop %s tick %s" % [prop.name_id, tick])
+	WyncWrapper.xtrap_reset_all_state_to_confirmed_tick_absolute(ctx, ctx.active_prop_ids, tick)
 
 	ctx.current_predicted_tick = tick
 
@@ -158,13 +153,15 @@ static func wync_xtrap_tick_end(ctx: WyncCtx, tick: int):
 	for wync_entity_id: int in ctx.present_to_integrate_pred_entity_ids:
 		# (run on last two iterations)
 		if store_predicted_states:
+			# TODO: Make this call user-level
 			# store predicted states
-			WyncXtrap.props_update_predicted_states_data(ctx, ctx.entity_has_props[wync_entity_id])
+			WyncWrapper.xtrap_props_update_predicted_states_data(ctx, ctx.entity_has_props[wync_entity_id])
 
 			# update/store predicted state metadata
 			WyncXtrap.props_update_predicted_states_ticks(ctx, ctx.entity_has_props[wync_entity_id], ctx.co_predict_data.target_tick)
 
 		# integration functions
+		# TODO: Move this to user level wrapper
 		var int_fun = WyncUtils.entity_get_integrate_fun(ctx, wync_entity_id)
 		int_fun.call()
 
@@ -186,31 +183,6 @@ static func wync_xtrap_tick_end(ctx: WyncCtx, tick: int):
 static func wync_xtrap_termination(ctx: WyncCtx):
 	WyncDeltaSyncUtils.auxiliar_props_clear_current_delta_events(ctx)
 	ctx.currently_on_predicted_tick = false
-
-
-static func props_update_predicted_states_data(ctx: WyncCtx, props_ids: Array) -> void:
-	
-	for prop_id: int in props_ids:
-		
-		var prop = ctx.props[prop_id] as WyncEntityProp
-		if prop == null:
-			continue
-
-		var pred_curr = prop.pred_curr
-		var pred_prev = prop.pred_prev
-		
-		# Initialize stored predicted states. TODO: Move elsewhere
-		
-		if pred_curr.data == null:
-			pred_curr.data = Vector2.ZERO
-			pred_prev = pred_curr.copy()
-			continue
-			
-		# store predicted states
-		# (run on last two iterations)
-		
-		pred_prev.data = pred_curr.data
-		pred_curr.data = prop.getter.call(prop.user_ctx_pointer)
 
 
 static func props_update_predicted_states_ticks(ctx: WyncCtx, props_ids: Array, target_tick: int) -> void:

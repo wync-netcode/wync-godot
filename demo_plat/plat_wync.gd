@@ -23,6 +23,7 @@ static func setup_connect_client(gs: Plat.GameState):
 	var ctx := gs.wctx
 	for nete_peer_id: int in ctx.out_peer_pending_to_setup:
 
+		#pass
 		# get wync_peer_id
 		var wync_peer_id = WyncUtils.is_peer_registered(ctx, nete_peer_id)
 		assert(wync_peer_id != -1)
@@ -48,42 +49,56 @@ static func setup_sync_for_ball_actor(gs: Plat.GameState, actor_id: int):
 
 	WyncUtils.track_entity(wctx, actor_id, Plat.ACTOR_TYPE_BALL)
 
-	var pos_prop_id = WyncUtils.prop_register(
+	var pos_prop_id = WyncUtils.prop_register_minimal(
 		wctx,
 		actor_id,
 		"position",
-		WyncEntityProp.DATA_TYPE.VECTOR2,
+		WyncEntityProp.DATA_TYPE.VECTOR2
+	)
+	WyncWrapper.wync_set_prop_callbacks(
+		wctx,
+		pos_prop_id,
 		ball_instance,
 		func(user_ctx: Variant) -> Vector2: return (user_ctx as Plat.Ball).position,
 		func(user_ctx: Variant, pos: Vector2): (user_ctx as Plat.Ball).position = pos,
 	)
-	var vel_prop_id = WyncUtils.prop_register(
-		wctx,
-		actor_id,
-		"velocity",
-		WyncEntityProp.DATA_TYPE.VECTOR2,
-		ball_instance,
-		func(user_ctx: Variant) -> Vector2: return (user_ctx as Plat.Ball).velocity,
-		func(user_ctx: Variant, vel: Vector2): (user_ctx as Plat.Ball).velocity = vel,
-	)
 
-	if WyncUtils.is_client(wctx):
-		# interpolation
-		
-		WyncUtils.prop_set_interpolate(wctx, pos_prop_id)
-		WyncUtils.prop_set_interpolate(wctx, vel_prop_id)
-		#WyncUtils.prop_set_interpolate(wctx, aim_prop_id) # TODO
-		
-		# setup extrapolation
+	#var pos_prop_id = WyncUtils.prop_register(
+		#wctx,
+		#actor_id,
+		#"position",
+		#WyncEntityProp.DATA_TYPE.VECTOR2,
+		#ball_instance,
+		#func(user_ctx: Variant) -> Vector2: return (user_ctx as Plat.Ball).position,
+		#func(user_ctx: Variant, pos: Vector2): (user_ctx as Plat.Ball).position = pos,
+	#)
+	#var vel_prop_id = WyncUtils.prop_register(
+		#wctx,
+		#actor_id,
+		#"velocity",
+		#WyncEntityProp.DATA_TYPE.VECTOR2,
+		#ball_instance,
+		#func(user_ctx: Variant) -> Vector2: return (user_ctx as Plat.Ball).velocity,
+		#func(user_ctx: Variant, vel: Vector2): (user_ctx as Plat.Ball).velocity = vel,
+	#)
 
-		#if co_actor.id % 2 == 0:
-			#WyncUtils.prop_set_predict(wctx, pos_prop_id)
-			#WyncUtils.prop_set_predict(wctx, vel_prop_id)
+	#if WyncUtils.is_client(wctx):
+		## interpolation
+		
+		#WyncUtils.prop_set_interpolate(wctx, pos_prop_id)
+		#WyncUtils.prop_set_interpolate(wctx, vel_prop_id)
+		##WyncUtils.prop_set_interpolate(wctx, aim_prop_id) # TODO
+		
+		## setup extrapolation
+
+		##if co_actor.id % 2 == 0:
+			##WyncUtils.prop_set_predict(wctx, pos_prop_id)
+			##WyncUtils.prop_set_predict(wctx, vel_prop_id)
 	
-	# it is server
-	else:
-		# time warp
-		WyncUtils.prop_set_timewarpable(wctx, pos_prop_id) 
+	## it is server
+	#else:
+		## time warp
+		#WyncUtils.prop_set_timewarpable(wctx, pos_prop_id) 
 
 
 static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
@@ -93,29 +108,43 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 
 	WyncUtils.track_entity(wctx, actor_id, Plat.ACTOR_TYPE_PLAYER)
 
-	var pos_prop_id = WyncUtils.prop_register(
+	var pos_prop_id = WyncUtils.prop_register_minimal(
 		wctx,
 		actor_id,
 		"position",
-		WyncEntityProp.DATA_TYPE.VECTOR2,
+		WyncEntityProp.DATA_TYPE.VECTOR2
+	)
+	WyncWrapper.wync_set_prop_callbacks(
+		wctx,
+		pos_prop_id,
 		player_instance,
 		func(user_ctx: Variant) -> Vector2: return (user_ctx as Plat.Player).position,
 		func(user_ctx: Variant, pos: Vector2): (user_ctx as Plat.Player).position = pos,
 	)
-	var vel_prop_id = WyncUtils.prop_register(
+
+	var vel_prop_id = WyncUtils.prop_register_minimal(
 		wctx,
 		actor_id,
 		"velocity",
-		WyncEntityProp.DATA_TYPE.VECTOR2,
+		WyncEntityProp.DATA_TYPE.VECTOR2
+	)
+	WyncWrapper.wync_set_prop_callbacks(
+		wctx,
+		vel_prop_id,
 		player_instance,
 		func(user_ctx: Variant) -> Vector2: return (user_ctx as Plat.Player).velocity,
 		func(user_ctx: Variant, vel: Vector2): (user_ctx as Plat.Player).velocity = vel,
 	)
-	var input_prop_id = WyncUtils.prop_register(
+
+	var input_prop_id = WyncUtils.prop_register_minimal(
 		wctx,
 		actor_id,
 		"input",
-		WyncEntityProp.DATA_TYPE.INPUT,
+		WyncEntityProp.DATA_TYPE.INPUT
+	)
+	WyncWrapper.wync_set_prop_callbacks(
+		wctx,
+		input_prop_id,
 		player_instance,
 		func(user_ctx: Variant) -> Plat.PlayerInput: return WyncUtils.duplicate_any((user_ctx as Plat.Player).input),
 		func(user_ctx: Variant, input: Plat.PlayerInput): (user_ctx as Plat.Player).input = input,
@@ -288,9 +317,11 @@ static func extrapolate(gs: Plat.GameState, delta: float):
 			#var progress = (float(tick) - ctx.last_tick_received) / (target_tick - ctx.last_tick_received)
 			#var progress = float(tick - (target_tick - 28)) / 10
 			var progress = float(tick - base_tick) / 10
-			var prop_position = WyncUtils.entity_get_prop(ctx, player_id, "position")
+			var prop_position = WyncUtils.entity_get_prop_id(ctx, player_id, "position")
 			if prop_position:
-				PlatPublic.spawn_trail(gs, prop_position.getter.call(prop_position.user_ctx_pointer), progress, 1)
+				var getter = ctx.wrapper.prop_getter[prop_position]
+				var user_ctx = ctx.wrapper.prop_user_ctx[prop_position]
+				PlatPublic.spawn_trail(gs, getter.call(user_ctx), progress, 1)
 
 
 		WyncXtrap.wync_xtrap_tick_end(ctx, tick)
@@ -301,4 +332,67 @@ static func extrapolate(gs: Plat.GameState, delta: float):
 
 static func set_interpolated_state(gs: Plat.GameState):
 
-	pass
+	#for actor_id: int in 
+	#for ball_id: int in gs.balls:
+		#var ball := gs.balls[ball_id]
+		#if ball = null:
+			#break
+	var ctx := gs.wctx
+	
+	for actor_id: int in range(gs.actors.size()):
+		var actor := gs.actors[actor_id]
+
+		# TODO: keep a list of active actors
+		# for now just break
+		if actor == null:
+			break
+
+		if not WyncUtils.is_entity_tracked(ctx, actor_id):
+			continue
+		var prop = WyncUtils.entity_get_prop(ctx, actor_id, "position")
+		if prop == null || prop.interpolated_state == null:
+			continue
+
+		match actor.actor_type:
+			Plat.ACTOR_TYPE_BALL:
+				var ball := gs.balls[actor.instance_id]
+				ball.position = prop.interpolated_state
+			Plat.ACTOR_TYPE_PLAYER:
+				var ball := gs.balls[actor.instance_id]
+				ball.position = prop.interpolated_state
+
+
+	#for entity: Entity in entities:
+
+		#var co_actor = entity.get_component(CoActor.label) as CoActor
+		#var co_renderer = entity.get_component(CoActorRenderer.label) as CoActorRenderer
+
+		## is prop interpolable (aka numeric, Vector2)
+
+		#if not WyncUtils.is_entity_tracked(wync_ctx, co_actor.id):
+			#continue
+			
+		#var prop = WyncUtils.entity_get_prop(wync_ctx, co_actor.id, "position")
+		#if (prop != null
+			#&& prop.interpolated_state != null
+			#&& co_renderer is Node2D):
+			#co_renderer.global_position = prop.interpolated_state
+			
+			## it's up to the user to do extra interpolation if they want
+			##wco_renderer.global_position = co_renderer.global_position.lerp(prop.interpolated_state, 0.9)
+			
+			## simple
+			#DebugPlayerTrail.spawn(self, co_renderer.global_position, 0.5, 0, true)
+
+			## long trail
+			##DebugPlayerTrail.spawn(self, co_renderer.global_position, wync_ctx.co_ticks.lerp_delta_accumulator_ms / 1000.0, 1, false, -10)
+				
+		
+		## 1. aim is currently interpolated by Wync
+		## 2. apply this value to the visual Ball
+		#prop = WyncUtils.entity_get_prop(wync_ctx, co_actor.id, "aim")
+		#if (prop != null
+			#&& prop.interpolated_state != null
+			#&& co_renderer is Node2D):
+			#co_renderer.rotation = prop.interpolated_state
+		

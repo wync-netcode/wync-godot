@@ -60,6 +60,64 @@ static func delete_prop(ctx: WyncCtx, prop_id: int):
 	# prop.free()
 
 
+static func prop_register_minimal(
+	ctx: WyncCtx, 
+	entity_id: int,
+	name_id: String,
+	data_type: WyncEntityProp.DATA_TYPE,
+	) -> int:
+	
+	if not is_entity_tracked(ctx, entity_id):
+		return -1
+
+	var prop_id = -1
+
+	# if it's pending to spawn then extract the prop_id
+	var entity_pending_to_spawn = false
+
+	if WyncUtils.is_client(ctx):
+		entity_pending_to_spawn = ctx.pending_entity_to_spawn_props.has(entity_id)
+		if entity_pending_to_spawn:
+			var entity_auth_props: Array[int] = ctx.pending_entity_to_spawn_props[entity_id]
+			prop_id = entity_auth_props[0] + entity_auth_props[2]
+			entity_auth_props[2] += 1
+
+	if not entity_pending_to_spawn:
+		prop_id = WyncUtils.get_new_prop_id(ctx)
+
+	if prop_id == -1:
+		return -1
+		
+	var prop = WyncEntityProp.new()
+	prop.name_id = name_id
+	prop.data_type = data_type
+
+	# instantiate structs
+	# todo: some might not be necessary for all
+	prop.last_ticks_received = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT, -1)
+	prop.arrived_at_tick = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT, -1)
+	prop.pred_curr = NetTickData.new()
+	prop.pred_prev = NetTickData.new()
+
+	# TODO: Dynamic sized buffer for all owned predicted props?
+	# TODO: Only do this if this prop is predicted, move to prop_set_predict ?
+	if (data_type == WyncEntityProp.DATA_TYPE.INPUT ||
+		data_type == WyncEntityProp.DATA_TYPE.EVENT):
+		prop.confirmed_states = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, null)
+		prop.confirmed_states_tick = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, -1)
+	else:
+		prop.confirmed_states = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT, null)
+		prop.confirmed_states_tick = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT, -1)
+	
+	ctx.props[prop_id] = prop
+	ctx.active_prop_ids.push_back(prop_id)
+
+	var entity_props = ctx.entity_has_props[entity_id] as Array
+	entity_props.append(prop_id)
+	
+	return prop_id
+
+
 static func prop_register(
 	ctx: WyncCtx, 
 	entity_id: int,
@@ -656,11 +714,15 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 	var entity_id = WyncCtx.ENTITY_ID_GLOBAL_EVENTS + peer_id
 	WyncUtils.track_entity(ctx, entity_id, -1)
 	var channel_id = 0
-	var prop_channel = WyncUtils.prop_register(
+	var prop_channel = WyncUtils.prop_register_minimal(
 		ctx,
 		entity_id,
 		"channel_%d" % [channel_id],
-		WyncEntityProp.DATA_TYPE.EVENT,
+		WyncEntityProp.DATA_TYPE.EVENT
+	)
+	WyncWrapper.wync_set_prop_callbacks(
+		ctx,
+		prop_channel,
 		ctx,
 		func(wync_ctx: Variant) -> Array: # getter
 			return (wync_ctx as WyncCtx).peer_has_channel_has_events[peer_id][channel_id].duplicate(true),
@@ -692,11 +754,18 @@ static func setup_entity_prob_for_entity_update_delay_ticks(ctx: WyncCtx, peer_i
 	
 	var entity_id = WyncCtx.ENTITY_ID_PROB_FOR_ENTITY_UPDATE_DELAY_TICKS
 	WyncUtils.track_entity(ctx, entity_id, -1)
-	var prop_prob = WyncUtils.prop_register(
+	var prop_prob = WyncUtils.prop_register_minimal(
 		ctx,
 		entity_id,
 		"entity_prob",
-		WyncEntityProp.DATA_TYPE.INT,
+		WyncEntityProp.DATA_TYPE.INT
+	)
+	# TODO: internal functions shouldn't be using wrapper functions...
+	# Maybe we can treat these differently? These are all internal, so it
+	# doesn't make sense to require external functions like the wrapper's
+	WyncWrapper.wync_set_prop_callbacks(
+		ctx,
+		prop_prob,
 		ctx,
 		func(p_ctx: Variant) -> int: # getter
 			# use any value that constantly changes, don't really need to read it

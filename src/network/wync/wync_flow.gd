@@ -10,7 +10,7 @@ static func wync_server_tick_start(ctx: WyncCtx):
 
 	# after tick start
 
-	WyncFlow.wync_input_props_set_tick_value(ctx)
+	WyncWrapper.wync_input_props_set_tick_value(ctx)
 
 	WyncDeltaSyncUtils.auxiliar_props_clear_current_delta_events(ctx)
 
@@ -22,7 +22,7 @@ static func wync_server_tick_end(ctx: WyncCtx):
 	# This function extracts regular props, plus _auxiliar delta event props_
 	# We need a function to extract data exclusively of events... Like the equivalent
 	# of the client's _input_bufferer_
-	SyWyncStateExtractor.extract_data_to_tick(ctx, ctx.co_ticks, ctx.co_ticks.ticks)
+	WyncWrapper.extract_data_to_tick(ctx, ctx.co_ticks.ticks)
 
 
 static func wync_client_tick_end(ctx: WyncCtx):
@@ -31,7 +31,7 @@ static func wync_client_tick_end(ctx: WyncCtx):
 	WyncThrottle.wync_system_stabilize_latency(ctx)
 	SyNetPredictionTicks.wync_update_prediction_ticks(ctx)
 	
-	SyWyncBufferedInputs.wync_buffer_inputs(ctx)
+	WyncWrapper.wync_buffer_inputs(ctx)
 
 	# CANNOT reset events BEFORE polling inputs, WHERE do we put this?
 	
@@ -47,7 +47,7 @@ static func wync_client_tick_end(ctx: WyncCtx):
 
 	WyncFlow.wync_dummy_props_cleanup(ctx)
 
-	SyWyncLerpPrecompute.wync_lerp_precompute(ctx)
+	#SyWyncLerpPrecompute.wync_lerp_precompute(ctx)
 
 
 static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_id: int) -> int:
@@ -401,7 +401,7 @@ static func wync_client_handle_pkt_inputs(ctx: WyncCtx, data: Variant) -> int:
 # apply inputs / events to props
 # TODO: Better to separate receive/apply logic
 # NOTE: could this be merged with SyWyncLatestValue?
-
+"""
 static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 		
 	for client_id in range(1, ctx.peers.size()):
@@ -427,6 +427,7 @@ static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 			#Log.outc(ctx, "(tick %s) setted input prop (%s) to %s" % [ctx.co_ticks.ticks, prop.name_id, input])
 
 	return OK
+"""
 
 
 static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):

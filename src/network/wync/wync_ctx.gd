@@ -1,5 +1,20 @@
 class_name WyncCtx
 
+
+# ------------------------------
+# Wrapper
+
+class Wrapper:
+	# Array<prop_id: int, Callable>
+	var prop_user_ctx: Array[Variant]
+	var prop_getter: Array[Callable]
+	var prop_setter: Array[Callable]
+
+var wrapper: Wrapper
+
+# ------------------------------
+
+
 const RELIABLE = true
 const UNRELIABLE = false
 
@@ -75,7 +90,7 @@ var REGULAR_PROP_CACHED_STATE_AMOUNT = 8
 var tracked_entities: Dictionary
 
 
-const MAX_PROPS = 4096 # 2**16
+const MAX_PROPS = 4096 # default to 2**16 (65536)
 
 # Array<prop_id: int, WyncEntityProp>
 var props: Array[WyncEntityProp]
@@ -398,4 +413,12 @@ func _init() -> void:
 	low_priority_entity_update_rate_sliding_window = RingBuffer.new(low_priority_entity_update_rate_sliding_window_size, 0)
 
 	dummy_props = {}
+
+	wrapper_initialize(self)
 		
+
+static func wrapper_initialize(ctx: WyncCtx):
+	ctx.wrapper = WyncCtx.Wrapper.new()
+	ctx.wrapper.prop_user_ctx.resize(MAX_PROPS)
+	ctx.wrapper.prop_getter.resize(MAX_PROPS)
+	ctx.wrapper.prop_setter.resize(MAX_PROPS)
