@@ -261,6 +261,12 @@ var present_delta_prop_ids: Array[int] = []
 var present_to_integrate_pred_entity_ids: Array[int] = []
 var present_pred_auxiliar_prop_ids: Array[int] = []
 
+## filtered props to optimize cycles
+var was_any_prop_added_deleted := false
+var filtered_clients_input_and_event_prop_ids: Array[int] = []
+var filtered_delta_prop_ids: Array[int] = []
+var filtered_regular_extractable_prop_ids: Array[int] = []
+
 # throttling
 # --------------------------------------------------------------------------------
 

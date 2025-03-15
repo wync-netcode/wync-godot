@@ -58,46 +58,31 @@ static func wync_buffer_inputs(ctx: WyncCtx):
 
 
 static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
-	
-	for entity_id_key in ctx.entity_has_props.keys():
 
-		var prop_ids_array = ctx.entity_has_props[entity_id_key] as Array
-		if not prop_ids_array.size():
-			continue
+	for prop_id in ctx.filtered_regular_extractable_prop_ids:
 		
-		for prop_id in prop_ids_array:
-			
-			var prop := WyncUtils.get_prop(ctx, prop_id)
-			if prop == null:
-				continue
-			
-			# don't extract input values
-			# FIXME: should events be extracted? game event yes, but other player events? Maybe we need an option to what events to share.
-			# NOTE: what about a setting like: NEVER, TO_ALL, TO_ALL_EXCEPT_OWNER, ONLY_TO_SERVER
-			if prop.prop_type in [WyncEntityProp.PROP_TYPE.INPUT,
-				WyncEntityProp.PROP_TYPE.EVENT]:
-				continue
+		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
 
-			# relative_syncable receives special treatment
-
-			if prop.relative_syncable:
-				
-				# Allow auxiliar props
-				#prop_id = prop.auxiliar_delta_events_prop_id
-				var prop_aux = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
-				if prop_aux == null:
-					continue
-				prop = prop_aux
+		## relative_syncable receives special treatment
+		## FIXME: DELETE THIS events should be sent by WYNC_PKT_INPUTS only
+		#if prop.relative_syncable:
 			
-			# ===========================================================
-			# Save state history per tick
-			
-			#if prop_id != 14:
+			## Allow auxiliar props
+			##prop_id = prop.auxiliar_delta_events_prop_id
+			#var prop_aux = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
+			#if prop_aux == null:
 				#continue
-			var getter = ctx.wrapper.prop_getter[prop_id]
-			var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
-			prop.confirmed_states.insert_at(save_on_tick, getter.call(user_ctx))
-			prop.confirmed_states_tick.insert_at(save_on_tick, save_on_tick)
+			#prop = prop_aux
+		
+		# ===========================================================
+		# Save state history per tick
+		
+		#if prop_id != 14:
+			#continue
+		var getter = ctx.wrapper.prop_getter[prop_id]
+		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
+		prop.confirmed_states.insert_at(save_on_tick, getter.call(user_ctx))
+		prop.confirmed_states_tick.insert_at(save_on_tick, save_on_tick)
 
 
 static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: Array[int], tick: int):
@@ -129,29 +114,18 @@ static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: A
 
 static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 		
-	for client_id in range(1, ctx.peers.size()):
-		for prop_id in ctx.client_owns_prop[client_id]:
-			if not WyncUtils.prop_exists(ctx, prop_id):
-				continue
-			var prop := WyncUtils.get_prop(ctx, prop_id)
-			if prop == null:
-				continue
-			if (prop.prop_type != WyncEntityProp.PROP_TYPE.INPUT &&
-				prop.prop_type != WyncEntityProp.PROP_TYPE.EVENT):
-				continue
-		
-			if prop.confirmed_states_tick.get_at(ctx.co_ticks.ticks) != ctx.co_ticks.ticks:
-				Log.errc(ctx, "couldn't find input (%s) for tick (%s)" % [prop.name_id, ctx.co_ticks.ticks])
-				continue
+	for prop_id in ctx.filtered_clients_input_and_event_prop_ids:
+		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)	
 
-			var input = prop.confirmed_states.get_at(ctx.co_ticks.ticks)
-			if input == null:
-				continue
+		if prop.confirmed_states_tick.get_at(ctx.co_ticks.ticks) != ctx.co_ticks.ticks:
+			Log.errc(ctx, "couldn't find input (%s) for tick (%s)" % [prop.name_id, ctx.co_ticks.ticks])
+			continue
 
-			var setter = ctx.wrapper.prop_setter[prop_id]
-			var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
-			setter.call(user_ctx, input)
-			#Log.outc(ctx, "(tick %s) setted input prop (%s) to %s" % [ctx.co_ticks.ticks, prop.name_id, input])
+		var input = prop.confirmed_states.get_at(ctx.co_ticks.ticks)
+		var setter = ctx.wrapper.prop_setter[prop_id]
+		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
+		setter.call(user_ctx, input)
+		#Log.outc(ctx, "(tick %s) setted input prop (%s) to %s" % [ctx.co_ticks.ticks, prop.name_id, input])
 
 	return OK
 

@@ -30,13 +30,7 @@ static func wync_reset_events_to_sync(ctx: WyncCtx):
 
 # TODO: Make a separate version only for _event_ids_ different from _inputs any_
 # TODO: Make a separate version only for _delta event_ids_
-static func wync_prop_event_send_event_ids_to_peer(ctx: WyncCtx, prop_id: int) -> WyncPktInputs:
-
-	# get props: base + auxiliar
-	var prop = WyncUtils.get_prop(ctx, prop_id)
-	if prop == null:
-		return null
-	prop = prop as WyncEntityProp
+static func wync_prop_event_send_event_ids_to_peer(ctx: WyncCtx, prop: WyncEntityProp, prop_id: int) -> WyncPktInputs:
 
 	# prepare packet
 
@@ -44,11 +38,9 @@ static func wync_prop_event_send_event_ids_to_peer(ctx: WyncCtx, prop_id: int) -
 
 	for tick in range(ctx.co_ticks.ticks - WyncCtx.INPUT_AMOUNT_TO_SEND, ctx.co_ticks.ticks +1):
 		if prop.confirmed_states_tick.get_at(tick) != tick:
-			continue
-		var input = prop.confirmed_states.get_at(tick)
-		if input == null:
 			Log.err("we don't have an input for this tick %s" % [tick], Log.TAG_DELTA_EVENT)
 			continue
+		var input = prop.confirmed_states.get_at(tick)
 		
 		var tick_input_wrap = WyncPktInputs.NetTickDataDecorator.new()
 		tick_input_wrap.tick = tick

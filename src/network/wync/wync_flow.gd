@@ -16,6 +16,9 @@ static func wync_server_tick_start(ctx: WyncCtx):
 
 
 static func wync_server_tick_end(ctx: WyncCtx):
+	# TODO: Run only on prop added/removed events
+	WyncXtrap.wync_server_tick_end_cache_filtered_input_ids(ctx)
+
 	SyWyncStateExtractor.update_delta_base_state_tick(ctx)
 
 	# NOTE: maybe a way to extract data but only events, since that is unskippable?

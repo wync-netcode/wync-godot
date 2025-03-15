@@ -98,9 +98,9 @@ static func wync_system_send_entities_to_despawn(ctx: WyncCtx, _commit: bool = t
 
 		# queue 
 		var res = WyncFlow.wync_wrap_packet_out(ctx, client_id, WyncPacket.WYNC_PKT_DESPAWN, packet)
-		if res[0] == OK:
-			var pkt_out = res[1] as WyncPacketOut
-			WyncThrottle.wync_try_to_queue_out_packet(ctx, pkt_out, WyncCtx.RELIABLE, true)
+		assert(res[0] == OK)
+		var pkt_out = res[1] as WyncPacketOut
+		WyncThrottle.wync_try_to_queue_out_packet(ctx, pkt_out, WyncCtx.RELIABLE, true)
 
 	ctx.despawned_entity_ids.clear()
 
@@ -173,9 +173,8 @@ static func wync_system_fill_entity_sync_queue(ctx: WyncCtx):
 
 		for entity_id_key in ctx.clients_sees_entities[client_id].keys():
 
-			# Clients can still see entities that we don't have. Not anymore?
-			if not WyncUtils.is_entity_tracked(ctx, entity_id_key):
-				continue
+			# Note. No need to check if entity is tracked. On entity removal
+			# the removed entity_id will be removed from all queues / lists / etc.
 
 			if not synced_last_time.has(entity_id_key) && not entity_queue.has_item(entity_id_key):
 				var err = entity_queue.push_head(entity_id_key)

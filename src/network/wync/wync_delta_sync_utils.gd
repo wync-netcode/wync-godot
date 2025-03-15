@@ -326,10 +326,8 @@ static func event_is_healthy (ctx: WyncCtx, event_id: int) -> int:
 
 
 static func auxiliar_props_clear_current_delta_events(ctx: WyncCtx):
-	for prop_id: int in ctx.active_prop_ids:
-		var prop := WyncUtils.get_prop(ctx, prop_id)
-		if not prop.relative_syncable:
-			continue
+	for prop_id in ctx.filtered_delta_prop_ids:
+		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
 		prop.current_delta_events.clear()
 		
 		var aux_prop := WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)

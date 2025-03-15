@@ -60,6 +60,7 @@ static func delete_prop(ctx: WyncCtx, prop_id: int):
 	if prop.relative_syncable:
 		delete_prop(ctx, prop.auxiliar_delta_events_prop_id)
 
+	ctx.was_any_prop_added_deleted = true
 	# free actual prop
 	# prop.free()
 
@@ -119,6 +120,8 @@ static func prop_register_minimal(
 	var entity_props = ctx.entity_has_props[entity_id] as Array
 	entity_props.append(prop_id)
 	
+	ctx.was_any_prop_added_deleted = true
+
 	return prop_id
 
 
@@ -182,6 +185,8 @@ static func prop_register(
 
 	var entity_props = ctx.entity_has_props[entity_id] as Array
 	entity_props.append(prop_id)
+
+	ctx.was_any_prop_added_deleted = true
 	
 	return prop_id
 
@@ -505,6 +510,10 @@ static func prop_exists(ctx: WyncCtx, prop_id: int) -> bool:
 static func get_prop(ctx: WyncCtx, prop_id: int) -> WyncEntityProp:
 	if prop_id < 0 || prop_id >= ctx.MAX_PROPS:
 		return null
+	return ctx.props[prop_id]
+
+
+static func get_prop_unsafe(ctx: WyncCtx, prop_id: int) -> WyncEntityProp:
 	return ctx.props[prop_id]
 
 

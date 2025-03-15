@@ -289,8 +289,6 @@ static func update_what_the_clients_can_see(gs: Plat.GameState):
 		gs.actors_added_or_deleted = false
 		var ctx = gs.wctx
 
-		## For the moment just sync gs.Players
-
 		for peer_id in range(1, ctx.peers.size()):
 			# TODO: get me a list of only active peers!
 

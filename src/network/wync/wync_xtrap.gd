@@ -75,20 +75,34 @@ static func wync_xtrap_tick_end_cache(ctx: WyncCtx):
 		ctx.present_to_integrate_pred_entity_ids.append(wync_entity_id)
 
 
-	#ctx.present_pred_delta_prop_ids.clear()
-	#for prop_id: int in ctx.active_prop_ids:
-		#var prop := WyncUtils.get_prop(ctx, prop_id)
-		#if prop == null:
-			#continue
-		#if not prop.relative_syncable:
-			#continue
-		#if not WyncUtils.prop_is_predicted(ctx, prop_id):
-			#continue
-		#var aux_prop := WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
-		#if aux_prop == null:
-			#assert(false)
-			#continue
-		#ctx.present_pred_delta_prop_ids.append(prop_id)
+# Note: further optimization could involve removing adding singular props from the list
+static func wync_server_tick_end_cache_filtered_input_ids(ctx: WyncCtx):
+	if not ctx.was_any_prop_added_deleted:
+		return
+	ctx.was_any_prop_added_deleted = false
+	Log.outc(ctx, "debug filters")
+
+	ctx.filtered_clients_input_and_event_prop_ids.clear()
+	ctx.filtered_delta_prop_ids.clear()
+	ctx.filtered_regular_extractable_prop_ids.clear()
+
+	for client_id in range(1, ctx.peers.size()):
+		for prop_id in ctx.client_owns_prop[client_id]:
+			var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
+			if (prop.prop_type != WyncEntityProp.PROP_TYPE.INPUT &&
+				prop.prop_type != WyncEntityProp.PROP_TYPE.EVENT):
+				continue
+			ctx.filtered_clients_input_and_event_prop_ids.append(prop_id)
+
+	for prop_id in ctx.active_prop_ids:
+		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
+		if prop.relative_syncable:
+			ctx.filtered_delta_prop_ids.append(prop_id)
+		if prop.prop_type not in [
+			WyncEntityProp.PROP_TYPE.INPUT,
+			WyncEntityProp.PROP_TYPE.EVENT
+		]:
+			ctx.filtered_regular_extractable_prop_ids.append(prop_id)
 
 
 static func wync_xtrap_tick_init(ctx: WyncCtx, tick: int):

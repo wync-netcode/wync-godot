@@ -49,8 +49,8 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 	# Array < client_id: int, List < WyncPacket > >
 	# Array < client_id: int, Array < idx: int, WyncPacket > >
 	# Array[Array[WyncPacket]]
-	var clients_packet_buffer_reliable := [] as Array[Array]
-	var clients_packet_buffer_unreliable := [] as Array[Array]
+	var clients_packet_buffer_reliable: Array[Array] = []
+	var clients_packet_buffer_unreliable: Array[Array] = []
 	clients_packet_buffer_reliable.resize(ctx.peers.size())
 	clients_packet_buffer_unreliable.resize(ctx.peers.size())
 	for client_id: int in range(1, ctx.peers.size()):
@@ -77,19 +77,16 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 		# client_prop_last_tick[prop_id] = co_ticks.tick
 
 		WyncThrottle.wync_remove_entity_from_sync_queue(ctx, client_id, entity_id)
-		#if WyncUtils.is_entity_tracked(ctx, entity_id)
 
-		# plan: fill all the data for the props, then see if it fits
+		# fill all the data for the props, then see if it fits
 
 		var prop_ids_array = ctx.entity_has_props[entity_id] as Array
-		if not prop_ids_array.size():
-			continue
+		assert(prop_ids_array.size())
 
 		for prop_id in prop_ids_array:
-			var prop = WyncUtils.get_prop(ctx, prop_id)
+			var prop := WyncUtils.get_prop(ctx, prop_id)
 			if prop == null:
 				continue
-			prop = prop as WyncEntityProp
 
 			# ignore inputs
 			if prop.prop_type == WyncEntityProp.PROP_TYPE.INPUT:
@@ -104,19 +101,14 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 					continue
 
 				# this includes _regular_ and _auxiliar_ props
-				var pkt_input := SyWyncStateExtractorDeltaSync.wync_prop_event_send_event_ids_to_peer (ctx, prop_id)
-				if not (pkt_input != null && pkt_input is WyncPktInputs):
-					Log.errc(ctx, "Couldn't create input packet")
-					assert(false)
-					continue
+				var pkt_input := SyWyncStateExtractorDeltaSync.wync_prop_event_send_event_ids_to_peer (ctx, prop, prop_id)
 
-				if pkt_input != null && pkt_input is WyncPktInputs:
-					# commit
-					var packet = WyncPacket.new()
-					packet.packet_type_id = WyncPacket.WYNC_PKT_INPUTS
-					packet.data = pkt_input
-					data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_INPUTS)
-					unreliable_buffer.append(packet)
+				# commit
+				var packet = WyncPacket.new()
+				packet.packet_type_id = WyncPacket.WYNC_PKT_INPUTS
+				packet.data = pkt_input
+				data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_INPUTS)
+				unreliable_buffer.append(packet)
 
 				# compile event ids
 				var event_ids := [] as Array[int] # TODO: Use a C friendly expression
@@ -128,11 +120,11 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 				var pkt_event_data = SyWyncSendEventData.wync_get_event_data_packet(ctx, client_id, event_ids)
 				if pkt_event_data.events.size() > 0:
 					# commit
-					var packet = WyncPacket.new()
-					packet.packet_type_id = WyncPacket.WYNC_PKT_EVENT_DATA
-					packet.data = pkt_event_data
+					var packet_events = WyncPacket.new()
+					packet_events.packet_type_id = WyncPacket.WYNC_PKT_EVENT_DATA
+					packet_events.data = pkt_event_data
+					reliable_buffer.append(packet_events)
 					data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_EVENT_DATA)
-					reliable_buffer.append(packet)
 
 				#Log.outc(ctx, "tag1 | this is my pkt_input %s" % [JsonClassConverter.class_to_json_string(pkt_input)])
 				#Log.outc(ctx, "tag1 | this is my pkt_event_data %s" % [JsonClassConverter.class_to_json_string(pkt_event_data)])
@@ -141,19 +133,16 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 			elif prop.relative_syncable:
 				if prop.timewarpable: # NOT supported: relative_syncable + timewarpable
 					continue
-				var snap_prop = _wync_sync_relative_prop_base_only(ctx, prop_id, client_id)
-				if snap_prop != null && snap_prop is WyncPktSnap.SnapProp:
+				var snap_prop := _wync_sync_relative_prop_base_only(ctx, prop, prop_id, client_id)
+				if snap_prop != null:
 					reliable_snap.snaps.append(snap_prop)
 
 			## regular declarative prop
 			else:
 
-				var snap_prop = _wync_sync_regular_prop(ctx, prop_id)
-				if snap_prop != null && snap_prop is WyncPktSnap.SnapProp:
-					#Log.outc(ctx, "tag1 | extracted this prop %s" % [HashUtils.object_to_dictionary(snap_prop)])
+				var snap_prop := _wync_sync_regular_prop(ctx, prop, prop_id)
+				if snap_prop != null:
 					unreliable_snap.snaps.append(snap_prop)
-				else:
-					Log.outc(ctx, "tag1 | came empty handed")
 
 		# commit snap packet
 
@@ -161,15 +150,15 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 			var packet = WyncPacket.new()
 			packet.packet_type_id = WyncPacket.WYNC_PKT_PROP_SNAP
 			packet.data = unreliable_snap
-			data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_PROP_SNAP)
 			unreliable_buffer.append(packet)
+			data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_PROP_SNAP)
 
 		if reliable_snap.snaps.size() > 0:
 			var packet = WyncPacket.new()
 			packet.packet_type_id = WyncPacket.WYNC_PKT_PROP_SNAP
 			packet.data = reliable_snap
-			data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_PROP_SNAP)
 			reliable_buffer.append(packet)
+			data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_PROP_SNAP)
 
 		# exceeded size, stop
 
@@ -203,12 +192,7 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 				Log.errc(ctx, "error wrapping packet")
 
 
-static func _wync_sync_regular_prop(ctx: WyncCtx, prop_id: int) -> WyncPktSnap.SnapProp:
-
-	var prop = WyncUtils.get_prop(ctx, prop_id)
-	if prop == null:
-		return null
-	prop = prop as WyncEntityProp
+static func _wync_sync_regular_prop(ctx: WyncCtx, prop: WyncEntityProp, prop_id: int) -> WyncPktSnap.SnapProp:
 
 	# copy cached data
 	
@@ -230,14 +214,10 @@ static func _wync_sync_regular_prop(ctx: WyncCtx, prop_id: int) -> WyncPktSnap.S
 
 static func _wync_sync_relative_prop_base_only(
 	ctx: WyncCtx,
+	prop: WyncEntityProp,
 	prop_id: int,
 	client_id: int
 	) -> WyncPktSnap.SnapProp:
-
-	var prop = WyncUtils.get_prop(ctx, prop_id)
-	if prop == null:
-		return null
-	prop = prop as WyncEntityProp
 
 	# send fullsnapshot if client doesn't have history, or if it's too old
 

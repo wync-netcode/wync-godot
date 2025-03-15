@@ -57,4 +57,3 @@ func sort() -> void:
 	if typeof(buffer[0]) != TYPE_INT:
 		return
 	buffer.sort()
-
