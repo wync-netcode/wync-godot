@@ -96,7 +96,7 @@ static func prop_set_relative_syncable (
 		ctx,
 		entity_id,
 		"auxiliar_delta_events",
-		WyncEntityProp.DATA_TYPE.EVENT,
+		WyncEntityProp.PROP_TYPE.EVENT,
 		prop,
 		func(prop_ctx: WyncEntityProp):
 			return prop_ctx.current_delta_events.duplicate(true),
@@ -129,7 +129,7 @@ static func prop_set_auxiliar(ctx: WyncCtx, prop_id: int, auxiliar_pair: int, un
 	if prop == null:
 		return 1
 	prop = prop as WyncEntityProp
-	if (prop.data_type != WyncEntityProp.DATA_TYPE.EVENT):
+	if (prop.prop_type != WyncEntityProp.PROP_TYPE.EVENT):
 		return 2
 	prop.is_auxiliar_prop = true
 	prop.auxiliar_delta_events_prop_id = auxiliar_pair
@@ -348,7 +348,7 @@ static func predicted_props_clear_events(ctx: WyncCtx):
 		if prop == null:
 			continue
 		prop = prop as WyncEntityProp
-		if prop.data_type != WyncEntityProp.DATA_TYPE.EVENT:
+		if prop.prop_type != WyncEntityProp.PROP_TYPE.EVENT:
 			continue
 		if not WyncUtils.prop_is_predicted(ctx, prop_id):
 			continue

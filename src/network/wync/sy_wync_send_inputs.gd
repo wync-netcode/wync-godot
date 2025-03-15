@@ -40,8 +40,8 @@ static func wync_client_send_inputs (ctx: WyncCtx):
 		if input_prop == null:
 			Log.errc(ctx, "not input_prop %s" % prop_id, Log.TAG_INPUT_BUFFER)
 			continue
-		if input_prop.data_type not in [WyncEntityProp.DATA_TYPE.INPUT,
-			WyncEntityProp.DATA_TYPE.EVENT]:
+		if input_prop.prop_type not in [WyncEntityProp.PROP_TYPE.INPUT,
+			WyncEntityProp.PROP_TYPE.EVENT]:
 			Log.errc(ctx, "prop %s is not INPUT or EVENT" % prop_id, Log.TAG_INPUT_BUFFER)
 			continue
 
@@ -71,7 +71,7 @@ static func wync_client_send_inputs (ctx: WyncCtx):
 			pkt_inputs.inputs.append(tick_input_wrap)
 			
 			# compile events ids
-			if (input_prop.data_type == WyncEntityProp.DATA_TYPE.EVENT &&
+			if (input_prop.prop_type == WyncEntityProp.PROP_TYPE.EVENT &&
 				input is Array):
 				input = input as Array
 				for event_id: int in input:
@@ -82,7 +82,7 @@ static func wync_client_send_inputs (ctx: WyncCtx):
 		pkt_inputs.amount = pkt_inputs.inputs.size()
 		pkt_inputs.prop_id = prop_id
 		#Log.out(self, "INPUT Sending prop %s" % [input_prop.name_id]) 
-		#if input_prop.data_type == WyncEntityProp.DATA_TYPE.EVENT:
+		#if input_prop.prop_type == WyncEntityProp.prop_type.EVENT:
 			#Log.outc(ctx, "tic(%s) setted | sending prop (%s) (%s) " % [tick_pred, prop_id, pkt_inputs.inputs[0].data])
 
 		# prepare peer packet and send (queue)

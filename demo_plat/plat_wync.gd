@@ -18,6 +18,15 @@ static func setup_client(ctx: WyncCtx):
 	#var desired_lerp: int = ceil((1000.0 / server_tick_rate) * 6) # 6 ticks in the past
 	WyncFlow.wync_client_set_lerp_ms(ctx, server_tick_rate, 200)
 
+	WyncWrapper.wync_register_lerp_type(
+		ctx, Plat.LERP_TYPE_FLOAT,
+		func (a: float, b: float, weight: float): return lerp(a, b, weight)
+	)
+	WyncWrapper.wync_register_lerp_type(
+		ctx, Plat.LERP_TYPE_VECTOR2,
+		func (a: Vector2, b: Vector2, weight: float): return lerp(a, b, weight)
+	)
+
 
 static func setup_connect_client(gs: Plat.GameState):
 	var ctx := gs.wctx
@@ -53,7 +62,7 @@ static func setup_sync_for_ball_actor(gs: Plat.GameState, actor_id: int):
 		wctx,
 		actor_id,
 		"position",
-		WyncEntityProp.DATA_TYPE.VECTOR2
+		WyncEntityProp.PROP_TYPE.ANY
 	)
 	WyncWrapper.wync_set_prop_callbacks(
 		wctx,
@@ -61,6 +70,9 @@ static func setup_sync_for_ball_actor(gs: Plat.GameState, actor_id: int):
 		ball_instance,
 		func(user_ctx: Variant) -> Vector2: return (user_ctx as Plat.Ball).position,
 		func(user_ctx: Variant, pos: Vector2): (user_ctx as Plat.Ball).position = pos,
+	)
+	WyncUtils.prop_set_interpolate(
+		wctx, pos_prop_id, Plat.LERP_TYPE_VECTOR2
 	)
 
 	#var pos_prop_id = WyncUtils.prop_register(
@@ -112,7 +124,7 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 		wctx,
 		actor_id,
 		"position",
-		WyncEntityProp.DATA_TYPE.VECTOR2
+		WyncEntityProp.PROP_TYPE.ANY
 	)
 	WyncWrapper.wync_set_prop_callbacks(
 		wctx,
@@ -126,7 +138,7 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 		wctx,
 		actor_id,
 		"velocity",
-		WyncEntityProp.DATA_TYPE.VECTOR2
+		WyncEntityProp.PROP_TYPE.ANY
 	)
 	WyncWrapper.wync_set_prop_callbacks(
 		wctx,
@@ -140,7 +152,7 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 		wctx,
 		actor_id,
 		"input",
-		WyncEntityProp.DATA_TYPE.INPUT
+		WyncEntityProp.PROP_TYPE.INPUT
 	)
 	WyncWrapper.wync_set_prop_callbacks(
 		wctx,
@@ -153,8 +165,8 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 	if wctx.is_client:
 		# interpolation
 		
-		WyncUtils.prop_set_interpolate(wctx, pos_prop_id)
-		WyncUtils.prop_set_interpolate(wctx, vel_prop_id)
+		#WyncUtils.prop_set_interpolate(wctx, pos_prop_id)
+		#WyncUtils.prop_set_interpolate(wctx, vel_prop_id)
 	
 		# setup extrapolation
 			

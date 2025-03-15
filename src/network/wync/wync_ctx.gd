@@ -4,11 +4,18 @@ class_name WyncCtx
 # ------------------------------
 # Wrapper
 
+const WRAPPER_MAX_USER_TYPES = 256
+
 class Wrapper:
 	# Array<prop_id: int, Callable>
 	var prop_user_ctx: Array[Variant]
 	var prop_getter: Array[Callable]
 	var prop_setter: Array[Callable]
+
+	# Array[256] <user_type_id: int, lerp_function_id: int>
+	var lerp_type_to_lerp_function: Array[int]
+	# DynArr[0] <order_id: int, Callable[a: Variant, b: Variant, c: float]>
+	var lerp_function: Array[Callable]
 
 var wrapper: Wrapper
 
@@ -245,6 +252,7 @@ var last_tick_predicted: int = 0
 var pred_intented_first_tick: int = 0
 
 ## how many ticks before 'last_tick_received' to predict to compensate for throttling
+## * Limited by REGULAR_PROP_CACHED_STATE_AMOUNT
 var max_prediction_tick_threeshold: int = 0
 
 ## precompile props for prediction ticks
@@ -422,3 +430,5 @@ static func wrapper_initialize(ctx: WyncCtx):
 	ctx.wrapper.prop_user_ctx.resize(MAX_PROPS)
 	ctx.wrapper.prop_getter.resize(MAX_PROPS)
 	ctx.wrapper.prop_setter.resize(MAX_PROPS)
+	ctx.wrapper.lerp_type_to_lerp_function.resize(WRAPPER_MAX_USER_TYPES)
+	ctx.wrapper.lerp_function = []

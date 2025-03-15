@@ -64,7 +64,7 @@ static func prop_register_minimal(
 	ctx: WyncCtx, 
 	entity_id: int,
 	name_id: String,
-	data_type: WyncEntityProp.DATA_TYPE,
+	data_type: WyncEntityProp.PROP_TYPE,
 	) -> int:
 	
 	if not is_entity_tracked(ctx, entity_id):
@@ -90,7 +90,7 @@ static func prop_register_minimal(
 		
 	var prop = WyncEntityProp.new()
 	prop.name_id = name_id
-	prop.data_type = data_type
+	prop.prop_type = data_type
 
 	# instantiate structs
 	# todo: some might not be necessary for all
@@ -101,8 +101,8 @@ static func prop_register_minimal(
 
 	# TODO: Dynamic sized buffer for all owned predicted props?
 	# TODO: Only do this if this prop is predicted, move to prop_set_predict ?
-	if (data_type == WyncEntityProp.DATA_TYPE.INPUT ||
-		data_type == WyncEntityProp.DATA_TYPE.EVENT):
+	if (data_type == WyncEntityProp.PROP_TYPE.INPUT ||
+		data_type == WyncEntityProp.PROP_TYPE.EVENT):
 		prop.confirmed_states = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, null)
 		prop.confirmed_states_tick = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, -1)
 	else:
@@ -122,7 +122,7 @@ static func prop_register(
 	ctx: WyncCtx, 
 	entity_id: int,
 	name_id: String,
-	data_type: WyncEntityProp.DATA_TYPE,
+	data_type: WyncEntityProp.PROP_TYPE,
 	user_ctx_pointer: Variant, # pointer
 	getter: Callable,
 	setter: Callable
@@ -151,7 +151,7 @@ static func prop_register(
 		
 	var prop = WyncEntityProp.new()
 	prop.name_id = name_id
-	prop.data_type = data_type
+	prop.prop_type = data_type
 	prop.user_ctx_pointer = user_ctx_pointer
 	prop.getter = getter
 	prop.setter = setter
@@ -165,8 +165,8 @@ static func prop_register(
 
 	# TODO: Dynamic sized buffer for all owned predicted props?
 	# TODO: Only do this if this prop is predicted, move to prop_set_predict ?
-	if (data_type == WyncEntityProp.DATA_TYPE.INPUT ||
-		data_type == WyncEntityProp.DATA_TYPE.EVENT):
+	if (data_type == WyncEntityProp.PROP_TYPE.INPUT ||
+		data_type == WyncEntityProp.PROP_TYPE.EVENT):
 		prop.confirmed_states = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, null)
 		prop.confirmed_states_tick = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, -1)
 	else:
@@ -289,12 +289,13 @@ static func entity_has_delta_prop(ctx: WyncCtx, entity_id: int) -> bool:
 			return true
 	return false
 
-static func prop_set_interpolate(ctx: WyncCtx, prop_id: int) -> int:
+static func prop_set_interpolate(ctx: WyncCtx, prop_id: int, user_data_type: int) -> int:
+	if not ctx.is_client:
+		return OK
 	var prop := WyncUtils.get_prop(ctx, prop_id)
 	if prop == null:
 		return 1
-	if prop.data_type not in WyncEntityProp.INTERPOLABLE_DATA_TYPES:
-		return 2
+	prop.user_data_type = user_data_type
 	prop.interpolated = true
 	return OK
 	
@@ -718,7 +719,7 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 		ctx,
 		entity_id,
 		"channel_%d" % [channel_id],
-		WyncEntityProp.DATA_TYPE.EVENT
+		WyncEntityProp.PROP_TYPE.EVENT
 	)
 	WyncWrapper.wync_set_prop_callbacks(
 		ctx,
@@ -758,7 +759,7 @@ static func setup_entity_prob_for_entity_update_delay_ticks(ctx: WyncCtx, peer_i
 		ctx,
 		entity_id,
 		"entity_prob",
-		WyncEntityProp.DATA_TYPE.INT
+		WyncEntityProp.PROP_TYPE.ANY
 	)
 	# TODO: internal functions shouldn't be using wrapper functions...
 	# Maybe we can treat these differently? These are all internal, so it

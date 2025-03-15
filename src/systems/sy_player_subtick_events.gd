@@ -97,11 +97,11 @@ static func debug_show_timewarpable_lerped_positions(node_ctx: Node, wync_ctx: W
 			0, 1)
 
 		match prop.data_type:
-			WyncEntityProp.DATA_TYPE.FLOAT:
+			WyncEntityProp.PROP_TYPE.FLOAT:
 				var left = left_value as float
 				var right = right_value as float
 				interpolated_value = lerp(left, right, factor)
-			WyncEntityProp.DATA_TYPE.VECTOR2:
+			WyncEntityProp.PROP_TYPE.VECTOR2:
 				var left = left_value as Vector2
 				var right = right_value as Vector2
 				interpolated_value = lerp(left, right, factor)

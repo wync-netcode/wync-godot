@@ -33,7 +33,7 @@ static func wync_xtrap_tick_init_cache(ctx: WyncCtx):
 		if prop == null:
 			continue
 		var predicted = WyncUtils.prop_is_predicted(ctx, prop_id)
-		var is_input = prop.data_type in [WyncEntityProp.DATA_TYPE.INPUT, WyncEntityProp.DATA_TYPE.EVENT]
+		var is_input = prop.prop_type in [WyncEntityProp.PROP_TYPE.INPUT, WyncEntityProp.PROP_TYPE.EVENT]
 
 		if predicted && is_input:
 			ctx.present_input_prop_ids.append(prop_id)

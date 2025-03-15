@@ -39,7 +39,7 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 		prop = prop as WyncEntityProp
 
 		# these are set on prediction tick start
-		if prop.data_type in [WyncEntityProp.DATA_TYPE.EVENT, WyncEntityProp.DATA_TYPE.INPUT]:
+		if prop.prop_type in [WyncEntityProp.PROP_TYPE.EVENT, WyncEntityProp.PROP_TYPE.INPUT]:
 			continue
 
 		if prop.relative_syncable:

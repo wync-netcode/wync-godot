@@ -82,12 +82,12 @@ static func interpolate_all(wync_ctx: WyncCtx, co_ticks: CoTicks, co_predict_dat
 				0, 1)
 				#Log.out(self, "left %s target %s right %s" % [left_timestamp_ms, target_time_pred, right_timestamp_ms])
 
-			match prop.data_type:
-				WyncEntityProp.DATA_TYPE.FLOAT:
+			match prop.prop_type:
+				WyncEntityProp.PROP_TYPE.FLOAT:
 					var left = left_value as float
 					var right = right_value as float
 					prop.interpolated_state = lerp(left, right, factor)
-				WyncEntityProp.DATA_TYPE.VECTOR2:
+				WyncEntityProp.PROP_TYPE.VECTOR2:
 					var left = left_value as Vector2
 					var right = right_value as Vector2
 					prop.interpolated_state = lerp(left, right, factor)

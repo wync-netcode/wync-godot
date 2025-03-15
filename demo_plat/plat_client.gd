@@ -6,15 +6,13 @@ var gs := Plat.GameState.new()
 
 func _ready() -> void:
 	PlatGlobals.initialize()
+	PlatPrivate.initialize_game_state(gs)
+	PlatPrivate.generate_world(gs)
 	PlatNet.initialize_net_state(gs, true)
 	PlatNet.register_peer_myself(gs)
 
 	gs.wctx = WyncCtx.new()
 	PlatWync.setup_client(gs.wctx)
-
-	# loopback.register_peer()
-	PlatPrivate.initialize_game_state(gs)
-	PlatPrivate.generate_world(gs)
 
 
 func _physics_process(delta: float) -> void:

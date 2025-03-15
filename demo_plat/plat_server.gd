@@ -35,8 +35,11 @@ func _physics_process(delta: float) -> void:
 
 	WyncFlow.wync_client_set_current_latency(gs.wctx, PlatGlobals.loopback_ctx.latency)
 	WyncFlow.wync_server_tick_end(gs.wctx)
-	WyncThrottle.wync_set_data_limit_chars_for_out_packets(gs.wctx, 10000)
-	WyncThrottle.wync_system_gather_packets(gs.wctx)
+
+	if WyncUtils.fast_modulus(Engine.get_physics_frames(), 4) == 0:
+		WyncThrottle.wync_set_data_limit_chars_for_out_packets(gs.wctx, 10000)
+		WyncThrottle.wync_system_gather_packets(gs.wctx)
+
 	PlatNet.queue_wync_packets(gs)
 
 	queue_redraw()

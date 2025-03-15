@@ -92,12 +92,12 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 			prop = prop as WyncEntityProp
 
 			# ignore inputs
-			if prop.data_type == WyncEntityProp.DATA_TYPE.INPUT:
+			if prop.prop_type == WyncEntityProp.PROP_TYPE.INPUT:
 				continue
 
 			# sync events, including their data
 			# (auxiliar props included)
-			elif prop.data_type == WyncEntityProp.DATA_TYPE.EVENT:
+			elif prop.prop_type == WyncEntityProp.PROP_TYPE.EVENT:
 				
 				# don't send if client owns this prop
 				if ctx.client_owns_prop[client_id].has(prop_id):

@@ -11,6 +11,16 @@ static func wync_set_prop_callbacks \
 	ctx.wrapper.prop_setter[prop_id] = setter
 
 
+static func wync_register_lerp_type (ctx: WyncCtx, user_type_id: int, lerp_fun: Callable):
+	if user_type_id < 0 || user_type_id >= WyncCtx.WRAPPER_MAX_USER_TYPES:
+		assert(false)
+	ctx.wrapper.lerp_type_to_lerp_function[user_type_id] = ctx.wrapper.lerp_function.size()
+	ctx.wrapper.lerp_function.append(lerp_fun)
+
+
+## Systems
+
+
 static func wync_buffer_inputs(ctx: WyncCtx):
 	
 	if not ctx.connected:
@@ -28,9 +38,9 @@ static func wync_buffer_inputs(ctx: WyncCtx):
 		if input_prop == null:
 			Log.err("not input_prop %s" % prop_id, Log.TAG_INPUT_BUFFER)
 			continue
-		if input_prop.data_type not in [
-			WyncEntityProp.DATA_TYPE.INPUT,
-			WyncEntityProp.DATA_TYPE.EVENT]:
+		if input_prop.prop_type not in [
+			WyncEntityProp.PROP_TYPE.INPUT,
+			WyncEntityProp.PROP_TYPE.EVENT]:
 			Log.err("prop %s is not INPUT or EVENT" % prop_id, Log.TAG_INPUT_BUFFER)
 			continue
 	
@@ -47,7 +57,7 @@ static func wync_buffer_inputs(ctx: WyncCtx):
 		input_prop.confirmed_states_tick.insert_at(ctx.co_predict_data.target_tick, ctx.co_predict_data.target_tick)
 
 
-static func extract_data_to_tick(ctx: WyncCtx, co_ticks: CoTicks, save_on_tick: int = -1):
+static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
 	
 	for entity_id_key in ctx.entity_has_props.keys():
 
@@ -64,8 +74,8 @@ static func extract_data_to_tick(ctx: WyncCtx, co_ticks: CoTicks, save_on_tick: 
 			# don't extract input values
 			# FIXME: should events be extracted? game event yes, but other player events? Maybe we need an option to what events to share.
 			# NOTE: what about a setting like: NEVER, TO_ALL, TO_ALL_EXCEPT_OWNER, ONLY_TO_SERVER
-			if prop.data_type in [WyncEntityProp.DATA_TYPE.INPUT,
-				WyncEntityProp.DATA_TYPE.EVENT]:
+			if prop.prop_type in [WyncEntityProp.PROP_TYPE.INPUT,
+				WyncEntityProp.PROP_TYPE.EVENT]:
 				continue
 
 			# relative_syncable receives special treatment
@@ -126,8 +136,8 @@ static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 			var prop := WyncUtils.get_prop(ctx, prop_id)
 			if prop == null:
 				continue
-			if (prop.data_type != WyncEntityProp.DATA_TYPE.INPUT &&
-				prop.data_type != WyncEntityProp.DATA_TYPE.EVENT):
+			if (prop.prop_type != WyncEntityProp.PROP_TYPE.INPUT &&
+				prop.prop_type != WyncEntityProp.PROP_TYPE.EVENT):
 				continue
 		
 			if prop.confirmed_states_tick.get_at(ctx.co_ticks.ticks) != ctx.co_ticks.ticks:

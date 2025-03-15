@@ -1,28 +1,18 @@
 class_name WyncEntityProp
-"""
-enum SYNC_STRAT {
-	LATEST_VALUE,
-	INTERPOLATED,
-	PREDICTED # aka extrapolation / self-prediction
-}"""
 
-enum DATA_TYPE {
-	INT,
-	FLOAT,
-	VECTOR2,
-	INPUT, # can store Variant
+enum PROP_TYPE {
 	ANY,
-	EVENT,
-	STRING
+	INPUT, # can store Variant
+	EVENT, # aka Array[int]
 }
 
-static var INTERPOLABLE_DATA_TYPES: Array[DATA_TYPE] = [
-	DATA_TYPE.FLOAT,
-	DATA_TYPE.VECTOR2,
-]
+# A note about syncing strings:
+# If you want to sync strings it's recommended to config the prop
+# So that updates are only sent on value change.
 
 var name_id: String
-var data_type: DATA_TYPE
+var prop_type: PROP_TYPE
+var user_data_type: int
 var user_ctx_pointer: Variant #: VariantPointer
 var getter: Callable #: func(user_ctx: Variant) -> Variant
 var setter: Callable #: func(user_ctx: Variant, new_state: Variant) -> void
