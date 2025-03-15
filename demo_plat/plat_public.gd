@@ -45,9 +45,29 @@ static func rocket_find_available_id(gs: Plat.GameState) -> int:
 
 static func spawn_actor(gs: Plat.GameState, actor_id: int, actor_type: int, instance_id: int):
 	var actor = Plat.Actor.new()
-	actor.actor_type = Plat.ACTOR_TYPE_BALL
+	actor.actor_type = actor_type
 	actor.instance_id = instance_id
 	gs.actors[actor_id] = actor
+
+
+static func despawn_actor(gs: Plat.GameState, actor_id: int):
+	if actor_id < 0 || actor_id >= Plat.ACTOR_AMOUNT:
+		assert(false)
+		return
+	var actor := gs.actors[actor_id]
+	if actor == null:
+		assert(false)
+		return
+
+	# clean specific instance
+	match actor.actor_type:
+		Plat.ACTOR_TYPE_ROCKET:
+			if not (actor.instance_id < 0 || actor.instance_id >= Plat.ROCKET_AMOUNT):
+				gs.rockets[actor.instance_id] = null
+		_:
+			assert(false)
+
+	gs.actors[actor_id] = null
 
 
 ## @returns int. actor_id or -1
@@ -113,6 +133,7 @@ static func spawn_rocket(gs: Plat.GameState, origin: Vector2, direction: Vector2
 	rocket.actor_id = actor_id
 	rocket.position = origin
 	rocket.direction = direction
+	rocket.time_to_live_ms = Plat.ROCKET_TIME_TO_LIVE_MS
 	rocket.size = Vector2(round(Plat.BLOCK_LENGTH_PIXELS * 0.5), round(Plat.BLOCK_LENGTH_PIXELS * 0.5))
 	gs.rockets[rocket_id] = rocket
 	spawn_actor(gs, actor_id, Plat.ACTOR_TYPE_ROCKET, rocket_id)
@@ -290,10 +311,19 @@ static func system_rocket_movement(gs: Plat.GameState):
 			Plat.BLOCK_LENGTH_PIXELS,
 			Vector2.ZERO
 		):
-			#assert(false)
+			despawn_actor(gs, rocket.actor_id)
 			pass
 		else:
 			rocket.position = new_pos
+
+
+static func system_rocket_time_to_live(gs: Plat.GameState, delta: float):
+	for rocket: Plat.Rocket in gs.rockets:
+		if rocket == null:
+			continue
+		if rocket.time_to_live_ms <= 0:
+			despawn_actor(gs, rocket.actor_id)
+		rocket.time_to_live_ms -= int(delta * 1000)
 
 
 static func system_player_shoot_rocket(gs: Plat.GameState):

@@ -18,6 +18,7 @@ const PLAYER_MAX_SPEED := 3.5
 const PLAYER_GRAVITY := 5
 const PLAYER_JUMP_SPEED := 2.7
 const ROCKET_SPEED := 4.5
+const ROCKET_TIME_TO_LIVE_MS := 1200
 
 
 enum {
@@ -100,6 +101,7 @@ class Rocket:
 	var size: Vector2
 	var position: Vector2
 	var direction: Vector2
+	var time_to_live_ms: int
 
 
 class GameState:

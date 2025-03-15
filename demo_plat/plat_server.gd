@@ -30,6 +30,7 @@ func _physics_process(delta: float) -> void:
 	PlatPublic.system_ball_movement(gs)
 	PlatPublic.system_player_movement(gs, delta, [])
 	PlatPublic.system_rocket_movement(gs)
+	PlatPublic.system_rocket_time_to_live(gs, delta)
 	PlatPublic.system_player_shoot_rocket(gs)
 	#PlatPublic.player_input_reset(gs, gs.players[0], self)
 
