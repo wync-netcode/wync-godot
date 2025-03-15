@@ -52,11 +52,13 @@ static func setup_connect_client(gs: Plat.GameState):
 
 
 static func setup_sync_for_ball_actor(gs: Plat.GameState, actor_id: int):
+	if actor_id < 0 || actor_id >= Plat.ACTOR_AMOUNT: assert(false)
 	var wctx = gs.wctx
 	var actor := gs.actors[actor_id]
 	var ball_instance := gs.balls[actor.instance_id]
 
-	WyncUtils.track_entity(wctx, actor_id, Plat.ACTOR_TYPE_BALL)
+	if WyncUtils.track_entity(wctx, actor_id, Plat.ACTOR_TYPE_BALL) != OK:
+		return
 
 	var pos_prop_id = WyncUtils.prop_register_minimal(
 		wctx,
@@ -114,11 +116,13 @@ static func setup_sync_for_ball_actor(gs: Plat.GameState, actor_id: int):
 
 
 static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
+	if actor_id < 0 || actor_id >= Plat.ACTOR_AMOUNT: assert(false)
 	var wctx = gs.wctx
 	var actor := gs.actors[actor_id]
 	var player_instance := gs.players[actor.instance_id]
 
-	WyncUtils.track_entity(wctx, actor_id, Plat.ACTOR_TYPE_PLAYER)
+	if WyncUtils.track_entity(wctx, actor_id, Plat.ACTOR_TYPE_PLAYER) != OK:
+		return
 
 	var pos_prop_id = WyncUtils.prop_register_minimal(
 		wctx,
@@ -181,6 +185,33 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 		WyncUtils.prop_set_timewarpable(wctx, pos_prop_id) 
 
 
+static func setup_sync_for_rocket_actor(gs: Plat.GameState, actor_id: int):
+	if actor_id < 0 || actor_id >= Plat.ACTOR_AMOUNT: assert(false)
+	var actor := gs.actors[actor_id]
+	var wctx = gs.wctx
+	var rocket_instance := gs.rockets[actor.instance_id]
+
+	if WyncUtils.track_entity(wctx, actor_id, Plat.ACTOR_TYPE_ROCKET) != OK:
+		return
+
+	var pos_prop_id = WyncUtils.prop_register_minimal(
+		wctx,
+		actor_id,
+		"position",
+		WyncEntityProp.PROP_TYPE.ANY
+	)
+	WyncWrapper.wync_set_prop_callbacks(
+		wctx,
+		pos_prop_id,
+		rocket_instance,
+		func(user_ctx: Variant) -> Vector2: return (user_ctx as Plat.Rocket).position,
+		func(user_ctx: Variant, pos: Vector2): (user_ctx as Plat.Rocket).position = pos,
+	)
+	WyncUtils.prop_set_interpolate(
+		wctx, pos_prop_id, Plat.LERP_TYPE_VECTOR2
+	)
+
+
 #static func system_spawn_entities(gs: Plat.GameState):
 
 	#if gs.wctx.out_pending_entities_to_despawn.size() > 0:
@@ -221,6 +252,16 @@ static func client_spawn_actors(gs: Plat.GameState, ctx: WyncCtx):
 				setup_sync_for_player_actor(gs, actor_id)
 				WyncUtils.finish_spawning_entity(ctx, entity_to_spawn.entity_id, i)
 
+			Plat.ACTOR_TYPE_ROCKET:
+				# spawn some entity
+				var actor_id = PlatPublic.spawn_rocket(gs, Vector2.ZERO, Vector2.ZERO, entity_to_spawn.entity_id)
+				assert(actor_id != -1)
+
+				# setup actor with wync
+				setup_sync_for_rocket_actor(gs, actor_id)
+				WyncUtils.finish_spawning_entity(ctx, entity_to_spawn.entity_id, i)
+	
+
 	# wync cleanup
 	WyncFlow.wync_system_spawned_props_cleanup(ctx)
 
@@ -239,28 +280,10 @@ static func update_what_the_clients_can_see(gs: Plat.GameState):
 		for peer_id in range(1, ctx.peers.size()):
 			# TODO: get me a list of only active peers!
 
-			for player_actor_id: int in range(Plat.PLAYER_AMOUNT):
-				if not WyncUtils.is_entity_tracked(ctx, player_actor_id):
+			for actor_id: int in range(Plat.ACTOR_AMOUNT):
+				if not WyncUtils.is_entity_tracked(ctx, actor_id):
 					continue
-				WyncThrottle.wync_client_now_can_see_entity(ctx, peer_id, player_actor_id)
-
-				#k
-
-			## map local entities
-			#for actor_id in range(0, 5 + 1):
-				#if co_actors.actors.size() <= actor_id:
-					#continue
-				#if co_actors.actors[actor_id] == null:
-					#continue
-
-				## deleteme debug
-				#if actor_id == 3:
-					#continue
-
-				#WyncThrottle.wync_client_now_can_see_entity(ctx, peer_id, actor_id)
-				#WyncThrottle.wync_add_local_existing_entity(ctx, peer_id, actor_id)
-
-			## 
+				WyncThrottle.wync_client_now_can_see_entity(ctx, peer_id, actor_id)
 			
 			# prob prop
 			# Note: Move this to peer setup
@@ -368,11 +391,14 @@ static func set_interpolated_state(gs: Plat.GameState):
 
 		match actor.actor_type:
 			Plat.ACTOR_TYPE_BALL:
-				var ball := gs.balls[actor.instance_id]
-				ball.position = prop.interpolated_state
+				var instance := gs.balls[actor.instance_id]
+				instance.position = prop.interpolated_state
 			Plat.ACTOR_TYPE_PLAYER:
-				var ball := gs.balls[actor.instance_id]
-				ball.position = prop.interpolated_state
+				var instance := gs.players[actor.instance_id]
+				instance.position = prop.interpolated_state
+			Plat.ACTOR_TYPE_ROCKET:
+				var instance := gs.rockets[actor.instance_id]
+				instance.position = prop.interpolated_state
 			_:
 				assert(false)
 

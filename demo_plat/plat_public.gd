@@ -334,7 +334,10 @@ static func system_player_shoot_rocket(gs: Plat.GameState):
 			continue
 		var player_center = player.position + Vector2(player.size.x, player.size.y) / 2
 		var direction = player_center.direction_to(player.input.aim)
-		spawn_rocket_server(gs, player_center, direction)
+
+		var actor_id = spawn_rocket_server(gs, player_center, direction)
+		if actor_id != -1:
+			PlatWync.setup_sync_for_rocket_actor(gs, actor_id)
 
 
 static func player_input_additive(gs: Plat.GameState, player: Plat.Player, node2d: Node2D):

@@ -68,6 +68,7 @@ offset_bottom = 40.0
 
 [node name="debug_info4" parent="CanvasLayer/HBoxContainer" instance=ExtResource("5_mx31v")]
 layout_mode = 2
+size_flags_vertical = 1
 theme_override_font_sizes/font_size = 9
 text = "Info Label
 Info Label
