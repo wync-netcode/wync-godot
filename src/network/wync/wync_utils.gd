@@ -5,10 +5,14 @@ class_name WyncUtils
 # ================================================================
 
 
-static func track_entity(ctx: WyncCtx, entity_id: int, entity_type_id: int):
+static func track_entity(ctx: WyncCtx, entity_id: int, entity_type_id: int) -> int:
+	if ctx.tracked_entities.has(entity_id):
+		Log.errc(ctx, "entity (id %s, entity_type_id %s) already tracked" % [entity_id, entity_type_id])
+		return 1
 	ctx.tracked_entities[entity_id] = true
 	ctx.entity_has_props[entity_id] = []
 	ctx.entity_is_of_type[entity_id] = entity_type_id
+	return OK
 
 
 static func untrack_entity(ctx: WyncCtx, entity_id: int):
@@ -182,7 +186,7 @@ static func prop_register(
 	return prop_id
 
 
-static func finish_spawning_entity(ctx: WyncCtx, entity_id: int, pending_id) -> int:
+static func finish_spawning_entity(ctx: WyncCtx, entity_id: int, pending_id: int) -> int:
 
 	var entity_to_spawn = ctx.out_pending_entities_to_spawn[pending_id]
 	entity_to_spawn.already_spawned = true

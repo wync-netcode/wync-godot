@@ -327,18 +327,12 @@ static func event_is_healthy (ctx: WyncCtx, event_id: int) -> int:
 
 static func auxiliar_props_clear_current_delta_events(ctx: WyncCtx):
 	for prop_id: int in ctx.active_prop_ids:
-		var prop = WyncUtils.get_prop(ctx, prop_id)
-		if prop == null:
-			continue
-		prop = prop as WyncEntityProp
+		var prop := WyncUtils.get_prop(ctx, prop_id)
 		if not prop.relative_syncable:
 			continue
 		prop.current_delta_events.clear()
 		
-		var aux_prop = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
-		if aux_prop == null:
-			continue
-		aux_prop = aux_prop as WyncEntityProp
+		var aux_prop := WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
 		aux_prop.current_undo_delta_events.clear()
 
 
