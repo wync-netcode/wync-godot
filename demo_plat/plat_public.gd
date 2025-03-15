@@ -69,6 +69,10 @@ static func despawn_actor(gs: Plat.GameState, actor_id: int):
 
 	gs.actors[actor_id] = null
 
+	# clean from wync
+	if WyncUtils.is_entity_tracked(gs.wctx, actor_id):
+		WyncUtils.untrack_entity(gs.wctx, actor_id)
+
 
 ## @returns int. actor_id or -1
 static func spawn_ball_server(gs: Plat.GameState, origin: Vector2) -> int:

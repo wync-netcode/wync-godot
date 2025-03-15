@@ -20,6 +20,7 @@ func _physics_process(delta: float) -> void:
 		# TODO: throttle
 		PlatNet.client_send_connection_request(gs)
 	PlatNet.consume_loopback_packets(gs)
+	PlatWync.client_despawn_actors(gs, gs.wctx)
 	PlatWync.client_spawn_actors(gs, gs.wctx)
 	PlatWync.find_out_what_player_i_control(gs)
 

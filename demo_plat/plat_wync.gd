@@ -266,6 +266,20 @@ static func client_spawn_actors(gs: Plat.GameState, ctx: WyncCtx):
 	WyncFlow.wync_system_spawned_props_cleanup(ctx)
 
 
+static func client_despawn_actors(gs: Plat.GameState, ctx: WyncCtx):
+
+	if gs.wctx.out_pending_entities_to_despawn.size() <= 0:
+		return
+
+	for i in range(ctx.out_pending_entities_to_despawn.size()):
+
+		var entity_to_despawn_id: int = ctx.out_pending_entities_to_despawn[i]
+		PlatPublic.despawn_actor(gs, entity_to_despawn_id)
+
+	# wync cleanup
+	WyncFlow.wync_clear_entities_pending_to_despawn(ctx)
+
+
 static func update_what_the_clients_can_see(gs: Plat.GameState):
 	if (
 		WyncUtils.fast_modulus(Engine.get_physics_frames(), 16) == 0
