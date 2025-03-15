@@ -28,30 +28,13 @@ static func wync_buffer_inputs(ctx: WyncCtx):
 
 	## Buffer state (extract) from props we own, to create a state history
 	
-	for prop_id: int in ctx.client_owns_prop[ctx.my_peer_id]:
-		
-		# Log.out(node_self, "client owns prop %s" % prop_id)
-		if not WyncUtils.prop_exists(ctx, prop_id):
-			Log.err("prop %s doesn't exists" % prop_id, Log.TAG_INPUT_BUFFER)
-			continue
-		var input_prop := WyncUtils.get_prop(ctx, prop_id)
-		if input_prop == null:
-			Log.err("not input_prop %s" % prop_id, Log.TAG_INPUT_BUFFER)
-			continue
-		if input_prop.prop_type not in [
-			WyncEntityProp.PROP_TYPE.INPUT,
-			WyncEntityProp.PROP_TYPE.EVENT]:
-			Log.err("prop %s is not INPUT or EVENT" % prop_id, Log.TAG_INPUT_BUFFER)
-			continue
-	
-		# Log.out(node_self, "gonna call getter for prop %s" % prop_id)
+	for prop_id: int in ctx.type_input_event__owned_prop_ids:
+
+		var input_prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
 		var getter = ctx.wrapper.prop_getter[prop_id]
 		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
 		var new_state = getter.call(user_ctx)
-		if new_state == null:
-			Log.out("new_state == null :%s" % [new_state], Log.TAG_INPUT_BUFFER)
-			assert(false)
-			continue
+		assert(new_state != null)
 
 		input_prop.confirmed_states.insert_at(ctx.co_predict_data.target_tick, new_state)
 		input_prop.confirmed_states_tick.insert_at(ctx.co_predict_data.target_tick, ctx.co_predict_data.target_tick)
@@ -77,8 +60,6 @@ static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
 		# ===========================================================
 		# Save state history per tick
 		
-		#if prop_id != 14:
-			#continue
 		var getter = ctx.wrapper.prop_getter[prop_id]
 		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
 		prop.confirmed_states.insert_at(save_on_tick, getter.call(user_ctx))
@@ -88,11 +69,7 @@ static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
 static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: Array[int], tick: int):
 	
 	for prop_id: int in prop_ids:
-		var prop = WyncUtils.get_prop(ctx, prop_id)
-		if prop == null:
-			continue 
-		prop = prop as WyncEntityProp
-		
+		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
 		
 		var last_confirmed_tick = prop.last_ticks_received.get_relative(tick)
 		if last_confirmed_tick == -1:
@@ -130,6 +107,7 @@ static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 	return OK
 
 
+## for inputs / events
 static func xtrap_reset_all_state_to_confirmed_tick_absolute(ctx: WyncCtx, prop_ids: Array[int], tick: int):
 	for prop_id: int in prop_ids:
 		var prop := ctx.props[prop_id]
@@ -187,13 +165,8 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 	var right_value: Variant
 	var factor: float
 
-	for prop_id: int in ctx.active_prop_ids:
-		var prop = WyncUtils.get_prop(ctx, prop_id)
-		if prop == null:
-			continue
-		prop = prop as WyncEntityProp
-		if not prop.interpolated:
-			continue
+	for prop_id in ctx.type_state__interpolated_regular_prop_ids:
+		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
 
 		# NOTE: opportunity to optimize this by not recalculating this each loop
 

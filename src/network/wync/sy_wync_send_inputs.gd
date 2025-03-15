@@ -4,19 +4,6 @@ const label: StringName = StringName("SyWyncSendInputs")
 
 ## * Sends inputs/events in chunks
 
-
-func on_process(_entities, _data, _delta: float):
-
-	var en_client = ECS.get_singleton_entity(self, "EnSingleClient")
-	if not en_client:
-		Log.err("Couldn't find singleton EnSingleClient", Log.TAG_INPUT_BUFFER)
-		return
-	
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var ctx = single_wync.ctx as WyncCtx
-	wync_client_send_inputs (ctx)
-	
-
 ## TODO: either throttle or commit to the packet
 ## This system writes state (ctx.peers_events_to_sync) but it's naturally redundant
 ## So think about it as if it didn't write state
@@ -31,19 +18,8 @@ static func wync_client_send_inputs (ctx: WyncCtx):
 	# reset events_id to sync
 	ctx.peers_events_to_sync[WyncCtx.SERVER_PEER_ID].clear()
 	
-	for prop_id: int in ctx.client_owns_prop[ctx.my_peer_id]:
-		
-		if not WyncUtils.prop_exists(ctx, prop_id):
-			Log.errc(ctx, "prop %s doesn't exists" % prop_id, Log.TAG_INPUT_BUFFER)
-			continue
-		var input_prop := WyncUtils.get_prop(ctx, prop_id)
-		if input_prop == null:
-			Log.errc(ctx, "not input_prop %s" % prop_id, Log.TAG_INPUT_BUFFER)
-			continue
-		if input_prop.prop_type not in [WyncEntityProp.PROP_TYPE.INPUT,
-			WyncEntityProp.PROP_TYPE.EVENT]:
-			Log.errc(ctx, "prop %s is not INPUT or EVENT" % prop_id, Log.TAG_INPUT_BUFFER)
-			continue
+	for prop_id in ctx.type_input_event__owned_prop_ids:
+		var input_prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
 
 		# prepare packet
 		# NOTE: Data size limit could be imposed at this level too

@@ -30,6 +30,7 @@ static func wync_server_tick_end(ctx: WyncCtx):
 
 static func wync_client_tick_end(ctx: WyncCtx):
 
+	WyncXtrap.wync_client_filter_prop_ids(ctx)
 	SyTicks.wync_advance_ticks(ctx)
 	WyncThrottle.wync_system_stabilize_latency(ctx)
 	SyNetPredictionTicks.wync_update_prediction_ticks(ctx)
@@ -165,7 +166,6 @@ static func wync_try_to_connect(ctx: WyncCtx) -> int:
 		return OK
 
 	# throttle
-	#if ctx.co_ticks.ticks % 5 != 0:
 	if WyncUtils.fast_modulus(ctx.co_ticks.ticks, 8) != 0:
 		return OK
 
@@ -803,12 +803,7 @@ static func wync_system_client_send_delta_prop_acks(ctx: WyncCtx):
 	var last_tick_received: Array[int] = []
 	var delta_props_last_tick = ctx.client_has_relative_prop_has_last_tick[ctx.my_peer_id] as Dictionary
 
-	for i in range(ctx.active_prop_ids.size()):
-		var prop_id = ctx.active_prop_ids[i]
-		var prop := WyncUtils.get_prop(ctx, prop_id)
-		assert(prop != null)
-		if not prop.relative_syncable:
-			continue
+	for prop_id in ctx.type_state__delta_prop_ids:
 		if not delta_props_last_tick.has(prop_id) || delta_props_last_tick[prop_id] == -1:
 			continue
 		var last_tick = delta_props_last_tick[prop_id]

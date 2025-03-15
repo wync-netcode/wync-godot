@@ -1,7 +1,7 @@
 class_name WyncEntityProp
 
 enum PROP_TYPE {
-	ANY,
+	STATE,
 	INPUT, # can store Variant
 	EVENT, # aka Array[int]
 }

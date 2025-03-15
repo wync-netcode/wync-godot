@@ -31,14 +31,11 @@ static func wync_lerp_precompute (ctx: WyncCtx):
 	var target_time_conf = curr_time - co_predict_data.lerp_ms
 
 	# precompute which ticks we'll be interpolating
+	# TODO: might want to use another filtered prop list for 'predicted'.
+	# Before doing that we might need to settled on our strategy for extrapolation as fallback
+	# of interpolation for confirmed states
 
-	for prop_id: int in ctx.active_prop_ids:
-		var prop = WyncUtils.get_prop(ctx, prop_id)
-		if prop == null:
-			continue
-		prop = prop as WyncEntityProp
-		if not prop.interpolated:
-			continue
+	for prop_id in ctx.type_state__interpolated_regular_prop_ids:
 
 		# -> for predictes states
 

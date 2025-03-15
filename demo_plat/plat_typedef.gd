@@ -18,7 +18,7 @@ const PLAYER_MAX_SPEED := 3.5
 const PLAYER_GRAVITY := 5
 const PLAYER_JUMP_SPEED := 2.7
 const ROCKET_SPEED := 4.5
-const ROCKET_TIME_TO_LIVE_MS := 1200
+const ROCKET_TIME_TO_LIVE_MS := 3200
 
 
 enum {

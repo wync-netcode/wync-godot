@@ -255,16 +255,26 @@ var pred_intented_first_tick: int = 0
 ## * Limited by REGULAR_PROP_CACHED_STATE_AMOUNT
 var max_prediction_tick_threeshold: int = 0
 
-## precompile props for prediction ticks
-var present_input_prop_ids: Array[int] = []
-var present_delta_prop_ids: Array[int] = []
-var present_to_integrate_pred_entity_ids: Array[int] = []
-var present_pred_auxiliar_prop_ids: Array[int] = []
+## client filtered props
+var type_input_event__owned_prop_ids: Array[int] = []
+var type_input_event__predicted_owned_prop_ids: Array[int] = []
+var type_event__predicted_prop_ids: Array[int] = []
+var type_event__predicted_auxiliar_prop_ids: Array[int] = []
+var type_state__delta_prop_ids: Array[int] = []
+var type_state__predicted_delta_prop_ids: Array[int] = []
+var type_state__predicted_regular_prop_ids: Array[int] = []
+var type_state__interpolated_regular_prop_ids: Array[int] = []
 
-## filtered props to optimize cycles
+## Note: This one requires special treatment
+var type_state__newstate_regular_prop_ids: Array[int] = [] # props that just received new state
+
+## precompile props for prediction ticks
+var predicted_integrable_entity_ids: Array[int] = []
+
+## server filtered props to optimize cycles
 var was_any_prop_added_deleted := false
 var filtered_clients_input_and_event_prop_ids: Array[int] = []
-var filtered_delta_prop_ids: Array[int] = []
+var filtered_delta_prop_ids: Array[int] = [] # client & server
 var filtered_regular_extractable_prop_ids: Array[int] = []
 
 # throttling
