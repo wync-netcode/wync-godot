@@ -21,7 +21,9 @@ func _ready() -> void:
 
 ## Run global processes
 
-#func _physics_process(_delta: float) -> void:
-func _process(_delta: float) -> void:
+func _physics_process(_delta: float) -> void:
 	Loopback.system_fluctuate_latency(loopback_ctx)
-	Loopback.system_send_receive(loopback_ctx)
+	Loopback.system_service(loopback_ctx)
+
+#func _process(_delta: float) -> void:
+	#Loopback.system_send_receive(loopback_ctx)

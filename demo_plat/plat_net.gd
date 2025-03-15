@@ -125,6 +125,7 @@ static func queue_wync_packets(gs: Plat.GameState):
 		user_packet.data = pkt.data 
 		Loopback.queue_unreliable_packet(PlatGlobals.loopback_ctx, io_peer, pkt.to_nete_peer_id, user_packet)
 
-	# clear 
+	# clear & flush
 	gs.wctx.out_reliable_packets.clear()
 	gs.wctx.out_unreliable_packets.clear()
+	Loopback.system_flush(PlatGlobals.loopback_ctx)

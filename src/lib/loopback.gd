@@ -3,8 +3,7 @@ class_name Loopback
 
 class Context:
 	var peers: Array[IOPeer]  
-	## represent packets flying in the network
-	var packets: Array[Packet]
+	var packets: Array[Packet] # flying packets
 	var _latency_mean: int = 200
 	var _latency_std_dev: int = 5
 	var latency: int = _latency_mean  # (ms)
@@ -40,21 +39,18 @@ class Packet:
 
 
 static func system_fluctuate_latency(ctx: Context):
+	if WyncUtils.fast_modulus(Engine.get_physics_frames(), 4) != 0:
+		return
+
 	# TODO: Make latency polling rate a final user setting
 	ctx.latency = int(ctx.random_generator.randfn(ctx._latency_mean, ctx._latency_std_dev))
 	ctx.latency = max(0, ctx.latency)
 
 
-static func system_send_receive(ctx: Context):
+
+static func system_flush(ctx: Context):
 	var curr_time = Time.get_ticks_msec()
 
-	# ready to simulate
-
-	#ctx.simulation_delta_acumulator += delta
-	#if ctx.simulation_delta_acumulator * 1000 < ctx.simulate_every_ms:
-	#	return
-	#ctx.simulation_delta_acumulator = 0
-		
 	# look for pending packets to send
 
 	for io_peer in ctx.peers:
@@ -68,10 +64,17 @@ static func system_send_receive(ctx: Context):
 				# A transport with redundancy would just need 2.
 				pkt._deliver_time = curr_time + ctx.latency * 3
 
-			pkt._deliver_time += ctx.jitter * ctx.random_generator.randf_range(-1, 1)
+			if ctx.jitter != 0:
+				pkt._deliver_time += ctx.jitter * ctx.random_generator.randf_range(-1, 1)
 			ctx.packets.append(pkt)
 
 		io_peer.out_packets.clear()
+
+
+static func system_service(ctx: Context):
+	var curr_time = Time.get_ticks_msec()
+
+	system_flush(ctx)
 
 	# look for packets ready to be received
 
@@ -108,14 +111,6 @@ static func system_send_receive(ctx: Context):
 	for i: int in range(ids_to_delete.size()-1, -1, -1):
 		var k = ids_to_delete[i]
 		ctx.packets.remove_at(k)
-
-
-#static func system_caotic_latency(ctx: Context):
-
-	#if Engine.get_physics_frames() % int(Engine.physics_ticks_per_second/2) == 0:
-		#ctx._latency_mean += 1
-		#if ctx._latency_mean > 600:
-			#ctx._latency_mean = 0
 
 
 static func register_io_peer(ctx: Context, io_peer: IOPeer):
@@ -172,3 +167,11 @@ static func queue_unreliable_packet(ctx: Context, io_peer: IOPeer, to_peer: int,
 		return
 
 	io_peer.out_packets.append(pkt)
+
+
+#static func system_caotic_latency(ctx: Context):
+
+	#if Engine.get_physics_frames() % int(Engine.physics_ticks_per_second/2) == 0:
+		#ctx._latency_mean += 1
+		#if ctx._latency_mean > 600:
+			#ctx._latency_mean = 0

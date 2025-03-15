@@ -44,7 +44,6 @@ func _physics_process(delta: float) -> void:
 		WyncThrottle.wync_system_gather_packets(gs.wctx)
 
 	PlatNet.queue_wync_packets(gs)
-
 	queue_redraw()
 
 
