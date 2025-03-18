@@ -132,6 +132,7 @@ func generate_block_grid_event(
 		Log.err("Can't find co_wync_events", Log.TAG_GAME_EVENT)
 		return
 	
+	# --------------------------------------------------
 	# first register the event to Wync
 
 	var game_event = null
@@ -153,6 +154,12 @@ func generate_block_grid_event(
 	if (event_id == null):
 		Log.err("Error WyncEventUtils.event_wrap_up(wync_ctx, event_id) got(%s)" % [event_id], Log.TAG_GAME_EVENT)
 		return
+
+	# now that we're commiting to this event, let's publish it
+	WyncEventUtils.publish_global_event_as_client(
+		wync_ctx, 0, event_id
+	)
+	# --------------------------------------------------
 	
 	var _event = wync_ctx.events[event_id] as WyncEvent
 	if _event:
@@ -161,11 +168,6 @@ func generate_block_grid_event(
 	
 	# save the event id to component
 	#co_wync_events.events.append(event_id)
-
-	# now that we're commiting to this event, let's publish it
-	WyncEventUtils.publish_global_event_as_client(
-		wync_ctx, 0, event_id
-	)
 	
 	var co_predict_data = wync_ctx.co_predict_data
 	Log.out("debug1 lo_ticks(%s) ser_ticks(%s) target(%s) co_wync_events.events %s:%s:%s" % [co_ticks.ticks, co_ticks.server_ticks, co_predict_data.target_tick, co_wync_events, co_wync_events.events.size(), co_wync_events.events], Log.TAG_GAME_EVENT)

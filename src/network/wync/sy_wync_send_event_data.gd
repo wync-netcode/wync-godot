@@ -39,14 +39,14 @@ static func wync_get_event_data_packet (ctx: WyncCtx, peer_id: int, event_ids: A
 			Log.err("couldn't find event_id %s" % event_id, Log.TAG_EVENT_DATA)
 			continue
 		
-		var wync_event = (ctx.events[event_id] as WyncEvent).data
+		var wync_event := ctx.events[event_id]
+		var wync_event_data = wync_event.data
 		
 		# check if peer already has it
-		var event_hash = HashUtils.hash_any(wync_event)
 		# NOTE: is_serve_cached could be skipped? all events should be cached on our side...
-		var is_event_cached = ctx.events_hash_to_id.has_item_hash(event_hash)
+		var is_event_cached = ctx.events_hash_to_id.has_item_hash(wync_event.data_hash)
 		if (is_event_cached):
-			var cached_event_id = ctx.events_hash_to_id.get_item_by_hash(event_hash)
+			var cached_event_id = ctx.events_hash_to_id.get_item_by_hash(wync_event.data_hash)
 			if (cached_event_id != null):
 				var peer_has_it = ctx.to_peers_i_sent_events[peer_id].has_item_hash(cached_event_id)
 				if (peer_has_it):
@@ -56,8 +56,8 @@ static func wync_get_event_data_packet (ctx: WyncCtx, peer_id: int, event_ids: A
 		
 		var event_data = WyncPktEventData.EventData.new()
 		event_data.event_id = event_id
-		event_data.event_type_id = wync_event.event_type_id
-		event_data.event_data = WyncUtils.duplicate_any(wync_event.event_data)
+		event_data.event_type_id = wync_event_data.event_type_id
+		event_data.event_data = WyncUtils.duplicate_any(wync_event_data.event_data)
 		packet.events.append(event_data)
 
 		# commit
@@ -90,15 +90,16 @@ static func wync_system_send_events_to_peer (ctx: WyncCtx, wync_peer_id: int) ->
 			Log.err("couldn't find event_id %s" % event_id, Log.TAG_EVENT_DATA)
 			continue
 		
-		var wync_event = (ctx.events[event_id] as WyncEvent).data
+		var wync_event := ctx.events[event_id]
+		var wync_event_data = wync_event.data
 		
 		# check if peer already has it
-		var event_hash = HashUtils.hash_any(wync_event)
 		# NOTE: is_serve_cached could be skipped? all events should be cached on our side...
-		var is_event_cached = ctx.events_hash_to_id.has_item_hash(event_hash)
+		var is_event_cached = ctx.events_hash_to_id.has_item_hash(wync_event.data_hash)
 		if (is_event_cached):
-			var cached_event_id = ctx.events_hash_to_id.get_item_by_hash(event_hash)
+			var cached_event_id = ctx.events_hash_to_id.get_item_by_hash(wync_event.data_hash)
 			if (cached_event_id != null):
+				#see ctx.max_amount_cache_events
 				var peer_has_it = ctx.to_peers_i_sent_events[wync_peer_id].has_item_hash(cached_event_id)
 				if (peer_has_it):
 					continue
@@ -107,8 +108,8 @@ static func wync_system_send_events_to_peer (ctx: WyncCtx, wync_peer_id: int) ->
 		
 		var event_data = WyncPktEventData.EventData.new()
 		event_data.event_id = event_id
-		event_data.event_type_id = wync_event.event_type_id
-		event_data.event_data = wync_event.event_data
+		event_data.event_type_id = wync_event_data.event_type_id
+		event_data.event_data = wync_event_data.event_data
 		data.events.append(event_data)
 
 		# confirm commit (these events are all aready commited)

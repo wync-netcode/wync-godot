@@ -33,7 +33,7 @@ static func _get_new_event_id(ctx: WyncCtx) -> int:
 ## @returns Optional<int>. event_id
 static func instantiate_new_event(
 	ctx: WyncCtx,
-	event_type_id: int,
+	event_user_type_id: int,
 	) -> Variant:
 	if not ctx.connected:
 		return null
@@ -41,7 +41,7 @@ static func instantiate_new_event(
 	var event_id = _get_new_event_id(ctx)
 	var event = WyncEvent.new()
 	event.data = WyncEvent.EventData.new()
-	event.data.event_type_id = event_type_id
+	event.data.event_type_id = event_user_type_id
 	event.data.event_data = null
 
 	ctx.events[event_id] = event
@@ -70,23 +70,36 @@ static func event_wrap_up(
 		event_id: int,
 	) -> Variant:
 		
-	var event = ctx.events[event_id]
-	if event is not WyncEvent:
+	var event := ctx.events[event_id]
+	if event == null:
 		return null
-	event = event as WyncEvent
 	
-	var event_hash = HashUtils.hash_any(event.data)
+	event.data_hash = HashUtils.hash_any(event.data)
 	
 	# this event is a duplicate
-	if ctx.events_hash_to_id.has_item_hash(event_hash):
+	if ctx.events_hash_to_id.has_item_hash(event.data_hash):
 		ctx.events.erase(event_id)
-		var cached_event_id = ctx.events_hash_to_id.get_item_by_hash(event_hash)
+		var cached_event_id = ctx.events_hash_to_id.get_item_by_hash(event.data_hash)
 		print("WyncCtx: EventData: this event is a duplicate")
 		return cached_event_id
 	
 	# not a duplicate -> cache it
-	ctx.events_hash_to_id.push_head_hash_and_item(event_hash, event_id)
+	ctx.events_hash_to_id.push_head_hash_and_item(event.data_hash, event_id)
 	return event_id
+
+
+## @returns Optional<int>. null -> error, int -> event id
+static func new_event_wrap_up(
+	ctx: WyncCtx,
+	event_user_type_id: int,
+	event_data: Variant,
+	) -> Variant:
+
+	var event_id = WyncEventUtils.instantiate_new_event(ctx, event_user_type_id)
+	if event_id == null:
+		return null
+	WyncEventUtils.event_set_data(ctx, event_id, event_data)
+	return WyncEventUtils.event_wrap_up(ctx, event_id)
 
 
 ## Call this function whenever creating a global event

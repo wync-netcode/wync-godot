@@ -840,12 +840,12 @@ static func is_client(ctx: WyncCtx, peer_id: int = -1) -> bool:
 
 static func duplicate_any(any): #-> Optional<any>
 	if any is Object:
-		if any.has_method("copy"):
-			return any.copy()
-		if any.has_method("make_duplicate"):
-			return any.make_duplicate()
-		elif any.has_method("duplicate") && any is not Node:
+		if any.has_method("duplicate") && any is not Node:
 			return any.duplicate()
+		elif any.has_method("copy"):
+			return any.copy()
+		elif any.has_method("make_duplicate"):
+			return any.make_duplicate()
 	elif typeof(any) in [
 		TYPE_ARRAY,
 		TYPE_DICTIONARY

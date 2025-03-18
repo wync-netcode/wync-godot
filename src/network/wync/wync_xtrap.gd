@@ -196,6 +196,7 @@ static func wync_xtrap_tick_end(ctx: WyncCtx, tick: int):
 
 static func wync_xtrap_termination(ctx: WyncCtx):
 	WyncDeltaSyncUtils.auxiliar_props_clear_current_delta_events(ctx)
+	WyncDeltaSyncUtils.predicted_props_clear_events(ctx)
 	ctx.currently_on_predicted_tick = false
 
 

@@ -118,7 +118,7 @@ var entity_is_of_type: Dictionary
 
 # TODO: Separate generated events from CACHED events
 # Map<event_id: uint, WyncEvent>
-var events: Dictionary
+var events: Dictionary[int, WyncEvent]
 
 var event_id_counter: int
 

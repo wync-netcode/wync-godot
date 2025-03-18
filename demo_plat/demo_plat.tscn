@@ -1,9 +1,9 @@
 [gd_scene load_steps=6 format=3 uid="uid://40h8mrqmmmcf"]
 
-[ext_resource type="Script" path="res://demo_plat/plat_server.gd" id="1_8i2rb"]
-[ext_resource type="Script" path="res://demo_plat/plat_globals.gd" id="1_685w5"]
-[ext_resource type="Script" path="res://demo_plat/plat_client.gd" id="3_jpy0n"]
-[ext_resource type="Script" path="res://src/ui/plat_debug_info_setup.gd" id="4_vjyac"]
+[ext_resource type="Script" uid="uid://c0ytsjda1qlcf" path="res://demo_plat/plat_server.gd" id="1_8i2rb"]
+[ext_resource type="Script" uid="uid://bdd6tve8scq67" path="res://demo_plat/plat_globals.gd" id="1_685w5"]
+[ext_resource type="Script" uid="uid://crcrj34k485a7" path="res://demo_plat/plat_client.gd" id="3_jpy0n"]
+[ext_resource type="Script" uid="uid://sc3wcybp83gb" path="res://src/ui/plat_debug_info_setup.gd" id="4_vjyac"]
 [ext_resource type="PackedScene" uid="uid://dr76xgr158sfu" path="res://src/ui/debug_info.tscn" id="5_mx31v"]
 
 [node name="Root" type="Node"]

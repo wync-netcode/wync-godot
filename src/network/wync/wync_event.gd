@@ -2,6 +2,7 @@ class_name WyncEvent
 
 
 var data: EventData
+var data_hash: int # used to avoid sending duplicates
 
 
 func _init() -> void:

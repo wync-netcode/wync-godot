@@ -47,10 +47,6 @@ enum {
 }
 
 
-class Block:
-	var type: int
-
-
 class PlayerInput:
 	var movement_dir: Vector2
 	var aim: Vector2
@@ -70,6 +66,15 @@ class Trail:
 	var tick_duration: int
 
 
+class Block:
+	var type: int
+
+
+class Chunk:
+	var actor_id: int
+	var blocks: Array[Array] #: Array[Array[Block]]
+
+
 class Actor:
 	#var actor_id: int # global actor identifier
 	var actor_type: int # type of actor (e.g. Ball, Player, Chunk, etc)
@@ -82,11 +87,6 @@ class Player:
 	var position: Vector2
 	var velocity: Vector2
 	var input: PlayerInput
-
-
-class Chunk:
-	var actor_id: int
-	var blocks: Array[Array] #: Array[Array[Block]]
 
 
 class Ball:
@@ -145,3 +145,27 @@ class Client:
 	var state: Client.STATE = Client.STATE.DISCONNECTED
 	var identifier: int = -1
 	var server_peer: int = -1  # key to actual peer, represents the connection stub
+
+
+# Events
+# --------------------------------------------------
+
+enum {
+	EVENT_NONE,
+
+	# delta
+	EVENT_DELTA_BLOCK_REPLACE,
+
+	# player input
+	EVENT_PLAYER_SHOOT,
+	EVENT_PLAYER_BLOCK_BREAK,
+	EVENT_PLAYER_BLOCK_PLACE,
+}
+
+class EventPlayerBlockBreak:
+	var pos: Vector2i
+
+	func duplicate() -> EventPlayerBlockBreak:
+		var newi = EventPlayerBlockBreak.new()
+		newi.pos = pos
+		return newi

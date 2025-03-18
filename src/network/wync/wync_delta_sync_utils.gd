@@ -235,6 +235,7 @@ static func merge_event_to_state_real_state \
 	return result[0]
 
 
+## TODO: Move to wrapper
 ## @returns Tuple[int, Optional<int>]. [0] -> Error, [1] -> undo_event_id || null
 static func _merge_event_to_state \
 	(ctx: WyncCtx, prop: WyncEntityProp, event_id: int, state: Variant, requires_undo: bool) -> Array[Variant]:
@@ -336,6 +337,16 @@ static func auxiliar_props_clear_current_delta_events(ctx: WyncCtx):
 
 static func predicted_props_clear_events(ctx: WyncCtx):
 	for prop_id in ctx.type_event__predicted_prop_ids:
+		var setter = ctx.wrapper.prop_setter[prop_id]
+		var user_cxt = ctx.wrapper.prop_user_ctx[prop_id]
+		setter.call(user_cxt, [] as Array[int])
+
+
+static func owned_props_clear_events(ctx: WyncCtx):
+	for prop_id in ctx.type_input_event__owned_prop_ids:
+		var prop = WyncUtils.get_prop_unsafe(ctx, prop_id)
+		if prop.prop_type != WyncEntityProp.PROP_TYPE.EVENT:
+			continue
 		var setter = ctx.wrapper.prop_setter[prop_id]
 		var user_cxt = ctx.wrapper.prop_user_ctx[prop_id]
 		setter.call(user_cxt, [] as Array[int])

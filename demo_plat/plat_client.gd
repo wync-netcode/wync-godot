@@ -26,6 +26,7 @@ func _physics_process(delta: float) -> void:
 
 	if gs.i_control_player_id != -1:
 		PlatPublic.player_input_additive(gs, gs.players[gs.i_control_player_id], self)
+		PlatPublic.system_player_grid_events(gs, gs.players[gs.i_control_player_id])
 	
 	WyncFlow.wync_client_set_current_latency(gs.wctx, PlatGlobals.loopback_ctx.latency)
 	WyncFlow.wync_client_tick_end(gs.wctx)

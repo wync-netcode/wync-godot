@@ -16,7 +16,8 @@ static func wync_client_send_inputs (ctx: WyncCtx):
 		return
 	
 	# reset events_id to sync
-	ctx.peers_events_to_sync[WyncCtx.SERVER_PEER_ID].clear()
+	var event_set = ctx.peers_events_to_sync[WyncCtx.SERVER_PEER_ID] as Dictionary
+	event_set.clear()
 	
 	for prop_id in ctx.type_input_event__owned_prop_ids:
 		var input_prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
@@ -51,9 +52,7 @@ static func wync_client_send_inputs (ctx: WyncCtx):
 				input is Array):
 				input = input as Array
 				for event_id: int in input:
-					var event_set = ctx.peers_events_to_sync[WyncCtx.SERVER_PEER_ID] as Dictionary
 					event_set[event_id] = true
-				
 
 		pkt_inputs.amount = pkt_inputs.inputs.size()
 		pkt_inputs.prop_id = prop_id
@@ -69,3 +68,5 @@ static func wync_client_send_inputs (ctx: WyncCtx):
 			var err = WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.UNRELIABLE, false)
 			if err != OK: # Out of space
 				break
+
+	#Log.outc(ctx, "debugevents | TOTAL events to sync %s" % [event_set.keys()])

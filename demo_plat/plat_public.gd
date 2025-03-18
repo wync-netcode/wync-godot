@@ -355,3 +355,25 @@ static func player_input_additive(gs: Plat.GameState, player: Plat.Player, node2
 
 static func player_input_reset(gs: Plat.GameState, player: Plat.Player):
 	player.input.shoot = false
+
+
+static func system_player_grid_events(gs: Plat.GameState, player: Plat.Player):
+	# get cursor grid position
+	var cursor_grid_pos: Vector2i = Vector2i(
+		floor(player.input.aim.x / Plat.BLOCK_LENGTH_PIXELS),
+		floor(player.input.aim.y / Plat.BLOCK_LENGTH_PIXELS) +1,
+	)
+
+	# is it valid?
+	if (cursor_grid_pos.x < 0 || cursor_grid_pos.x >= (Plat.CHUNK_AMOUNT * Plat.CHUNK_WIDTH_BLOCKS)
+	|| cursor_grid_pos.y < 0 || cursor_grid_pos.y >= Plat.CHUNK_HEIGHT_BLOCKS):
+		return
+
+	print("debugmouse | mouse_grid_pos %s" % [cursor_grid_pos])
+
+	# get mouse 1 event
+	var event_data = Plat.EventPlayerBlockBreak.new()
+	event_data.pos = cursor_grid_pos
+
+	var event_id = WyncEventUtils.new_event_wrap_up(gs.wctx, Plat.EVENT_PLAYER_BLOCK_BREAK, event_data)
+	WyncEventUtils.publish_global_event_as_client(gs.wctx, 0, event_id)
