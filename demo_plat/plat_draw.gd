@@ -2,7 +2,10 @@ class_name PlatDraw
 
 
 static func draw_game(canvas: Node2D, gs: Plat.GameState):
-	draw_block_grid(canvas, gs, gs.camera_offset)
+	if not gs.net.is_client:
+		draw_block_grid(canvas, gs, gs.camera_offset)
+	else:
+		draw_block_grid(canvas, gs, gs.camera_offset + Vector2(0, 300))
 	draw_balls(canvas, gs, gs.camera_offset)
 	draw_trails(canvas, gs, gs.camera_offset)
 	draw_players(canvas, gs, gs.camera_offset)

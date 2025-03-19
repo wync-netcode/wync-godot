@@ -32,6 +32,7 @@ func _physics_process(delta: float) -> void:
 	PlatPublic.system_rocket_movement(gs)
 	PlatPublic.system_rocket_time_to_live(gs, delta)
 	PlatPublic.system_player_shoot_rocket(gs)
+	PlatPublic.system_server_events(gs)
 	#PlatPublic.player_input_reset(gs, gs.players[0], self)
 
 	PlatWync.update_what_the_clients_can_see(gs)

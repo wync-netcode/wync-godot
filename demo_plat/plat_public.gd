@@ -377,3 +377,44 @@ static func system_player_grid_events(gs: Plat.GameState, player: Plat.Player):
 
 	var event_id = WyncEventUtils.new_event_wrap_up(gs.wctx, Plat.EVENT_PLAYER_BLOCK_BREAK, event_data)
 	WyncEventUtils.publish_global_event_as_client(gs.wctx, 0, event_id)
+
+
+static func system_server_events(gs: Plat.GameState):
+
+	var channel_id = 0
+	var server_wync_peer_id = 1
+	var event_list: Array = gs.wctx.peer_has_channel_has_events[server_wync_peer_id][channel_id]
+	while(event_list.size() > 0):
+		var event_id = event_list[event_list.size() -1]
+		assert(gs.wctx.events.has(event_id))
+		var event := gs.wctx.events[event_id]
+		if event == null:
+			WyncEventUtils.global_event_consume(gs.wctx, server_wync_peer_id, channel_id, event_id)
+			continue
+
+		# handle it
+		Log.out("event handling | handling server event %s" % [event_id], Log.TAG_GAME_EVENT)
+		handle_events(gs, event.data, server_wync_peer_id)
+		WyncEventUtils.global_event_consume(gs.wctx, server_wync_peer_id, channel_id, event_id)
+
+
+static func handle_events(gs: Plat.GameState, event_data: WyncEvent.EventData, peer_id: int):
+	match event_data.event_type_id:
+		Plat.EVENT_PLAYER_BLOCK_BREAK:
+			var data = event_data.event_data as Plat.EventPlayerBlockBreak
+			grid_block_break(gs, data.pos)
+
+
+static func grid_block_break(gs: Plat.GameState, block_pos: Vector2i):
+	# block pos is valid
+	if (block_pos.x < 0 || block_pos.x >= (Plat.CHUNK_AMOUNT * Plat.CHUNK_WIDTH_BLOCKS)
+	|| block_pos.y < 0 || block_pos.y >= Plat.CHUNK_HEIGHT_BLOCKS
+	):
+		Log.errc(gs.wctx, "Invalid coordinates");
+		return
+
+	# downgrade block
+	var chunk_id = floori(block_pos.x / (Plat.CHUNK_WIDTH_BLOCKS))
+	var chunk := gs.chunks[chunk_id]
+	var block: Plat.Block = chunk.blocks[block_pos.x % Plat.CHUNK_WIDTH_BLOCKS][block_pos.y]
+	block.type = max(0, block.type -1)
