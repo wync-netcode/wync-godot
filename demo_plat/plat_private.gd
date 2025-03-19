@@ -20,6 +20,7 @@ static func initialize_game_state(gs: Plat.GameState):
 	for k in range(Plat.CHUNK_AMOUNT):
 		var chunk = Plat.Chunk.new()
 		chunk.blocks.resize(Plat.CHUNK_WIDTH_BLOCKS)
+		chunk.position = k
 
 		for i in range(Plat.CHUNK_WIDTH_BLOCKS):
 			var vertical = chunk.blocks[i] as Array[Plat.Block]

@@ -303,22 +303,22 @@ static func wync_client_no_longer_sees_entity(ctx: WyncCtx, client_id: int, enti
 ## because it assumes the client already has it.
 
 static func wync_add_local_existing_entity \
-		(ctx: WyncCtx, client_id: int, entity_id: int) -> int:
+		(ctx: WyncCtx, wync_client_id: int, entity_id: int) -> int:
 
 	if WyncUtils.is_client(ctx):
 		return 1
-	if client_id == WyncCtx.SERVER_PEER_ID:
+	if wync_client_id == WyncCtx.SERVER_PEER_ID:
 		return 2
 	if not WyncUtils.is_entity_tracked(ctx, entity_id): # entity exists
 		Log.err("entity (%s) isn't tracked", Log.TAG_THROTTLE)
 		return 3
 
-	var entity_set = ctx.clients_sees_entities[client_id]
+	var entity_set = ctx.clients_sees_entities[wync_client_id]
 	entity_set[entity_id] = true
 
 	# remove from new entities
 
-	var new_entity_set = ctx.clients_sees_new_entities[client_id] as Dictionary
+	var new_entity_set = ctx.clients_sees_new_entities[wync_client_id] as Dictionary
 	new_entity_set.erase(entity_id)
 
 	return OK

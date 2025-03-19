@@ -48,7 +48,21 @@ static func setup_connect_client(gs: Plat.GameState):
 			var prop_id = WyncUtils.entity_get_prop_id(ctx, actor_id, prop_name_id)
 			WyncUtils.prop_set_client_owner(ctx, prop_id, wync_peer_id)
 
+		# Note: In bigger games with different levels you might set this up also on level change
+		setup_new_client_level_props(gs, wync_peer_id)
+
 	WyncUtils.clear_peers_pending_to_setup(ctx)
+
+
+# setup entities that the client should already have present
+static func setup_new_client_level_props(gs: Plat.GameState, wync_peer_id: int):
+
+	# chunk entities should be present
+	for i: int in range(Plat.CHUNK_AMOUNT):
+		var chunk := gs.chunks[i]
+		if chunk == null:
+			continue
+		WyncThrottle.wync_add_local_existing_entity(gs.wctx, wync_peer_id, chunk.actor_id)
 
 
 static func setup_sync_for_ball_actor(gs: Plat.GameState, actor_id: int):
@@ -212,12 +226,59 @@ static func setup_sync_for_rocket_actor(gs: Plat.GameState, actor_id: int):
 	)
 
 
+static func setup_sync_for_all_chunks(gs: Plat.GameState):
+	for i: int in range(Plat.CHUNK_AMOUNT):
+		var chunk := gs.chunks[i]
+		if chunk == null:
+			continue
+
+		var instance_id = i
+		var actor_id = PlatPublic.actor_find_available_id(gs)
+		chunk.actor_id = actor_id
+
+		PlatPublic.spawn_actor(gs, actor_id, Plat.ACTOR_TYPE_CHUNK, instance_id)
+		PlatWync.setup_sync_for_chunk_actor(gs, actor_id)
+
+
+static func setup_sync_for_chunk_actor(gs: Plat.GameState, actor_id: int):
+	if actor_id < 0 || actor_id >= Plat.ACTOR_AMOUNT: assert(false)
+	var actor := gs.actors[actor_id]
+	var wctx = gs.wctx
+	var chunk_instance := gs.chunks[actor.instance_id]
+
+	if WyncUtils.track_entity(wctx, actor_id, Plat.ACTOR_TYPE_CHUNK) != OK:
+		return
+
+	var blocks_prop = WyncUtils.prop_register_minimal(
+		wctx,
+		actor_id,
+		"blocks",
+		WyncEntityProp.PROP_TYPE.STATE
+	)
+	WyncWrapper.wync_set_prop_callbacks(
+		wctx,
+		blocks_prop,
+		chunk_instance,
+		func(user_ctx: Variant) -> Array[Array]: return (user_ctx as Plat.Chunk).blocks.duplicate(true),
+		func(user_ctx: Variant, blocks: Array[Array]): (user_ctx as Plat.Chunk).blocks = blocks,
+	)
+
+
 #static func system_spawn_entities(gs: Plat.GameState):
 
 	#if gs.wctx.out_pending_entities_to_despawn.size() > 0:
 		#despawn_actors(gs.wctx)
 	#if gs.wctx.out_pending_entities_to_spawn.size() > 0:
 		#client_spawn_actors(gs.wctx)
+
+
+static func client_event_connected_to_server(gs: Plat.GameState):
+	if not WyncUtils.out_client_just_connected_to_server(gs.wctx):
+		return
+
+	# setup
+
+	PlatWync.setup_sync_for_all_chunks(gs)
 
 
 static func client_spawn_actors(gs: Plat.GameState, ctx: WyncCtx):
@@ -260,6 +321,10 @@ static func client_spawn_actors(gs: Plat.GameState, ctx: WyncCtx):
 				# setup actor with wync
 				setup_sync_for_rocket_actor(gs, actor_id)
 				WyncUtils.finish_spawning_entity(ctx, entity_to_spawn.entity_id, i)
+
+			Plat.ACTOR_TYPE_CHUNK:
+				# chunks already exist on clients, no need for spawn event
+				assert(false)
 	
 
 	# wync cleanup
@@ -351,18 +416,17 @@ static func extrapolate(gs: Plat.GameState, delta: float):
 		PlatPublic.system_player_movement(gs, delta, dont_predict_entity_ids)
 
 		# debug trail
-		#if base_tick == -1:
-			#base_tick = tick
 		if WyncUtils.fast_modulus(tick, 2) == 0:
-			for player_id: int in range(gs.players.size()):
-				#if not WyncUtils.is_entity_tracked(ctx, player_id):
-					#continue
-				if not WyncUtils.entity_is_predicted(ctx, player_id):
+			for player_id: int in range(Plat.PLAYER_AMOUNT):
+				var player := gs.players[player_id]
+				if player == null:
+					continue
+				if not WyncUtils.entity_is_predicted(ctx, player.actor_id):
 					continue
 				#var progress = (float(tick) - ctx.last_tick_received) / (target_tick - ctx.last_tick_received)
 				#var progress = float(tick - (target_tick - 28)) / 10
 				var progress = float(tick - base_tick) / 10
-				var prop_position = WyncUtils.entity_get_prop_id(ctx, player_id, "position")
+				var prop_position = WyncUtils.entity_get_prop_id(ctx, player.actor_id, "position")
 				if prop_position:
 					var getter = ctx.wrapper.prop_getter[prop_position]
 					var user_ctx = ctx.wrapper.prop_user_ctx[prop_position]

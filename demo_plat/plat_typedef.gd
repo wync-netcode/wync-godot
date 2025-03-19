@@ -4,10 +4,10 @@ class_name Plat
 const ACTOR_AMOUNT := 20
 const BALL_AMOUNT := 4
 const PLAYER_AMOUNT := 4
-const CHUNK_AMOUNT := 5
+const CHUNK_AMOUNT := 12
 const ROCKET_AMOUNT := 30
 
-const CHUNK_WIDTH_BLOCKS := 5
+const CHUNK_WIDTH_BLOCKS := 3
 const CHUNK_HEIGHT_BLOCKS := 10
 const BLOCK_LENGTH_PIXELS := 24
 const BALL_GRAVITY := 1
@@ -72,6 +72,7 @@ class Block:
 
 class Chunk:
 	var actor_id: int
+	var position: int # where in the world is located
 	var blocks: Array[Array] #: Array[Array[Block]]
 
 

@@ -228,6 +228,7 @@ var entity_has_simulation_fun: Dictionary
 
 # Meta state / Managment
 var connected: bool = false
+var _prev_connected: bool = false
 
 # This size should be the maximum amount of 'tick_offset' for prediction
 var tick_action_history_size: int = 32

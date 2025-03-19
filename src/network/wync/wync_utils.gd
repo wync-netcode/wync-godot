@@ -928,3 +928,9 @@ static func wync_system_sync_client_ownership(ctx: WyncCtx):
 			if result[0] == OK:
 				var packet_out = result[1] as WyncPacketOut
 				WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.RELIABLE, true)
+
+
+static func out_client_just_connected_to_server(ctx: WyncCtx) -> bool:
+	var just_connected: bool = ctx.connected && not ctx._prev_connected
+	ctx._prev_connected = ctx.connected
+	return just_connected
