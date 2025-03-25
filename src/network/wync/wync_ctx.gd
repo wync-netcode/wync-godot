@@ -36,7 +36,17 @@ var xtrap_local_tick: Variant = null # Optional<int>
 
 ## user network info feed
 
-var current_tick_nete_latency_ms: int
+const LATENCY_BUFFER_SIZE: int = 20 ## 20 size, 2 polls per second -> 10 seconds worth
+class PeerLatencyInfo:
+	var latency_raw_latest_ms: int ## Recently polled latency
+	var latency_stable_ms: int ## Stabilized latency
+	var latency_mean_ms: int
+	var latency_std_dev_ms: int
+	var latency_buffer: Array[int]
+	var latency_buffer_head: int
+
+# Array[12] <peer_id: int, PeerLatencyInfo>
+var peer_latency_info: Array[PeerLatencyInfo]
 
 # other config
 
@@ -83,7 +93,7 @@ const ENTITY_ID_GLOBAL_EVENTS = 700
 # NOTE: Rename to PRED_INPUT_BUFFER_SIZE
 const INPUT_BUFFER_SIZE = 2 ** 10 ## 1024
 const INPUT_AMOUNT_TO_SEND = 20
-var max_amount_cache_events = 2 # it could be useful to have a different value for server cache
+var max_amount_cache_events = 1000 # it could be useful to have a different value for server cache
 var max_peers = 4
 var max_channels = 12
 var max_tick_history = 64 # 1 second at 60 fps
@@ -157,7 +167,7 @@ var delta_base_state_tick: int = -1
 ## Server only ==============================
 
 # peer[0] = -1: it's reserved for the server
-# List<client_id: int, any_data: int> # NOTE: Should be Ring
+# List<wync_peer_id: int, nete_peer_id: int> # NOTE: Should be Ring
 var peers: Array[int]
 
 # Map<client_id: int, prop_id: Array[int]>
@@ -406,6 +416,8 @@ func _init() -> void:
 	clients_no_longer_sees_entities.resize(max_peers)
 	entities_synced_last_time.resize(max_peers)
 
+	peer_latency_info.resize(max_peers)
+
 	for peer_i in range(max_peers):
 		peer_has_channel_has_events[peer_i] = []
 		peer_has_channel_has_events[peer_i].resize(max_channels)
@@ -420,6 +432,10 @@ func _init() -> void:
 		clients_sees_new_entities[peer_i] = {}
 		clients_no_longer_sees_entities[peer_i] = {}
 		entities_synced_last_time[peer_i] = {}
+
+		var latency_info = WyncCtx.PeerLatencyInfo.new()
+		latency_info.latency_buffer.resize(WyncCtx.LATENCY_BUFFER_SIZE)
+		peer_latency_info[peer_i] = latency_info
 	
 	for i in range(tick_action_history_size):
 		tick_action_history.insert_at(i, {} as Dictionary)
@@ -438,6 +454,7 @@ func _init() -> void:
 	low_priority_entity_update_rate_sliding_window = RingBuffer.new(low_priority_entity_update_rate_sliding_window_size, 0)
 
 	dummy_props = {}
+
 
 	wrapper_initialize(self)
 		

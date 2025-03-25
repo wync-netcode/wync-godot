@@ -400,51 +400,46 @@ static func wync_ocuppy_space_towards_packets_data_size_limit(ctx: WyncCtx, char
 	ctx.out_packets_size_remaining_chars -= chars
 
 
-static func wync_system_stabilize_latency (ctx: WyncCtx):
-
-	var co_predict_data = ctx.co_predict_data
-	var co_ticks = ctx.co_ticks
-	#var physics_fps = Engine.physics_ticks_per_second
+static func wync_system_stabilize_latency (ctx: WyncCtx, lat_info: WyncCtx.PeerLatencyInfo):
 	
 	# Poll latency
-	#if co_ticks.ticks % ceili(float(physics_fps) / 2) == 0: # we couldn't precalcultate this...
-	#if co_ticks.ticks % ceili(float(physics_fps) / 2) == 0:
-	if WyncUtils.fast_modulus(co_ticks.ticks, 16) == 0:
-		co_predict_data.latency_buffer[co_predict_data.latency_buffer_head % co_predict_data.LATENCY_BUFFER_SIZE] = ctx.current_tick_nete_latency_ms
-		co_predict_data.latency_buffer_head += 1
+	if WyncUtils.fast_modulus(ctx.co_ticks.ticks, 16) == 0:
+		lat_info.latency_buffer[
+			lat_info.latency_buffer_head % WyncCtx.LATENCY_BUFFER_SIZE] = lat_info.latency_raw_latest_ms
+		lat_info.latency_buffer_head += 1
 		
 		# sliding window mean
 		var counter = 0
 		var accum = 0
 		var mean = 0
-		for lat in co_predict_data.latency_buffer:
+		for lat: int in lat_info.latency_buffer:
 			if lat == 0:
 				continue
 			counter += 1
 			accum += lat
 		mean = ceil(float(accum) / counter)
 		
-		Log.out("latencyme mean diff %s %s %s >? %s" % [co_predict_data.latency_mean, mean, abs(mean - co_predict_data.latency_mean), co_predict_data.latency_std_dev], Log.TAG_LATENCY)
+		#Log.out("latencyme mean diff %s %s %s >? %s" % [lat_info.latency_mean, mean, abs(mean - lat_info.latency_mean), lat_info.latency_std_dev], Log.TAG_LATENCY)
 		
-		# if new mean is outside range, then update everything
 		# NOTE: Currently this doesn't cover the case of a highly volatile std_dev (i.e. that is stable then unstable). However this case is so rare it might be not worth even supporting it. Although it should'nt be too hard.
+		# if new mean is outside range, then update everything
 		
-		if abs(mean - co_predict_data.latency_mean) > co_predict_data.latency_std_dev || counter < co_predict_data.LATENCY_BUFFER_SIZE:
+		if abs(mean - lat_info.latency_mean_ms) > lat_info.latency_std_dev_ms || counter < WyncCtx.LATENCY_BUFFER_SIZE:
 			
-			co_predict_data.latency_mean = mean
+			lat_info.latency_mean_ms = mean
 			
 			# calculate std dev
 			accum = 0
-			for lat in co_predict_data.latency_buffer:
+			for lat in lat_info.latency_buffer:
 				if lat == 0:
 					continue
-				accum += (lat - co_predict_data.latency_mean) ** 2
-			co_predict_data.latency_std_dev = ceil(sqrt(accum / counter)) 
+				accum += (lat - lat_info.latency_mean_ms) ** 2
+			lat_info.latency_std_dev_ms = ceil(sqrt(accum / counter)) 
 
 			# use 98th percentile (mean + 2*std_dev)
-			co_predict_data.latency_stable = co_predict_data.latency_mean + co_predict_data.latency_std_dev * 2
+			lat_info.latency_stable_ms = lat_info.latency_mean_ms + lat_info.latency_std_dev_ms * 2
 			
 			# NOTE: Allow for choosing a latency stabilization strategy:
-			# e.g. none (for using directly what the transport tells), std_dev, or 95th Qu
+			# e.g. none (for using directly what the transport tells) or 98th perc
 			
-			Log.out("latencyme stable updated to %s | mean %s | stddev %s | acum %s" % [co_predict_data.latency_stable, co_predict_data.latency_mean, co_predict_data.latency_std_dev, accum], Log.TAG_LATENCY)
+			Log.out("latencyme stable updated to %s | mean %s | stddev %s | acum %s" % [lat_info.latency_stable_ms, lat_info.latency_mean_ms, lat_info.latency_std_dev_ms, accum], Log.TAG_LATENCY)

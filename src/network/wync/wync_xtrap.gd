@@ -37,12 +37,15 @@ static func wync_server_tick_end_cache_filtered_input_ids(ctx: WyncCtx):
 
 	for prop_id in ctx.active_prop_ids:
 		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
-		if prop.relative_syncable:
-			ctx.filtered_delta_prop_ids.append(prop_id)
-		if prop.prop_type not in [
+		if prop.prop_type in [
 			WyncEntityProp.PROP_TYPE.INPUT,
 			WyncEntityProp.PROP_TYPE.EVENT
 		]:
+			continue
+		if prop.relative_syncable:
+			ctx.filtered_delta_prop_ids.append(prop_id)
+			# TODO: Check if it has a healthy _auxiliar prop_
+		else:
 			ctx.filtered_regular_extractable_prop_ids.append(prop_id)
 
 

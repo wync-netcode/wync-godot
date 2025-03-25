@@ -4,6 +4,7 @@ class_name PlatWync
 static func setup_server(ctx: WyncCtx):
 	WyncUtils.server_setup(ctx)
 	WyncFlow.wync_client_set_physics_ticks_per_second(ctx, Engine.physics_ticks_per_second)
+	setup_blueprints(ctx)
 
 
 static func setup_client(ctx: WyncCtx):
@@ -26,6 +27,7 @@ static func setup_client(ctx: WyncCtx):
 		ctx, Plat.LERP_TYPE_VECTOR2,
 		func (a: Vector2, b: Vector2, weight: float): return lerp(a, b, weight)
 	)
+	setup_blueprints(ctx)
 
 
 static func setup_connect_client(gs: Plat.GameState):
@@ -63,6 +65,44 @@ static func setup_new_client_level_props(gs: Plat.GameState, wync_peer_id: int):
 		if chunk == null:
 			continue
 		WyncThrottle.wync_add_local_existing_entity(gs.wctx, wync_peer_id, chunk.actor_id)
+
+
+static func setup_blueprints(ctx: WyncCtx):
+	# setup relative synchronization blueprints
+
+	var blueprint_id = WyncDeltaSyncUtils.create_delta_blueprint(ctx)
+	WyncDeltaSyncUtils.delta_blueprint_register_event(
+		ctx,
+		blueprint_id,
+		Plat.EVENT_DELTA_BLOCK_REPLACE,
+		blueprint_handle_event_delta_block_replace
+	)
+	Plat.BLUEPRINT_ID_BLOCK_GRID_DELTA = blueprint_id
+
+
+static func blueprint_handle_event_delta_block_replace \
+	(user_ctx: Variant, event: WyncEvent.EventData, requires_undo: bool, ctx: WyncCtx) -> Array[int]:
+	
+	# TODO: maybe check event integrity before casting
+	var chunk := user_ctx as Plat.Chunk
+	var event_data := event.event_data as Plat.EventDeltaBlockReplace
+	var block_pos = event_data.pos
+
+	var block = chunk.blocks[block_pos.x][block_pos.y] as Plat.Block
+	var event_id = -1
+
+	# create undo event
+	if requires_undo:
+		var prev_block_type = block.type
+
+		var undo_event = Plat.EventDeltaBlockReplace.new()
+		undo_event.pos = block_pos
+		undo_event.block_type = prev_block_type
+		event_id = WyncEventUtils.new_event_wrap_up(ctx, Plat.EVENT_DELTA_BLOCK_REPLACE, undo_event)
+		assert(event_id != null)
+
+	block.type = event_data.block_type
+	return [OK, event_id]
 
 
 static func setup_sync_for_ball_actor(gs: Plat.GameState, actor_id: int):
@@ -245,6 +285,7 @@ static func setup_sync_for_chunk_actor(gs: Plat.GameState, actor_id: int):
 	var actor := gs.actors[actor_id]
 	var wctx = gs.wctx
 	var chunk_instance := gs.chunks[actor.instance_id]
+	assert(chunk_instance != null)
 
 	if WyncUtils.track_entity(wctx, actor_id, Plat.ACTOR_TYPE_CHUNK) != OK:
 		return
@@ -259,9 +300,22 @@ static func setup_sync_for_chunk_actor(gs: Plat.GameState, actor_id: int):
 		wctx,
 		blocks_prop,
 		chunk_instance,
-		func(user_ctx: Variant) -> Array[Array]: return (user_ctx as Plat.Chunk).blocks.duplicate(true),
+		func(user_ctx: Variant) -> Array[Array]: return PlatPrivate.duplicate_chunk_blocks(user_ctx as Plat.Chunk),
 		func(user_ctx: Variant, blocks: Array[Array]): (user_ctx as Plat.Chunk).blocks = blocks,
 	)
+
+	# hook blueprint to prop
+	var err = WyncDeltaSyncUtils.prop_set_relative_syncable(
+		wctx,
+		actor_id,
+		blocks_prop,
+		Plat.BLUEPRINT_ID_BLOCK_GRID_DELTA,
+		false
+	)
+	assert(err == OK)
+
+	#if not wctx.is_client:
+		#assert(false)
 
 
 #static func system_spawn_entities(gs: Plat.GameState):

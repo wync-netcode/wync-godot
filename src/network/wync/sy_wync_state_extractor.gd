@@ -113,8 +113,10 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 				# compile event ids
 				var event_ids := [] as Array[int] # TODO: Use a C friendly expression
 				for input: WyncPktInputs.NetTickDataDecorator in pkt_input.inputs:
-					for event_id: int in input.data as Array[int]:
+					for event_id in (input.data):
 						event_ids.append(event_id)
+						#if event_id is Array:
+							#assert(false)
 
 				# get event data
 				var pkt_event_data = SyWyncSendEventData.wync_get_event_data_packet(ctx, client_id, event_ids)
@@ -136,6 +138,7 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 				var snap_prop := _wync_sync_relative_prop_base_only(ctx, prop, prop_id, client_id)
 				if snap_prop != null:
 					reliable_snap.snaps.append(snap_prop)
+
 
 			## regular declarative prop
 			else:
@@ -211,6 +214,7 @@ static func _wync_sync_regular_prop(ctx: WyncCtx, prop: WyncEntityProp, prop_id:
 			
 ## Sends to clients the latest _base state_ of a delta prop
 ## Assumes recepeit, send as reliable
+## TODO: Move to wrapper
 
 static func _wync_sync_relative_prop_base_only(
 	ctx: WyncCtx,
@@ -219,23 +223,39 @@ static func _wync_sync_relative_prop_base_only(
 	client_id: int
 	) -> WyncPktSnap.SnapProp:
 
+	# Optimization ideas:
+	# 1. (probably not) Adelantar ticks en los que no pasó nada. Es decir automaticamente
+	# aumentar el número del tick de un peer 'last_tick_confirmed'. Esto trae problemas por el
+	# determinismo, pues no se enviaría ticks intermedios, es decir, el cliente debe saber.
 	# send fullsnapshot if client doesn't have history, or if it's too old
+	# 2. Podriamos evitar enviar actualizaciones si se detecta que el cliente está desconectado
+	# temporalmente (1-3 mins); Wync actualmente no sabe cuando un peer está sufriendo desconexión
+	# temporal; se podría crear un mecanismo para esto o usar _last_tick_.
 
 	var client_relative_props = ctx.client_has_relative_prop_has_last_tick[client_id] as Dictionary
 	if not client_relative_props.has(prop_id):
 		client_relative_props[prop_id] = -1
-	if client_relative_props[prop_id] >= ctx.delta_base_state_tick:
+
+	var peer_latency_info = ctx.peer_latency_info[client_id] as WyncCtx.PeerLatencyInfo
+	var latency_ticks: int = (peer_latency_info.latency_stable_ms * 2) / (1000.0 / ctx.physic_ticks_per_second)
+	if (client_relative_props[prop_id] + latency_ticks) >= ctx.delta_base_state_tick:
 		return null
+
+	Log.outc(ctx, "debugack | client_has (%s) (%s) , base_tick (%s)" % [
+		client_relative_props[prop_id], client_relative_props[prop_id] + latency_ticks, ctx.delta_base_state_tick])
 	
 	# ===========================================================
 	# Save state history per tick
 	
-	var state = prop.getter.call(prop.user_ctx_pointer) # getter already gives a copy
+	var getter = ctx.wrapper.prop_getter[prop_id]
+	var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
+	var state = getter.call(user_ctx) # getter already gives a copy
 	var prop_snap = WyncPktSnap.SnapProp.new()
 	prop_snap.prop_id = prop_id
 	prop_snap.state = state
 
 	client_relative_props[prop_id] = ctx.co_ticks.ticks
+	Log.outc(ctx, "debugdelta | client_has (%s) , base_tick (%s)" % [client_relative_props[prop_id], ctx.delta_base_state_tick])
 
 	return prop_snap
 

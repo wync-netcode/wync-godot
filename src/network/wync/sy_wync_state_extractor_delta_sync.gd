@@ -38,7 +38,7 @@ static func wync_prop_event_send_event_ids_to_peer(ctx: WyncCtx, prop: WyncEntit
 
 	for tick in range(ctx.co_ticks.ticks - WyncCtx.INPUT_AMOUNT_TO_SEND, ctx.co_ticks.ticks +1):
 		if prop.confirmed_states_tick.get_at(tick) != tick:
-			Log.err("we don't have an input for this tick %s" % [tick], Log.TAG_DELTA_EVENT)
+			Log.errc(ctx, "we don't have an input for this tick %s prop %s(id %s)" % [tick, prop.name_id, prop_id], Log.TAG_DELTA_EVENT)
 			continue
 		var input = prop.confirmed_states.get_at(tick)
 		
@@ -48,6 +48,7 @@ static func wync_prop_event_send_event_ids_to_peer(ctx: WyncCtx, prop: WyncEntit
 		var copy = WyncUtils.duplicate_any(input)
 		if copy == null:
 			Log.errc(ctx, "WARNING: input data couldn't be duplicated %s" % [input], Log.TAG_DELTA_EVENT)
+			continue
 		tick_input_wrap.data = copy if copy != null else input
 			
 		pkt_inputs.inputs.append(tick_input_wrap)

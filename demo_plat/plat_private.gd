@@ -71,4 +71,21 @@ static func generate_world(gs: Plat.GameState):
 
 
 
-			
+## chunk full snapshot
+static func duplicate_chunk_blocks(chunk: Plat.Chunk) -> Array[Array]:
+	var blocks: Array[Array] = []
+
+	for k in range(Plat.CHUNK_AMOUNT):
+		blocks.resize(Plat.CHUNK_WIDTH_BLOCKS)
+
+		for i in range(Plat.CHUNK_WIDTH_BLOCKS):
+			var vertical = blocks[i] as Array[Plat.Block]
+			vertical.resize(Plat.CHUNK_HEIGHT_BLOCKS)
+
+			for j in range(Plat.CHUNK_HEIGHT_BLOCKS):
+				var chunk_block = (chunk.blocks[i][j] as Plat.Block)
+				var block = Plat.Block.new()
+				block.type = chunk_block.type
+				vertical[j] = block
+
+	return blocks

@@ -555,8 +555,8 @@ static func peer_register(ctx: WyncCtx, peer_data: int = -1) -> int:
 	ctx.client_owns_prop[peer_id] = []
 	ctx.client_has_relative_prop_has_last_tick[peer_id] = {}
 	
-	if !is_client(ctx):
-		ctx.client_has_info[peer_id] = WyncClientInfo.new()
+	ctx.client_has_info[peer_id] = WyncClientInfo.new()
+
 	return peer_id
 
 
@@ -630,6 +630,7 @@ static func client_setup_my_client(ctx: WyncCtx, peer_id: int) -> bool:
 	#WyncUtils.setup_peer_global_events(ctx, ctx.my_peer_id)
 	# setup prob prop
 	WyncUtils.setup_entity_prob_for_entity_update_delay_ticks(ctx, ctx.my_peer_id)
+
 	return true
 
 

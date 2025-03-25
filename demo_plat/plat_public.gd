@@ -342,6 +342,7 @@ static func system_player_shoot_rocket(gs: Plat.GameState):
 		var actor_id = spawn_rocket_server(gs, player_center, direction)
 		if actor_id != -1:
 			PlatWync.setup_sync_for_rocket_actor(gs, actor_id)
+			# Note: Spawn data would be added here
 
 
 static func player_input_additive(gs: Plat.GameState, player: Plat.Player, node2d: Node2D):
@@ -385,6 +386,7 @@ static func system_server_events(gs: Plat.GameState):
 	var server_wync_peer_id = 1
 	var event_list: Array = gs.wctx.peer_has_channel_has_events[server_wync_peer_id][channel_id]
 	while(event_list.size() > 0):
+
 		var event_id = event_list[event_list.size() -1]
 		assert(gs.wctx.events.has(event_id))
 		var event := gs.wctx.events[event_id]
@@ -417,4 +419,28 @@ static func grid_block_break(gs: Plat.GameState, block_pos: Vector2i):
 	var chunk_id = floori(block_pos.x / (Plat.CHUNK_WIDTH_BLOCKS))
 	var chunk := gs.chunks[chunk_id]
 	var block: Plat.Block = chunk.blocks[block_pos.x % Plat.CHUNK_WIDTH_BLOCKS][block_pos.y]
-	block.type = max(0, block.type -1)
+	var new_block_type = max(0, block.type -1)
+
+	# downgrade block as delta event
+	var event_data = Plat.EventDeltaBlockReplace.new()
+	event_data.pos = block_pos
+	event_data.block_type = new_block_type
+
+	# get block prop id
+	var blocks_prop_id = WyncUtils.entity_get_prop_id(gs.wctx, chunk.actor_id, "blocks")
+	assert(blocks_prop_id != -1)
+
+	# commit event to wync
+	var event_id = WyncEventUtils.new_event_wrap_up(gs.wctx, Plat.EVENT_DELTA_BLOCK_REPLACE, event_data)
+	var err = WyncDeltaSyncUtils.delta_prop_push_event_to_current(
+		gs.wctx, blocks_prop_id, Plat.EVENT_DELTA_BLOCK_REPLACE, event_id)
+	if err != OK:
+		Log.errc(gs.wctx, "Couldn't push event prop(%s) err(%s)" % [blocks_prop_id, err])
+		return
+
+	# apply event
+	err = WyncDeltaSyncUtils.merge_event_to_state_real_state(gs.wctx, blocks_prop_id, event_id)
+	if err != OK:
+		Log.errc(gs.wctx, "Couldn't apply event prop(%s) err(%s)" % [blocks_prop_id, err])
+
+

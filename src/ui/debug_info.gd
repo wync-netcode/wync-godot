@@ -55,8 +55,15 @@ func get_info_general() -> String:
 	var text = \
 	"""PhysicsFPS: %s
 	ScreenFPS: %s
-	Latency: %s jit(%sms) loss(%s%%)
-	Latency_stable: %s
+	---
+	Loopback Latency
+	%s
+	---
+	Wync Latency (Server)
+	%s
+	Wync Latency (Peer 0)
+	%s
+	---
 	(pred)tick_offset: %s
 	  predicted_ticks: %s
 	lerp_ms: %s
@@ -76,10 +83,9 @@ func get_info_general() -> String:
 	[
 		Engine.physics_ticks_per_second,
 		Performance.get_monitor(Performance.TIME_FPS),
-		string_exact_length(str(loopback_ctx.latency), 3),
-		string_exact_length(str(loopback_ctx.jitter), 3),
-		loopback_ctx.packet_loss_percentage,
-		client_wctx.co_predict_data.latency_stable,
+		get_loopback_latency_info(loopback_ctx),
+		get_wync_latency_info(server_wctx),
+		get_wync_latency_info(client_wctx),
 		client_wctx.co_predict_data.tick_offset,
 		(client_wctx.last_tick_predicted -client_wctx.first_tick_predicted),
 		client_wctx.co_predict_data.lerp_ms,
@@ -100,6 +106,29 @@ func get_info_general() -> String:
 		client_wctx.dummy_props.size(), client_wctx.stat_lost_dummy_props
 	]
 	return text
+
+
+static func get_loopback_latency_info(ctx: Loopback.Context) -> String:
+	var txt := ""
+	for peer_id: int in range(ctx.peers.size()):
+		var peer := ctx.peers[peer_id]
+		txt += "peer(%d) lat %0*dms, loss %s%%" % [peer_id, 3, peer.latency_current_ms, peer.packet_loss_percentage]
+		if peer_id < ctx.peers.size() -1:
+			txt += '\n'
+	return txt
+
+
+static func get_wync_latency_info(ctx: WyncCtx) -> String:
+	var txt := ""
+	var lat_info: WyncCtx.PeerLatencyInfo = null
+	for peer_id in range(ctx.peers.size()):
+		if peer_id == ctx.my_peer_id:
+			continue
+		lat_info = ctx.peer_latency_info[peer_id]
+		txt += "peer(%d->%d) lat_stable %3.dms" % [ctx.my_peer_id, peer_id, lat_info.latency_stable_ms]
+		if peer_id < ctx.peers.size() -1:
+			txt += '\n'
+	return txt
 
 
 static func get_info_packets_received_text(ctx: WyncCtx) -> String:

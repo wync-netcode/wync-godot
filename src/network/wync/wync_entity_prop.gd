@@ -16,7 +16,6 @@ var user_data_type: int
 var user_ctx_pointer: Variant #: VariantPointer
 var getter: Callable #: func(user_ctx: Variant) -> Variant
 var setter: Callable #: func(user_ctx: Variant, new_state: Variant) -> void
-var state_pointer: Variant #: VariantPointer # for relative sync props
 
 # Optional properties:
 # TODO: Move these elsewhere

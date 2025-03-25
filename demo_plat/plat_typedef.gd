@@ -4,10 +4,10 @@ class_name Plat
 const ACTOR_AMOUNT := 20
 const BALL_AMOUNT := 4
 const PLAYER_AMOUNT := 4
-const CHUNK_AMOUNT := 12
+const CHUNK_AMOUNT := 1
 const ROCKET_AMOUNT := 30
 
-const CHUNK_WIDTH_BLOCKS := 3
+const CHUNK_WIDTH_BLOCKS := 36
 const CHUNK_HEIGHT_BLOCKS := 10
 const BLOCK_LENGTH_PIXELS := 24
 const BALL_GRAVITY := 1
@@ -163,10 +163,23 @@ enum {
 	EVENT_PLAYER_BLOCK_PLACE,
 }
 
+# later filled on blueprint setup
+static var BLUEPRINT_ID_BLOCK_GRID_DELTA = -1
+
 class EventPlayerBlockBreak:
 	var pos: Vector2i
 
 	func duplicate() -> EventPlayerBlockBreak:
 		var newi = EventPlayerBlockBreak.new()
 		newi.pos = pos
+		return newi
+
+class EventDeltaBlockReplace:
+	var pos: Vector2i
+	var block_type: int
+
+	func duplicate() -> EventDeltaBlockReplace:
+		var newi = EventDeltaBlockReplace.new()
+		newi.pos = pos
+		newi.block_type = block_type
 		return newi

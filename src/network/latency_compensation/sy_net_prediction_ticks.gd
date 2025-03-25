@@ -8,8 +8,9 @@ const label: StringName = StringName("SyNetPredictionTicks")
 
 static func wync_update_prediction_ticks (ctx: WyncCtx):
 	
-	var co_predict_data = ctx.co_predict_data
-	var co_ticks = ctx.co_ticks
+	var lat_info := ctx.peer_latency_info[WyncCtx.SERVER_PEER_ID]
+	var co_predict_data := ctx.co_predict_data
+	var co_ticks := ctx.co_ticks
 	
 	var curr_time = WyncUtils.clock_get_ms(ctx)
 	var physics_fps = Engine.physics_ticks_per_second
@@ -18,7 +19,7 @@ static func wync_update_prediction_ticks (ctx: WyncCtx):
 	
 	if WyncUtils.fast_modulus(co_ticks.ticks, 32) == 0:
 
-		co_predict_data.tick_offset_desired = ceil(co_predict_data.latency_stable / (1000.0 / physics_fps)) + 2
+		co_predict_data.tick_offset_desired = ceil(lat_info.latency_stable_ms / (1000.0 / physics_fps)) + 2
 		
 		var target_tick = max(co_ticks.server_ticks + co_predict_data.tick_offset, co_predict_data.target_tick)
 		var target_time = curr_time + co_predict_data.tick_offset_desired * (1000.0 / physics_fps)

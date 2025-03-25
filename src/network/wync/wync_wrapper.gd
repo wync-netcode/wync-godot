@@ -42,23 +42,22 @@ static func wync_buffer_inputs(ctx: WyncCtx):
 
 static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
 
+	# Save state history per tick
+
 	for prop_id in ctx.filtered_regular_extractable_prop_ids:
 		
 		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
+		var getter = ctx.wrapper.prop_getter[prop_id]
+		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
+		prop.confirmed_states.insert_at(save_on_tick, getter.call(user_ctx))
+		prop.confirmed_states_tick.insert_at(save_on_tick, save_on_tick)
 
-		## relative_syncable receives special treatment
-		## FIXME: DELETE THIS events should be sent by WYNC_PKT_INPUTS only
-		#if prop.relative_syncable:
-			
-			## Allow auxiliar props
-			##prop_id = prop.auxiliar_delta_events_prop_id
-			#var prop_aux = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
-			#if prop_aux == null:
-				#continue
-			#prop = prop_aux
+	for prop_id in ctx.filtered_delta_prop_ids:
 		
-		# ===========================================================
-		# Save state history per tick
+		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
+		var prop_aux := WyncUtils.get_prop_unsafe(ctx, prop.auxiliar_delta_events_prop_id)
+		prop_id = prop.auxiliar_delta_events_prop_id
+		prop = prop_aux
 		
 		var getter = ctx.wrapper.prop_getter[prop_id]
 		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]

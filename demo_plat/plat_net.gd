@@ -11,11 +11,13 @@ static func initialize_net_state(gs: Plat.GameState, is_client: bool):
 		gs.net.client.identifier = -1
 		gs.net.client.server_peer = -1
 		gs.net.client.state = Plat.Client.STATE.DISCONNECTED
+		Loopback.setup_io_peer(gs.net.io_peer, 200, 5, 0)
 
 	else:
 		gs.net.server = Plat.Server.new()
 		gs.net.server.peer_count = 0
 		gs.net.server.peers = []
+		Loopback.setup_io_peer(gs.net.io_peer, 1, 0, 0)
 
 
 static func register_peer_myself(gs: Plat.GameState):

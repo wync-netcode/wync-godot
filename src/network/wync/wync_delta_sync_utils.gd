@@ -31,6 +31,7 @@ static func get_delta_blueprint (ctx: WyncCtx, delta_blueprint_id: int) -> WyncD
 	return null
 
 
+# TODO: Move to wrapper
 static func delta_blueprint_register_event (
 	ctx: WyncCtx,
 	delta_blueprint_id: int,
@@ -58,21 +59,20 @@ static func prop_set_relative_syncable (
 	entity_id: int,
 	prop_id: int,
 	delta_blueprint_id: int,
-	state_pointer: Variant,
 	predictable: bool = false,
+	#state_pointer: Variant,
 	# timewarpable: bool # NOT PLANNED
-	) -> Error:
-	var prop = WyncUtils.get_prop(ctx, prop_id)
+	) -> int:
+	var prop := WyncUtils.get_prop(ctx, prop_id)
 	if prop == null:
-		return ERR_INVALID_DATA
-	prop = prop as WyncEntityProp
+		return 1
 
 	if not delta_blueprint_exists(ctx, delta_blueprint_id):
-		Log.err("delta blueprint(%s) doesn't exists" % [delta_blueprint_id])
-		return ERR_DOES_NOT_EXIST
+		Log.errc(ctx, "delta blueprint(%s) doesn't exists" % [delta_blueprint_id])
+		return 2
 	
 	prop.relative_syncable = true
-	prop.state_pointer = state_pointer
+	#prop.state_pointer = state_pointer
 	prop.delta_blueprint_id = delta_blueprint_id
 
 	# depending on the features and if it's server or client we'll need different things
@@ -92,18 +92,22 @@ static func prop_set_relative_syncable (
 
 	# setup auxiliar prop for delta change events
 	prop.current_delta_events = [] as Array[int]
-	var events_prop_id = WyncUtils.prop_register(
+	var events_prop_id = WyncUtils.prop_register_minimal(
 		ctx,
 		entity_id,
 		"auxiliar_delta_events",
-		WyncEntityProp.PROP_TYPE.EVENT,
+		WyncEntityProp.PROP_TYPE.EVENT
+	)
+	WyncWrapper.wync_set_prop_callbacks(
+		ctx,
+		events_prop_id,
 		prop,
 		func(prop_ctx: WyncEntityProp):
 			return prop_ctx.current_delta_events.duplicate(true),
 		func(prop_ctx: WyncEntityProp, events: Array):
 			prop_ctx.current_delta_events.clear()
 			# NOTE: somehow can't check cast like this `if events is not Array[int]:`
-			prop_ctx.current_delta_events.append_array(events),
+			prop_ctx.current_delta_events.append_array(events)
 	)
 	# FIXME: shouldn't we be setting the auxiliar as predicted?
 	# the main prop IS marked as predicted, however, auxiliar props are NOT marked
@@ -143,7 +147,7 @@ static func prop_set_auxiliar(ctx: WyncCtx, prop_id: int, auxiliar_pair: int, un
 
 ## commits a delta event to this tick
 static func delta_prop_push_event_to_current \
-	(ctx: WyncCtx, prop_id: int, event_type_id: int, event_id: int, co_ticks: CoTicks) -> int:
+	(ctx: WyncCtx, prop_id: int, event_type_id: int, event_id: int) -> int:
 	var prop = WyncUtils.get_prop(ctx, prop_id)
 	if prop == null:
 		return 1
@@ -161,7 +165,7 @@ static func delta_prop_push_event_to_current \
 
 	# append event to current delta events
 	prop.current_delta_events.append(event_id)
-	Log.out("delta_prop_push_event_to_current | delta sync | ticks(%s) event_list %s" % [co_ticks.ticks, prop.current_delta_events], Log.TAG_DELTA_EVENT)
+	Log.out("delta_prop_push_event_to_current | delta sync | ticks(%s) event_list %s" % [ctx.co_ticks.ticks, prop.current_delta_events], Log.TAG_DELTA_EVENT)
 	return OK
 
 
@@ -220,11 +224,11 @@ static func merge_event_to_state_real_state \
 		if not aux_prop.is_auxiliar_prop:
 			return 4
 
-	var state_pointer = prop.state_pointer
-	if state_pointer == null:
+	var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
+	if user_ctx == null:
 		return 5
 
-	var result: Array[Variant] = _merge_event_to_state(ctx, prop, event_id, state_pointer, true)
+	var result: Array[Variant] = _merge_event_to_state(ctx, prop, event_id, user_ctx, true)
 
 	# cache _undo delta event_ to aux_prop
 	if (is_client_predicting):

@@ -16,6 +16,9 @@ static func wync_server_tick_start(ctx: WyncCtx):
 
 
 static func wync_server_tick_end(ctx: WyncCtx):
+	for peer_id: int in range(1, ctx.peers.size()):
+		WyncThrottle.wync_system_stabilize_latency(ctx, ctx.peer_latency_info[peer_id])
+
 	# TODO: Run only on prop added/removed events
 	WyncXtrap.wync_server_tick_end_cache_filtered_input_ids(ctx)
 
@@ -32,7 +35,7 @@ static func wync_client_tick_end(ctx: WyncCtx):
 
 	WyncXtrap.wync_client_filter_prop_ids(ctx)
 	SyTicks.wync_advance_ticks(ctx)
-	WyncThrottle.wync_system_stabilize_latency(ctx)
+	WyncThrottle.wync_system_stabilize_latency(ctx, ctx.peer_latency_info[WyncCtx.SERVER_PEER_ID])
 	SyNetPredictionTicks.wync_update_prediction_ticks(ctx)
 	
 	WyncWrapper.wync_buffer_inputs(ctx)
@@ -488,10 +491,12 @@ static func prop_save_confirmed_state(ctx: WyncCtx, prop_id: int, tick: int, sta
 		# if a delta prop receives a fullsnapshot we have no other option but to comply
 		# TODO: This might not be true on high _jitter_
 
-		prop.setter.call(prop.user_ctx_pointer, state)
+		var setter = ctx.wrapper.prop_setter[prop_id]
+		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
+		setter.call(user_ctx, state)
 		prop.just_received_new_state = true
 		var delta_props_last_tick = ctx.client_has_relative_prop_has_last_tick[ctx.my_peer_id] as Dictionary
-		delta_props_last_tick[prop_id] = tick
+		delta_props_last_tick[prop_id] = tick # max?
 		#Log.out("debug_pred_delta_event | ser_tick(%s) delta_prop_last_tick %s" % [ctx.co_ticks.server_ticks, delta_props_last_tick], Log.TAG_LATEST_VALUE)
 
 		# clean up predicted data TODO
@@ -577,7 +582,8 @@ static func wync_handle_pkt_delta_prop_ack(ctx: WyncCtx, data: Variant, from_net
 		var prop_id: int = data.delta_prop_ids[i]
 		var last_tick: int = data.last_tick_received[i]
 
-		if last_tick > ctx.co_ticks.ticks:
+		if last_tick > ctx.co_ticks.ticks: # cannot be in the future
+			Log.errc(ctx, "W: last_tick is in the future prop(%s) tick(%s)" % [prop_id, last_tick])
 			continue
 
 		var prop := WyncUtils.get_prop(ctx, prop_id)
@@ -589,7 +595,8 @@ static func wync_handle_pkt_delta_prop_ack(ctx: WyncCtx, data: Variant, from_net
 			Log.outc(ctx, "W: Client might no be 'seeing' this prop %s" % [prop_id])
 			continue
 
-		client_relative_props[prop_id] = last_tick
+		client_relative_props[prop_id] = max(last_tick, client_relative_props[prop_id])
+		#Log.outc(ctx, "debugack | prop(%s) tick(%s)" % [prop_id, last_tick])
 
 	return OK
 
@@ -826,11 +833,10 @@ static func wync_system_client_send_delta_prop_acks(ctx: WyncCtx):
 		WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.UNRELIABLE, false)
 
 
-## client only
-## set the latency this client is experimenting (get it from your transport)
+## set the latency this peer is experimenting (get it from your transport)
 ## @argument latency_ms: int. Latency in milliseconds
-static func wync_client_set_current_latency (ctx: WyncCtx, latency_ms: int):
-	ctx.current_tick_nete_latency_ms = latency_ms
+static func wync_peer_set_current_latency (ctx: WyncCtx, peer_id: int, latency_ms: int):
+	ctx.peer_latency_info[peer_id].latency_raw_latest_ms = latency_ms
 
 static func wync_client_set_physics_ticks_per_second (ctx: WyncCtx, tps: int):
 	ctx.physic_ticks_per_second = tps
