@@ -25,5 +25,10 @@ func _physics_process(_delta: float) -> void:
 	Loopback.system_fluctuate_latency(loopback_ctx)
 	Loopback.system_service(loopback_ctx)
 
+	if Input.is_action_just_pressed("key_debug_1"):
+		if loopback_ctx.peers.size() > 1: loopback_ctx.peers[1].disabled = true
+	if Input.is_action_just_released("key_debug_1"):
+		if loopback_ctx.peers.size() > 1: loopback_ctx.peers[1].disabled = false
+
 #func _process(_delta: float) -> void:
 	#Loopback.system_send_receive(loopback_ctx)

@@ -19,6 +19,7 @@ class IOPeer:
 	var peer_id: int
 	var in_packets: Array[Packet]
 	var out_packets: Array[Packet]
+	var disabled: bool ## for debugging purposes, can emulate a temporal disconnection
 
 	var latency_current_ms: int
 	var latency_mean_ms: int
@@ -88,7 +89,24 @@ static func system_service(ctx: Context):
 		if curr_time < pkt._deliver_time:
 			continue
 
-		# check for reliability before sending
+		var from_peer: IOPeer = ctx.peers[pkt.from_peer]
+		if not from_peer:
+			print("E: Couldn't find peer %s" % [pkt.from_peer])
+			continue
+		var to_peer: IOPeer = ctx.peers[pkt.to_peer]
+		if not to_peer:
+			print("E: Couldn't find peer %s" % [pkt.to_peer])
+			continue
+
+		# skip if one peer is disabled
+		if from_peer.disabled || to_peer.disabled:
+
+			# drop if unreliable
+			if not pkt._reliable:
+				ids_to_delete.append(k)
+			continue
+
+		# increase reliable index order
 		if pkt._reliable:
 			var last_pkt_ids: Array[int] = ctx.last_pkt_number_sent_from_peer_to_peer[pkt.from_peer][pkt.to_peer]
 			if last_pkt_ids[0] != pkt._reliable_id:
@@ -99,16 +117,9 @@ static func system_service(ctx: Context):
 
 		ids_to_delete.append(k)
 
-		# get destination buffer from registered peers
-
-		var peer: IOPeer = ctx.peers[pkt.to_peer]
-		if not peer:
-			print("E: Couldn't find peer %s" % [pkt.to_peer])
-			continue
-
 		# deliver
 
-		peer.in_packets.append(pkt)
+		to_peer.in_packets.append(pkt)
 	
 	# remove from right to left
 	for i: int in range(ids_to_delete.size()-1, -1, -1):
