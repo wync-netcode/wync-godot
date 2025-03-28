@@ -197,3 +197,47 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 			var lerp_func = ctx.wrapper.lerp_function[lerp_func_id]
 			prop.interpolated_state = lerp_func.call(left_value, right_value, clampf(factor, 0, 1))
 			#Log.outc(ctx, "deblerp | factor %.3f left %s target %s right %s" % [factor, left_timestamp_ms, target_time_conf, right_timestamp_ms])
+
+
+## Q: Is it possible that event_ids accumulate infinitely if they are never consumed?
+## A: No, if events are never consumed they remain in the confirmed_states buffer until eventually replaced.
+## Returns events from this tick, that aren't consumed
+## TODO: Move out of wrapper
+static func wync_get_events_from_channel_from_peer(
+	ctx: WyncCtx, wync_peer_id: int, channel: int, tick: int
+	) -> Array[int]:
+
+	var out_events_id: Array[int] = []
+	if tick < 0:
+		return out_events_id
+
+	var prop_id: int = ctx.prop_id_by_peer_by_channel[wync_peer_id][channel]
+	var prop_channel := WyncUtils.get_prop_unsafe(ctx, prop_id)
+
+	var consumed_event_ids_tick: int = prop_channel.events_consumed_at_tick_tick.get_at(tick)
+	if tick != consumed_event_ids_tick:
+		return out_events_id
+	var confirmed_state_tick = prop_channel.confirmed_states_tick.get_at(tick)
+	if tick != confirmed_state_tick:
+		return out_events_id
+
+	var consumed_event_ids: Array[int] = prop_channel.events_consumed_at_tick.get_at(tick)
+	var confirmed_event_ids: Array
+
+	if ctx.co_ticks.ticks == tick:
+		confirmed_event_ids = ctx.peer_has_channel_has_events[wync_peer_id][channel]
+	else:
+		confirmed_event_ids = prop_channel.confirmed_states.get_at(tick)
+
+	for i in range(confirmed_event_ids.size()):
+		var event_id = confirmed_event_ids[i]
+		if consumed_event_ids.has(event_id):
+			continue
+		if not ctx.events.has(event_id):
+			continue
+
+		var event := ctx.events[event_id]
+		assert(event != null)
+		out_events_id.append(event_id)
+
+	return out_events_id

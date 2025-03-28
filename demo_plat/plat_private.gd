@@ -64,10 +64,11 @@ static func generate_world(gs: Plat.GameState):
 		block.type = Plat.BLOCK_TYPE_GOLD
 
 	# ceiling
-	chunk = gs.chunks[0]
-	for j in range(Plat.CHUNK_WIDTH_BLOCKS):
-		var block = chunk.blocks[j][Plat.CHUNK_HEIGHT_BLOCKS-1] as Plat.Block
-		block.type = Plat.BLOCK_TYPE_GOLD
+	for i in range(Plat.CHUNK_AMOUNT):
+		chunk = gs.chunks[i]
+		for j in range(Plat.CHUNK_WIDTH_BLOCKS):
+			var block = chunk.blocks[j][Plat.CHUNK_HEIGHT_BLOCKS-1] as Plat.Block
+			block.type = Plat.BLOCK_TYPE_GOLD
 
 
 

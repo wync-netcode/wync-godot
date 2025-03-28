@@ -96,9 +96,10 @@ const INPUT_AMOUNT_TO_SEND = 20
 var max_amount_cache_events = 1000 # it could be useful to have a different value for server cache
 var max_peers = 4
 var max_channels = 12
-var max_tick_history = 64 # 1 second at 60 fps
+var max_tick_history_timewarp = 64 # 1 second at 60 fps
 var max_prop_relative_sync_history_ticks = 20 # set to 1 to see if it's working alright 
 var max_delta_prop_predicted_ticks = 60 # 1000ms ping at 60fps 2000ms ping at 30fps
+var max_age_user_events_for_consumption = 120 # almost two seconds
 
 # how many ticks in the past to keep state cache for a regular prop
 var REGULAR_PROP_CACHED_STATE_AMOUNT = 8
@@ -137,6 +138,9 @@ var event_id_counter: int
 # events can be Dictionary (non-repeating set) or Array (allows duplicates)
 # Array[Array[Array[int]]]
 var peer_has_channel_has_events: Array[Array]
+
+## Array< peer_id: int, Array< channel: int, prop_id: prop_id > >
+var prop_id_by_peer_by_channel: Array[Array]
 
 
 # event caching
@@ -406,6 +410,7 @@ func _init() -> void:
 	active_prop_ids = []
 
 	peer_has_channel_has_events.resize(max_peers)
+	prop_id_by_peer_by_channel.resize(max_peers)
 	client_has_relative_prop_has_last_tick.resize(max_peers) # NOTE: index 0 not used
 
 	queue_clients_entities_to_sync.resize(max_peers)
@@ -424,6 +429,11 @@ func _init() -> void:
 		for channel_i in range(max_channels):
 			peer_has_channel_has_events[peer_i][channel_i] = []
 		client_has_relative_prop_has_last_tick[peer_i] = {}
+
+		prop_id_by_peer_by_channel[peer_i] = []
+		prop_id_by_peer_by_channel[peer_i].resize(max_channels)
+		for channel_i in range(max_channels):
+			prop_id_by_peer_by_channel[peer_i][channel_i] = -1
 
 		#if peer_i != WyncCtx.SERVER_PEER_ID:
 		queue_clients_entities_to_sync[peer_i] = FIFORing.new()

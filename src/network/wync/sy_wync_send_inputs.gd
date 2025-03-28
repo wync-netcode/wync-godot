@@ -9,11 +9,10 @@ const label: StringName = StringName("SyWyncSendInputs")
 ## So think about it as if it didn't write state
 static func wync_client_send_inputs (ctx: WyncCtx):
 
+	assert(ctx.connected)
+
 	var co_predict_data = ctx.co_predict_data
 	var tick_pred = co_predict_data.target_tick
-
-	if !ctx.connected:
-		return
 	
 	# reset events_id to sync
 	var event_set = ctx.peers_events_to_sync[WyncCtx.SERVER_PEER_ID] as Dictionary

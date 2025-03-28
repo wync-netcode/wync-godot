@@ -359,6 +359,9 @@ static func player_input_reset(gs: Plat.GameState, player: Plat.Player):
 
 
 static func system_player_grid_events(gs: Plat.GameState, player: Plat.Player):
+	if not Input.is_action_just_pressed("p1_mouse1"):
+		return
+
 	# get cursor grid position
 	var cursor_grid_pos: Vector2i = Vector2i(
 		floor(player.input.aim.x / Plat.BLOCK_LENGTH_PIXELS),
@@ -380,24 +383,44 @@ static func system_player_grid_events(gs: Plat.GameState, player: Plat.Player):
 	WyncEventUtils.publish_global_event_as_client(gs.wctx, 0, event_id)
 
 
+## Server runs events (aka inputs) from clients
+
 static func system_server_events(gs: Plat.GameState):
 
 	var channel_id = 0
 	var server_wync_peer_id = 1
-	var event_list: Array = gs.wctx.peer_has_channel_has_events[server_wync_peer_id][channel_id]
-	while(event_list.size() > 0):
 
-		var event_id = event_list[event_list.size() -1]
-		assert(gs.wctx.events.has(event_id))
-		var event := gs.wctx.events[event_id]
-		if event == null:
-			WyncEventUtils.global_event_consume(gs.wctx, server_wync_peer_id, channel_id, event_id)
-			continue
+	var tick_start = gs.wctx.co_ticks.ticks - gs.wctx.max_age_user_events_for_consumption
+	var tick_end = gs.wctx.co_ticks.ticks +1
 
-		# handle it
-		Log.out("event handling | handling server event %s" % [event_id], Log.TAG_GAME_EVENT)
-		handle_events(gs, event.data, server_wync_peer_id)
-		WyncEventUtils.global_event_consume(gs.wctx, server_wync_peer_id, channel_id, event_id)
+	var something_happened = false
+	for tick: int in range(tick_start, tick_end):
+
+		var event_list: Array[int] = WyncWrapper.wync_get_events_from_channel_from_peer(
+			gs.wctx, server_wync_peer_id, channel_id, tick)
+
+		for event_id in event_list:
+			var event := gs.wctx.events[event_id]
+
+			# handle it
+			Log.outc(gs.wctx, "event handling | tick(%s) handling server event %s" % [tick, event_id], Log.TAG_GAME_EVENT)
+			handle_events(gs, event.data, server_wync_peer_id)
+			WyncEventUtils.global_event_consume_tick(gs.wctx, server_wync_peer_id, channel_id, tick, event_id)
+			something_happened = true
+
+	if something_happened:
+		Log.outc(gs.wctx, "event handling start (tick_curr %s)========================================" % [tick_end-1])
+
+	"""
+	for tick in range(tick_current - tick_event_range, tick_current):
+		var event_id = WyncWrapper.wync_get_events_from_channel_from_peer(ctx, peer_id, tick)
+
+		for event_id in event_list:
+			var event = get_event(id)
+			user_handle_event(event)
+
+			wync_mark_event_as_consumed(ctx, event_id)
+	"""
 
 
 static func handle_events(gs: Plat.GameState, event_data: WyncEvent.EventData, peer_id: int):
@@ -418,7 +441,9 @@ static func grid_block_break(gs: Plat.GameState, block_pos: Vector2i):
 	# downgrade block
 	var chunk_id = floori(block_pos.x / (Plat.CHUNK_WIDTH_BLOCKS))
 	var chunk := gs.chunks[chunk_id]
-	var block: Plat.Block = chunk.blocks[block_pos.x % Plat.CHUNK_WIDTH_BLOCKS][block_pos.y]
+
+	block_pos.x = block_pos.x % Plat.CHUNK_WIDTH_BLOCKS
+	var block: Plat.Block = chunk.blocks[block_pos.x][block_pos.y]
 	var new_block_type = max(0, block.type -1)
 
 	# downgrade block as delta event
@@ -442,5 +467,3 @@ static func grid_block_break(gs: Plat.GameState, block_pos: Vector2i):
 	err = WyncDeltaSyncUtils.merge_event_to_state_real_state(gs.wctx, blocks_prop_id, event_id)
 	if err != OK:
 		Log.errc(gs.wctx, "Couldn't apply event prop(%s) err(%s)" % [blocks_prop_id, err])
-
-

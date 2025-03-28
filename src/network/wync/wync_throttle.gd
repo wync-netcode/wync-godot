@@ -112,10 +112,12 @@ static func wync_system_send_entities_to_despawn(ctx: WyncCtx, _commit: bool = t
 static func wync_system_gather_packets(ctx: WyncCtx):
 
 	if ctx.is_client:
-		WyncFlow.wync_try_to_connect(ctx)                     # reliable, commited
-		WyncFlow.wync_system_client_send_delta_prop_acks(ctx) # unreliable
-		SyWyncSendInputs.wync_client_send_inputs(ctx)         # unreliable
-		SyWyncSendEventData.wync_send_event_data(ctx)         # reliable, commited
+		if not ctx.connected:
+			WyncFlow.wync_try_to_connect(ctx)                     # reliable, commited
+		else:
+			WyncFlow.wync_system_client_send_delta_prop_acks(ctx) # unreliable
+			SyWyncSendInputs.wync_client_send_inputs(ctx)         # unreliable
+			SyWyncSendEventData.wync_send_event_data(ctx)         # reliable, commited
 
 	else:
 		SyWyncClockServer.wync_server_sync_clock(ctx)          # unreliable

@@ -99,3 +99,15 @@ var confirmed_states_undo_tick: RingBuffer = null
 # --------------------------------------------------
 
 var reliable := true
+
+# Event consumed module
+# --------------------------------------------------
+
+## * Note: Currently, if there are duplicated events on a single tick,
+##   only once instance will be executed
+## * Stores the consumed events for the last N ticks
+## * Used mainly for the server to consume late client events
+## Ring <tick: id, event_ids: Array[int]>
+var module_events_consumed: bool = false
+var events_consumed_at_tick: RingBuffer = null
+var events_consumed_at_tick_tick: RingBuffer = null

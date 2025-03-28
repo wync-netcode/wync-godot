@@ -4,11 +4,10 @@ class_name WyncFlow
 ## Note. Before running this, make sure to receive packets from the network
 
 static func wync_server_tick_start(ctx: WyncCtx):
-	# before tick start
 
 	SyTicks.wync_advance_ticks(ctx)
 
-	# after tick start
+	WyncEventUtils.module_events_consumed_advance_tick(ctx)
 
 	WyncWrapper.wync_input_props_set_tick_value(ctx)
 

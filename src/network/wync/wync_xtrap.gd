@@ -131,6 +131,7 @@ static func auxiliar_props_clear_current_delta_events(ctx: WyncCtx):
 # which entities shouldnt' be predicted in this tick:
 # * entities containing delta props
 # * entities with an already confirmed state for this tick or a higher tick
+# * entities that haven't received new state
 # These props need their state reset to that tick. Why here this ???
 # * props that are predicted and already have a confirmed state for this tick
 static func wync_xtrap_dont_predict_entities(ctx: WyncCtx, tick: int) -> Array[int]:

@@ -320,8 +320,8 @@ static func prop_set_timewarpable(ctx: WyncCtx, prop_id: int) -> int:
 	if prop == null:
 		return 1
 	prop.timewarpable = true
-	prop.confirmed_states = RingBuffer.new(ctx.max_tick_history, null)
-	prop.confirmed_states_tick = RingBuffer.new(ctx.max_tick_history, -1)
+	prop.confirmed_states = RingBuffer.new(ctx.max_tick_history_timewarp, null)
+	prop.confirmed_states_tick = RingBuffer.new(ctx.max_tick_history_timewarp, -1)
 	return OK
 
 # server only
@@ -338,6 +338,18 @@ static func prop_set_reliability(ctx: WyncCtx, prop_id: int, reliable: bool) -> 
 		return 1
 	prop.reliable = reliable
 	return OK
+
+# server only
+static func prop_set_module_events_consumed(ctx: WyncCtx, prop_id: int) -> int:
+	# TODO:
+	var prop := WyncUtils.get_prop(ctx, prop_id)
+	if prop == null:
+		return 1
+	prop.module_events_consumed = true
+	prop.events_consumed_at_tick = RingBuffer.new(ctx.max_age_user_events_for_consumption, [] as Array[int])
+	prop.events_consumed_at_tick_tick = RingBuffer.new(ctx.max_age_user_events_for_consumption, -1)
+	return OK
+
 
 ## Only for INPUT / EVENT props
 #static func prop_set_prediction_duplication(ctx: WyncCtx, prop_id: int, duplication: bool) -> bool:
@@ -722,14 +734,12 @@ static func setup_general_global_events(ctx: WyncCtx) -> int:
 # run on both server & client to set up peer channel
 # NOTE: Maybe it's better to initialize all client channels from the start
 static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
-	if (!ctx.connected):
-		printerr("WyncUtils setup_client_global_events | not connected")
-		return 1
+	assert(ctx.connected)
 	
 	var entity_id = WyncCtx.ENTITY_ID_GLOBAL_EVENTS + peer_id
 	WyncUtils.track_entity(ctx, entity_id, -1)
 	var channel_id = 0
-	var prop_channel = WyncUtils.prop_register_minimal(
+	var channel_prop_id = WyncUtils.prop_register_minimal(
 		ctx,
 		entity_id,
 		"channel_%d" % [channel_id],
@@ -737,7 +747,7 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 	)
 	WyncWrapper.wync_set_prop_callbacks(
 		ctx,
-		prop_channel,
+		channel_prop_id,
 		ctx,
 		func(wync_ctx: Variant) -> Array: # getter
 			return (wync_ctx as WyncCtx).peer_has_channel_has_events[peer_id][channel_id].duplicate(true),
@@ -747,15 +757,19 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 			event_array.append_array(input),
 	)
 
-	# predict my own global channel
-	if (WyncUtils.is_client(ctx) && peer_id == ctx.my_peer_id):
-		WyncUtils.prop_set_predict(ctx, prop_channel)
-
 	# TODO: add as VIP prop
 
-	# add as local existing prop
-	if not WyncUtils.is_client(ctx):
+	# predict my own global channel
+	if (ctx.is_client && peer_id == ctx.my_peer_id):
+		WyncUtils.prop_set_predict(ctx, channel_prop_id)
+
+	if not ctx.is_client:
+		# add as local existing prop
 		WyncThrottle.wync_add_local_existing_entity(ctx, peer_id, entity_id)
+		# server module for consuming user events
+		prop_set_module_events_consumed(ctx, channel_prop_id)
+		# populate ctx var
+		ctx.prop_id_by_peer_by_channel[peer_id][channel_id] = channel_prop_id
 
 	return 0
 

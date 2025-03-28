@@ -147,16 +147,47 @@ static func publish_global_event_as_server \
 	return 0
 
 
-static func global_event_consume \
-	(ctx: WyncCtx, peer_id: int, channel_id: int, event_id: int) -> int:
-	if channel_id < 0 || channel_id >= ctx.max_channels:
-		return 1
+static func global_event_consume_tick \
+	(ctx: WyncCtx, wync_peer_id: int, channel: int, tick: int, event_id: int) -> void:
 	
-	if not ctx.peer_has_channel_has_events[peer_id][channel_id].has(event_id):
-		return 2
+	assert(channel >= 0 && channel < ctx.max_channels)
+	assert(wync_peer_id >= 0 && wync_peer_id < ctx.max_peers)
 	
-	ctx.peer_has_channel_has_events[peer_id][channel_id].erase(event_id)
-	return 0
+	var prop_id: int = ctx.prop_id_by_peer_by_channel[wync_peer_id][channel]
+	var prop_channel := WyncUtils.get_prop_unsafe(ctx, prop_id)
+
+	var consumed_event_ids_tick: int = prop_channel.events_consumed_at_tick_tick.get_at(tick)
+	if tick != consumed_event_ids_tick:
+		return
+
+	var consumed_events: Array[int] = prop_channel.events_consumed_at_tick.get_at(tick)
+	consumed_events.append(event_id)
+
+
+static func module_events_consumed_advance_tick(ctx: WyncCtx):
+	var tick = ctx.co_ticks.ticks
+
+	for prop_id: int in ctx.active_prop_ids:
+		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
+		if not prop.module_events_consumed:
+			continue
+
+		prop.events_consumed_at_tick_tick.insert_at(tick, tick)
+		var event_ids: Array[int] = prop.events_consumed_at_tick.get_at(tick)
+		event_ids.clear()
+
+
+# DEPRECATED
+#static func global_event_consume \
+	#(ctx: WyncCtx, peer_id: int, channel_id: int, event_id: int) -> int:
+	#if channel_id < 0 || channel_id >= ctx.max_channels:
+		#return 1
+	
+	#if not ctx.peer_has_channel_has_events[peer_id][channel_id].has(event_id):
+		#return 2
+	
+	#ctx.peer_has_channel_has_events[peer_id][channel_id].erase(event_id)
+	#return 0
 	
 	# NOTE: What about the duplicated state
 	# on the user's event container?
