@@ -333,83 +333,82 @@ static func client_event_connected_to_server(gs: Plat.GameState):
 	#PlatWync.setup_sync_for_all_chunks(gs)
 
 
-static func client_spawn_actors(gs: Plat.GameState, ctx: WyncCtx):
 
-	if gs.wctx.out_pending_entities_to_spawn.size() <= 0:
-		return
+static func client_handle_spawn_events(gs: Plat.GameState):
+	var ctx := gs.wctx
 
-	#assert(false)
-	for i in range(ctx.out_pending_entities_to_spawn.size()):
+	var event: WyncCtx.EntitySpawnEvent = null
 
-		var entity_to_spawn: WyncCtx.PendingEntityToSpawn = ctx.out_pending_entities_to_spawn[i]
+	event = WyncFlow.wync_get_next_entity_event_spawn(ctx)
+	while(event != null):
 
-		match entity_to_spawn.entity_type_id:
+		if event.spawn:
+			client_spawn_actor(gs, event.entity_type_id, event.entity_id, event.spawn_data)
+			WyncUtils.finish_spawning_entity(ctx, event.entity_id)
+		else:
+			client_despawn_actor(gs, event.entity_id)
 
-			Plat.ACTOR_TYPE_BALL:
-				#var spawn_data = entity_to_spawn.spawn_data as GameInfo.EntityProjectileSpawnData
+		event = WyncFlow.wync_get_next_entity_event_spawn(ctx)
 
-				# spawn some entity
-				var actor_id = PlatPublic.spawn_ball(gs, PlatUtils.GRID_CORD(5, 10), entity_to_spawn.entity_id)
-				assert(actor_id != -1)
-
-				# setup actor with wync
-				setup_sync_for_ball_actor(gs, actor_id)
-				WyncUtils.finish_spawning_entity(ctx, entity_to_spawn.entity_id, i)
-
-			Plat.ACTOR_TYPE_PLAYER:
-				# spawn some entity
-				var actor_id = PlatPublic.spawn_player(gs, PlatUtils.GRID_CORD(5, 10), entity_to_spawn.entity_id)
-				assert(actor_id != -1)
-
-				# setup actor with wync
-				setup_sync_for_player_actor(gs, actor_id)
-				WyncUtils.finish_spawning_entity(ctx, entity_to_spawn.entity_id, i)
-
-			Plat.ACTOR_TYPE_ROCKET:
-				# spawn some entity
-				var actor_id = PlatPublic.spawn_rocket(gs, Vector2.ZERO, Vector2.ZERO, entity_to_spawn.entity_id)
-				assert(actor_id != -1)
-
-				# setup actor with wync
-				setup_sync_for_rocket_actor(gs, actor_id)
-				WyncUtils.finish_spawning_entity(ctx, entity_to_spawn.entity_id, i)
-
-			Plat.ACTOR_TYPE_CHUNK:
-				# chunks already exist on clients, however, spawn event needed to initialize synchronization
-				# according to the static user_entity_id, sync with the correct local chunk
-
-				var actor_id = entity_to_spawn.entity_id
-
-				# get local actor
-				var actor: Plat.Actor = PlatPublic.get_actor(gs, actor_id)
-				if actor == null:
-					break
-
-				# is of type chunk
-				if actor.actor_type != Plat.ACTOR_TYPE_CHUNK:
-					break
-
-				setup_sync_for_chunk_actor(gs, actor_id)
-				WyncUtils.finish_spawning_entity(ctx, entity_to_spawn.entity_id, i)
-				Log.outc(ctx, "spawn, spawned chunk %s" % [HashUtils.object_to_dictionary(entity_to_spawn)])
-	
-
-	# wync cleanup
+	# cleanup
 	WyncFlow.wync_system_spawned_props_cleanup(ctx)
 
 
-static func client_despawn_actors(gs: Plat.GameState, ctx: WyncCtx):
+static func client_spawn_actor(gs: Plat.GameState, actor_type: int, actor_id: int, _spawn_data: Variant):
 
-	if gs.wctx.out_pending_entities_to_despawn.size() <= 0:
-		return
+	match actor_type:
 
-	for i in range(ctx.out_pending_entities_to_despawn.size()):
+		Plat.ACTOR_TYPE_BALL:
+			# spawn some entity
+			var new_actor_id = PlatPublic.spawn_ball(gs, PlatUtils.GRID_CORD(5, 10), actor_id)
+			assert(new_actor_id != -1)
+			assert(new_actor_id == actor_id)
 
-		var entity_to_despawn_id: int = ctx.out_pending_entities_to_despawn[i]
-		PlatPublic.despawn_actor(gs, entity_to_despawn_id)
+			# setup actor with wync
+			setup_sync_for_ball_actor(gs, actor_id)
+
+		Plat.ACTOR_TYPE_PLAYER:
+			# spawn some entity
+			var new_actor_id = PlatPublic.spawn_player(gs, PlatUtils.GRID_CORD(5, 10), actor_id)
+			assert(new_actor_id != -1)
+			assert(new_actor_id == actor_id)
+
+			# setup actor with wync
+			setup_sync_for_player_actor(gs, actor_id)
+
+		Plat.ACTOR_TYPE_ROCKET:
+			# spawn some entity
+			var new_actor_id = PlatPublic.spawn_rocket(gs, Vector2.ZERO, Vector2.ZERO, actor_id)
+			assert(new_actor_id != -1)
+			assert(new_actor_id == actor_id)
+
+			# setup actor with wync
+			setup_sync_for_rocket_actor(gs, actor_id)
+
+		Plat.ACTOR_TYPE_CHUNK:
+			# chunks already exist on clients, however, spawn event needed to initialize synchronization
+			# according to the static user_entity_id, sync with the correct local chunk
+
+			#var actor_id = entity_to_spawn.entity_id
+
+			# get local actor
+			var actor: Plat.Actor = PlatPublic.get_actor(gs, actor_id)
+			assert(actor != null)
+
+			# is of type chunk
+			assert(actor.actor_type == Plat.ACTOR_TYPE_CHUNK)
+
+			setup_sync_for_chunk_actor(gs, actor_id)
+
+		_:
+			assert(false)
+
+
+static func client_despawn_actor(gs: Plat.GameState, actor_id: int):
+	PlatPublic.despawn_actor(gs, actor_id)
 
 	# wync cleanup
-	WyncFlow.wync_clear_entities_pending_to_despawn(ctx)
+	#WyncFlow.wync_clear_entities_pending_to_despawn(ctx)
 
 
 static func update_what_the_clients_can_see(gs: Plat.GameState):

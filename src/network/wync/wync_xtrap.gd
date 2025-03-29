@@ -12,6 +12,8 @@ static func wync_xtrap_preparation(ctx: WyncCtx) -> int:
 	ctx.xtrap_local_tick = null # Optional<int>
 	ctx.first_tick_predicted = ctx.last_tick_received +1
 	ctx.pred_intented_first_tick = ctx.last_tick_received +1
+	if ctx.co_predict_data.target_tick <= ctx.co_ticks.server_ticks:
+		return 2
 
 	return OK
 

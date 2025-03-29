@@ -191,9 +191,9 @@ static func prop_register(
 	return prop_id
 
 
-static func finish_spawning_entity(ctx: WyncCtx, entity_id: int, pending_id: int) -> int:
+static func finish_spawning_entity(ctx: WyncCtx, entity_id: int) -> int:
 
-	var entity_to_spawn = ctx.out_pending_entities_to_spawn[pending_id]
+	var entity_to_spawn = ctx.next_entity_to_spawn
 	entity_to_spawn.already_spawned = true
 
 	assert(ctx.pending_entity_to_spawn_props.has(entity_id))

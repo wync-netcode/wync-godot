@@ -98,9 +98,11 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 				wync_handle_packet_client_set_lerp_ms(ctx, wync_pkt.data, from_nete_peer_id)
 		WyncPacket.WYNC_PKT_SPAWN:
 			if is_client:
+				Log.outc(ctx, "spawn, spawn pkt %s" % [(wync_pkt.data as WyncPktSpawn).entity_ids])
 				wync_handle_pkt_spawn(ctx, wync_pkt.data)
 		WyncPacket.WYNC_PKT_DESPAWN:
 			if is_client:
+				Log.outc(ctx, "spawn, despawn pkt %s" % [(wync_pkt.data as WyncPktDespawn).entity_ids])
 				wync_handle_pkt_despawn(ctx, wync_pkt.data)
 		WyncPacket.WYNC_PKT_DELTA_PROP_ACK:
 			if not is_client:
@@ -525,7 +527,7 @@ static func wync_handle_pkt_spawn(ctx: WyncCtx, data: Variant):
 		return 1
 	data = data as WyncPktSpawn
 
-	var entity_to_spawn: WyncCtx.PendingEntityToSpawn = null
+	var entity_to_spawn: WyncCtx.EntitySpawnEvent = null
 	for i: int in range(data.entity_amount):
 
 		var entity_id = data.entity_ids[i]
@@ -538,13 +540,14 @@ static func wync_handle_pkt_spawn(ctx: WyncCtx, data: Variant):
 		ctx.pending_entity_to_spawn_props[entity_id] = [prop_start, prop_end, 0] as Array[int]
 
 		# queue it to user facing variable
-		entity_to_spawn = WyncCtx.PendingEntityToSpawn.new()
+		entity_to_spawn = WyncCtx.EntitySpawnEvent.new()
+		entity_to_spawn.spawn = true
 		entity_to_spawn.already_spawned = false
 		entity_to_spawn.entity_id = entity_id
 		entity_to_spawn.entity_type_id = entity_type_id
 		entity_to_spawn.spawn_data = spawn_data
 
-		ctx.out_pending_entities_to_spawn.append(entity_to_spawn)
+		ctx.out_queue_spawn_events.push_head(entity_to_spawn)
 
 
 static func wync_handle_pkt_despawn(ctx: WyncCtx, data: Variant):
@@ -553,10 +556,16 @@ static func wync_handle_pkt_despawn(ctx: WyncCtx, data: Variant):
 		return 1
 	data = data as WyncPktDespawn
 
+	var entity_to_spawn: WyncCtx.EntitySpawnEvent = null
+
 	for i: int in range(data.entity_amount):
 
 		var entity_id = data.entity_ids[i]
-		ctx.out_pending_entities_to_despawn.append(entity_id)
+
+		entity_to_spawn = WyncCtx.EntitySpawnEvent.new()
+		entity_to_spawn.spawn = false
+		entity_to_spawn.entity_id = entity_id
+		ctx.out_queue_spawn_events.push_head(entity_to_spawn)
 
 		WyncUtils.untrack_entity(ctx, entity_id)
 
@@ -797,10 +806,11 @@ static func wync_dummy_props_cleanup(ctx: WyncCtx):
 
 ## Call after finishing spawning entities
 static func wync_system_spawned_props_cleanup(ctx: WyncCtx):
-	for i in range(ctx.out_pending_entities_to_spawn.size()-1, -1, -1):
-		var entity_to_spawn: WyncCtx.PendingEntityToSpawn = ctx.out_pending_entities_to_spawn[i]
-		if entity_to_spawn.already_spawned:
-			ctx.out_pending_entities_to_spawn.remove_at(i)
+	ctx.out_queue_spawn_events.clear()
+	#for i in range(ctx.out_pending_entities_to_spawn.size()-1, -1, -1):
+		#var entity_to_spawn: WyncCtx.EntitySpawnEvent = ctx.out_pending_entities_to_spawn[i]
+		#if entity_to_spawn.already_spawned:
+			#ctx.out_pending_entities_to_spawn.remove_at(i)
 
 
 static func wync_system_client_send_delta_prop_acks(ctx: WyncCtx):
@@ -847,3 +857,16 @@ static func wync_client_set_lerp_ms (ctx: WyncCtx, server_tick_rate: int, lerp_m
 	#ctx.lerp_ms = max(lerp_ms, (1000 / server_update_rate) * 2)
 
 	ctx.co_predict_data.lerp_ms = max(lerp_ms, ceil((1000.0 / server_tick_rate) * 2))
+
+
+static func wync_get_next_entity_event_spawn(ctx: WyncCtx) -> WyncCtx.EntitySpawnEvent:
+	var size = ctx.out_queue_spawn_events.size
+	if size <= 0:
+		return null
+
+	var event = ctx.out_queue_spawn_events.pop_tail()
+	if event is not WyncCtx.EntitySpawnEvent:
+		return null
+
+	ctx.next_entity_to_spawn = event
+	return event

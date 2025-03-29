@@ -28,8 +28,7 @@ func _physics_process(delta: float) -> void:
 		WyncThrottle.wync_system_gather_packets(gs.wctx)
 	else:
 		PlatWync.client_event_connected_to_server(gs)
-		PlatWync.client_despawn_actors(gs, gs.wctx)
-		PlatWync.client_spawn_actors(gs, gs.wctx)
+		PlatWync.client_handle_spawn_events(gs)
 		PlatWync.find_out_what_player_i_control(gs)
 
 		if gs.i_control_player_id != -1:

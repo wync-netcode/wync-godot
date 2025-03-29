@@ -21,7 +21,7 @@ func spawn_actors(ctx: WyncCtx):
 
 	for i in range(ctx.out_pending_entities_to_spawn.size()):
 
-		var entity_to_spawn: WyncCtx.PendingEntityToSpawn = ctx.out_pending_entities_to_spawn[i]
+		var entity_to_spawn: WyncCtx.EntitySpawnEvent = ctx.out_pending_entities_to_spawn[i]
 
 		match entity_to_spawn.entity_type_id:
 

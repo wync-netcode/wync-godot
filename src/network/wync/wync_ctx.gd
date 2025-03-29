@@ -327,16 +327,21 @@ var clients_no_longer_sees_entities: Array[Dictionary]
 # Map <entity_id: int, data: Variant>
 var entity_spawn_data: Dictionary
 
-class PendingEntityToSpawn:
+class EntitySpawnEvent:
+	var spawn: bool  ## wheter to spawn or to dispawn
 	var already_spawned: bool
 	var entity_id: int
 	var entity_type_id: int
 	var spawn_data: Variant
 
-## User facing var
+## User facing variable
 ## Client only
-## List<PendingEntityToSpawn>
-var out_pending_entities_to_spawn: Array[PendingEntityToSpawn]
+## FIFO<SpawnEvent>
+var out_queue_spawn_events: FIFORingAny # Maybe a dynamic FIFORing would be better?
+
+## User must call get_next_entity
+## Cleared each tick
+var next_entity_to_spawn: EntitySpawnEvent
 
 # Internal list
 # Map <entity_id: int, Tripla[prop_start: int, prop_end: int, curr: int]
@@ -345,12 +350,6 @@ var pending_entity_to_spawn_props: Dictionary
 ## Despawned entities
 ## List<entity_id: int>
 var despawned_entity_ids: Array[int]
-
-## User facing var
-## Client only
-## List<entity_id: int>
-var out_pending_entities_to_despawn: Array[int]
-
 
 ## Queues
 
@@ -413,6 +412,7 @@ func _init() -> void:
 	peer_has_channel_has_events.resize(max_peers)
 	prop_id_by_peer_by_channel.resize(max_peers)
 	client_has_relative_prop_has_last_tick.resize(max_peers) # NOTE: index 0 not used
+	out_queue_spawn_events = FIFORingAny.new(1024)
 
 	queue_clients_entities_to_sync.resize(max_peers)
 	queue_entity_pairs_to_sync.resize(100)
