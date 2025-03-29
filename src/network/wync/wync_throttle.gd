@@ -4,6 +4,7 @@ class_name WyncThrottle
 # ----------------------------------------------------------------------
 
 
+## TODO: fix all these comments
 ## @argument commit: bool. Pass True if you're gonna send this message through the network,
 ## so that Wync can assume it will arrive
 ## This system is network throttled
@@ -51,7 +52,7 @@ static func wync_system_send_entities_to_spawn(ctx: WyncCtx, _commit: bool = tru
 
 			# commit / confirm as _client can see it_
 
-			wync_confirm_client_can_see_entity(ctx, client_id, entity_id)
+			_wync_confirm_client_can_see_entity(ctx, client_id, entity_id)
 
 			data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_SPAWN)
 			if (data_used >= ctx.out_packets_size_remaining_chars):
@@ -151,7 +152,7 @@ static func wync_system_calculate_data_per_tick(ctx: WyncCtx):
 
 
 # TODO: rename
-static func wync_remove_entity_from_sync_queue(ctx: WyncCtx, peer_id: int, entity_id: int):
+static func _wync_remove_entity_from_sync_queue(ctx: WyncCtx, peer_id: int, entity_id: int):
 	var synced_last_time = ctx.entities_synced_last_time[peer_id] as Dictionary
 	synced_last_time[entity_id] = true
 
@@ -328,7 +329,7 @@ static func wync_add_local_existing_entity \
 
 ## TODO: this function is too similar to wync_add_local_existing_entity
 ## Removes an entity from clients_sees_new_entities
-static func wync_confirm_client_can_see_entity(ctx: WyncCtx, client_id: int, entity_id: int):
+static func _wync_confirm_client_can_see_entity(ctx: WyncCtx, client_id: int, entity_id: int):
 
 	var entity_set = ctx.clients_sees_entities[client_id]
 	entity_set[entity_id] = true
@@ -347,6 +348,9 @@ static func wync_confirm_client_can_see_entity(ctx: WyncCtx, client_id: int, ent
 	# remove from new entities
 	var new_entity_set = ctx.clients_sees_new_entities[client_id] as Dictionary
 	new_entity_set.erase(entity_id)
+
+	Log.outc(ctx, "I: spawn, confirmed: client %s can now see entity %s" % [
+		client_id, entity_id])
 
 
 ## Call every time before gathering packets

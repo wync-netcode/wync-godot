@@ -272,10 +272,11 @@ static func wync_handle_pkt_join_req(ctx: WyncCtx, data: Variant, from_nete_peer
 	# let client own it's own global events
 	# NOTE: Maybe move this where all channels are defined
 
-	var global_events_entity_id = WyncCtx.ENTITY_ID_GLOBAL_EVENTS + wync_client_id
-	var prop_id = WyncUtils.entity_get_prop_id(ctx, global_events_entity_id, "channel_0")
-	assert(prop_id != -1)
-	WyncUtils.prop_set_client_owner(ctx, prop_id, wync_client_id)
+	# WARNING: TODO: REFACTOR
+	#var global_events_entity_id = WyncCtx.ENTITY_ID_GLOBAL_EVENTS + wync_client_id
+	#var prop_id = WyncUtils.entity_get_prop_id(ctx, global_events_entity_id, "channel_0")
+	#assert(prop_id != -1)
+	#WyncUtils.prop_set_client_owner(ctx, prop_id, wync_client_id)
 
 	#var global_events_entity_id = WyncCtx.ENTITY_ID_GLOBAL_EVENTS + wync_client_id
 	#if WyncUtils.is_entity_tracked(ctx, global_events_entity_id):
@@ -448,7 +449,7 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 		var prop = WyncUtils.get_prop(ctx, snap_prop.prop_id)
 		if prop == null:
 			Log.errc(ctx, "couldn't find prop (%s) saving as dummy prop..." % [snap_prop.prop_id], Log.TAG_LATEST_VALUE)
-			WyncUtils.prop_register_update_dummy(ctx, snap_prop.prop_id, data.tick, 99, snap_prop.state)
+			WyncUtils._prop_register_update_dummy(ctx, snap_prop.prop_id, data.tick, 99, snap_prop.state)
 			continue
 
 		# avoid flooding the buffer with old late state

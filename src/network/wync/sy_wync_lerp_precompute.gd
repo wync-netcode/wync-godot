@@ -56,7 +56,7 @@ static func precompute_lerping_prop_confirmed_states(
 		return
 	prop = prop as WyncEntityProp
 
-	var snaps = WyncUtils.find_closest_two_snapshots_from_prop(ctx, target_time, prop, co_ticks, co_predict_data)
+	var snaps = WyncUtils._find_closest_two_snapshots_from_prop2(ctx, target_time, prop, co_ticks, co_predict_data)
 	if snaps.size() != 2:
 		return
 

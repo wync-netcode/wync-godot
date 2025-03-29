@@ -76,7 +76,7 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 		# TODO (2): Notify wync user has last tick
 		# client_prop_last_tick[prop_id] = co_ticks.tick
 
-		WyncThrottle.wync_remove_entity_from_sync_queue(ctx, client_id, entity_id)
+		WyncThrottle._wync_remove_entity_from_sync_queue(ctx, client_id, entity_id)
 
 		# fill all the data for the props, then see if it fits
 

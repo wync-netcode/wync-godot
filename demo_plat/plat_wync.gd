@@ -58,13 +58,14 @@ static func setup_connect_client(gs: Plat.GameState):
 
 # setup entities that the client should already have present
 static func setup_new_client_level_props(gs: Plat.GameState, wync_peer_id: int):
+	return
 
 	# chunk entities should be present
-	for i: int in range(Plat.CHUNK_AMOUNT):
-		var chunk := gs.chunks[i]
-		if chunk == null:
-			continue
-		WyncThrottle.wync_add_local_existing_entity(gs.wctx, wync_peer_id, chunk.actor_id)
+	#for i: int in range(Plat.CHUNK_AMOUNT):
+		#var chunk := gs.chunks[i]
+		#if chunk == null:
+			#continue
+		#WyncThrottle.wync_add_local_existing_entity(gs.wctx, wync_peer_id, chunk.actor_id)
 
 
 static func setup_blueprints(ctx: WyncCtx):
@@ -106,9 +107,9 @@ static func blueprint_handle_event_delta_block_replace \
 
 
 static func setup_sync_for_ball_actor(gs: Plat.GameState, actor_id: int):
-	if actor_id < 0 || actor_id >= Plat.ACTOR_AMOUNT: assert(false)
+	#if actor_id < 0 || actor_id >= Plat.ACTOR_AMOUNT: assert(false)
 	var wctx = gs.wctx
-	var actor := gs.actors[actor_id]
+	var actor := PlatPublic.get_actor(gs, actor_id)
 	var ball_instance := gs.balls[actor.instance_id]
 
 	if WyncUtils.track_entity(wctx, actor_id, Plat.ACTOR_TYPE_BALL) != OK:
@@ -170,9 +171,9 @@ static func setup_sync_for_ball_actor(gs: Plat.GameState, actor_id: int):
 
 
 static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
-	if actor_id < 0 || actor_id >= Plat.ACTOR_AMOUNT: assert(false)
+	#if actor_id < 0 || actor_id >= Plat.ACTOR_AMOUNT: assert(false)
 	var wctx = gs.wctx
-	var actor := gs.actors[actor_id]
+	var actor := PlatPublic.get_actor(gs, actor_id)
 	var player_instance := gs.players[actor.instance_id]
 
 	if WyncUtils.track_entity(wctx, actor_id, Plat.ACTOR_TYPE_PLAYER) != OK:
@@ -240,8 +241,8 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 
 
 static func setup_sync_for_rocket_actor(gs: Plat.GameState, actor_id: int):
-	if actor_id < 0 || actor_id >= Plat.ACTOR_AMOUNT: assert(false)
-	var actor := gs.actors[actor_id]
+	#if actor_id < 0 || actor_id >= Plat.ACTOR_AMOUNT: assert(false)
+	var actor := PlatPublic.get_actor(gs, actor_id)
 	var wctx = gs.wctx
 	var rocket_instance := gs.rockets[actor.instance_id]
 
@@ -270,24 +271,21 @@ static func setup_sync_for_all_chunks(gs: Plat.GameState):
 	for i: int in range(Plat.CHUNK_AMOUNT):
 		var chunk := gs.chunks[i]
 		if chunk == null:
+			assert(false)
 			continue
 
-		var instance_id = i
-		var actor_id = PlatPublic.actor_find_available_id(gs)
-		chunk.actor_id = actor_id
-
-		PlatPublic.spawn_actor(gs, actor_id, Plat.ACTOR_TYPE_CHUNK, instance_id)
-		PlatWync.setup_sync_for_chunk_actor(gs, actor_id)
+		PlatWync.setup_sync_for_chunk_actor(gs, chunk.actor_id)
 
 
 static func setup_sync_for_chunk_actor(gs: Plat.GameState, actor_id: int):
-	if actor_id < 0 || actor_id >= Plat.ACTOR_AMOUNT: assert(false)
-	var actor := gs.actors[actor_id]
+	#if actor_id < 0 || actor_id >= Plat.ACTOR_AMOUNT: assert(false)
+	var actor := PlatPublic.get_actor(gs, actor_id)
 	var wctx = gs.wctx
 	var chunk_instance := gs.chunks[actor.instance_id]
 	assert(chunk_instance != null)
 
 	if WyncUtils.track_entity(wctx, actor_id, Plat.ACTOR_TYPE_CHUNK) != OK:
+		assert(false)
 		return
 
 	var blocks_prop = WyncUtils.prop_register_minimal(
@@ -332,7 +330,7 @@ static func client_event_connected_to_server(gs: Plat.GameState):
 
 	# setup
 
-	PlatWync.setup_sync_for_all_chunks(gs)
+	#PlatWync.setup_sync_for_all_chunks(gs)
 
 
 static func client_spawn_actors(gs: Plat.GameState, ctx: WyncCtx):
@@ -377,8 +375,23 @@ static func client_spawn_actors(gs: Plat.GameState, ctx: WyncCtx):
 				WyncUtils.finish_spawning_entity(ctx, entity_to_spawn.entity_id, i)
 
 			Plat.ACTOR_TYPE_CHUNK:
-				# chunks already exist on clients, no need for spawn event
-				assert(false)
+				# chunks already exist on clients, however, spawn event needed to initialize synchronization
+				# according to the static user_entity_id, sync with the correct local chunk
+
+				var actor_id = entity_to_spawn.entity_id
+
+				# get local actor
+				var actor: Plat.Actor = PlatPublic.get_actor(gs, actor_id)
+				if actor == null:
+					break
+
+				# is of type chunk
+				if actor.actor_type != Plat.ACTOR_TYPE_CHUNK:
+					break
+
+				setup_sync_for_chunk_actor(gs, actor_id)
+				WyncUtils.finish_spawning_entity(ctx, entity_to_spawn.entity_id, i)
+				Log.outc(ctx, "spawn, spawned chunk %s" % [HashUtils.object_to_dictionary(entity_to_spawn)])
 	
 
 	# wync cleanup
@@ -411,8 +424,12 @@ static func update_what_the_clients_can_see(gs: Plat.GameState):
 		for peer_id in range(1, ctx.peers.size()):
 			# TODO: get me a list of only active peers!
 
-			for actor_id: int in range(Plat.ACTOR_AMOUNT):
-				if not WyncUtils.is_entity_tracked(ctx, actor_id):
+			#for actor_index: int in range(Plat.ACTOR_AMOUNT):
+				#if not gs.actor_ids.has(actor_index):
+					#return
+				#var actor_id = gs.actor_ids[actor_index]
+			for actor_id: int in gs.actor_ids.keys():
+				if not WyncUtils.is_user_entity_tracked(ctx, actor_id):
 					continue
 				WyncThrottle.wync_client_now_can_see_entity(ctx, peer_id, actor_id)
 			
@@ -447,7 +464,7 @@ static func find_out_what_player_i_control(gs: Plat.GameState):
 			# Note: asssuming wync's entity_id directly maps to gs.actors[]
 
 			var actor_id = entity_id
-			var actor := gs.actors[actor_id]
+			var actor := PlatPublic.get_actor(gs, actor_id)
 			gs.i_control_player_id = actor.instance_id
 			break
 
@@ -502,8 +519,9 @@ static func set_interpolated_state(gs: Plat.GameState):
 			#break
 	var ctx := gs.wctx
 	
-	for actor_id: int in range(gs.actors.size()):
-		var actor := gs.actors[actor_id]
+	#for actor_id: int in range(gs.actors.size()):
+	for actor_id: int in gs.actor_ids.keys():
+		var actor := PlatPublic.get_actor(gs, actor_id)
 
 		# TODO: keep a list of active actors
 		# for now just break

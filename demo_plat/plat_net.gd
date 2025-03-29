@@ -93,7 +93,8 @@ static func consume_loopback_packets(gs: Plat.GameState):
 	var is_server = not gs.net.is_client
 	var io_peer = gs.net.io_peer
 
-	for k in range(io_peer.in_packets.size()-1, -1, -1):
+	#for k in range(io_peer.in_packets.size()-1, -1, -1): # for testing with reverse order
+	for k in range(io_peer.in_packets.size()):
 		var pkt = io_peer.in_packets[k] as Loopback.Packet
 		var user_pkt = pkt.data as UserNetPacket
 		var data = user_pkt.data

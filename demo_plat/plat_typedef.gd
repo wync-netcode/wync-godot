@@ -4,10 +4,10 @@ class_name Plat
 const ACTOR_AMOUNT := 20
 const BALL_AMOUNT := 4
 const PLAYER_AMOUNT := 4
-const CHUNK_AMOUNT := 1
+const CHUNK_AMOUNT := 6
 const ROCKET_AMOUNT := 30
 
-const CHUNK_WIDTH_BLOCKS := 36
+const CHUNK_WIDTH_BLOCKS := 6
 const CHUNK_HEIGHT_BLOCKS := 10
 const BLOCK_LENGTH_PIXELS := 24
 const BALL_GRAVITY := 1
@@ -20,6 +20,8 @@ const PLAYER_JUMP_SPEED := 2.7
 const ROCKET_SPEED := 4.5
 const ROCKET_TIME_TO_LIVE_MS := 3200
 
+static var CHUNK_ACTOR_ID_RANGE_START: int = 500
+static var CHUNK_ACTOR_ID_RANGE_END: int = CHUNK_ACTOR_ID_RANGE_START + CHUNK_AMOUNT
 
 enum {
 	LERP_TYPE_FLOAT,
@@ -108,6 +110,8 @@ class Rocket:
 class GameState:
 	# game world
 	var actors: Array[Actor]   # Array[Actor*]
+	var actor_ids: Dictionary[int, int] # Map<actor_id: int, actor_index: int>
+
 	var chunks: Array[Chunk]   # Array[Chunk*]
 	var balls: Array[Ball]     # Array[Ball*]
 	var players: Array[Player] # Array[Player*]

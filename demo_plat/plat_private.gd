@@ -18,7 +18,14 @@ static func initialize_game_state(gs: Plat.GameState):
 	# chunks
 
 	for k in range(Plat.CHUNK_AMOUNT):
+
 		var chunk = Plat.Chunk.new()
+		chunk.actor_id = Plat.CHUNK_ACTOR_ID_RANGE_START + k
+		gs.chunks[k] = chunk
+		PlatPublic.spawn_actor(gs, chunk.actor_id, Plat.ACTOR_TYPE_CHUNK, k)
+
+		# fill
+
 		chunk.blocks.resize(Plat.CHUNK_WIDTH_BLOCKS)
 		chunk.position = k
 
@@ -30,7 +37,6 @@ static func initialize_game_state(gs: Plat.GameState):
 				var block = Plat.Block.new()
 				vertical[j] = block
 
-		gs.chunks[k] = chunk
 
 
 static func generate_world(gs: Plat.GameState):

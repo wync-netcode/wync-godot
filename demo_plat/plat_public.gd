@@ -43,18 +43,28 @@ static func rocket_find_available_id(gs: Plat.GameState) -> int:
 	return instance_id
 
 
+static func get_actor(gs: Plat.GameState, actor_id: int) -> Plat.Actor:
+	return gs.actors[gs.actor_ids[actor_id]]
+
+
 static func spawn_actor(gs: Plat.GameState, actor_id: int, actor_type: int, instance_id: int):
 	var actor = Plat.Actor.new()
 	actor.actor_type = actor_type
 	actor.instance_id = instance_id
-	gs.actors[actor_id] = actor
+	var actor_index = actor_find_available_id(gs)
+	gs.actors[actor_index] = actor
+	gs.actor_ids[actor_id] = actor_index
 
 
 static func despawn_actor(gs: Plat.GameState, actor_id: int):
-	if actor_id < 0 || actor_id >= Plat.ACTOR_AMOUNT:
+	if actor_id < 0 || actor_id >= Plat.ACTOR_AMOUNT || not gs.actor_ids.has(actor_id):
 		assert(false)
 		return
-	var actor := gs.actors[actor_id]
+
+	var actor_index = gs.actor_ids[actor_id]
+	gs.actor_ids.erase(actor_id)
+
+	var actor := gs.actors[actor_index]
 	if actor == null:
 		assert(false)
 		return
@@ -67,11 +77,13 @@ static func despawn_actor(gs: Plat.GameState, actor_id: int):
 		_:
 			assert(false)
 
-	gs.actors[actor_id] = null
+	gs.actors[actor_index] = null
 
 	# clean from wync
-	if WyncUtils.is_entity_tracked(gs.wctx, actor_id):
+	if WyncUtils.is_user_entity_tracked(gs.wctx, actor_id):
 		WyncUtils.untrack_entity(gs.wctx, actor_id)
+	
+	Log.outc(gs.wctx, "spawn, despawned entity %s" % [actor_id])
 
 
 ## @returns int. actor_id or -1

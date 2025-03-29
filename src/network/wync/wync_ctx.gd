@@ -104,8 +104,9 @@ var max_age_user_events_for_consumption = 120 # almost two seconds
 # how many ticks in the past to keep state cache for a regular prop
 var REGULAR_PROP_CACHED_STATE_AMOUNT = 8
 
-# Map<entity_id: int, unused_bool: bool>
-var tracked_entities: Dictionary
+# Map<wync_entity_id: int, unused_bool: bool>
+var tracked_entities: Dictionary[int, bool]
+
 
 
 const MAX_PROPS = 4096 # default to 2**16 (65536)
