@@ -74,7 +74,8 @@ arg5 = null, arg6 = null, arg7 = null, arg8 = null):
 			else:
 				tag_text += "%s " % str(tag)
 
-	var prefix = "cli_%s| " % [ctx.my_peer_id] if ctx.is_client else "serve| "
+	var prefix = "cli_%s" % [ctx.my_peer_id] if ctx.is_client else "serve"
+	prefix += " %s| " % [ctx.co_ticks.ticks]
 	var color = "yellow" if ctx.is_client else "magenta"
 	var function_name = get_function_name(1)
 	print_rich("[color=%s]%s%s | %s%s" % [color, prefix, msg, function_name, tag_text])
@@ -98,7 +99,8 @@ arg5 = null, arg6 = null, arg7 = null, arg8 = null):
 			else:
 				tag_text += "%s " % str(tag)
 
-	var prefix = "cli_%s| " % [ctx.my_peer_id] if ctx.is_client else "serve| "
+	var prefix = "cli_%s" % [ctx.my_peer_id] if ctx.is_client else "serve"
+	prefix += " %s| " % [ctx.co_ticks.ticks]
 	var function_name = get_function_name(1)
 	printerr("%s%s | %s%s" % [prefix, msg, function_name, tag_text])
 
