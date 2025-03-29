@@ -1,6 +1,7 @@
 extends ECSRoot
 
 var worlds: Array[World] = []
+var world_ids: Array[int] = []
 var worlds_physics_groups: Dictionary = {}
 var worlds_process_groups: Dictionary = {}
 
@@ -13,6 +14,7 @@ func _ready() -> void:
 	for child in get_node("worlds").get_children():
 		if child is World:
 			worlds.append(child)
+			world_ids.append(child.get_instance_id())
 			ECS.update(child)
 
 	# get system groups
@@ -111,18 +113,14 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	# updte process groups
-	var world_id = 0
-	for world in worlds:
-		world_id = world.get_instance_id()
-		if worlds_process_groups.has(world_id):
-			ECS.update_group(world, worlds_process_groups[world_id], null, delta)
+	for i: int in range(world_ids.size()):
+		ECS.update_group(worlds[i], worlds_process_groups[world_ids[i]], null, delta)
 
 
 func _physics_process(delta: float) -> void:
-	# updte physics groups
-	var world_id = 0
-	for world in worlds:
-		world_id = world.get_instance_id()
-		if worlds_physics_groups.has(world_id):
-			ECS.update_group(world, worlds_physics_groups[world_id], null, delta)
+	for i: int in range(world_ids.size()):
+		ECS.update_group(worlds[i], worlds_physics_groups[world_ids[i]], null, delta)
+
+func _exit_tree() -> void:
+	print_orphan_nodes()
+	

@@ -429,7 +429,7 @@ static func update_what_the_clients_can_see(gs: Plat.GameState):
 					#return
 				#var actor_id = gs.actor_ids[actor_index]
 			for actor_id: int in gs.actor_ids.keys():
-				if not WyncUtils.is_user_entity_tracked(ctx, actor_id):
+				if not WyncUtils.is_entity_tracked(ctx, actor_id):
 					continue
 				WyncThrottle.wync_client_now_can_see_entity(ctx, peer_id, actor_id)
 			

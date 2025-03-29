@@ -1,4 +1,4 @@
-[gd_scene load_steps=32 format=3 uid="uid://cw8uqs2q746kt"]
+[gd_scene load_steps=31 format=3 uid="uid://cw8uqs2q746kt"]
 
 [ext_resource type="Script" uid="uid://8buuckn7446x" path="res://rooms/lab0/simple_ecs.gd" id="1_k1as7"]
 [ext_resource type="Script" uid="uid://er6fwywo7pt2" path="res://data/StaticData.gd" id="2_c1wwm"]
@@ -52,9 +52,6 @@ metadata/__load_path__ = "res://src/network/sy_state_extractor.gd"
 
 [sub_resource type="Resource" id="Resource_fvw0p"]
 metadata/__load_path__ = "res://src/network/sy_transport_loopback.gd"
-
-[sub_resource type="Resource" id="Resource_kamap"]
-metadata/__load_path__ = "res://src/ui/info.tscn"
 
 [node name="Lab1" type="Node2D"]
 script = ExtResource("1_k1as7")

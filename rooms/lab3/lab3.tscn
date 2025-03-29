@@ -1,4 +1,4 @@
-[gd_scene load_steps=34 format=3 uid="uid://e4enao3jmf22"]
+[gd_scene load_steps=33 format=3 uid="uid://e4enao3jmf22"]
 
 [ext_resource type="Script" uid="uid://8buuckn7446x" path="res://rooms/lab0/simple_ecs.gd" id="1_8726f"]
 [ext_resource type="Script" uid="uid://er6fwywo7pt2" path="res://data/StaticData.gd" id="2_w1jha"]
@@ -50,9 +50,6 @@ metadata/__load_path__ = "res://src/network/sy_transport_loopback_connection.gd"
 
 [sub_resource type="Resource" id="Resource_ublu0"]
 metadata/__load_path__ = "res://src/network/sy_transport_loopback.gd"
-
-[sub_resource type="Resource" id="Resource_55ahw"]
-metadata/__load_path__ = "res://src/ui/info.tscn"
 
 [node name="Lab3" type="Node2D"]
 script = ExtResource("1_8726f")

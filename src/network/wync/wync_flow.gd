@@ -449,7 +449,7 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 		var prop = WyncUtils.get_prop(ctx, snap_prop.prop_id)
 		if prop == null:
 			Log.errc(ctx, "couldn't find prop (%s) saving as dummy prop..." % [snap_prop.prop_id], Log.TAG_LATEST_VALUE)
-			WyncUtils._prop_register_update_dummy(ctx, snap_prop.prop_id, data.tick, 99, snap_prop.state)
+			WyncUtils.prop_register_update_dummy(ctx, snap_prop.prop_id, data.tick, 99, snap_prop.state)
 			continue
 
 		# avoid flooding the buffer with old late state

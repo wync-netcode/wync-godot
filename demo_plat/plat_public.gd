@@ -80,7 +80,7 @@ static func despawn_actor(gs: Plat.GameState, actor_id: int):
 	gs.actors[actor_index] = null
 
 	# clean from wync
-	if WyncUtils.is_user_entity_tracked(gs.wctx, actor_id):
+	if WyncUtils.is_entity_tracked(gs.wctx, actor_id):
 		WyncUtils.untrack_entity(gs.wctx, actor_id)
 	
 	Log.outc(gs.wctx, "spawn, despawned entity %s" % [actor_id])
