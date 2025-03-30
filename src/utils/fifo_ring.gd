@@ -1,6 +1,6 @@
 class_name FIFORing
 
-var max_size: int = 0
+var capacity: int = 0
 var size: int
 var tail: int
 var head: int
@@ -15,20 +15,20 @@ func init(p_max_size: int = 0):
 
 
 func resize(new_size: int):
-	max_size = new_size
+	capacity = new_size
 	ring.resize(new_size)
 
 
 ## @returns int. 0 -> ok, 1 -> error
 func push_head(item: int) -> int:
-	if size >= max_size:
+	if size >= capacity:
 		return 1
 	elif size == 0:
 		head = 0
 		tail = 0
 	else:
 		head += 1
-		if head >= max_size:
+		if head >= capacity:
 			head = 0
 	ring[head] = item
 	size += 1
@@ -45,7 +45,7 @@ func pop_tail() -> int:
 	
 	if size > 1:
 		tail += 1
-		if tail >= max_size:
+		if tail >= capacity:
 			tail = 0
 	
 	size -= 1
@@ -67,12 +67,12 @@ func remove_item(item_to_remove: int) -> int:
 			if size > 1:
 				head -= 1
 				if head < 0:
-					head = max_size -1
+					head = capacity -1
 			size -= 1
 			return OK
 
 		ring_i += 1
-		if ring_i >= max_size:
+		if ring_i >= capacity:
 			ring_i = 0
 
 	return 2
@@ -91,12 +91,12 @@ func get_tail() -> int:
 
 ## @returns Optional<Variant>
 #func get_relative_to_head(pos: int) -> int:
-	#return ring[WyncUtils.fast_modulus(head + pos, max_size)]
+	#return ring[WyncUtils.fast_modulus(head + pos, capacity)]
 
 
 ## @returns Optional<Variant>
 func get_relative_to_tail(pos: int) -> int:
-	return ring[WyncUtils.fast_modulus(tail + pos, max_size)]
+	return ring[WyncUtils.fast_modulus(tail + pos, capacity)]
 
 func clear() -> void:
 	tail = 0
@@ -112,7 +112,7 @@ func has_item(item: int) -> bool:
 			if ring[i] == item:
 				return true
 	if tail > head:
-		for i in range(tail, max_size):
+		for i in range(tail, capacity):
 			if ring[i] == item:
 				return true
 		for i in range(0, head +1):
