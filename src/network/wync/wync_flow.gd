@@ -643,6 +643,9 @@ static func wync_handle_packet_res_client_info(ctx: WyncCtx, data: Variant):
 	WyncUtils.prop_set_client_owner(ctx, data.prop_id, data.peer_id)
 	Log.out("Prop %s ownership given to client %s" % [data.prop_id, data.peer_id], Log.TAG_WYNC_PEER_SETUP)
 
+	# recompute filtered props
+	ctx.was_any_prop_added_deleted = true
+
 
 static func wync_handle_packet_client_set_lerp_ms(ctx: WyncCtx, data: Variant, from_nete_peer_id: int) -> int:
 
