@@ -562,12 +562,31 @@ static func wync_handle_pkt_despawn(ctx: WyncCtx, data: Variant):
 
 		var entity_id = data.entity_ids[i]
 
-		entity_to_spawn = WyncCtx.EntitySpawnEvent.new()
-		entity_to_spawn.spawn = false
-		entity_to_spawn.entity_id = entity_id
-		ctx.out_queue_spawn_events.push_head(entity_to_spawn)
-
+		# TODO: untrack only if it exists already
+		# NOTE: There might be a bug where we untrack an entity that needed to be respawned
 		WyncUtils.untrack_entity(ctx, entity_id)
+
+		## remove from spawn list if found
+		if ctx.pending_entity_to_spawn_props.has(entity_id):
+
+			assert(ctx.pending_entity_to_spawn_props.erase(entity_id))
+
+			var queue = ctx.out_queue_spawn_events
+
+			for k: int in range(queue.size):
+				var item: WyncCtx.EntitySpawnEvent = queue.get_relative_to_tail(k)
+				assert(item != null)
+
+				if item.entity_id == entity_id && item.spawn == true:
+					assert(queue.remove_relative_to_tail(k) == OK)
+					break
+
+		else:
+
+			entity_to_spawn = WyncCtx.EntitySpawnEvent.new()
+			entity_to_spawn.spawn = false
+			entity_to_spawn.entity_id = entity_id
+			ctx.out_queue_spawn_events.push_head(entity_to_spawn)
 
 
 static func wync_handle_pkt_delta_prop_ack(ctx: WyncCtx, data: Variant, from_nete_peer_id: int) -> int:
