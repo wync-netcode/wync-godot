@@ -12,6 +12,8 @@ static func track_entity(ctx: WyncCtx, entity_id: int, entity_type_id: int) -> i
 	ctx.tracked_entities[entity_id] = true
 	ctx.entity_has_props[entity_id] = []
 	ctx.entity_is_of_type[entity_id] = entity_type_id
+	ctx.entity_last_predicted_tick[entity_id] = -1
+	ctx.entity_last_received_tick[entity_id] = -1
 	return OK
 
 
@@ -30,6 +32,8 @@ static func untrack_entity(ctx: WyncCtx, entity_id: int):
 	ctx.entity_has_integrate_fun.erase(entity_id)
 	ctx.entity_has_simulation_fun.erase(entity_id)
 	ctx.entity_spawn_data.erase(entity_id)
+	ctx.entity_last_predicted_tick.erase(entity_id)
+	ctx.entity_last_received_tick.erase(entity_id)
 
 	# remove from queues
 

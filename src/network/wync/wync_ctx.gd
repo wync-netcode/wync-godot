@@ -293,6 +293,9 @@ var filtered_clients_input_and_event_prop_ids: Array[int] = []
 var filtered_delta_prop_ids: Array[int] = [] # client & server
 var filtered_regular_extractable_prop_ids: Array[int] = []
 
+var entity_last_predicted_tick: Dictionary[int, int] = {}
+var entity_last_received_tick: Dictionary[int, int] = {}
+
 # throttling
 # --------------------------------------------------------------------------------
 

@@ -460,7 +460,14 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 			continue
 		prop_save_confirmed_state(ctx, snap_prop.prop_id, data.tick, snap_prop.state)
 
+		# update entity last received
+		# TODO: assume snap props always include all snaps for an entity
+		if WyncUtils.prop_is_predicted(ctx, snap_prop.prop_id):
+			var entity_id = WyncUtils.prop_get_entity(ctx, snap_prop.prop_id)
+			ctx.entity_last_received_tick[entity_id] = WyncUtils.entity_get_last_received_tick_from_pred_props(ctx, entity_id)
+
 	wync_client_update_last_tick_received(ctx, data.tick)
+
 
 
 static func prop_save_confirmed_state(ctx: WyncCtx, prop_id: int, tick: int, state: Variant) -> int:
