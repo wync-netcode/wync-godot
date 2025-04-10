@@ -489,7 +489,7 @@ static func extrapolate(gs: Plat.GameState, delta: float):
 		var entity_ids_to_predict = WyncXtrap.wync_xtrap_dont_predict_entities(ctx, tick)
 		#Log.outc(ctx, "dont_predict_entities %s" % [dont_predict_entity_ids])
 		Log.outc(ctx, "xtrap, entity_ids_to_predict %s" % [entity_ids_to_predict])
-		PlatPublic.system_player_movement(gs, delta, true, entity_ids_to_predict)
+		PlatPublic.system_player_movement(gs, Plat.LOGIC_DELTA_MS, true, entity_ids_to_predict)
 
 		# debug trail
 		if WyncUtils.fast_modulus(tick, 2) == 0:

@@ -1,6 +1,7 @@
 class_name Plat
 
 
+const LOGIC_DELTA_MS: float = 1.0/60
 const ACTOR_AMOUNT := 20
 const BALL_AMOUNT := 4
 const PLAYER_AMOUNT := 4

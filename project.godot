@@ -114,3 +114,7 @@ limits/debugger/max_chars_per_second=9999999
 limits/debugger/max_queued_messages=9999999
 limits/debugger/max_errors_per_second=9999999
 limits/debugger/max_warnings_per_second=9999999
+
+[physics]
+
+common/physics_ticks_per_second=10
