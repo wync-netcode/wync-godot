@@ -4,8 +4,9 @@ class_name PlatDraw
 static func draw_game(canvas: Node2D, gs: Plat.GameState):
 	if not gs.net.is_client:
 		draw_block_grid(canvas, gs, gs.camera_offset)
-	else:
-		draw_block_grid(canvas, gs, gs.camera_offset + Vector2(0, 300))
+		#pass
+	#else:
+		#draw_block_grid(canvas, gs, gs.camera_offset + Vector2(0, 300))
 	draw_balls(canvas, gs, gs.camera_offset)
 	draw_trails(canvas, gs, gs.camera_offset)
 	draw_players(canvas, gs, gs.camera_offset)
@@ -15,21 +16,20 @@ static func draw_game(canvas: Node2D, gs: Plat.GameState):
 static func draw_block_grid(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
 	var x_offset = offset.x
 	var y_offset = offset.y
+	var block_rect: Rect2
 	
 	for k in range(Plat.CHUNK_AMOUNT):
 		var chunk := gs.chunks[k]
+		var odd_chunk = WyncUtils.fast_modulus(k, 2) == 0
+
 		for i in range(Plat.CHUNK_WIDTH_BLOCKS):
 			var x = k * Plat.CHUNK_WIDTH_BLOCKS + i
 			for j in range(Plat.CHUNK_HEIGHT_BLOCKS):
 				var block = chunk.blocks[i][j] as Plat.Block
 				var color = Color.WHITE
-				var odd_chunk = false
 
 				if block.type == Plat.BLOCK_TYPE_AIR:
 					continue
-
-				if WyncUtils.fast_modulus(k, 2) == 0:
-					odd_chunk = true
 					
 				if odd_chunk:
 					match block.type:
@@ -49,14 +49,14 @@ static func draw_block_grid(canvas: Node2D, gs: Plat.GameState, offset: Vector2i
 							color = Color.GOLD
 
 				# tile
-				var block_rect = Rect2(
+				block_rect = Rect2(
 					x * Plat.BLOCK_LENGTH_PIXELS + x_offset,
 					(-j) * Plat.BLOCK_LENGTH_PIXELS + y_offset,
 					Plat.BLOCK_LENGTH_PIXELS,
 					Plat.BLOCK_LENGTH_PIXELS
 				)
 				canvas.draw_rect(block_rect, color, true)
-				canvas.draw_rect(block_rect, Color.BLACK, false)
+				#canvas.draw_rect(block_rect, Color.BLACK, false)
 
 
 static func draw_balls(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):

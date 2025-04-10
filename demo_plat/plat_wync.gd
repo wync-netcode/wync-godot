@@ -190,7 +190,10 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 		pos_prop_id,
 		player_instance,
 		func(user_ctx: Variant) -> Vector2: return (user_ctx as Plat.Player).position,
-		func(user_ctx: Variant, pos: Vector2): (user_ctx as Plat.Player).position = pos,
+		func(user_ctx: Variant, pos: Vector2):
+			(user_ctx as Plat.Player).position = pos
+			Log.outc(gs.wctx, "plapre, setted position")
+			,
 	)
 
 	var vel_prop_id = WyncUtils.prop_register_minimal(
@@ -476,14 +479,17 @@ static func extrapolate(gs: Plat.GameState, delta: float):
 	if WyncXtrap.wync_xtrap_preparation(ctx) != OK:
 		return
 
-	Log.outc(ctx, "starting prediction ==============================")
+	#Log.outc(ctx, "starting prediction ==============================")
 	var base_tick = ctx.pred_intented_first_tick - ctx.max_prediction_tick_threeshold
+	if (base_tick - 30 < 0):
+		return
 	for tick in range(ctx.pred_intented_first_tick - ctx.max_prediction_tick_threeshold, target_tick +1):
 		#Log.outc(ctx, "pred_tick %s" % [tick])
 		WyncXtrap.wync_xtrap_tick_init(ctx, tick)
-		var dont_predict_entity_ids = WyncXtrap.wync_xtrap_dont_predict_entities(ctx, tick)
+		var entity_ids_to_predict = WyncXtrap.wync_xtrap_dont_predict_entities(ctx, tick)
 		#Log.outc(ctx, "dont_predict_entities %s" % [dont_predict_entity_ids])
-		PlatPublic.system_player_movement(gs, delta, dont_predict_entity_ids)
+		Log.outc(ctx, "xtrap, entity_ids_to_predict %s" % [entity_ids_to_predict])
+		PlatPublic.system_player_movement(gs, delta, true, entity_ids_to_predict)
 
 		# debug trail
 		if WyncUtils.fast_modulus(tick, 2) == 0:
@@ -503,8 +509,9 @@ static func extrapolate(gs: Plat.GameState, delta: float):
 					PlatPublic.spawn_trail(gs, getter.call(user_ctx), progress, 1)
 
 
+
 		WyncXtrap.wync_xtrap_tick_end(ctx, tick)
-	Log.outc(ctx, "debugging prediction range (%s : %s) d %s | server_ticks %s" % [ctx.pred_intented_first_tick, target_tick +1, (target_tick+1-ctx.pred_intented_first_tick), ctx.co_ticks.server_ticks])
+	#Log.outc(ctx, "debugging prediction range (%s : %s) d %s | server_ticks %s" % [ctx.pred_intented_first_tick, target_tick +1, (target_tick+1-ctx.pred_intented_first_tick), ctx.co_ticks.server_ticks])
 	
 	WyncXtrap.wync_xtrap_termination(ctx)
 

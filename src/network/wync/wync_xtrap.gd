@@ -14,6 +14,8 @@ static func wync_xtrap_preparation(ctx: WyncCtx) -> int:
 	ctx.pred_intented_first_tick = ctx.last_tick_received +1
 	if ctx.co_predict_data.target_tick <= ctx.co_ticks.server_ticks:
 		return 2
+	if ctx.pred_intented_first_tick - ctx.max_prediction_tick_threeshold < 0:
+		return 3
 
 	return OK
 
@@ -67,6 +69,7 @@ static func wync_client_filter_prop_ids(ctx: WyncCtx):
 	ctx.type_state__interpolated_regular_prop_ids.clear()
 
 	ctx.predicted_integrable_entity_ids.clear()
+	ctx.predicted_entity_ids.clear()
 
 	# Where are active props set?
 
@@ -106,14 +109,20 @@ static func wync_client_filter_prop_ids(ctx: WyncCtx):
 			continue
 		ctx.predicted_integrable_entity_ids.append(wync_entity_id)
 
+	for wync_entity_id in ctx.tracked_entities.keys():
+		if not WyncUtils.entity_is_predicted(ctx, wync_entity_id):
+			continue
+		if WyncUtils.entity_has_delta_prop(ctx, wync_entity_id):
+			continue
+		ctx.predicted_entity_ids.append(wync_entity_id)
 
 
 static func wync_xtrap_tick_init(ctx: WyncCtx, tick: int):
-	# set predicted inputs / events
+	# reset predicted inputs / events
 	WyncWrapper.xtrap_reset_all_state_to_confirmed_tick_absolute(ctx, ctx.type_input_event__predicted_owned_prop_ids, tick)
 
-	# set predicted regular
-	WyncWrapper.xtrap_reset_all_state_to_confirmed_tick_absolute(ctx, ctx.type_state__predicted_regular_prop_ids, tick)
+	# reset predicted regular
+	#WyncWrapper.xtrap_reset_all_state_to_confirmed_tick_absolute(ctx, ctx.type_state__predicted_regular_prop_ids, tick)
 
 	ctx.current_predicted_tick = tick
 
@@ -139,27 +148,36 @@ static func auxiliar_props_clear_current_delta_events(ctx: WyncCtx):
 static func wync_xtrap_dont_predict_entities(ctx: WyncCtx, tick: int) -> Array[int]:
 	var entity_ids := [] as Array[int]
 
-	var pred_start_tick = ctx.last_tick_received +1
-	if tick >= pred_start_tick:
-		return []
+	var entity_last_tick: int
+	var entity_last_predicted_tick: int
 
 	# iterate each entity and determine if they shouldn't be predicted
-	for entity_id in ctx.tracked_entities.keys():
-		var entity_last_tick = WyncUtils.entity_get_last_received_tick_from_pred_props(ctx, entity_id)
+	for entity_id in ctx.predicted_entity_ids:
 
-		# contains a delta prop TODO: optimize this query
-		if WyncUtils.entity_has_delta_prop(ctx, entity_id):
-			entity_ids.append(entity_id)
+		entity_last_tick = ctx.entity_last_received_tick[entity_id]
 		
 		# no history
-		elif entity_last_tick == -1:
-			entity_ids.append(entity_id)
+		if entity_last_tick == -1:
+			continue
 
 		# WARNING: Do not assume that we have all -10 past tick just before 'entity_last_tick'
 
 		# already have confirmed state + it's regular prop
 		elif entity_last_tick >= tick:
-			entity_ids.append(entity_id)
+			continue
+
+		entity_last_predicted_tick = ctx.entity_last_predicted_tick[entity_id]
+
+		if tick <= entity_last_predicted_tick:
+			continue
+
+		# else, assume this entity will be predicted
+		# Note: Maybe the user could report this
+		if tick > entity_last_predicted_tick:
+			ctx.entity_last_predicted_tick[entity_id] = tick
+
+		entity_ids.append(entity_id)
+
 
 	return entity_ids
 

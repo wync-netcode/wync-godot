@@ -275,10 +275,10 @@ static func wync_handle_pkt_join_req(ctx: WyncCtx, data: Variant, from_nete_peer
 	# NOTE: Maybe move this where all channels are defined
 
 	# WARNING: TODO: REFACTOR
-	#var global_events_entity_id = WyncCtx.ENTITY_ID_GLOBAL_EVENTS + wync_client_id
-	#var prop_id = WyncUtils.entity_get_prop_id(ctx, global_events_entity_id, "channel_0")
-	#assert(prop_id != -1)
-	#WyncUtils.prop_set_client_owner(ctx, prop_id, wync_client_id)
+	var global_events_entity_id = WyncCtx.ENTITY_ID_GLOBAL_EVENTS + wync_client_id
+	var prop_id = WyncUtils.entity_get_prop_id(ctx, global_events_entity_id, "channel_0")
+	assert(prop_id != -1)
+	WyncUtils.prop_set_client_owner(ctx, prop_id, wync_client_id)
 
 	#var global_events_entity_id = WyncCtx.ENTITY_ID_GLOBAL_EVENTS + wync_client_id
 	#if WyncUtils.is_entity_tracked(ctx, global_events_entity_id):

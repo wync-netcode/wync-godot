@@ -8,6 +8,7 @@ const TILE_LENGTH_PIXELS = 30
 ## This system runs ONE time AFTER the physics frame has ended, but not EVERY _draw frame_. 
 ## As a result, events generated here must be buffered at the beginning of the next physics frame
 
+"""
 
 func _ready():
 	components = [CoBlockGrid.label]
@@ -39,31 +40,34 @@ func draw_block_grid(entity: Entity, singleton_grid_name: String, offset: Vector
 	var single_world = ECS.get_singleton_component(self, CoSingleWorld.label) as CoSingleWorld
 	var x_offset = (offset.x + single_world.world_id) * ((block_grid.LENGTH + 1) * TILE_LENGTH_PIXELS)
 	var y_offset = offset.y * ((block_grid.LENGTH + 1) * TILE_LENGTH_PIXELS)
+	var mouse = node2d.get_local_mouse_position()
+	var block_rect: Rect2
+	var sprite_rect: Rect2
 	
 	for i in range(block_grid.LENGTH):
 		for j in range(block_grid.LENGTH):
 			# tile
-			var block_rect = Rect2(
+			block_rect = Rect2(
 				i * TILE_LENGTH_PIXELS + x_offset,
 				j * TILE_LENGTH_PIXELS + y_offset,
 				TILE_LENGTH_PIXELS,
 				TILE_LENGTH_PIXELS
 			)
-			node2d.draw_rect(block_rect, Color.BLACK, false)
 			
 			# sprite
-			var sprite_rect = Rect2(block_rect)
+			sprite_rect = Rect2(block_rect)
 			sprite_rect.position += Vector2.ONE * 4
 			sprite_rect.size -= Vector2.ONE * 8
 			
 			var block = block_grid.blocks[i][j] as CoBlockGrid.BlockData
+
+			#node2d.draw_rect(block_rect, Color.BLACK, false)
 			SyDrawBlockGrid.draw_block(node2d, sprite_rect, block)
 			
 			# client interaction
 			if !is_client_application():
 				continue
 			
-			var mouse = node2d.get_local_mouse_position()
 			#Log.out(self, "mouse pos %s , rect pos %s" % [mouse, block_rect.position])
 			if block_rect.has_point(mouse):
 				var color = Color.WHITE
@@ -99,11 +103,10 @@ static func draw_block(node2d: Node2D, sprite_rect: Rect2, block: CoBlockGrid.Bl
 			node2d.draw_rect(sprite_rect, Color.BLACK, false)
 		CoBlockGrid.BLOCK.DIAMOND:
 			node2d.draw_rect(sprite_rect, Color.MEDIUM_TURQUOISE, true) # Color.DARK_RED
-			"""
-			var tnt_stripe_rect = Rect2(sprite_rect)
-			tnt_stripe_rect.position.y += tnt_stripe_rect.size.y / 3
-			tnt_stripe_rect.size.y /= 3
-			node2d.draw_rect(tnt_stripe_rect, Color.WHITE, true)"""
+			#var tnt_stripe_rect = Rect2(sprite_rect)
+			#tnt_stripe_rect.position.y += tnt_stripe_rect.size.y / 3
+			#tnt_stripe_rect.size.y /= 3
+			#node2d.draw_rect(tnt_stripe_rect, Color.WHITE, true)
 			node2d.draw_rect(sprite_rect, Color.BLACK, false)
 			pass
 	
@@ -198,3 +201,4 @@ func generate_block_grid_event(
 	
 	var co_predict_data = wync_ctx.co_predict_data
 	Log.out("ticks(%s|%s) co_wync_events.events %s:%s:%s" % [co_ticks.ticks, co_predict_data.target_tick, co_wync_events, co_wync_events.events.size(), co_wync_events.events], Log.TAG_GAME_EVENT)
+"""

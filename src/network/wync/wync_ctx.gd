@@ -295,6 +295,7 @@ var filtered_regular_extractable_prop_ids: Array[int] = []
 
 var entity_last_predicted_tick: Dictionary[int, int] = {}
 var entity_last_received_tick: Dictionary[int, int] = {}
+var predicted_entity_ids: Array[int] = []
 
 # throttling
 # --------------------------------------------------------------------------------

@@ -6,6 +6,7 @@ const label: StringName = StringName("SyWyncLatestValue")
 ## NOTE: optimize which to reset, by knowing which were modified/new state gotten
 ## NOTE: reset only when new data is available
 
+"""
 func _ready():
 	components = [
 		CoActor.label,
@@ -19,7 +20,8 @@ func on_process(_entities, _data, _delta: float):
 	
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	wync_reset_props_to_latest_value (single_wync.ctx)
-	
+"""
+
 	
 static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 	# Reset all extrapolated entities to last confirmed tick
@@ -27,6 +29,7 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 	# TODO: store props in HashMap instead of Array
 	# TODO: when receiving new state store the prop_id in a set,
 	# Also, don't include extrapolated props, since they're always set anyway
+	# TODO: optimize this query
 	
 	ctx.type_state__newstate_regular_prop_ids.clear()
 	for prop_id: int in ctx.active_prop_ids:
@@ -36,10 +39,16 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 				if prop.just_received_new_state:
 					prop.just_received_new_state = false
 					ctx.type_state__newstate_regular_prop_ids.append(prop_id)
+
+					if WyncUtils.prop_is_predicted(ctx, prop_id):
+						var entity_id = WyncUtils.prop_get_entity(ctx, prop_id)
+						ctx.entity_last_predicted_tick[entity_id] = prop.last_ticks_received.get_relative(0)
 		
 	# rest state to _canonic_
 
 	WyncWrapper.reset_all_state_to_confirmed_tick_relative(ctx, ctx.type_state__newstate_regular_prop_ids, 0)
+
+	# delta props ---- vvv
 	
 	# Note: might need to reenable this when doing _delta prop prediction_
 	#WyncWrapper.reset_all_state_to_confirmed_tick_relative(ctx, ctx.type_state__predicted_regular_prop_ids, 0)
@@ -54,7 +63,6 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 	delta_props_update_and_apply_delta_events(ctx, ctx.type_state__delta_prop_ids)
 	
 	# call integration function to sync new transforms with physics server
-
 	integrate_state(ctx)
 
 

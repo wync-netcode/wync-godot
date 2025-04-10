@@ -409,6 +409,7 @@ static func wync_ocuppy_space_towards_packets_data_size_limit(ctx: WyncCtx, char
 	ctx.out_packets_size_remaining_chars -= chars
 
 
+# TODO: Fix divisions by zero
 static func wync_system_stabilize_latency (ctx: WyncCtx, lat_info: WyncCtx.PeerLatencyInfo):
 	
 	# Poll latency
@@ -443,7 +444,7 @@ static func wync_system_stabilize_latency (ctx: WyncCtx, lat_info: WyncCtx.PeerL
 				if lat == 0:
 					continue
 				accum += (lat - lat_info.latency_mean_ms) ** 2
-			lat_info.latency_std_dev_ms = ceil(sqrt(accum / counter)) 
+			lat_info.latency_std_dev_ms = ceil(sqrt(accum / counter))
 
 			# use 98th percentile (mean + 2*std_dev)
 			lat_info.latency_stable_ms = lat_info.latency_mean_ms + lat_info.latency_std_dev_ms * 2

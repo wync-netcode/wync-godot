@@ -11,7 +11,7 @@ static func initialize_net_state(gs: Plat.GameState, is_client: bool):
 		gs.net.client.identifier = -1
 		gs.net.client.server_peer = -1
 		gs.net.client.state = Plat.Client.STATE.DISCONNECTED
-		Loopback.setup_io_peer(gs.net.io_peer, 200, 5, 0)
+		Loopback.setup_io_peer(gs.net.io_peer, 200, 10, 50)
 
 	else:
 		gs.net.server = Plat.Server.new()

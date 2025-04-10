@@ -215,14 +215,16 @@ static func system_ball_movement(gs: Plat.GameState):
 			ball.position.y = new_pos.y
 
 
-static func system_player_movement(gs: Plat.GameState, delta: float, exclude_ids: Array[int]):
+static func system_player_movement(gs: Plat.GameState, delta: float, filter: bool, to_predict_entity_ids: Array[int]):
+
 	for player_id: int in range(Plat.PLAYER_AMOUNT):
 	#for player: Plat.Player in gs.players:
-		if exclude_ids.has(player_id):
-			continue
 		var player := gs.players[player_id]
 		if player == null:
 			continue
+		if filter && not to_predict_entity_ids.has(player.actor_id):
+			continue
+		#if gs.net.is_client: Log.outc(gs.wctx, "plapre, Predicting player %s tick %s" % [player_id, gs.wctx.current_predicted_tick])
 		
 		# horizontal movement ----------
 		# apply friction
