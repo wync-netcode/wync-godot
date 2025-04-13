@@ -150,11 +150,11 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 
 	var co_predict_data = ctx.co_predict_data
 	var co_ticks = ctx.co_ticks
-	co_ticks.lerp_delta_accumulator_ms += int(delta * 1000)
+	co_ticks.lerp_delta_accumulator_ms += delta * 1000
 	var curr_tick_time = WyncUtils.clock_get_tick_timestamp_ms(ctx, co_ticks.ticks)
 	var curr_time = curr_tick_time + co_ticks.lerp_delta_accumulator_ms
-	var target_time_conf = curr_time - co_predict_data.lerp_ms
-	var target_time_pred = curr_time
+	var target_time_conf: int = curr_time - co_predict_data.lerp_ms
+	var target_time_pred: int = curr_time
 
 	# then interpolate them 
 
@@ -193,10 +193,12 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 			else:
 				factor = (float(target_time_pred) - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms)
 
+			# TODO: Make it a config toggleable option
+			# TODO: Allow extrapolation up to 1000ms (configurable)
+			#factor = clampf(factor, 0, 1)
 			var lerp_func_id = ctx.wrapper.lerp_type_to_lerp_function[prop.user_data_type]
 			var lerp_func = ctx.wrapper.lerp_function[lerp_func_id]
-			prop.interpolated_state = lerp_func.call(left_value, right_value, clampf(factor, 0, 1))
-			#Log.outc(ctx, "deblerp | factor %.3f left %s target %s right %s" % [factor, left_timestamp_ms, target_time_conf, right_timestamp_ms])
+			prop.interpolated_state = lerp_func.call(left_value, right_value, factor)
 
 
 ## Q: Is it possible that event_ids accumulate infinitely if they are never consumed?

@@ -25,7 +25,7 @@ const SERVER_TICK_OFFSET_COLLECTION_SIZE := 4
 
 # TODO: Move this elsewhere
 # used to (1) lerp and (2) time warp
-var lerp_delta_accumulator_ms: int
+var lerp_delta_accumulator_ms: float
 var last_tick_rendered_left: int
 
 
