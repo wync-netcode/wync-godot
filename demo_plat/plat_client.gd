@@ -51,9 +51,11 @@ func _physics_process(delta: float) -> void:
 	if gs.net.client.state == Plat.Client.STATE.CONNECTED:
 		PlatNet.queue_wync_packets(gs)
 
+	PlatWync.debug_draw_confirmed_interpolated_states(gs)
+
 func _process(delta: float) -> void:
-	#WyncWrapper.wync_interpolate_all(gs.wctx, delta)
-	#PlatWync.set_interpolated_state(gs)
+	WyncWrapper.wync_interpolate_all(gs.wctx, delta)
+	PlatWync.set_interpolated_state(gs)
 	queue_redraw()
 
 

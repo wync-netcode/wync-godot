@@ -589,3 +589,22 @@ static func set_interpolated_state(gs: Plat.GameState):
 			#&& co_renderer is Node2D):
 			#co_renderer.rotation = prop.interpolated_state
 		
+
+static func debug_draw_confirmed_interpolated_states(gs: Plat.GameState):
+
+	var ctx = gs.wctx
+
+	var left_value: Variant
+	var right_value: Variant
+
+	for prop_id in ctx.type_state__interpolated_regular_prop_ids:
+		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
+
+		if prop.lerp_use_confirmed_state:
+			left_value = prop.confirmed_states.get_at(prop.lerp_left_confirmed_state_tick)
+			right_value = prop.confirmed_states.get_at(prop.lerp_right_confirmed_state_tick)
+
+			# create debug hulls
+
+			PlatPublic.spawn_trail(gs, left_value, 0.2, 0)
+			PlatPublic.spawn_trail(gs, right_value, 0.0, 0)
