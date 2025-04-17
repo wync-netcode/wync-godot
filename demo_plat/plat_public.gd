@@ -1,8 +1,6 @@
 class_name PlatPublic
 
 
-
-
 ## @returns int. id or -1 if not found
 static func actor_find_available_id(gs: Plat.GameState) -> int:
 	var instance_id = -1
@@ -186,7 +184,8 @@ static func system_ball_movement(gs: Plat.GameState):
 		ball.velocity.y -= Plat.BALL_GRAVITY
 		#ball.velocity.x = min(Plat.BALL_MAX_SPEED, abs(ball.velocity.x)) * sign(ball.velocity.x)
 		#ball.velocity.y = min(Plat.BALL_MAX_SPEED, abs(ball.velocity.y)) * sign(ball.velocity.y)
-		var new_pos = ball.position + ball.velocity
+		#var new_pos = ball.position + ball.velocity
+		var new_pos = ball.position + Vector2(ball.velocity.x, 0)
 
 		# collision
 		var collision_horizontal = Rect2Col.rect_collides_with_tile_map(
@@ -213,6 +212,8 @@ static func system_ball_movement(gs: Plat.GameState):
 			ball.velocity.y = 8
 		else:
 			ball.position.y = new_pos.y
+
+		if ball.position.x > 700: ball.position.x = 300
 
 
 static func system_player_movement(gs: Plat.GameState, delta: float, filter: bool, to_predict_entity_ids: Array[int]):

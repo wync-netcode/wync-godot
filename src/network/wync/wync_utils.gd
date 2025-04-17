@@ -424,24 +424,44 @@ static func is_entity_tracked(ctx: WyncCtx, entity_id: int) -> bool:
 # Interpolation / Extrapolation / Prediction functions
 # ================================================================
 
+
 ## @returns tuple[int, int]. tick left, tick right
-static func find_closest_two_snapshots_from_prop_id(ctx: WyncCtx, target_time: int, prop_id: int, co_ticks: CoTicks, co_predict_data: CoPredictionData) -> Array:
+static func prop_find_closest_two_snapshots_from_tick(target_tick: int, prop: WyncEntityProp) -> Array:
 	
-	var prop = WyncUtils.get_prop(ctx, prop_id)
-	if prop == null:
+	var snap_left = -1
+	var snap_right = -1
+	
+	for i in range(prop.last_ticks_received.size):
+		var server_tick = prop.last_ticks_received.get_relative(-i)
+		if server_tick == -1:
+			continue
+
+		# get snapshot from received ticks
+		# NOTE: This block shouldn't necessary
+		# TODO: before storing check the data is healthy
+		#var data = prop.confirmed_states.get_at(server_tick)
+		#if data == null:
+			#continue
+
+		# get local tick
+		var arrived_at_tick = prop.arrived_at_tick.get_at(server_tick)
+		if arrived_at_tick == -1:
+			continue
+
+		if arrived_at_tick > target_tick:
+			snap_right = server_tick
+		elif snap_right != -1 && arrived_at_tick <= target_tick:
+			snap_left = server_tick
+			break
+	
+	if snap_left == -1:
 		return []
 	
-	return find_closest_two_snapshots_from_prop(
-		ctx,
-		target_time,
-		ctx.props[prop_id] as WyncEntityProp,
-		co_ticks,
-		co_predict_data
-	)
+	return [snap_left, snap_right]
 
 
 ## @returns tuple[int, int]. tick left, tick right
-static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time: int, prop: WyncEntityProp, co_ticks: CoTicks, co_predict_data: CoPredictionData) -> Array:
+static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: int, prop: WyncEntityProp) -> Array:
 	
 	var snap_left = -1
 	var snap_right = -1
@@ -465,9 +485,9 @@ static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time: int,
 
 		var snapshot_timestamp = WyncUtils.clock_get_tick_timestamp_ms(ctx, arrived_at_tick)
 
-		if snapshot_timestamp > target_time:
+		if snapshot_timestamp > target_time_ms:
 			snap_right = server_tick
-		elif snap_right != -1 && snapshot_timestamp < target_time:
+		elif snap_right != -1 && snapshot_timestamp < target_time_ms:
 			snap_left = server_tick
 			break
 	
@@ -903,6 +923,7 @@ static func lerp_any(left: Variant, right: Variant, weight: float):
 
 ## denominator must be a power of 2
 static func fast_modulus(numerator: int, denominator: int) -> int:
+	## NOTE: DEBUG flag only: assert(denominator is power of 2)
 	return numerator & (denominator - 1)
 
 
@@ -913,11 +934,11 @@ static func clock_set_debug_time_offset(ctx: WyncCtx, time_offset_ms: int):
 	ctx.co_ticks.debug_time_offset_ms = time_offset_ms
 
 
-static func clock_get_ms(ctx: WyncCtx) -> int:
-	return Time.get_ticks_msec() + ctx.co_ticks.debug_time_offset_ms
+static func clock_get_ms(ctx: WyncCtx) -> float:
+	return float(Time.get_ticks_usec()) / 1000 + ctx.co_ticks.debug_time_offset_ms
 
 
-static func clock_get_tick_timestamp_ms(ctx: WyncCtx, ticks: int) -> int:
+static func clock_get_tick_timestamp_ms(ctx: WyncCtx, ticks: int) -> float:
 	var frame = 1000.0 / Engine.physics_ticks_per_second
 	return ctx.co_predict_data.current_tick_timestamp + (ticks - ctx.co_ticks.ticks) * frame
 

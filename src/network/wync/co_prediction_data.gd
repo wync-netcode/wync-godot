@@ -9,7 +9,7 @@ var tick_offset_desired: int = 0
 var target_tick: int = 0 # co_ticks.ticks + tick_offset
 ## fixed timestamp for current tick
 ## It's the point of reference for other ticks
-var current_tick_timestamp: int = 0
+var current_tick_timestamp: float = 0
 
 # For calculating clock_offset_mean
 # TODO: Move this to co_ticks

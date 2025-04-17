@@ -18,6 +18,7 @@ static func setup_client(ctx: WyncCtx):
 	var server_tick_rate: int = ctx.physic_ticks_per_second
 	var desired_lerp: int = ceil((1000.0 / server_tick_rate) * 5) # 6 ticks in the past
 	WyncFlow.wync_client_set_lerp_ms(ctx, server_tick_rate, desired_lerp)
+	#WyncFlow.wync_client_set_lerp_ms(ctx, server_tick_rate, 200)
 
 	WyncWrapper.wync_register_lerp_type(
 		ctx, Plat.LERP_TYPE_FLOAT,
@@ -190,10 +191,7 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 		pos_prop_id,
 		player_instance,
 		func(user_ctx: Variant) -> Vector2: return (user_ctx as Plat.Player).position,
-		func(user_ctx: Variant, pos: Vector2):
-			(user_ctx as Plat.Player).position = pos
-			Log.outc(gs.wctx, "plapre, setted position")
-			,
+		func(user_ctx: Variant, pos: Vector2): (user_ctx as Plat.Player).position = pos,
 	)
 
 	var vel_prop_id = WyncUtils.prop_register_minimal(
@@ -227,8 +225,9 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 	if wctx.is_client:
 		# interpolation
 		
-		#WyncUtils.prop_set_interpolate(wctx, pos_prop_id)
-		#WyncUtils.prop_set_interpolate(wctx, vel_prop_id)
+		WyncUtils.prop_set_interpolate(
+			wctx, pos_prop_id, Plat.LERP_TYPE_VECTOR2
+		)
 	
 		# setup extrapolation
 			
@@ -488,7 +487,7 @@ static func extrapolate(gs: Plat.GameState, delta: float):
 		WyncXtrap.wync_xtrap_tick_init(ctx, tick)
 		var entity_ids_to_predict = WyncXtrap.wync_xtrap_dont_predict_entities(ctx, tick)
 		#Log.outc(ctx, "dont_predict_entities %s" % [dont_predict_entity_ids])
-		Log.outc(ctx, "xtrap, entity_ids_to_predict %s" % [entity_ids_to_predict])
+		#Log.outc(ctx, "xtrap, entity_ids_to_predict %s" % [entity_ids_to_predict])
 		PlatPublic.system_player_movement(gs, Plat.LOGIC_DELTA_MS, true, entity_ids_to_predict)
 
 		# debug trail
@@ -590,12 +589,15 @@ static func set_interpolated_state(gs: Plat.GameState):
 			#co_renderer.rotation = prop.interpolated_state
 		
 
+## Draws left and right states for interpolation
+## Also draws latest received state
 static func debug_draw_confirmed_interpolated_states(gs: Plat.GameState):
 
 	var ctx = gs.wctx
 
 	var left_value: Variant
 	var right_value: Variant
+	var last_value: Variant
 
 	for prop_id in ctx.type_state__interpolated_regular_prop_ids:
 		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
@@ -603,8 +605,12 @@ static func debug_draw_confirmed_interpolated_states(gs: Plat.GameState):
 		if prop.lerp_use_confirmed_state:
 			left_value = prop.confirmed_states.get_at(prop.lerp_left_confirmed_state_tick)
 			right_value = prop.confirmed_states.get_at(prop.lerp_right_confirmed_state_tick)
+			#last_value = prop.confirmed_states.get_relative(0)
+			last_value = prop.confirmed_states.get_at(prop.last_ticks_received.get_relative(0))
+			
 
 			# create debug hulls
 
-			PlatPublic.spawn_trail(gs, left_value, 0.2, 0)
-			PlatPublic.spawn_trail(gs, right_value, 0.0, 0)
+			#PlatPublic.spawn_trail(gs, left_value, 0.2, 0)
+			#PlatPublic.spawn_trail(gs, right_value, 0.0, 0)
+			if last_value is Vector2: PlatPublic.spawn_trail(gs, last_value, 0.4, 0)

@@ -148,34 +148,50 @@ static func xtrap_props_update_predicted_states_data(ctx: WyncCtx, props_ids: Ar
 ## interpolates confirmed states and predicted states
 static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 
+	var frame := 1000.0 / Engine.physics_ticks_per_second
+
 	var co_predict_data = ctx.co_predict_data
 	var co_ticks = ctx.co_ticks
 	co_ticks.lerp_delta_accumulator_ms += delta * 1000
 	var curr_tick_time = WyncUtils.clock_get_tick_timestamp_ms(ctx, co_ticks.ticks)
-	var curr_time = curr_tick_time + co_ticks.lerp_delta_accumulator_ms
-	var target_time_conf: int = curr_time - co_predict_data.lerp_ms
-	var target_time_pred: int = curr_time
+	var curr_time: float = curr_tick_time + co_ticks.lerp_delta_accumulator_ms
+	var target_time_conf: float = curr_time - co_predict_data.lerp_ms
+	var target_time_pred: float = curr_time
+
+	curr_time = co_ticks.lerp_delta_accumulator_ms
+	curr_time = Engine.get_physics_interpolation_fraction() * frame
+	target_time_conf = curr_time - co_predict_data.lerp_ms
+	target_time_pred = curr_time
 
 	# then interpolate them 
 
-	var left_timestamp_ms: int
-	var right_timestamp_ms: int
+	#var sel_ticks: int = co_ticks.server_ticks
+	#var sel_ticks: int = co_ticks.ticks
+	var left_timestamp_ms: float
+	var right_timestamp_ms: float
 	var left_value: Variant
 	var right_value: Variant
 	var factor: float
+
+	#Log.outc(ctx, "deblerp | curr_tick_time %s delta_acc %s curr_time %s" % [
+		#curr_tick_time, co_ticks.lerp_delta_accumulator_ms, curr_time
+		#])
 
 	for prop_id in ctx.type_state__interpolated_regular_prop_ids:
 		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
 
 		# NOTE: opportunity to optimize this by not recalculating this each loop
 
-		left_timestamp_ms = WyncUtils.clock_get_tick_timestamp_ms(ctx, prop.lerp_left_local_tick)
-		right_timestamp_ms = WyncUtils.clock_get_tick_timestamp_ms(ctx, prop.lerp_right_local_tick)
+		left_timestamp_ms = (prop.lerp_left_local_tick - co_ticks.ticks) * frame
+		right_timestamp_ms = (prop.lerp_right_local_tick - co_ticks.ticks) * frame
+		#left_timestamp_ms = (prop.lerp_left_confirmed_state_tick - sel_ticks) * frame
+		#right_timestamp_ms = (prop.lerp_right_confirmed_state_tick - sel_ticks) * frame
 
 		if prop.lerp_use_confirmed_state:
 			left_value = prop.confirmed_states.get_at(prop.lerp_left_confirmed_state_tick)
 			right_value = prop.confirmed_states.get_at(prop.lerp_right_confirmed_state_tick)
 		else:
+			# TODO: Come up with a better approach with less branches
 			if prop.pred_prev == null:
 				continue
 			left_value = prop.pred_prev.data
@@ -183,22 +199,47 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 		if left_value == null:
 			continue
 
+		var debug_previous: Vector2
+
 		# NOTE: Maybe check for value integrity
 
 		if abs(left_timestamp_ms - right_timestamp_ms) < 0.000001:
 			prop.interpolated_state = right_value
 		else:
 			if prop.lerp_use_confirmed_state:
-				factor = (float(target_time_conf) - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms)
+				factor = (target_time_conf - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms)
 			else:
-				factor = (float(target_time_pred) - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms)
+				factor = (target_time_pred - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms)
 
 			# TODO: Make it a config toggleable option
 			# TODO: Allow extrapolation up to 1000ms (configurable)
 			#factor = clampf(factor, 0, 1)
+
 			var lerp_func_id = ctx.wrapper.lerp_type_to_lerp_function[prop.user_data_type]
 			var lerp_func = ctx.wrapper.lerp_function[lerp_func_id]
+
+			if prop.interpolated_state != null: debug_previous = prop.interpolated_state
+
 			prop.interpolated_state = lerp_func.call(left_value, right_value, factor)
+
+			#if not prop.lerp_use_confirmed_state:
+		if prop_id == 18:
+
+			var txt = "deblerp | p_id%s | l(%s) r(%s) | l(%.2f) r(%.2f) | left %.2f right %.2f target %.3f d %.3f | delta %.3f acu %.3f factor %.3f lerp_fra %.3f | curr %.3f d %2.3f | pos %.3f diff %2.3f" % [
+				prop_id,
+				prop.lerp_left_local_tick, prop.lerp_right_local_tick,
+				left_value.x, right_value.x,
+				left_timestamp_ms, right_timestamp_ms, target_time_conf,
+				target_time_conf - ctx.debug_lerp_prev_target,
+				delta * 1000, co_ticks.lerp_delta_accumulator_ms, factor,
+				Engine.get_physics_interpolation_fraction(),
+				curr_time, curr_time - ctx.debug_lerp_prev_curr_time,
+				prop.interpolated_state.x, (prop.interpolated_state.x - debug_previous.x)]
+			DynamicDebugInfo.custom_global_text = txt
+			Log.outc(ctx, txt)
+
+	ctx.debug_lerp_prev_curr_time = curr_time
+	ctx.debug_lerp_prev_target = target_time_conf
 
 
 ## Q: Is it possible that event_ids accumulate infinitely if they are never consumed?

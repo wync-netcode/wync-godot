@@ -184,14 +184,14 @@ static func wync_xtrap_dont_predict_entities(ctx: WyncCtx, tick: int) -> Array[i
 
 static func wync_xtrap_tick_end(ctx: WyncCtx, tick: int):
 
-	var store_predicted_states = tick > (ctx.co_predict_data.target_tick - 1)
-
 	# wync bookkeeping
 	# --------------------------------------------------
 
-	for wync_entity_id: int in ctx.predicted_integrable_entity_ids:
-		# (run on last two iterations)
-		if store_predicted_states:
+	# (run on last two iterations)
+
+	var store_predicted_states = tick > (ctx.co_predict_data.target_tick - 1)
+	if store_predicted_states:
+		for wync_entity_id: int in ctx.predicted_entity_ids:
 			# TODO: Make this call user-level
 			# store predicted states
 			WyncWrapper.xtrap_props_update_predicted_states_data(ctx, ctx.entity_has_props[wync_entity_id])
@@ -199,11 +199,12 @@ static func wync_xtrap_tick_end(ctx: WyncCtx, tick: int):
 			# update/store predicted state metadata
 			WyncXtrap.props_update_predicted_states_ticks(ctx, ctx.entity_has_props[wync_entity_id], ctx.co_predict_data.target_tick)
 
-		# integration functions
+	# integration functions
+
+	for wync_entity_id: int in ctx.predicted_integrable_entity_ids:
 		# TODO: Move this to user level wrapper
 		var int_fun = WyncUtils.entity_get_integrate_fun(ctx, wync_entity_id)
 		int_fun.call()
-
 
 	# extract / poll for generated predicted _undo delta events_
 

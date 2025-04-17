@@ -9,7 +9,11 @@ enum INFO {
 	INFO_PROPS_SERVER,
 	INFO_PROPS_CLIENT,
 	INFO_DRAW_FRAME,
+	INFO_CUSTOM_GLOBAL,
 }
+
+static var custom_global_text: String
+
 @export var info_to_show: INFO = INFO.INFO_GENERAL
 @export var enabled: bool = true
 @onready var lblMain: Label = self
@@ -43,21 +47,23 @@ func _physics_process(_delta: float) -> void:
 		INFO.INFO_GENERAL:
 			lblMain.text = get_info_general()
 		INFO.INFO_CLIENT_PACKET_LOG:
-			lblMain.text = get_info_packets_received_text(client_wctx)
+			lblMain.text = get_info_packets_received_text(client_wctx, 20)
 		INFO.INFO_SERVER_PACKET_LOG:
-			lblMain.text = get_info_packets_received_text(server_wctx)
+			lblMain.text = get_info_packets_received_text(server_wctx, 1)
 		INFO.INFO_PROPS_SERVER:
 			lblMain.text = get_info_prop_identifiers(server_wctx)
 		INFO.INFO_PROPS_CLIENT:
 			lblMain.text = get_info_prop_identifiers(client_wctx)
 
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	if not initialized:
 		return
 	match info_to_show:
 		INFO.INFO_DRAW_FRAME:
 			lblMain.text = "%s %s %s" % [Engine.get_frames_drawn(), Engine.get_process_frames(), Engine.get_physics_frames()]
+		INFO.INFO_CUSTOM_GLOBAL:
+			lblMain.text = custom_global_text
 
 
 func get_info_general() -> String:
@@ -140,11 +146,10 @@ static func get_wync_latency_info(ctx: WyncCtx) -> String:
 	return txt
 
 
-static func get_info_packets_received_text(ctx: WyncCtx) -> String:
+static func get_info_packets_received_text(ctx: WyncCtx, prop_amount: int) -> String:
 	var name_length = 10
 	var number_length = 4
 
-	var prop_amount = 20
 	var text = ""
 	var prefix = "client_%s" % [ctx.my_peer_id] if WyncUtils.is_client(ctx) else "server"
 

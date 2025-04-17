@@ -13,6 +13,7 @@ config_version=5
 config/name="combies-ecs"
 run/main_scene="uid://40h8mrqmmmcf"
 config/features=PackedStringArray("4.4", "GL Compatibility")
+run/max_fps=80
 config/icon="res://icon.svg"
 
 [autoload]
@@ -117,4 +118,4 @@ limits/debugger/max_warnings_per_second=9999999
 
 [physics]
 
-common/physics_ticks_per_second=10
+common/physics_ticks_per_second=30

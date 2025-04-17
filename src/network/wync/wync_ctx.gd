@@ -406,6 +406,9 @@ var debug_data_per_tick_sliding_window_mean: float = 0
 var debug_data_per_tick_current: float = 0
 var debug_ticks_sent: int = 0
 
+var debug_lerp_prev_curr_time: float
+var debug_lerp_prev_target: float
+
 
 # TODO: Move to WyncUtils
 func _init() -> void:

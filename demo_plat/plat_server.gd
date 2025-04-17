@@ -44,7 +44,8 @@ func _physics_process(delta: float) -> void:
 
 	WyncFlow.wync_server_tick_end(gs.wctx)
 
-	if WyncUtils.fast_modulus(Engine.get_physics_frames(), 4) == 0:
+	#if Engine.get_physics_frames() % 1 == 0:
+	if true:
 		WyncThrottle.wync_set_data_limit_chars_for_out_packets(gs.wctx, 10000)
 		WyncThrottle.wync_system_gather_packets(gs.wctx)
 
@@ -52,5 +53,5 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 
 
-func _draw():
-	PlatDraw.draw_game(self, gs)
+#func _draw():
+	#PlatDraw.draw_game(self, gs)

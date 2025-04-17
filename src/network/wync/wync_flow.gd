@@ -494,6 +494,12 @@ static func prop_save_confirmed_state(ctx: WyncCtx, prop_id: int, tick: int, sta
 		if prop_id == ctx.PROP_ID_PROB:
 			wync_try_to_update_prob_prop_rate(ctx)
 
+	
+		if prop_id == 18:
+			#var frame = 1000.0 / ctx.physic_ticks_per_second
+			Log.outc(ctx, "deblerp | (cl)rver_tick %s | prop %s received tick %s saved as tick %s | ~%s" % [ctx.co_ticks.server_ticks, prop_id, tick, ctx.co_ticks.ticks,
+			(ctx.co_ticks.ticks + ctx.co_ticks.server_tick_offset)])
+
 
 	else:
 
@@ -719,6 +725,9 @@ static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
 		acc += i_clock_offset
 
 	co_predict_data.clock_offset_mean = ceil(acc / count)
+
+	var stable_latency = ctx.peer_latency_info[WyncCtx.SERVER_PEER_ID].latency_stable_ms
+	var latency_ticks = ceil(stable_latency / (1000.0 / physics_fps))
 	
 	# update ticks
 	
@@ -727,16 +736,20 @@ static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
 
 	# Note that at the beggining 'server_ticks' will be equal to 0
 
-	var cal_server_ticks = data.tick + ceil(time_since_packet_sent / (1000.0 / physics_fps))
+	#var cal_server_ticks = data.tick + roundi(time_since_packet_sent / (1000.0 / physics_fps))
+	var cal_server_ticks = data.tick
 	var new_server_ticks_offset = cal_server_ticks - co_ticks.ticks
 
 	# to avoid fluctuations by one unit, always prefer the biggest value
 	if (abs(new_server_ticks_offset - co_ticks.server_tick_offset) == 1):
-		new_server_ticks_offset = max(co_ticks.server_tick_offset, new_server_ticks_offset)
+		new_server_ticks_offset = min(co_ticks.server_tick_offset, new_server_ticks_offset)
+
 	CoTicks.server_tick_offset_collection_add_value(co_ticks, new_server_ticks_offset)
 	co_ticks.server_tick_offset = CoTicks.server_tick_offset_collection_get_most_common(co_ticks)
 	
-	co_ticks.server_ticks = co_ticks.ticks + co_ticks.server_tick_offset
+	co_ticks.server_ticks = co_ticks.ticks + co_ticks.server_tick_offset + latency_ticks
+
+	Log.outc(ctx, "deblerp | time_since_packet_sent %s lat_stable %s" % [time_since_packet_sent, stable_latency])
 
 	Log.out("couldn't find input | Servertime %s, real %s, d %s | server_ticks_aprox %s | latency %s | clock %s | %s | %s | %s" % [
 		int(current_server_time),
@@ -886,6 +899,7 @@ static func wync_client_set_lerp_ms (ctx: WyncCtx, server_tick_rate: int, lerp_m
 	#ctx.lerp_ms = max(lerp_ms, (1000 / server_update_rate) * 2)
 
 	ctx.co_predict_data.lerp_ms = max(lerp_ms, ceil((1000.0 / server_tick_rate) * 2))
+	# TODO: also set maximum based on tick history size
 
 
 static func wync_get_next_entity_event_spawn(ctx: WyncCtx) -> WyncCtx.EntitySpawnEvent:

@@ -12,7 +12,7 @@ static func wync_update_prediction_ticks (ctx: WyncCtx):
 	var co_predict_data := ctx.co_predict_data
 	var co_ticks := ctx.co_ticks
 	
-	var curr_time = WyncUtils.clock_get_ms(ctx)
+	var curr_time: float = WyncUtils.clock_get_ms(ctx)
 	var physics_fps = Engine.physics_ticks_per_second
 
 	# Adjust tick_offset_desired periodically to compensate for unstable ping
