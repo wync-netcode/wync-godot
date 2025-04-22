@@ -460,11 +460,13 @@ static func prop_find_closest_two_snapshots_from_tick(target_tick: int, prop: Wy
 	return [snap_left, snap_right]
 
 
-## @returns tuple[int, int]. tick left, tick right
+## @returns tuple[int, int, int, int]. server tick left, server tick right, local tick left, local tick right
 static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: int, prop: WyncEntityProp) -> Array:
 	
-	var snap_left = -1
-	var snap_right = -1
+	var server_tick_left = -1
+	var server_tick_right = -1
+	var local_tick_left = -1
+	var local_tick_right = -1
 	
 	for i in range(prop.last_ticks_received.size):
 		var server_tick = prop.last_ticks_received.get_relative(-i)
@@ -479,6 +481,8 @@ static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: i
 			#continue
 
 		# get local tick
+		if prop.confirmed_states_tick.get_at(server_tick) != server_tick:
+			continue
 		var arrived_at_tick = prop.arrived_at_tick.get_at(server_tick)
 		if arrived_at_tick == -1:
 			continue
@@ -486,15 +490,17 @@ static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: i
 		var snapshot_timestamp = WyncUtils.clock_get_tick_timestamp_ms(ctx, arrived_at_tick)
 
 		if snapshot_timestamp > target_time_ms:
-			snap_right = server_tick
-		elif snap_right != -1 && snapshot_timestamp < target_time_ms:
-			snap_left = server_tick
+			server_tick_right = server_tick
+			local_tick_right = arrived_at_tick
+		elif server_tick_right != -1 && snapshot_timestamp < target_time_ms:
+			server_tick_left = server_tick
+			local_tick_left = arrived_at_tick
 			break
 	
-	if snap_left == -1:
-		return []
+	if server_tick_left == -1:
+		return [-1, 0, 0, 0]
 	
-	return [snap_left, snap_right]
+	return [server_tick_left, server_tick_right, local_tick_left, local_tick_right]
 
 
 ## @returns int sim_fun_id

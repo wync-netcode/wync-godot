@@ -64,6 +64,11 @@ var lerp_right_local_tick: int
 var lerp_left_confirmed_state_tick: int
 var lerp_right_confirmed_state_tick: int
 
+# Q: Why store state copy?
+# A: To allow the buffer to fill and be replaced
+var lerp_left_state: Variant
+var lerp_right_state: Variant
+
 ## Whether when we skip ticks we want to duplicated it
 ## (useful for _input events_, e.g movement, shooting. Do not confuse with INPUT props)
 ## Only applies to EVENT props

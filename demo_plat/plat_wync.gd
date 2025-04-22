@@ -603,9 +603,8 @@ static func debug_draw_confirmed_interpolated_states(gs: Plat.GameState):
 		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
 
 		if prop.lerp_use_confirmed_state:
-			left_value = prop.confirmed_states.get_at(prop.lerp_left_confirmed_state_tick)
-			right_value = prop.confirmed_states.get_at(prop.lerp_right_confirmed_state_tick)
-			#last_value = prop.confirmed_states.get_relative(0)
+			left_value = prop.lerp_left_state
+			right_value = prop.lerp_right_state
 			last_value = prop.confirmed_states.get_at(prop.last_ticks_received.get_relative(0))
 			
 

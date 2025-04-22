@@ -60,19 +60,25 @@ static func precompute_lerping_prop_confirmed_states(
 
 	var snaps = WyncUtils.find_closest_two_snapshots_from_prop(ctx, target_time, prop)
 	#var snaps = WyncUtils.prop_find_closest_two_snapshots_from_tick(target_tick, prop)
-	if snaps.size() != 2:
+	#if snaps.size() != 2:
+	if snaps[0] == -1:
 		return
 
 	prop.lerp_use_confirmed_state = true
 	prop.lerp_left_confirmed_state_tick = snaps[0]
 	prop.lerp_right_confirmed_state_tick = snaps[1]
-	prop.lerp_left_local_tick = prop.arrived_at_tick.get_at(prop.lerp_left_confirmed_state_tick)
-	prop.lerp_right_local_tick = prop.arrived_at_tick.get_at(prop.lerp_right_confirmed_state_tick)
+	prop.lerp_left_local_tick = snaps[2]
+	prop.lerp_right_local_tick = snaps[3]
 
 	# TODO: Move this elsewhere
 	# NOTE: might want to limit how much it grows
 	ctx.co_ticks.last_tick_rendered_left = max(ctx.co_ticks.last_tick_rendered_left, prop.lerp_left_confirmed_state_tick)
 
+	var val_left = prop.confirmed_states.get_at(prop.lerp_left_confirmed_state_tick)
+	var val_right = prop.confirmed_states.get_at(prop.lerp_right_confirmed_state_tick)
+
+	prop.lerp_left_state = val_left
+	prop.lerp_right_state = val_right
 
 static func precompute_lerping_prop_predicted(
 		ctx: WyncCtx, prop_id: int,
