@@ -53,5 +53,5 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 
 
-#func _draw():
-	#PlatDraw.draw_game(self, gs)
+func _draw():
+	PlatDraw.draw_game(self, gs)

@@ -74,11 +74,15 @@ static func precompute_lerping_prop_confirmed_states(
 	# NOTE: might want to limit how much it grows
 	ctx.co_ticks.last_tick_rendered_left = max(ctx.co_ticks.last_tick_rendered_left, prop.lerp_left_confirmed_state_tick)
 
-	var val_left = prop.confirmed_states.get_at(prop.lerp_left_confirmed_state_tick)
-	var val_right = prop.confirmed_states.get_at(prop.lerp_right_confirmed_state_tick)
+	var val_left = WyncEntityProp.saved_state_get_throughout(prop, prop.lerp_left_confirmed_state_tick)
+	var val_right = WyncEntityProp.saved_state_get_throughout(prop, prop.lerp_right_confirmed_state_tick)
 
 	prop.lerp_left_state = val_left
 	prop.lerp_right_state = val_right
+
+	Log.outc(ctx, "deblerp, precomp | l(%s,%s) s(%s,%s) v(%.3f,%.3f)" % [
+		snaps[2], snaps[3], snaps[0], snaps[1], val_left.x, val_right.x ])
+
 
 static func precompute_lerping_prop_predicted(
 		ctx: WyncCtx, prop_id: int,

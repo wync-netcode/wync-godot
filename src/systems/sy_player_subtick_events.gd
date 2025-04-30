@@ -12,6 +12,8 @@ func _ready():
 
 
 func on_process_entity(entity: Entity, _data, _delta: float):
+	return
+	"""
 	var input = entity.get_component(CoActorInput.label) as CoActorInput
 	
 	# subtick shooting event
@@ -110,3 +112,4 @@ static func debug_show_timewarpable_lerped_positions(node_ctx: Node, wync_ctx: W
 				pass
 
 	DebugPlayerTrail.spawn(node_ctx, interpolated_value, 0.9, 2.5)
+	"""

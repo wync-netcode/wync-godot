@@ -22,5 +22,5 @@ int is_factor(int A, int B) {
 """
 
 ## Inclusive
-static func is_between_int(value: int, left: int, right: int):
-	return value >= left && value <= right
+static func is_between_int(value: int, lhs: int, rhs: int):
+	return value >= lhs && value <= rhs

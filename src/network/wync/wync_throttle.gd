@@ -427,6 +427,7 @@ static func wync_system_stabilize_latency (ctx: WyncCtx, lat_info: WyncCtx.PeerL
 				continue
 			counter += 1
 			accum += lat
+		if counter == 0: return
 		mean = ceil(float(accum) / counter)
 		
 		#Log.out("latencyme mean diff %s %s %s >? %s" % [lat_info.latency_mean, mean, abs(mean - lat_info.latency_mean), lat_info.latency_std_dev], Log.TAG_LATENCY)

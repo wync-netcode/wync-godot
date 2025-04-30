@@ -27,12 +27,75 @@ var interpolated_state # : any
 # (server-side) the server will keep a history of state
 var timewarpable: bool
 
-# TODO: Make this value configurable on WyncCtx
-# Ring <tick: id, data: Variant>
-var confirmed_states: RingBuffer = null
 
-## what tick corresponds to any saved state
-var confirmed_states_tick: RingBuffer = null
+# Unified
+# states           <state_id, state>
+# state_id_to_tick <state_id, tick>
+# tick_to_state_id <tick, state_id>
+# state_id_to_local_tick <state_id, local_tick>
+
+# RingBuffer<int, Variant>
+var saved_states: RingBuffer = null
+# RingBuffer<int, int>
+var state_id_to_tick: RingBuffer = null
+# RingBuffer<int, int>
+var tick_to_state_id: RingBuffer = null
+# RingBuffer<int, int> (only for lerping)
+var state_id_to_local_tick: RingBuffer = null
+
+
+# get state from tick
+# @argument int: tick
+# @returns Variant: state
+
+# Warning: Use only if you know what you're doing
+static func saved_state_get(
+	prop: WyncEntityProp, tick: int) -> Variant:
+
+	var state_id = prop.tick_to_state_id.get_at(tick)
+	if state_id == -1 || prop.state_id_to_tick.get_absolute(state_id) != tick:
+		return null
+
+	return prop.saved_states.get_absolute(state_id)
+
+
+static func saved_state_get_throughout(
+	prop: WyncEntityProp, tick: int) -> Variant:
+
+	#return saved_state_get_quick(prop, tick)
+
+	# look up tick
+	for i in range(prop.saved_states.size):
+		#var state_id = WyncUtils.fast_modulus(
+			#prop.state_id_to_tick.head_pointer -i, prop.state_id_to_tick.size)
+		var state_id = i
+		var saved_tick = prop.state_id_to_tick.get_absolute(state_id) 
+		if saved_tick == tick:
+		#if prop.state_id_to_tick.get_relative(-i) == tick:
+		#if prop.state_id_to_tick.get_absolute(i) == tick:
+			return prop.saved_states.get_absolute(state_id)
+
+	return null
+
+
+static func saved_state_insert (
+	prop: WyncEntityProp, tick: int, state: Variant):
+	prop.saved_states.push(state)
+	var state_id = prop.saved_states.head_pointer
+	prop.state_id_to_tick.insert_at(state_id, tick)
+	prop.tick_to_state_id.insert_at(tick, state_id)
+
+
+static func server_tick_arrived_at_local_tick (prop: WyncEntityProp, server_tick: int) -> int:
+
+	for i in range(prop.saved_states.size):
+		var state_id = i
+		var saved_tick = prop.state_id_to_tick.get_absolute(state_id) 
+		if saved_tick == server_tick:
+			return prop.state_id_to_local_tick.get_absolute(state_id)
+
+	return -1
+
 
 ## On predicted entities, only the latest value is valid
 ## Last-In-First-Out (LIFO)
@@ -43,10 +106,6 @@ var last_ticks_received: RingBuffer = null
 ## we last stored a predicted state
 ## Guaranteed to find state between last_tick_received(0) and last_cached_predicted_tick
 var last_cached_predicted_tick: int = -1
-
-## this server tick was received at this tick (used for lerping)
-## LIFO Queue <server_tick: int, local_tick: int>
-var arrived_at_tick: RingBuffer = null
 
 ## store predicted state
 var pred_curr: NetTickData = null

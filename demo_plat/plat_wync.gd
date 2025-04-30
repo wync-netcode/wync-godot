@@ -605,11 +605,28 @@ static func debug_draw_confirmed_interpolated_states(gs: Plat.GameState):
 		if prop.lerp_use_confirmed_state:
 			left_value = prop.lerp_left_state
 			right_value = prop.lerp_right_state
-			last_value = prop.confirmed_states.get_at(prop.last_ticks_received.get_relative(0))
+			#last_value = prop.confirmed_states.get_at(prop.last_ticks_received.get_relative(0))
 			
 
 			# create debug hulls
 
-			#PlatPublic.spawn_trail(gs, left_value, 0.2, 0)
-			#PlatPublic.spawn_trail(gs, right_value, 0.0, 0)
-			if last_value is Vector2: PlatPublic.spawn_trail(gs, last_value, 0.4, 0)
+			PlatPublic.spawn_trail(gs, left_value + Vector2(0,-15), 0.5, 0)
+			PlatPublic.spawn_trail(gs, right_value + Vector2(0,-15), 0.0, 0)
+			#if last_value is Vector2: PlatPublic.spawn_trail(gs, last_value, 0.4, 0)
+
+
+## Draws all confirmed states for a given prop
+static func debug_draw_confirmed_states(gs: Plat.GameState, prop_id: int):
+
+	var ctx = gs.wctx
+
+	var prop := WyncUtils.get_prop(ctx, prop_id)
+	#Log.outc(gs.wctx, "debtrail, prop %s" % prop)
+	if prop == null:
+		return
+
+	for i in range(prop.saved_states.size):
+		var state = prop.saved_states.get_relative(-i)
+		if state is Vector2:
+			PlatPublic.spawn_trail(gs, state, (float(i) / prop.saved_states.size) / 4.0, 0)
+			Log.outc(gs.wctx, "debtrail, got state %s" % state)

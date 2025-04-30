@@ -27,13 +27,10 @@ static func wync_client_send_inputs (ctx: WyncCtx):
 		var pkt_inputs = WyncPktInputs.new()
 
 		for i in range(tick_pred - WyncCtx.INPUT_AMOUNT_TO_SEND, tick_pred +1):
-			if input_prop.confirmed_states_tick.get_at(i) != i:
-				#Log.outc(ctx, "we don't have an input for this tick %s" % [i])
-				continue
-			var input = input_prop.confirmed_states.get_at(i)
+			var input = WyncEntityProp.saved_state_get(input_prop, i)
 			if input == null:
 				# TODO: Implement input duplication on frame skip
-				#Log.outc(ctx, "we don't have an input for this tick %s" % [i])
+				Log.outc(ctx, "we don't have an input for this tick %s" % [i])
 				continue
 			
 			var tick_input_wrap = WyncPktInputs.NetTickDataDecorator.new()

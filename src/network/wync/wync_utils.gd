@@ -104,7 +104,6 @@ static func prop_register_minimal(
 	# instantiate structs
 	# todo: some might not be necessary for all
 	prop.last_ticks_received = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT, -1)
-	prop.arrived_at_tick = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT, -1)
 	prop.pred_curr = NetTickData.new()
 	prop.pred_prev = NetTickData.new()
 
@@ -112,11 +111,15 @@ static func prop_register_minimal(
 	# TODO: Only do this if this prop is predicted, move to prop_set_predict ?
 	if (data_type == WyncEntityProp.PROP_TYPE.INPUT ||
 		data_type == WyncEntityProp.PROP_TYPE.EVENT):
-		prop.confirmed_states = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, null)
-		prop.confirmed_states_tick = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, -1)
+		prop.saved_states = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, null)
+		prop.state_id_to_tick = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, -1)
+		prop.tick_to_state_id = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, -1)
+		prop.state_id_to_local_tick = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, -1) # only for lerp
 	else:
-		prop.confirmed_states = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT, null)
-		prop.confirmed_states_tick = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT, -1)
+		prop.saved_states = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT, null)
+		prop.state_id_to_tick = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT, -1)
+		prop.tick_to_state_id = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT, -1)
+		prop.state_id_to_local_tick = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT, -1) # only for lerp
 	
 	ctx.props[prop_id] = prop
 	ctx.active_prop_ids.push_back(prop_id)
@@ -138,7 +141,12 @@ static func prop_register(
 	getter: Callable,
 	setter: Callable
 	) -> int:
+
+	# DEPRECATED
+
+	return -1
 	
+	"""
 	if not is_entity_tracked(ctx, entity_id):
 		return -1
 
@@ -193,6 +201,7 @@ static func prop_register(
 	ctx.was_any_prop_added_deleted = true
 	
 	return prop_id
+	"""
 
 
 static func finish_spawning_entity(ctx: WyncCtx, entity_id: int) -> int:
@@ -324,8 +333,11 @@ static func prop_set_timewarpable(ctx: WyncCtx, prop_id: int) -> int:
 	if prop == null:
 		return 1
 	prop.timewarpable = true
-	prop.confirmed_states = RingBuffer.new(ctx.max_tick_history_timewarp, null)
-	prop.confirmed_states_tick = RingBuffer.new(ctx.max_tick_history_timewarp, -1)
+	prop.saved_states = RingBuffer.new(ctx.max_tick_history_timewarp, null)
+	prop.state_id_to_tick = RingBuffer.new(ctx.max_tick_history_timewarp, -1)
+	prop.tick_to_state_id = RingBuffer.new(ctx.max_tick_history_timewarp, -1)
+	prop.state_id_to_local_tick = RingBuffer.new(ctx.max_tick_history_timewarp, -1) # TODO: this is only for lerp
+	
 	return OK
 
 # server only
@@ -444,7 +456,7 @@ static func prop_find_closest_two_snapshots_from_tick(target_tick: int, prop: Wy
 			#continue
 
 		# get local tick
-		var arrived_at_tick = prop.arrived_at_tick.get_at(server_tick)
+		var arrived_at_tick = WyncEntityProp.server_tick_arrived_at_local_tick(prop, server_tick)
 		if arrived_at_tick == -1:
 			continue
 
@@ -476,14 +488,12 @@ static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: i
 		# get snapshot from received ticks
 		# NOTE: This block shouldn't necessary
 		# TODO: before storing check the data is healthy
-		#var data = prop.confirmed_states.get_at(server_tick)
-		#if data == null:
-			#continue
+		var data = WyncEntityProp.saved_state_get_throughout(prop, server_tick)
+		if data == null:
+			continue
 
 		# get local tick
-		if prop.confirmed_states_tick.get_at(server_tick) != server_tick:
-			continue
-		var arrived_at_tick = prop.arrived_at_tick.get_at(server_tick)
+		var arrived_at_tick = WyncEntityProp.server_tick_arrived_at_local_tick(prop, server_tick)
 		if arrived_at_tick == -1:
 			continue
 

@@ -199,9 +199,9 @@ static func _wync_sync_regular_prop(ctx: WyncCtx, prop: WyncEntityProp, prop_id:
 
 	# copy cached data
 	
-	if prop.confirmed_states_tick.get_at(ctx.co_ticks.ticks) != ctx.co_ticks.ticks:
+	var state = WyncEntityProp.saved_state_get(prop, ctx.co_ticks.ticks)
+	if state == null:
 		return null
-	var state = prop.confirmed_states.get_at(ctx.co_ticks.ticks)
 
 	# build packet
 

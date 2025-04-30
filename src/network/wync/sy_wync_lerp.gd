@@ -45,11 +45,8 @@ static func confirmed_states_set_to_tick_interpolated (
 			continue
 		prop = prop as WyncEntityProp
 
-		if (prop.confirmed_states_tick.get_at(tick_left) != tick_left
-		|| prop.confirmed_states_tick.get_at(tick_left +1) != tick_left + 1):
-			continue
-		left_value = prop.confirmed_states.get_at(tick_left)
-		right_value = prop.confirmed_states.get_at(tick_left +1)
+		left_value = WyncEntityProp.saved_state_get(prop, tick_left)
+		right_value = WyncEntityProp.saved_state_get(prop, tick_left +1)
 		if left_value == null || right_value == null:
 			continue
 
@@ -73,9 +70,8 @@ static func confirmed_states_set_to_tick (
 			continue
 		prop = prop as WyncEntityProp
 
-		if prop.confirmed_states_tick.get_at(tick) != tick:
-			continue
-		var tick_value = prop.confirmed_states.get_at(tick)
+		var tick_value = WyncEntityProp.saved_state_get(prop, tick)
 		if tick_value == null:
 			continue
+
 		prop.setter.call(prop.user_ctx_pointer, tick_value)

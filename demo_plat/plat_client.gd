@@ -52,6 +52,7 @@ func _physics_process(delta: float) -> void:
 		PlatNet.queue_wync_packets(gs)
 
 	PlatWync.debug_draw_confirmed_interpolated_states(gs)
+	PlatWync.debug_draw_confirmed_states(gs, 18)
 
 func _process(delta: float) -> void:
 	WyncWrapper.wync_interpolate_all(gs.wctx, delta)

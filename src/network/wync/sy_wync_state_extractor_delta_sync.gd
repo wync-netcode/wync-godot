@@ -37,10 +37,11 @@ static func wync_prop_event_send_event_ids_to_peer(ctx: WyncCtx, prop: WyncEntit
 	var pkt_inputs = WyncPktInputs.new()
 
 	for tick in range(ctx.co_ticks.ticks - WyncCtx.INPUT_AMOUNT_TO_SEND, ctx.co_ticks.ticks +1):
-		if prop.confirmed_states_tick.get_at(tick) != tick:
+
+		var input = WyncEntityProp.saved_state_get(prop, tick)
+		if input == null:
 			Log.errc(ctx, "we don't have an input for this tick %s prop %s(id %s)" % [tick, prop.name_id, prop_id], Log.TAG_DELTA_EVENT)
 			continue
-		var input = prop.confirmed_states.get_at(tick)
 		
 		var tick_input_wrap = WyncPktInputs.NetTickDataDecorator.new()
 		tick_input_wrap.tick = tick

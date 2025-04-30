@@ -36,8 +36,7 @@ static func wync_buffer_inputs(ctx: WyncCtx):
 		var new_state = getter.call(user_ctx)
 		assert(new_state != null)
 
-		input_prop.confirmed_states.insert_at(ctx.co_predict_data.target_tick, new_state)
-		input_prop.confirmed_states_tick.insert_at(ctx.co_predict_data.target_tick, ctx.co_predict_data.target_tick)
+		WyncEntityProp.saved_state_insert(input_prop, ctx.co_predict_data.target_tick, new_state)
 
 
 static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
@@ -49,8 +48,8 @@ static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
 		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
 		var getter = ctx.wrapper.prop_getter[prop_id]
 		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
-		prop.confirmed_states.insert_at(save_on_tick, getter.call(user_ctx))
-		prop.confirmed_states_tick.insert_at(save_on_tick, save_on_tick)
+		WyncEntityProp.saved_state_insert(prop, save_on_tick, getter.call(user_ctx))
+		# Note: safe to call user getter like that?
 
 	for prop_id in ctx.filtered_delta_prop_ids:
 		
@@ -61,8 +60,7 @@ static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
 		
 		var getter = ctx.wrapper.prop_getter[prop_id]
 		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
-		prop.confirmed_states.insert_at(save_on_tick, getter.call(user_ctx))
-		prop.confirmed_states_tick.insert_at(save_on_tick, save_on_tick)
+		WyncEntityProp.saved_state_insert(prop, save_on_tick, getter.call(user_ctx))
 
 
 static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: Array[int], tick: int):
@@ -73,9 +71,8 @@ static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: A
 		var last_confirmed_tick = prop.last_ticks_received.get_relative(tick)
 		if last_confirmed_tick == -1:
 			continue
-		if prop.confirmed_states_tick.get_at(last_confirmed_tick) != last_confirmed_tick:
-			continue
-		var last_confirmed = prop.confirmed_states.get_at(last_confirmed_tick as int)
+
+		var last_confirmed = WyncEntityProp.saved_state_get(prop, last_confirmed_tick as int)
 		if last_confirmed == null:
 			continue
 		
@@ -93,11 +90,11 @@ static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 	for prop_id in ctx.filtered_clients_input_and_event_prop_ids:
 		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)	
 
-		if prop.confirmed_states_tick.get_at(ctx.co_ticks.ticks) != ctx.co_ticks.ticks:
+		var input = WyncEntityProp.saved_state_get(prop, ctx.co_ticks.ticks)
+		if input == null:
 			Log.errc(ctx, "couldn't find input (%s) for tick (%s)" % [prop.name_id, ctx.co_ticks.ticks])
 			continue
 
-		var input = prop.confirmed_states.get_at(ctx.co_ticks.ticks)
 		var setter = ctx.wrapper.prop_setter[prop_id]
 		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
 		setter.call(user_ctx, input)
@@ -110,11 +107,11 @@ static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 static func xtrap_reset_all_state_to_confirmed_tick_absolute(ctx: WyncCtx, prop_ids: Array[int], tick: int):
 	for prop_id: int in prop_ids:
 		var prop := ctx.props[prop_id]
-		if prop.confirmed_states_tick.get_at(tick) != tick:
+		if WyncEntityProp.saved_state_get(prop, tick) == null:
 			continue
 		var setter = ctx.wrapper.prop_setter[prop_id]
 		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
-		setter.call(user_ctx, prop.confirmed_states.get_at(tick))
+		setter.call(user_ctx, WyncEntityProp.saved_state_get(prop, tick))
 		#Log.outc(ctx, "tick init setted state for prop %s tick %s" % [prop.name_id, tick])
 
 
@@ -225,9 +222,10 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 			#if not prop.lerp_use_confirmed_state:
 		if prop_id == 18:
 
-			var txt = "deblerp | p_id%s | l(%s) r(%s) | l(%.2f) r(%.2f) | left %.2f right %.2f target %.3f d %.3f | delta %.3f acu %.3f factor %.3f lerp_fra %.3f | curr %.3f d %2.3f | pos %.3f diff %2.3f" % [
+			var txt = "deblerp | p_id%s | l(%s,%s) s(%s,%s) | l(%.2f) r(%.2f) | left %.2f right %.2f target %.3f d %.3f | delta %.3f acu %.3f factor %.3f lerp_fra %.3f | curr %.3f d %2.3f | pos %.3f diff %2.3f" % [
 				prop_id,
 				prop.lerp_left_local_tick, prop.lerp_right_local_tick,
+				prop.lerp_left_confirmed_state_tick, prop.lerp_right_confirmed_state_tick,
 				left_value.x, right_value.x,
 				left_timestamp_ms, right_timestamp_ms, target_time_conf,
 				target_time_conf - ctx.debug_lerp_prev_target,
@@ -237,6 +235,11 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 				prop.interpolated_state.x, (prop.interpolated_state.x - debug_previous.x)]
 			DynamicDebugInfo.custom_global_text = txt
 			Log.outc(ctx, txt)
+
+			# Debug only
+			var val_diff = right_value.x - left_value.x
+			if val_diff < 0 && val_diff > -100:
+				assert(false)
 
 	ctx.debug_lerp_prev_curr_time = curr_time
 	ctx.debug_lerp_prev_target = target_time_conf
@@ -260,9 +263,6 @@ static func wync_get_events_from_channel_from_peer(
 	var consumed_event_ids_tick: int = prop_channel.events_consumed_at_tick_tick.get_at(tick)
 	if tick != consumed_event_ids_tick:
 		return out_events_id
-	var confirmed_state_tick = prop_channel.confirmed_states_tick.get_at(tick)
-	if tick != confirmed_state_tick:
-		return out_events_id
 
 	var consumed_event_ids: Array[int] = prop_channel.events_consumed_at_tick.get_at(tick)
 	var confirmed_event_ids: Array
@@ -270,7 +270,11 @@ static func wync_get_events_from_channel_from_peer(
 	if ctx.co_ticks.ticks == tick:
 		confirmed_event_ids = ctx.peer_has_channel_has_events[wync_peer_id][channel]
 	else:
-		confirmed_event_ids = prop_channel.confirmed_states.get_at(tick)
+		# TODO: Rewrite me
+		var state = WyncEntityProp.saved_state_get(prop_channel, tick)
+		if state == null:
+			return out_events_id
+		confirmed_event_ids = state
 
 	for i in range(confirmed_event_ids.size()):
 		var event_id = confirmed_event_ids[i]
