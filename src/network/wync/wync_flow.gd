@@ -93,6 +93,8 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 		WyncPacket.WYNC_PKT_CLOCK:
 			if is_client:
 				wync_handle_pkt_clock(ctx, wync_pkt.data)
+			else:
+				SyWyncClockServer.wync_server_handle_clock_req(ctx, wync_pkt.data, from_nete_peer_id)
 		WyncPacket.WYNC_PKT_CLIENT_SET_LERP_MS:
 			if not is_client:
 				wync_handle_packet_client_set_lerp_ms(ctx, wync_pkt.data, from_nete_peer_id)
@@ -328,7 +330,7 @@ static func wync_server_handle_pkt_inputs(ctx: WyncCtx, data: Variant, from_nete
 	# client and prop exists
 	var client_id = WyncUtils.is_peer_registered(ctx, from_nete_peer_id)
 	if client_id < 0:
-		Log.err("client %s is not registered" % client_id, Log.TAG_INPUT_RECEIVE)
+		Log.err("client %s is not registered" % from_nete_peer_id, Log.TAG_INPUT_RECEIVE)
 		return 3
 	var prop_id = data.prop_id
 	if not WyncUtils.prop_exists(ctx, prop_id):
@@ -700,6 +702,8 @@ static func wync_handle_packet_client_set_lerp_ms(ctx: WyncCtx, data: Variant, f
 
 static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
 
+	# see https://en.wikipedia.org/wiki/Cristian%27s_algorithm
+
 	if data is not WyncPktClock:
 		return 1
 	data = data as WyncPktClock
@@ -708,7 +712,7 @@ static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
 	var co_predict_data = ctx.co_predict_data
 	var curr_time = WyncUtils.clock_get_ms(ctx)
 	var physics_fps = ctx.physic_ticks_per_second
-	var curr_clock_offset = (data.time + data.latency) - curr_time
+	var curr_clock_offset = (data.time + (curr_time - data.time_og) / 2.0) - curr_time
 
 	# calculate mean
 	# Note: To improve accurace modify _server clock sync_ throttling or sliding window size
@@ -752,7 +756,7 @@ static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
 
 	Log.outc(ctx, "deblerp | time_since_packet_sent %s lat_stable %s" % [time_since_packet_sent, stable_latency])
 
-	Log.out("couldn't find input | Servertime %s, real %s, d %s | server_ticks_aprox %s | latency %s | clock %s | %s | %s | %s" % [
+	Log.out(" Servertime %s, real %s, d %s | server_ticks_aprox %s | latency %s | clock %s | %s | %s | %s" % [
 		int(current_server_time),
 		Time.get_ticks_msec(),
 		str(Time.get_ticks_msec() - current_server_time).pad_zeros(2).pad_decimals(1),

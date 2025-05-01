@@ -2,35 +2,44 @@ extends System
 class_name SyWyncClockServer
 const label: StringName = StringName("SyWyncClockServer")
 
-## Periodically send server clock to clients
-## This service doesn't write state
 
-static func wync_server_sync_clock(ctx: WyncCtx):
-	# throttle send rate
-	# Note: How often we sync the clock will affect the client's slidding window
+static func wync_server_handle_clock_req(ctx: WyncCtx, data: Variant, from_nete_peer_id: int):
+	
+	if data is not WyncPktClock:
+		return 1
+	data = data as WyncPktClock
 
-	#var physics_fps = Engine.physics_ticks_per_second
-	#if ctx.co_ticks.ticks % int(physics_fps * 0.5) != 0:
+	var wync_peer_id = WyncUtils.is_peer_registered(ctx, from_nete_peer_id)
+	if wync_peer_id < 0:
+		Log.errc(ctx, "client %s is not registered" % from_nete_peer_id)
+		return 3
+	
+	# prepare packet
+
+	var packet = WyncPktClock.new()
+	packet.time_og = data.time_og
+	packet.tick = ctx.co_ticks.ticks
+	packet.time = WyncUtils.clock_get_ms(ctx)
+
+	# queue for sending
+
+	var result = WyncFlow.wync_wrap_packet_out(ctx, wync_peer_id, WyncPacket.WYNC_PKT_CLOCK, packet)
+	if result[0] == OK:
+		var packet_out = result[1] as WyncPacketOut
+		WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.UNRELIABLE, false)
+
+
+static func wync_client_ask_for_clock(ctx: WyncCtx):
+
 	if WyncUtils.fast_modulus(ctx.co_ticks.ticks, 16) != 0:
 		return
-		
-	for wync_peer_id: int in range(1, ctx.peers.size()):
 
-		# get latency towards that peer
+	var packet = WyncPktClock.new()
+	packet.time_og = WyncUtils.clock_get_ms(ctx)
 
-		var lat_info = ctx.peer_latency_info[wync_peer_id]
-		
-		# prepare packet
+	# prepare peer packet and send (queue)
 
-		var packet = WyncPktClock.new()
-		packet.tick = ctx.co_ticks.ticks
-		packet.time = WyncUtils.clock_get_ms(ctx)
-		packet.latency = lat_info.latency_raw_latest_ms # raw latency or stable latency?
-
-		# queue for sending
-
-		var packet_dup = WyncUtils.duplicate_any(packet)
-		var result = WyncFlow.wync_wrap_packet_out(ctx, wync_peer_id, WyncPacket.WYNC_PKT_CLOCK, packet_dup)
-		if result[0] == OK:
-			var packet_out = result[1] as WyncPacketOut
-			WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.UNRELIABLE, false)
+	var result = WyncFlow.wync_wrap_packet_out(ctx, WyncCtx.SERVER_PEER_ID, WyncPacket.WYNC_PKT_CLOCK, packet)
+	if result[0] == OK:
+		var packet_out = result[1] as WyncPacketOut
+		WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.UNRELIABLE, false)
