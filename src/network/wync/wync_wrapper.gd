@@ -234,7 +234,7 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 				curr_time, curr_time - ctx.debug_lerp_prev_curr_time,
 				prop.interpolated_state.x, (prop.interpolated_state.x - debug_previous.x)]
 			DynamicDebugInfo.custom_global_text = txt
-			Log.outc(ctx, txt)
+			#Log.outc(ctx, txt)
 
 			# Debug only
 			var val_diff = right_value.x - left_value.x

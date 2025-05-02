@@ -2,6 +2,7 @@ class_name PlatWync
 
 
 static func setup_server(ctx: WyncCtx):
+	ctx.co_ticks.ticks = 0
 	WyncUtils.server_setup(ctx)
 	WyncFlow.wync_client_set_physics_ticks_per_second(ctx, Engine.physics_ticks_per_second)
 	setup_blueprints(ctx)
@@ -629,4 +630,4 @@ static func debug_draw_confirmed_states(gs: Plat.GameState, prop_id: int):
 		var state = prop.saved_states.get_relative(-i)
 		if state is Vector2:
 			PlatPublic.spawn_trail(gs, state, (float(i) / prop.saved_states.size) / 4.0, 0)
-			Log.outc(gs.wctx, "debtrail, got state %s" % state)
+			#Log.outc(gs.wctx, "debtrail, got state %s" % state)
