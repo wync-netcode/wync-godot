@@ -18,6 +18,7 @@ static func wync_server_handle_clock_req(ctx: WyncCtx, data: Variant, from_nete_
 
 	var packet = WyncPktClock.new()
 	packet.time_og = data.time_og
+	packet.tick_og = data.tick_og
 	packet.tick = ctx.co_ticks.ticks
 	packet.time = WyncUtils.clock_get_ms(ctx)
 
@@ -31,11 +32,13 @@ static func wync_server_handle_clock_req(ctx: WyncCtx, data: Variant, from_nete_
 
 static func wync_client_ask_for_clock(ctx: WyncCtx):
 
+	# Note: Maybe increase frequency when: beggining, or when detected high packet loss
 	if WyncUtils.fast_modulus(ctx.co_ticks.ticks, 16) != 0:
 		return
 
 	var packet = WyncPktClock.new()
 	packet.time_og = WyncUtils.clock_get_ms(ctx)
+	packet.tick_og = ctx.co_ticks.ticks
 
 	# prepare peer packet and send (queue)
 

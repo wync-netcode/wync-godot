@@ -716,6 +716,8 @@ static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
 
 	# calculate mean
 	# Note: To improve accurace modify _server clock sync_ throttling or sliding window size
+	# Note: Use a better algorithm for calculating a stable long lasting value of the clock offset
+	#   Resistant to sudden lag spikes. Look into 'Trimmed mean'
 
 	co_predict_data.clock_offset_sliding_window.push(curr_clock_offset)
 
@@ -730,43 +732,33 @@ static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
 		acc += i_clock_offset
 
 	co_predict_data.clock_offset_mean = ceil(acc / count)
-
-	var stable_latency = ctx.peer_latency_info[WyncCtx.SERVER_PEER_ID].latency_stable_ms
-	var latency_ticks = ceil(stable_latency / (1000.0 / physics_fps))
+	var current_server_time: float = curr_time + co_predict_data.clock_offset_mean
 	
 	# update ticks
-	
-	var current_server_time: float = curr_time + co_predict_data.clock_offset_mean
-	var time_since_packet_sent: float = current_server_time - data.time
 
-	# Note that at the beggining 'server_ticks' will be equal to 0
+	var cal_server_ticks: float = (data.tick + ((curr_time - data.time_og) / 2.0) / (1000.0 / physics_fps))
+	var new_server_ticks_offset: int = roundi(cal_server_ticks - co_ticks.ticks)
 
-	#var cal_server_ticks = data.tick + roundi(time_since_packet_sent / (1000.0 / physics_fps))
-	var cal_server_ticks = data.tick
-	var new_server_ticks_offset = cal_server_ticks - co_ticks.ticks
-
+	# Note: needs further reviewing
 	# to avoid fluctuations by one unit, always prefer the biggest value
-	if (abs(new_server_ticks_offset - co_ticks.server_tick_offset) == 1):
-		new_server_ticks_offset = min(co_ticks.server_tick_offset, new_server_ticks_offset)
+	#if (abs(new_server_ticks_offset - co_ticks.server_tick_offset) == 1):
+		#new_server_ticks_offset = max(co_ticks.server_tick_offset, new_server_ticks_offset)
+
+	# Note: at the beggining 'server_ticks' will be equal to 0
 
 	CoTicks.server_tick_offset_collection_add_value(co_ticks, new_server_ticks_offset)
 	co_ticks.server_tick_offset = CoTicks.server_tick_offset_collection_get_most_common(co_ticks)
-	
-	co_ticks.server_ticks = co_ticks.ticks + co_ticks.server_tick_offset + latency_ticks
+	co_ticks.server_ticks = co_ticks.ticks + co_ticks.server_tick_offset
 
-	Log.outc(ctx, "deblerp | time_since_packet_sent %s lat_stable %s" % [time_since_packet_sent, stable_latency])
-
-	Log.out(" Servertime %s, real %s, d %s | server_ticks_aprox %s | latency %s | clock %s | %s | %s | %s" % [
+	Log.out("Servertime %s, real %s, d %s | server_ticks_aprox %s | latency %s | clock %s | %s" % [
 		int(current_server_time),
 		Time.get_ticks_msec(),
 		str(Time.get_ticks_msec() - current_server_time).pad_zeros(2).pad_decimals(1),
 		co_ticks.server_ticks,
 		Time.get_ticks_msec() - data.time,
 		str(co_predict_data.clock_offset_mean).pad_decimals(2),
-		str(time_since_packet_sent).pad_decimals(2),
-		str(time_since_packet_sent / (1000.0 / physics_fps)).pad_decimals(2),
 		co_ticks.server_tick_offset,
-	], Log.TAG_CLOCK)
+	])
 
 
 ## Call every time a packet is received
