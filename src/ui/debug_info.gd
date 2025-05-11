@@ -67,27 +67,34 @@ func _process(_delta: float) -> void:
 
 
 func get_info_general() -> String:
+	var client_time_ms = WyncUtils.clock_get_ms(client_wctx)
+	var pred_server_time_ms = client_time_ms + client_wctx.co_predict_data.clock_offset_mean
+
 	var text = \
 	"""PhysicsFPS: %s
 	ScreenFPS: %s
-	---
-	Loopback Latency
+	――― loopback latency ―――
 	%s
-	---
+	―――
 	Wync Latency (Server)
 	%s
 	Wync Latency (Peer 0)
 	%s
-	---
-	(pred)tick_offset: %s
-	  predicted_ticks: %s
-	lerp_ms: %s
-	delta_base_tick: %s
+	――― clock ―――
 	  server_tick: %s
 	(cl)rver_tick: %s (d %s)
 	ser_tick_offs: %s
-	(cl)target : %s
-	client_tick: %s
+	  server_time: %.2f
+	(cl)rver_time: %.2f (d %.2f)
+	――― prediction ―――
+	client tick: %s
+	target tick: %s
+	tick_offset: %s (from local ticks)
+	predicted_ticks: %s
+	――― timewarp ―――
+	delta_base_tick: %s
+	――― etc ―――
+	lerp_ms: %s
 	server_rate_out: %s/t
 	client_rate_out: %s/t
 	(cl)server_tick_rate %.2f (%.2f tps)
@@ -97,20 +104,30 @@ func get_info_general() -> String:
 	""" % \
 	[
 		Engine.physics_ticks_per_second,
+
 		Performance.get_monitor(Performance.TIME_FPS),
+
 		get_loopback_latency_info(loopback_ctx),
+
 		get_wync_latency_info(server_wctx),
 		get_wync_latency_info(client_wctx),
-		client_wctx.co_predict_data.tick_offset,
-		(client_wctx.last_tick_predicted -client_wctx.first_tick_predicted),
-		client_wctx.co_predict_data.lerp_ms,
-		server_wctx.delta_base_state_tick,
+
 		server_wctx.co_ticks.ticks,
 		client_wctx.co_ticks.server_ticks,
-		client_wctx.co_ticks.server_ticks -server_wctx.co_ticks.ticks, 
+		(client_wctx.co_ticks.server_ticks -server_wctx.co_ticks.ticks), 
 		client_wctx.co_ticks.server_tick_offset,
-		client_wctx.co_predict_data.target_tick,
+		WyncUtils.clock_get_ms(server_wctx),
+		pred_server_time_ms,
+		(WyncUtils.clock_get_ms(server_wctx) - pred_server_time_ms),
+
 		client_wctx.co_ticks.ticks,
+		client_wctx.co_predict_data.target_tick,
+		client_wctx.co_predict_data.tick_offset,
+		(client_wctx.last_tick_predicted -client_wctx.first_tick_predicted),
+
+		server_wctx.delta_base_state_tick,
+
+		client_wctx.co_predict_data.lerp_ms,
 		server_wctx.debug_data_per_tick_sliding_window_mean,
 		client_wctx.debug_data_per_tick_sliding_window_mean,
 		client_wctx.server_tick_rate,
@@ -121,6 +138,22 @@ func get_info_general() -> String:
 		client_wctx.dummy_props.size(), client_wctx.stat_lost_dummy_props
 	]
 	return text
+
+	#(pred)tick_offset: %s
+	  #predicted_ticks: %s
+	#lerp_ms: %s
+	#delta_base_tick: %s
+	  #server_tick: %s
+	#(cl)rver_tick: %s (d %s)
+	#ser_tick_offs: %s
+	#(cl)target : %s
+	#client_tick: %s
+	#server_rate_out: %s/t
+	#client_rate_out: %s/t
+	#(cl)server_tick_rate %.2f (%.2f tps)
+	#(cl)prob_prop_rate %.2f (latest %d)
+	#(cl)max_pred_threeshold %d
+	#(cl)dummy_props %s (lost %s)
 
 
 static func get_loopback_latency_info(ctx: Loopback.Context) -> String:

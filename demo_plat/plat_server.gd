@@ -44,8 +44,8 @@ func _physics_process(delta: float) -> void:
 
 	WyncFlow.wync_server_tick_end(gs.wctx)
 
-	#if Engine.get_physics_frames() % 1 == 0:
-	if true:
+	if Engine.get_physics_frames() % 4 == 0:
+	#if true:
 		WyncThrottle.wync_set_data_limit_chars_for_out_packets(gs.wctx, 10000)
 		WyncThrottle.wync_system_gather_packets(gs.wctx)
 

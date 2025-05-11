@@ -101,7 +101,7 @@ static func spawn_ball(gs: Plat.GameState, origin: Vector2, actor_id: int) -> in
 	ball.actor_id = actor_id
 	ball.position = origin
 	ball.size = Vector2(round(Plat.BLOCK_LENGTH_PIXELS * 0.66), Plat.BLOCK_LENGTH_PIXELS * 1.5)
-	ball.velocity.x = 3
+	ball.velocity.x = Plat.BALL_MAX_SPEED
 	gs.balls[ball_id] = ball
 	spawn_actor(gs, actor_id, Plat.ACTOR_TYPE_BALL, ball_id)
 	return actor_id
@@ -213,7 +213,7 @@ static func system_ball_movement(gs: Plat.GameState):
 		else:
 			ball.position.y = new_pos.y
 
-		if ball.position.x > 700: ball.position.x = 300
+		if ball.position.x > 1500: ball.position.x = 300
 
 
 static func system_player_movement(gs: Plat.GameState, delta: float, filter: bool, to_predict_entity_ids: Array[int]):
