@@ -30,9 +30,6 @@ static func wync_lerp_precompute (ctx: WyncCtx):
 	var curr_time = curr_tick_time + int(1000.0 / (Engine.physics_ticks_per_second * 2)) # half a physic frame
 	var target_time_conf = curr_time - co_predict_data.lerp_ms
 
-	var lerp_ticks: int = ceil(co_predict_data.lerp_ms / (1000.0 / Engine.physics_ticks_per_second))
-	var target_tick_conf: int = ctx.co_ticks.ticks - lerp_ticks
-
 	# precompute which ticks we'll be interpolating
 	# TODO: might want to use another filtered prop list for 'predicted'.
 	# Before doing that we might need to settled on our strategy for extrapolation as fallback
@@ -47,11 +44,11 @@ static func wync_lerp_precompute (ctx: WyncCtx):
 
 		# -> for confirmed states
 		else:
-			precompute_lerping_prop_confirmed_states(ctx, prop_id, target_time_conf, target_tick_conf)
+			precompute_lerping_prop_confirmed_states(ctx, prop_id, target_time_conf)
 
 
 static func precompute_lerping_prop_confirmed_states(
-		ctx: WyncCtx, prop_id: int, target_time: int, target_tick: int
+		ctx: WyncCtx, prop_id: int, target_time: int
 	):
 	var prop = WyncUtils.get_prop(ctx, prop_id)
 	if prop == null:
@@ -59,9 +56,11 @@ static func precompute_lerping_prop_confirmed_states(
 	prop = prop as WyncEntityProp
 
 	var snaps = WyncUtils.find_closest_two_snapshots_from_prop(ctx, target_time, prop)
-	#var snaps = WyncUtils.prop_find_closest_two_snapshots_from_tick(target_tick, prop)
-	#if snaps.size() != 2:
 	if snaps[0] == -1:
+		return
+
+	if (prop.lerp_left_confirmed_state_tick == snaps[0] &&
+		prop.lerp_right_confirmed_state_tick == snaps[1]):
 		return
 
 	prop.lerp_use_confirmed_state = true

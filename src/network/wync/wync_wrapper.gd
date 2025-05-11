@@ -162,8 +162,6 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 
 	# then interpolate them 
 
-	#var sel_ticks: int = co_ticks.server_ticks
-	#var sel_ticks: int = co_ticks.ticks
 	var left_timestamp_ms: float
 	var right_timestamp_ms: float
 	var left_value: Variant
@@ -177,22 +175,30 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 	for prop_id in ctx.type_state__interpolated_regular_prop_ids:
 		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
 
-		# NOTE: opportunity to optimize this by not recalculating this each loop
-
-		left_timestamp_ms = (prop.lerp_left_local_tick - co_ticks.ticks) * frame
-		right_timestamp_ms = (prop.lerp_right_local_tick - co_ticks.ticks) * frame
-		#left_timestamp_ms = (prop.lerp_left_confirmed_state_tick - sel_ticks) * frame
-		#right_timestamp_ms = (prop.lerp_right_confirmed_state_tick - sel_ticks) * frame
-
 		if prop.lerp_use_confirmed_state:
 			left_value = prop.lerp_left_state
 			right_value = prop.lerp_right_state
+
+			## WARNING: getting time by ticks might be imprecise
+
+			left_timestamp_ms = (prop.lerp_left_confirmed_state_tick
+			- ctx.co_ticks.server_tick_offset - co_ticks.ticks) * frame
+			right_timestamp_ms = (prop.lerp_right_confirmed_state_tick
+			- ctx.co_ticks.server_tick_offset - co_ticks.ticks) * frame
 		else:
+
 			# TODO: Come up with a better approach with less branches
 			if prop.pred_prev == null:
 				continue
+
 			left_value = prop.pred_prev.data
 			right_value = prop.pred_curr.data
+
+			# NOTE: opportunity to optimize this by not recalculating this each loop (prediction only)
+
+			left_timestamp_ms = (prop.lerp_left_local_tick - co_ticks.ticks) * frame
+			right_timestamp_ms = (prop.lerp_right_local_tick - co_ticks.ticks) * frame
+
 		if left_value == null:
 			continue
 
@@ -209,8 +215,7 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 				factor = (target_time_pred - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms)
 
 			# TODO: Make it a config toggleable option
-			# TODO: Allow extrapolation up to 1000ms (configurable)
-			#factor = clampf(factor, 0, 1)
+			# TODO: Allow extrapolation up to 1000ms (clamp?) (configurable)
 
 			var lerp_func_id = ctx.wrapper.lerp_type_to_lerp_function[prop.user_data_type]
 			var lerp_func = ctx.wrapper.lerp_function[lerp_func_id]
@@ -219,7 +224,6 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 
 			prop.interpolated_state = lerp_func.call(left_value, right_value, factor)
 
-			#if not prop.lerp_use_confirmed_state:
 		if prop_id == 18:
 
 			var txt = "deblerp | p_id%s | l(%s,%s) s(%s,%s) | l(%.2f) r(%.2f) | left %.2f right %.2f target %.3f d %.3f | delta %.3f acu %.3f factor %.3f lerp_fra %.3f | curr %.3f d %2.3f | pos %.3f diff %2.3f" % [
@@ -234,7 +238,7 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 				curr_time, curr_time - ctx.debug_lerp_prev_curr_time,
 				prop.interpolated_state.x, (prop.interpolated_state.x - debug_previous.x)]
 			DynamicDebugInfo.custom_global_text = txt
-			#Log.outc(ctx, txt)
+			Log.outc(ctx, txt)
 
 			# Debug only
 			var val_diff = right_value.x - left_value.x

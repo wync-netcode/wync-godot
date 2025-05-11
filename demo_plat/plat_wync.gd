@@ -19,7 +19,7 @@ static func setup_client(ctx: WyncCtx):
 	var server_tick_rate: int = ctx.physic_ticks_per_second
 	var desired_lerp: int = ceil((1000.0 / server_tick_rate) * 5) # 6 ticks in the past
 	WyncFlow.wync_client_set_lerp_ms(ctx, server_tick_rate, desired_lerp)
-	#WyncFlow.wync_client_set_lerp_ms(ctx, server_tick_rate, 200)
+	WyncFlow.wync_client_set_lerp_ms(ctx, server_tick_rate, 600)
 
 	WyncWrapper.wync_register_lerp_type(
 		ctx, Plat.LERP_TYPE_FLOAT,

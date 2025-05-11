@@ -489,22 +489,18 @@ static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: i
 		# NOTE: This block shouldn't necessary
 		# TODO: before storing check the data is healthy
 		var data = WyncEntityProp.saved_state_get_throughout(prop, server_tick)
-		if data == null:
-			continue
+		assert(data != null)
 
-		# get local tick
-		var arrived_at_tick = WyncEntityProp.server_tick_arrived_at_local_tick(prop, server_tick)
-		if arrived_at_tick == -1:
-			continue
-
-		var snapshot_timestamp = WyncUtils.clock_get_tick_timestamp_ms(ctx, arrived_at_tick)
+		# calculate local tick from server tick
+		var local_tick = server_tick - ctx.co_ticks.server_tick_offset
+		var snapshot_timestamp = WyncUtils.clock_get_tick_timestamp_ms(ctx, local_tick)
 
 		if snapshot_timestamp > target_time_ms:
 			server_tick_right = server_tick
-			local_tick_right = arrived_at_tick
+			local_tick_right = local_tick
 		elif server_tick_right != -1 && snapshot_timestamp < target_time_ms:
 			server_tick_left = server_tick
-			local_tick_left = arrived_at_tick
+			local_tick_left = local_tick
 			break
 	
 	if server_tick_left == -1:
