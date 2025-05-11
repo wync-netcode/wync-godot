@@ -150,15 +150,11 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 	var co_predict_data = ctx.co_predict_data
 	var co_ticks = ctx.co_ticks
 	co_ticks.lerp_delta_accumulator_ms += delta * 1000
-	var curr_tick_time = WyncUtils.clock_get_tick_timestamp_ms(ctx, co_ticks.ticks)
-	var curr_time: float = curr_tick_time + co_ticks.lerp_delta_accumulator_ms
+
+	# TODO: Replace "Engine.get_physics_interpolation_fraction" with user arg
+	var curr_time: float = Engine.get_physics_interpolation_fraction() * frame
 	var target_time_conf: float = curr_time - co_predict_data.lerp_ms
 	var target_time_pred: float = curr_time
-
-	curr_time = co_ticks.lerp_delta_accumulator_ms
-	curr_time = Engine.get_physics_interpolation_fraction() * frame
-	target_time_conf = curr_time - co_predict_data.lerp_ms
-	target_time_pred = curr_time
 
 	# then interpolate them 
 

@@ -485,11 +485,12 @@ static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: i
 		if server_tick == -1:
 			continue
 
-		# get snapshot from received ticks
-		# NOTE: This block shouldn't necessary
-		# TODO: before storing check the data is healthy
+		# This check is necessary because of the current strategy
+		# Where we sort last_ticks_received causing newer received ticks (albeit older
+		# numerically) to overlive older received ticks with higher number
 		var data = WyncEntityProp.saved_state_get_throughout(prop, server_tick)
-		assert(data != null)
+		if data == null:
+			continue
 
 		# calculate local tick from server tick
 		var local_tick = server_tick - ctx.co_ticks.server_tick_offset
