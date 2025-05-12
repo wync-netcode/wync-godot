@@ -42,7 +42,7 @@ static func setup_connect_client(gs: Plat.GameState):
 		assert(wync_peer_id != -1)
 
 		# spawn some entity
-		var actor_id = PlatPublic.spawn_player_server(gs, PlatUtils.GRID_CORD(5, 10))
+		var actor_id = PlatPublic.spawn_player_server(gs, PlatUtils.GRID_CORD(5, 5))
 
 		# setup actor with wync
 		setup_sync_for_player_actor(gs, actor_id)
@@ -547,7 +547,7 @@ static func set_interpolated_state(gs: Plat.GameState):
 				instance.position = prop.interpolated_state
 			Plat.ACTOR_TYPE_PLAYER:
 				var instance := gs.players[actor.instance_id]
-				instance.position = prop.interpolated_state
+				instance.visual_position = prop.interpolated_state
 			Plat.ACTOR_TYPE_ROCKET:
 				var instance := gs.rockets[actor.instance_id]
 				instance.position = prop.interpolated_state

@@ -24,11 +24,10 @@ func on_process(_entities, _data, _delta: float):
 
 static func wync_lerp_precompute (ctx: WyncCtx):
 	var co_predict_data = ctx.co_predict_data
-	var co_ticks = ctx.co_ticks
 
 	var latency_info: WyncCtx.PeerLatencyInfo = ctx.peer_latency_info[WyncCtx.SERVER_PEER_ID]
 	ctx.co_predict_data.lerp_latency_ms = latency_info.latency_stable_ms
-	var curr_time = WyncUtils.clock_get_tick_timestamp_ms(ctx, co_ticks.ticks)
+	var curr_time = WyncUtils.clock_get_tick_timestamp_ms(ctx, ctx.co_ticks.ticks)
 	var target_time_conf = curr_time - co_predict_data.lerp_ms - ctx.co_predict_data.lerp_latency_ms
 
 	# precompute which ticks we'll be interpolating
@@ -41,7 +40,7 @@ static func wync_lerp_precompute (ctx: WyncCtx):
 		# -> for predictes states
 
 		if WyncUtils.prop_is_predicted(ctx, prop_id):
-			precompute_lerping_prop_predicted(ctx, prop_id, co_ticks)
+			precompute_lerping_prop_predicted(ctx, prop_id)
 
 		# -> for confirmed states
 		else:
@@ -85,8 +84,7 @@ static func precompute_lerping_prop_confirmed_states(
 
 
 static func precompute_lerping_prop_predicted(
-		ctx: WyncCtx, prop_id: int,
-		co_ticks: CoTicks
+		ctx: WyncCtx, prop_id: int
 	):
 	var prop = WyncUtils.get_prop(ctx, prop_id)
 	if prop == null:
@@ -94,5 +92,5 @@ static func precompute_lerping_prop_predicted(
 	prop = prop as WyncEntityProp
 
 	prop.lerp_use_confirmed_state = false
-	prop.lerp_left_local_tick = co_ticks.ticks
-	prop.lerp_right_local_tick = co_ticks.ticks +1
+	prop.lerp_left_local_tick = ctx.co_ticks.ticks
+	prop.lerp_right_local_tick = ctx.co_ticks.ticks +1

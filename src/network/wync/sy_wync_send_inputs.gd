@@ -30,7 +30,7 @@ static func wync_client_send_inputs (ctx: WyncCtx):
 			var input = WyncEntityProp.saved_state_get(input_prop, i)
 			if input == null:
 				# TODO: Implement input duplication on frame skip
-				Log.outc(ctx, "we don't have an input for this tick %s" % [i])
+				Log.outc(ctx, "prop(%s) don't have input for tick %s" % [prop_id, i])
 				continue
 			
 			var tick_input_wrap = WyncPktInputs.NetTickDataDecorator.new()

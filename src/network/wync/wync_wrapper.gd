@@ -184,6 +184,7 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 		else:
 
 			# TODO: Come up with a better approach with less branches
+			# Maybe mark it for no lerp on precompute
 			if prop.pred_prev == null:
 				continue
 

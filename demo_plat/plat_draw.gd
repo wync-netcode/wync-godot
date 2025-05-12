@@ -9,7 +9,7 @@ static func draw_game(canvas: Node2D, gs: Plat.GameState):
 		draw_block_grid(canvas, gs, gs.camera_offset + Vector2(0, 300))
 	draw_trails(canvas, gs, gs.camera_offset)
 	draw_balls(canvas, gs, gs.camera_offset)
-	draw_players(canvas, gs, gs.camera_offset)
+	draw_players(canvas, gs, gs.camera_offset, not gs.net.is_client)
 	draw_rockets(canvas, gs, gs.camera_offset)
 
 
@@ -73,13 +73,16 @@ static func draw_balls(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
 		canvas.draw_rect(ball_rect, color, true, -1, true)
 
 
-static func draw_players(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
+static func draw_players(canvas: Node2D, gs: Plat.GameState, offset: Vector2i, real_pos: bool):
 	var player_rect: Rect2
 	var color = Color.PINK
 	for player: Plat.Player in gs.players:
 		if player == null:
 			continue
-		player_rect = Rect2(Vector2(player.position.x, -player.position.y -player.size.y) + Vector2(offset), player.size)
+		if real_pos:
+			player_rect = Rect2(Vector2(player.position.x, -player.position.y -player.size.y) + Vector2(offset), player.size)
+		else:
+			player_rect = Rect2(Vector2(player.visual_position.x, -player.visual_position.y -player.size.y) + Vector2(offset), player.size)
 		canvas.draw_rect(player_rect, color, true)
 		player_rect = Rect2(player_rect.position.x +1, player_rect.position.y +1, player_rect.size.x -2, player_rect.size.y -2)
 		canvas.draw_rect(player_rect, Color.BLACK, true)

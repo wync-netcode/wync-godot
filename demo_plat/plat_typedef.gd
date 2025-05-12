@@ -91,6 +91,7 @@ class Player:
 	var position: Vector2
 	var velocity: Vector2
 	var input: PlayerInput
+	var visual_position: Vector2
 
 
 class Ball:
