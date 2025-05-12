@@ -10,8 +10,15 @@ static func wync_xtrap_preparation(ctx: WyncCtx) -> int:
 	ctx.xtrap_is_local_tick_duplicated = false
 	ctx.xtrap_prev_local_tick = null # Optional<int>
 	ctx.xtrap_local_tick = null # Optional<int>
-	ctx.first_tick_predicted = ctx.last_tick_received +1
-	ctx.pred_intented_first_tick = ctx.last_tick_received +1
+
+	if ctx.last_tick_received_prev != ctx.last_tick_received:
+		ctx.last_tick_received_prev = ctx.last_tick_received
+		ctx.pred_intented_first_tick = ctx.last_tick_received +1
+	else:
+		ctx.pred_intented_first_tick = ctx.last_tick_predicted
+
+	ctx.first_tick_predicted = ctx.pred_intented_first_tick
+
 	if ctx.co_predict_data.target_tick <= ctx.co_ticks.server_ticks:
 		return 2
 	if ctx.pred_intented_first_tick - ctx.max_prediction_tick_threeshold < 0:

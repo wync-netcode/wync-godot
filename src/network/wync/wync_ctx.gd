@@ -269,7 +269,11 @@ var pred_intented_first_tick: int = 0
 
 ## how many ticks before 'last_tick_received' to predict to compensate for throttling
 ## * Limited by REGULAR_PROP_CACHED_STATE_AMOUNT
+## TODO: rename
 var max_prediction_tick_threeshold: int = 0
+
+# to know if we should extrapolate from the beggining (last received tick) or continue (this implies not getting packets)
+var last_tick_received_prev: int = 0
 
 ## client filtered props
 var type_input_event__owned_prop_ids: Array[int] = []
