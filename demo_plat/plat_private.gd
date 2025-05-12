@@ -12,7 +12,7 @@ static func initialize_game_state(gs: Plat.GameState):
 	gs.rockets.resize(Plat.ROCKET_AMOUNT)
 	gs.camera_offset = Vector2i(
 		10,
-		Plat.CHUNK_HEIGHT_BLOCKS * 1.2 * Plat.BLOCK_LENGTH_PIXELS,
+		(Plat.CHUNK_HEIGHT_BLOCKS + 3) * Plat.BLOCK_LENGTH_PIXELS,
 	)
 
 	# chunks

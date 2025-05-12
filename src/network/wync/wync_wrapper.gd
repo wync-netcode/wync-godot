@@ -153,7 +153,7 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 
 	# TODO: Replace "Engine.get_physics_interpolation_fraction" with user arg
 	var curr_time: float = Engine.get_physics_interpolation_fraction() * frame
-	var target_time_conf: float = curr_time - co_predict_data.lerp_ms
+	var target_time_conf: float = curr_time - co_predict_data.lerp_ms - co_predict_data.lerp_latency_ms
 	var target_time_pred: float = curr_time
 
 	# then interpolate them 

@@ -86,6 +86,7 @@ func get_info_general() -> String:
 	ser_tick_offs: %s
 	  server_time: %.2f
 	(cl)rver_time: %.2f (d %.2f)
+	clock_offset_mean: %.2f
 	――― prediction ―――
 	client tick: %s
 	target tick: %s
@@ -119,6 +120,7 @@ func get_info_general() -> String:
 		WyncUtils.clock_get_ms(server_wctx),
 		pred_server_time_ms,
 		(WyncUtils.clock_get_ms(server_wctx) - pred_server_time_ms),
+		client_wctx.co_predict_data.clock_offset_mean,
 
 		client_wctx.co_ticks.ticks,
 		client_wctx.co_predict_data.target_tick,
@@ -173,7 +175,7 @@ static func get_wync_latency_info(ctx: WyncCtx) -> String:
 		if peer_id == ctx.my_peer_id:
 			continue
 		lat_info = ctx.peer_latency_info[peer_id]
-		txt += "peer(%d->%d) lat_stable %3.dms" % [ctx.my_peer_id, peer_id, lat_info.latency_stable_ms]
+		txt += "peer(%d->%d) lat_stable %3.dms, m:%3.d, d:%d" % [ctx.my_peer_id, peer_id, lat_info.latency_stable_ms, lat_info.latency_mean_ms, lat_info.latency_std_dev_ms]
 		if peer_id < ctx.peers.size() -1:
 			txt += '\n'
 	return txt

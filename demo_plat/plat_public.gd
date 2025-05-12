@@ -185,7 +185,8 @@ static func system_ball_movement(gs: Plat.GameState):
 		#ball.velocity.x = min(Plat.BALL_MAX_SPEED, abs(ball.velocity.x)) * sign(ball.velocity.x)
 		#ball.velocity.y = min(Plat.BALL_MAX_SPEED, abs(ball.velocity.y)) * sign(ball.velocity.y)
 		#var new_pos = ball.position + ball.velocity
-		var new_pos = ball.position + Vector2(ball.velocity.x, 0)
+		#var new_pos = ball.position + Vector2(ball.velocity.x, 0)
+		var new_pos = ball.position + Vector2(ball.velocity.x, 3*sin(Time.get_ticks_msec()/120.0))
 
 		# collision
 		var collision_horizontal = Rect2Col.rect_collides_with_tile_map(

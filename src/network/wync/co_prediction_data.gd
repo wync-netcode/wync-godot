@@ -22,6 +22,7 @@ var clock_offset_mean: float
 # TODO: Move this elsewhere
 
 var lerp_ms: int = 50
+var lerp_latency_ms: int = 0
 
 
 func _init() -> void:

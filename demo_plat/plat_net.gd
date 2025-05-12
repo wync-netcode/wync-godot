@@ -14,9 +14,10 @@ static func initialize_net_state(gs: Plat.GameState, is_client: bool):
 
 		# DEBUG cases
 		#Loopback.setup_io_peer(gs.net.io_peer, 200, 100, 70)
-		Loopback.setup_io_peer(gs.net.io_peer, 200, 50, 30)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 100, 50)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 50, 30)
 		#Loopback.setup_io_peer(gs.net.io_peer, 200, 10, 5)
-		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 0)
+		Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 5)
 		#Loopback.setup_io_peer(gs.net.io_peer, 1, 0, 0)
 
 	else:

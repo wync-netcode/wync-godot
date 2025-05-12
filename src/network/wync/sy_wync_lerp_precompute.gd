@@ -26,9 +26,10 @@ static func wync_lerp_precompute (ctx: WyncCtx):
 	var co_predict_data = ctx.co_predict_data
 	var co_ticks = ctx.co_ticks
 
-	var curr_tick_time = WyncUtils.clock_get_tick_timestamp_ms(ctx, co_ticks.ticks)
-	var curr_time = curr_tick_time + int(1000.0 / (Engine.physics_ticks_per_second * 2)) # half a physic frame
-	var target_time_conf = curr_time - co_predict_data.lerp_ms
+	var latency_info: WyncCtx.PeerLatencyInfo = ctx.peer_latency_info[WyncCtx.SERVER_PEER_ID]
+	ctx.co_predict_data.lerp_latency_ms = latency_info.latency_stable_ms
+	var curr_time = WyncUtils.clock_get_tick_timestamp_ms(ctx, co_ticks.ticks)
+	var target_time_conf = curr_time - co_predict_data.lerp_ms - ctx.co_predict_data.lerp_latency_ms
 
 	# precompute which ticks we'll be interpolating
 	# TODO: might want to use another filtered prop list for 'predicted'.

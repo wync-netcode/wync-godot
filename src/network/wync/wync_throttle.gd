@@ -413,44 +413,46 @@ static func wync_ocuppy_space_towards_packets_data_size_limit(ctx: WyncCtx, char
 static func wync_system_stabilize_latency (ctx: WyncCtx, lat_info: WyncCtx.PeerLatencyInfo):
 	
 	# Poll latency
-	if WyncUtils.fast_modulus(ctx.co_ticks.ticks, 16) == 0:
-		lat_info.latency_buffer[
-			lat_info.latency_buffer_head % WyncCtx.LATENCY_BUFFER_SIZE] = lat_info.latency_raw_latest_ms
-		lat_info.latency_buffer_head += 1
+	if WyncUtils.fast_modulus(ctx.co_ticks.ticks, 16) != 0:
+		return
+
+	lat_info.latency_buffer[
+		lat_info.latency_buffer_head % WyncCtx.LATENCY_BUFFER_SIZE] = lat_info.latency_raw_latest_ms
+	lat_info.latency_buffer_head += 1
+	
+	# sliding window mean
+	var counter = 0
+	var accum = 0
+	var mean = 0
+	for lat: int in lat_info.latency_buffer:
+		if lat == 0:
+			continue
+		counter += 1
+		accum += lat
+	if counter == 0: return
+	mean = ceil(float(accum) / counter)
+	
+	#Log.out("latencyme mean diff %s %s %s >? %s" % [lat_info.latency_mean, mean, abs(mean - lat_info.latency_mean), lat_info.latency_std_dev], Log.TAG_LATENCY)
+	
+	# NOTE: Currently this doesn't cover the case of a highly volatile std_dev (i.e. that is stable then unstable). However this case is so rare it might be not worth even supporting it. Although it should'nt be too hard.
+	# if new mean is outside range, then update everything
+	
+	if abs(mean - lat_info.latency_mean_ms) > lat_info.latency_std_dev_ms || counter < WyncCtx.LATENCY_BUFFER_SIZE:
 		
-		# sliding window mean
-		var counter = 0
-		var accum = 0
-		var mean = 0
-		for lat: int in lat_info.latency_buffer:
+		lat_info.latency_mean_ms = mean
+		
+		# calculate std dev
+		accum = 0
+		for lat in lat_info.latency_buffer:
 			if lat == 0:
 				continue
-			counter += 1
-			accum += lat
-		if counter == 0: return
-		mean = ceil(float(accum) / counter)
-		
-		#Log.out("latencyme mean diff %s %s %s >? %s" % [lat_info.latency_mean, mean, abs(mean - lat_info.latency_mean), lat_info.latency_std_dev], Log.TAG_LATENCY)
-		
-		# NOTE: Currently this doesn't cover the case of a highly volatile std_dev (i.e. that is stable then unstable). However this case is so rare it might be not worth even supporting it. Although it should'nt be too hard.
-		# if new mean is outside range, then update everything
-		
-		if abs(mean - lat_info.latency_mean_ms) > lat_info.latency_std_dev_ms || counter < WyncCtx.LATENCY_BUFFER_SIZE:
-			
-			lat_info.latency_mean_ms = mean
-			
-			# calculate std dev
-			accum = 0
-			for lat in lat_info.latency_buffer:
-				if lat == 0:
-					continue
-				accum += (lat - lat_info.latency_mean_ms) ** 2
-			lat_info.latency_std_dev_ms = ceil(sqrt(accum / counter))
+			accum += (lat - lat_info.latency_mean_ms) ** 2
+		lat_info.latency_std_dev_ms = ceil(sqrt(accum / counter))
 
-			# use 98th percentile (mean + 2*std_dev)
-			lat_info.latency_stable_ms = lat_info.latency_mean_ms + lat_info.latency_std_dev_ms * 2
-			
-			# NOTE: Allow for choosing a latency stabilization strategy:
-			# e.g. none (for using directly what the transport tells) or 98th perc
-			
-			Log.out("latencyme stable updated to %s | mean %s | stddev %s | acum %s" % [lat_info.latency_stable_ms, lat_info.latency_mean_ms, lat_info.latency_std_dev_ms, accum], Log.TAG_LATENCY)
+		# use 98th percentile (mean + 2*std_dev)
+		lat_info.latency_stable_ms = lat_info.latency_mean_ms + lat_info.latency_std_dev_ms * 2
+		
+		# NOTE: Allow for choosing a latency stabilization strategy:
+		# e.g. none (for using directly what the transport tells) or 98th perc
+		
+		Log.out("latencyme stable updated to %s | mean %s | stddev %s | acum %s" % [lat_info.latency_stable_ms, lat_info.latency_mean_ms, lat_info.latency_std_dev_ms, accum], Log.TAG_LATENCY)

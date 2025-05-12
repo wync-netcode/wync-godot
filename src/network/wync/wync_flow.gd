@@ -897,6 +897,7 @@ static func wync_client_set_lerp_ms (ctx: WyncCtx, server_tick_rate: int, lerp_m
 
 	ctx.co_predict_data.lerp_ms = max(lerp_ms, ceil((1000.0 / server_tick_rate) * 2))
 	# TODO: also set maximum based on tick history size
+	# NOTE: what about tick differences between server and clients?
 
 
 static func wync_get_next_entity_event_spawn(ctx: WyncCtx) -> WyncCtx.EntitySpawnEvent:

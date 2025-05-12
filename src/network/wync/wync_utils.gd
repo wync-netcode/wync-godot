@@ -486,7 +486,7 @@ static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: i
 			continue
 
 		# This check is necessary because of the current strategy
-		# Where we sort last_ticks_received causing newer received ticks (albeit older
+		# where we sort last_ticks_received causing newer received ticks (albeit older
 		# numerically) to overlive older received ticks with higher number
 		var data = WyncEntityProp.saved_state_get_throughout(prop, server_tick)
 		if data == null:
