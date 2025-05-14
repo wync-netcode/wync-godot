@@ -317,23 +317,27 @@ static func system_player_movement(gs: Plat.GameState, delta: float, filter: boo
 		if player.position.x > 800: player.position.x = 50
 
 
-static func system_rocket_movement(gs: Plat.GameState):
+static func system_rocket_movement(gs: Plat.GameState, test_only: bool):
 	for rocket: Plat.Rocket in gs.rockets:
 		if rocket == null:
 			continue
-		var new_pos = rocket.position + rocket.direction * Plat.ROCKET_SPEED
-		if Rect2Col.rect_collides_with_tile_map(
-			Rect2(new_pos, rocket.size),
-			gs.chunks,
-			Plat.CHUNK_WIDTH_BLOCKS,
-			Plat.CHUNK_HEIGHT_BLOCKS,
-			Plat.BLOCK_LENGTH_PIXELS,
-			Vector2.ZERO
-		):
-			despawn_actor(gs, rocket.actor_id)
-			pass
-		else:
-			rocket.position = new_pos
+		individual_rocket_movement(gs, rocket, test_only)
+
+
+static func individual_rocket_movement(gs, rocket: Plat.Rocket, test_only: bool):
+	var new_pos = rocket.position + rocket.direction * Plat.ROCKET_SPEED
+	if !test_only && Rect2Col.rect_collides_with_tile_map(
+		Rect2(new_pos, rocket.size),
+		gs.chunks,
+		Plat.CHUNK_WIDTH_BLOCKS,
+		Plat.CHUNK_HEIGHT_BLOCKS,
+		Plat.BLOCK_LENGTH_PIXELS,
+		Vector2.ZERO
+	):
+		despawn_actor(gs, rocket.actor_id)
+		pass
+	else:
+		rocket.position = new_pos
 
 
 static func system_rocket_time_to_live(gs: Plat.GameState, delta: float):
@@ -356,8 +360,26 @@ static func system_player_shoot_rocket(gs: Plat.GameState):
 
 		var actor_id = spawn_rocket_server(gs, player_center, direction)
 		if actor_id != -1:
+
 			PlatWync.setup_sync_for_rocket_actor(gs, actor_id)
-			# Note: Spawn data would be added here
+
+			# Simulating future movement to help client interpolation
+
+			var pair = WyncUtils.fast_modulus(Engine.get_physics_frames(), 2) == 0
+			var simulate_ticks = 1 if pair else 0
+
+			var actor: Plat.Actor = PlatPublic.get_actor(gs, actor_id)
+			var rocket: Plat.Rocket = gs.rockets[actor.instance_id]
+			var ball_spawn_data = Plat.RocketSpawnData.new()
+			var old_rocket_pos = rocket.position
+
+			for i in range(simulate_ticks):
+				PlatPublic.individual_rocket_movement(gs, rocket, true)
+			ball_spawn_data.tick = WyncWrapper.wync_get_ticks(gs.wctx) + simulate_ticks
+			ball_spawn_data.value = rocket.position
+			rocket.position = old_rocket_pos
+
+			WyncThrottle.wync_entity_set_spawn_data(gs.wctx, actor_id, ball_spawn_data, 20)
 
 
 static func player_input_additive(gs: Plat.GameState, player: Plat.Player, node2d: Node2D):
@@ -365,6 +387,7 @@ static func player_input_additive(gs: Plat.GameState, player: Plat.Player, node2
 		int(Input.is_action_pressed("p1_right")) - int(Input.is_action_pressed("p1_left")),
 		int(Input.is_action_pressed("p1_down")) - int(Input.is_action_pressed("p1_up")),
 	)
+	player.input.movement_dir = Vector2(signf(sin(Time.get_ticks_msec() / 100.0)), -1)
 	player.input.shoot = player.input.shoot || Input.is_action_pressed("p1_mouse1")
 	player.input.aim = PlatUtils.SCREEN_CORD_TO_GRID_CORD(gs, node2d.get_global_mouse_position())
 

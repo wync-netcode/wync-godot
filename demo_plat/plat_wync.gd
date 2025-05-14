@@ -388,6 +388,14 @@ static func client_spawn_actor(gs: Plat.GameState, actor_type: int, actor_id: in
 			# setup actor with wync
 			setup_sync_for_rocket_actor(gs, actor_id)
 
+			# unpack spawn data
+			var ball_spawn_data = _spawn_data as Plat.RocketSpawnData
+
+			# insert tick to help interpolation
+			var res = WyncWrapper.wync_insert_state_to_entity_prop(
+				gs.wctx, actor_id, "position", ball_spawn_data.tick, ball_spawn_data.value)
+			Log.outc(gs.wctx, "success inserting state? %s" % [res])
+
 		Plat.ACTOR_TYPE_CHUNK:
 			# chunks already exist on clients, however, spawn event needed to initialize synchronization
 			# according to the static user_entity_id, sync with the correct local chunk

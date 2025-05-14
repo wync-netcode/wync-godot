@@ -134,6 +134,10 @@ class GameState:
 	#var wync_tracked_actors: Array[] # TODO
 
 
+# Networking data
+# --------------------------------------------------
+
+
 class NetState:
 	var io_peer: Loopback.IOPeer
 	var is_client: bool
@@ -157,6 +161,17 @@ class Client:
 	var state: Client.STATE = Client.STATE.DISCONNECTED
 	var identifier: int = -1
 	var server_peer: int = -1  # key to actual peer, represents the connection stub
+
+
+class RocketSpawnData: # This represents the position
+	var tick: int
+	var value: Vector2
+
+	func duplicate() -> RocketSpawnData:
+		var i = RocketSpawnData.new()
+		i.tick = tick
+		i.value = value
+		return i
 
 
 # Events

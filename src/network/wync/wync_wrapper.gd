@@ -314,3 +314,7 @@ static func wync_insert_state_to_entity_prop (
 
 	return OK
 
+
+static func wync_get_ticks(ctx: WyncCtx):
+	return ctx.co_ticks.ticks
+
