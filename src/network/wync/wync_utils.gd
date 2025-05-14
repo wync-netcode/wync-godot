@@ -475,15 +475,28 @@ static func prop_find_closest_two_snapshots_from_tick(target_tick: int, prop: Wy
 ## @returns tuple[int, int, int, int]. server tick left, server tick right, local tick left, local tick right
 static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: int, prop: WyncEntityProp) -> Array:
 	
-	var server_tick_left = -1
-	var server_tick_right = -1
-	var local_tick_left = -1
-	var local_tick_right = -1
-	
+	## Note: Maybe we don't need local ticks here
+	var done_selecting_right = false
+	var rhs_tick_server = -1
+	var rhs_tick_server_prev = -1
+	var rhs_tick_local = -1
+	var rhs_tick_local_prev = -1
+	var lhs_tick_server = -1
+	var lhs_tick_local = -1
+	var lhs_timestamp = 0
+
 	for i in range(prop.last_ticks_received.size):
 		var server_tick = prop.last_ticks_received.get_relative(-i)
 		if server_tick == -1:
-			continue
+			if (lhs_tick_server == -1 or
+	   			lhs_tick_server >= rhs_tick_server) and rhs_tick_server_prev != -1:
+
+				lhs_tick_server = rhs_tick_server
+				lhs_tick_local = rhs_tick_local
+				rhs_tick_server = rhs_tick_server_prev
+				rhs_tick_local = rhs_tick_local_prev
+			else:
+				continue
 
 		# This check is necessary because of the current strategy
 		# where we sort last_ticks_received causing newer received ticks (albeit older
@@ -496,18 +509,32 @@ static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: i
 		var local_tick = server_tick - ctx.co_ticks.server_tick_offset
 		var snapshot_timestamp = WyncUtils.clock_get_tick_timestamp_ms(ctx, local_tick)
 
-		if snapshot_timestamp > target_time_ms:
-			server_tick_right = server_tick
-			local_tick_right = local_tick
-		elif server_tick_right != -1 && snapshot_timestamp < target_time_ms:
-			server_tick_left = server_tick
-			local_tick_left = local_tick
-			break
+		if not done_selecting_right:
+
+			if snapshot_timestamp > target_time_ms:
+
+				rhs_tick_server_prev = rhs_tick_server
+				rhs_tick_local_prev = rhs_tick_local
+				rhs_tick_server = server_tick
+				rhs_tick_local = local_tick
+
+			else:
+				done_selecting_right = true
+				if rhs_tick_server == -1:
+					rhs_tick_server = server_tick
+
+		if (snapshot_timestamp > lhs_timestamp or
+			lhs_tick_server == -1 or
+	  		lhs_tick_server >= rhs_tick_server
+		):
+			lhs_tick_server = server_tick
+			lhs_tick_local = local_tick
+			lhs_timestamp = snapshot_timestamp
 	
-	if server_tick_left == -1:
+	if lhs_tick_server == -1 || rhs_tick_server == -1:
 		return [-1, 0, 0, 0]
 	
-	return [server_tick_left, server_tick_right, local_tick_left, local_tick_right]
+	return [lhs_tick_server, rhs_tick_server, lhs_tick_local, rhs_tick_local]
 
 
 ## @returns int sim_fun_id
