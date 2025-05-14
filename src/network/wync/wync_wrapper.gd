@@ -286,3 +286,31 @@ static func wync_get_events_from_channel_from_peer(
 		out_events_id.append(event_id)
 
 	return out_events_id
+
+
+static func wync_insert_state_to_entity_prop (
+	ctx: WyncCtx, entity_id: int, prop_name_id: String, tick: int, state: Variant) -> int:
+
+	var prop = WyncUtils.entity_get_prop(ctx, entity_id, prop_name_id)
+	if prop == null:
+		return 1
+	prop = prop as WyncEntityProp
+
+	# Note: The code below was copied from 'prop_save_confirmed_state'
+
+	prop.last_ticks_received.push(tick)
+	prop.last_ticks_received.sort()
+
+	WyncEntityProp.saved_state_insert(ctx, prop, tick, state)
+
+	prop.state_id_to_local_tick.insert_at(prop.saved_states.head_pointer, ctx.co_ticks.ticks)
+
+	prop.just_received_new_state = true
+
+	if prop.is_auxiliar_prop:
+		# notify _main delta prop_ about the updates
+		var delta_prop = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id) as WyncEntityProp
+		delta_prop.just_received_new_state = true
+
+	return OK
+
