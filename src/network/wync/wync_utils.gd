@@ -472,6 +472,7 @@ static func prop_find_closest_two_snapshots_from_tick(target_tick: int, prop: Wy
 	return [snap_left, snap_right]
 
 
+## NOTE: Here we asume `prop.last_ticks_received` is sorted
 ## @returns tuple[int, int, int, int]. server tick left, server tick right, local tick left, local tick right
 static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: int, prop: WyncEntityProp) -> Array:
 	
@@ -484,9 +485,15 @@ static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: i
 	var lhs_tick_server = -1
 	var lhs_tick_local = -1
 	var lhs_timestamp = 0
+	var size = prop.last_ticks_received.size
 
-	for i in range(prop.last_ticks_received.size):
-		var server_tick = prop.last_ticks_received.get_relative(-i)
+	var server_tick = 0
+	var server_tick_prev = 0
+
+	for i in range(size):
+		server_tick_prev = server_tick
+		server_tick = prop.last_ticks_received.get_absolute(size -1 -i)
+
 		if server_tick == -1:
 			if (lhs_tick_server == -1 or
 	   			lhs_tick_server >= rhs_tick_server) and rhs_tick_server_prev != -1:
@@ -497,6 +504,9 @@ static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: i
 				rhs_tick_local = rhs_tick_local_prev
 			else:
 				continue
+		elif server_tick == server_tick_prev:
+			continue
+
 
 		# This check is necessary because of the current strategy
 		# where we sort last_ticks_received causing newer received ticks (albeit older
@@ -531,6 +541,14 @@ static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: i
 			lhs_tick_local = local_tick
 			lhs_timestamp = snapshot_timestamp
 			# TODO: End prematurely when both sides are found
+
+	if (lhs_tick_server == -1 or
+		lhs_tick_server >= rhs_tick_server) and rhs_tick_server_prev != -1:
+
+		lhs_tick_server = rhs_tick_server
+		lhs_tick_local = rhs_tick_local
+		rhs_tick_server = rhs_tick_server_prev
+		rhs_tick_local = rhs_tick_local_prev
 	
 	if lhs_tick_server == -1 || rhs_tick_server == -1:
 		return [-1, 0, 0, 0]
