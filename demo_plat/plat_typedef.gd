@@ -62,6 +62,11 @@ class PlayerInput:
 		i.shoot = shoot
 		return i
 
+	func copyTo(i: PlayerInput):
+		i.movement_dir = movement_dir
+		i.aim = aim
+		i.shoot = shoot
+
 
 class Trail:
 	var position: Vector2

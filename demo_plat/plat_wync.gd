@@ -220,7 +220,7 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 		input_prop_id,
 		player_instance,
 		func(user_ctx: Variant) -> Plat.PlayerInput: return WyncUtils.duplicate_any((user_ctx as Plat.Player).input),
-		func(user_ctx: Variant, input: Plat.PlayerInput): (user_ctx as Plat.Player).input = input,
+		func(user_ctx: Variant, input: Plat.PlayerInput): input.copyTo((user_ctx as Plat.Player).input),
 	)
 
 	if wctx.is_client:

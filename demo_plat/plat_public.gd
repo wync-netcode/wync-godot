@@ -314,8 +314,6 @@ static func system_player_movement(gs: Plat.GameState, delta: float, filter: boo
 		else: # allow it to fall / hit his head slowly
 			player.velocity.y /= 2
 
-		#if gs.net.is_client:
-			#Log.outc(gs.wctx, "emulated entity %s" % [player_id])
 		if player.position.x > 800: player.position.x = 50
 
 

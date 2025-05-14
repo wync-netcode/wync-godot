@@ -79,7 +79,7 @@ static func saved_state_get_throughout(
 
 
 static func saved_state_insert (
-	prop: WyncEntityProp, tick: int, state: Variant):
+	_ctx: WyncCtx, prop: WyncEntityProp, tick: int, state: Variant):
 	prop.saved_states.push(state)
 	var state_id = prop.saved_states.head_pointer
 	prop.state_id_to_tick.insert_at(state_id, tick)

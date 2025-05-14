@@ -11,11 +11,18 @@ static func wync_xtrap_preparation(ctx: WyncCtx) -> int:
 	ctx.xtrap_prev_local_tick = null # Optional<int>
 	ctx.xtrap_local_tick = null # Optional<int>
 
-	if ctx.last_tick_received_prev != ctx.last_tick_received:
-		ctx.last_tick_received_prev = ctx.last_tick_received
+	if (
+		ctx.last_tick_received_at_tick_prev != ctx.last_tick_received_at_tick ||
+		ctx.last_tick_received > ctx.first_tick_predicted
+	):
 		ctx.pred_intented_first_tick = ctx.last_tick_received +1
+		ctx.last_tick_received_at_tick_prev = ctx.last_tick_received_at_tick
 	else:
 		ctx.pred_intented_first_tick = ctx.last_tick_predicted
+	#ctx.last_tick_received_prev = ctx.last_tick_received
+
+	# DEBUG: Uncomment this line to overwrite the decision
+	#ctx.pred_intented_first_tick = ctx.last_tick_received +1
 
 	ctx.first_tick_predicted = ctx.pred_intented_first_tick
 
@@ -125,13 +132,13 @@ static func wync_client_filter_prop_ids(ctx: WyncCtx):
 
 
 static func wync_xtrap_tick_init(ctx: WyncCtx, tick: int):
+	ctx.current_predicted_tick = tick
+
 	# reset predicted inputs / events
 	WyncWrapper.xtrap_reset_all_state_to_confirmed_tick_absolute(ctx, ctx.type_input_event__predicted_owned_prop_ids, tick)
 
 	# reset predicted regular
 	#WyncWrapper.xtrap_reset_all_state_to_confirmed_tick_absolute(ctx, ctx.type_state__predicted_regular_prop_ids, tick)
-
-	ctx.current_predicted_tick = tick
 
 	# clearing delta events before predicting, predicted delta events will be
 	# polled and cached at the end of the predicted tick

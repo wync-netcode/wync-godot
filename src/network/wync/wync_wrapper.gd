@@ -36,7 +36,7 @@ static func wync_buffer_inputs(ctx: WyncCtx):
 		var new_state = getter.call(user_ctx)
 		assert(new_state != null)
 
-		WyncEntityProp.saved_state_insert(input_prop, ctx.co_predict_data.target_tick, new_state)
+		WyncEntityProp.saved_state_insert(ctx, input_prop, ctx.co_predict_data.target_tick, new_state)
 
 
 static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
@@ -48,7 +48,7 @@ static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
 		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
 		var getter = ctx.wrapper.prop_getter[prop_id]
 		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
-		WyncEntityProp.saved_state_insert(prop, save_on_tick, getter.call(user_ctx))
+		WyncEntityProp.saved_state_insert(ctx, prop, save_on_tick, getter.call(user_ctx))
 		# Note: safe to call user getter like that?
 
 	for prop_id in ctx.filtered_delta_prop_ids:
@@ -60,7 +60,7 @@ static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
 		
 		var getter = ctx.wrapper.prop_getter[prop_id]
 		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
-		WyncEntityProp.saved_state_insert(prop, save_on_tick, getter.call(user_ctx))
+		WyncEntityProp.saved_state_insert(ctx, prop, save_on_tick, getter.call(user_ctx))
 
 
 static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: Array[int], tick: int):
@@ -81,8 +81,6 @@ static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: A
 		var setter = ctx.wrapper.prop_setter[prop_id]
 		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
 		setter.call(user_ctx, last_confirmed)
-		if prop_id == 6:
-			Log.outc(ctx, "debugging set latest state prop_id %s to tick %s" % [prop_id, last_confirmed_tick])
 
 
 static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
@@ -98,7 +96,6 @@ static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 		var setter = ctx.wrapper.prop_setter[prop_id]
 		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
 		setter.call(user_ctx, input)
-		#Log.outc(ctx, "(tick %s) setted input prop (%s) to %s" % [ctx.co_ticks.ticks, prop.name_id, input])
 
 	return OK
 
@@ -107,12 +104,12 @@ static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 static func xtrap_reset_all_state_to_confirmed_tick_absolute(ctx: WyncCtx, prop_ids: Array[int], tick: int):
 	for prop_id: int in prop_ids:
 		var prop := ctx.props[prop_id]
-		if WyncEntityProp.saved_state_get(prop, tick) == null:
+		var value = WyncEntityProp.saved_state_get(prop, tick)
+		if value == null:
 			continue
 		var setter = ctx.wrapper.prop_setter[prop_id]
 		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
-		setter.call(user_ctx, WyncEntityProp.saved_state_get(prop, tick))
-		#Log.outc(ctx, "tick init setted state for prop %s tick %s" % [prop.name_id, tick])
+		setter.call(user_ctx, value)
 
 
 static func xtrap_props_update_predicted_states_data(ctx: WyncCtx, props_ids: Array) -> void:

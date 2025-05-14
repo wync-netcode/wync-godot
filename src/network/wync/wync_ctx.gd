@@ -273,7 +273,9 @@ var pred_intented_first_tick: int = 0
 var max_prediction_tick_threeshold: int = 0
 
 # to know if we should extrapolate from the beggining (last received tick) or continue (this implies not getting packets)
-var last_tick_received_prev: int = 0
+
+var last_tick_received_at_tick: int
+var last_tick_received_at_tick_prev: int
 
 ## client filtered props
 var type_input_event__owned_prop_ids: Array[int] = []
