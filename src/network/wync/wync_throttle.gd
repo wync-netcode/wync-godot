@@ -169,6 +169,8 @@ static func _wync_remove_entity_from_sync_queue(ctx: WyncCtx, peer_id: int, enti
 	assert(saved_entity_id == entity_id)
 
 
+# Just appends entity_id's into the queue 
+
 static func wync_system_fill_entity_sync_queue(ctx: WyncCtx):
 
 	for client_id: int in range(1, ctx.peers.size()):
@@ -200,6 +202,7 @@ static func wync_system_fill_entity_sync_queue(ctx: WyncCtx):
 
 		#Log.outc(ctx, "deb5 queue size(%s) tail(%s) head(%s) is %s synced_last_time is %s" % [entity_queue.size, entity_queue.tail, entity_queue.head, entity_queue.ring, synced_last_time.keys()], Log.TAG_SYNC_QUEUE)
 
+# queues pairs of client and entity to sync
 
 static func wync_compute_entity_sync_order(ctx: WyncCtx):
 
@@ -213,6 +216,8 @@ static func wync_compute_entity_sync_order(ctx: WyncCtx):
 
 	while (not ran_out_of_entities):
 		ran_out_of_entities = true
+
+		# from each client we get the Nth item in queue (entity_index'th)
 
 		for client_id: int in range(1, ctx.peers.size()):
 			

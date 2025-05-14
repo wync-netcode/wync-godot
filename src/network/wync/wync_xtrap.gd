@@ -19,7 +19,7 @@ static func wync_xtrap_preparation(ctx: WyncCtx) -> int:
 		ctx.last_tick_received_at_tick_prev = ctx.last_tick_received_at_tick
 	else:
 		ctx.pred_intented_first_tick = ctx.last_tick_predicted
-	#ctx.last_tick_received_prev = ctx.last_tick_received
+	#ctx.last_tick_received_at_tick_prev = ctx.last_tick_received_at_tick
 
 	# DEBUG: Uncomment this line to overwrite the decision
 	#ctx.pred_intented_first_tick = ctx.last_tick_received +1

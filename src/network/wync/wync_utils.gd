@@ -530,6 +530,7 @@ static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: i
 			lhs_tick_server = server_tick
 			lhs_tick_local = local_tick
 			lhs_timestamp = snapshot_timestamp
+			# TODO: End prematurely when both sides are found
 	
 	if lhs_tick_server == -1 || rhs_tick_server == -1:
 		return [-1, 0, 0, 0]

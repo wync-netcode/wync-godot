@@ -143,7 +143,7 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 			## regular declarative prop
 			else:
 
-				var snap_prop := _wync_sync_regular_prop(ctx, prop, prop_id)
+				var snap_prop := _wync_sync_regular_prop(ctx, prop, prop_id, ctx.co_ticks.ticks)
 				if snap_prop != null:
 					unreliable_snap.snaps.append(snap_prop)
 
@@ -195,11 +195,11 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 				Log.errc(ctx, "error wrapping packet")
 
 
-static func _wync_sync_regular_prop(ctx: WyncCtx, prop: WyncEntityProp, prop_id: int) -> WyncPktSnap.SnapProp:
+static func _wync_sync_regular_prop(_ctx: WyncCtx, prop: WyncEntityProp, prop_id: int, tick: int) -> WyncPktSnap.SnapProp:
 
 	# copy cached data
 	
-	var state = WyncEntityProp.saved_state_get(prop, ctx.co_ticks.ticks)
+	var state = WyncEntityProp.saved_state_get(prop, tick)
 	if state == null:
 		return null
 
