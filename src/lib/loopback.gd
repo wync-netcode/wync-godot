@@ -25,6 +25,7 @@ class IOPeer:
 	var latency_mean_ms: int
 	var latency_std_dev_ms: int
 	var packet_loss_percentage: int ## [0-100] inclusive
+	var packet_duplicate_percentage: int ## [0-100] inclusive
 
 
 class Packet:
@@ -131,11 +132,13 @@ static func setup_io_peer(
 	io_peer: IOPeer,
 	latency_mean_ms: int,
 	latency_std_dev_ms: int,
-	packet_loss_percentage: int
+	packet_loss_percentage: int,
+	packet_duplicate_percentage: int
 	):
 	io_peer.latency_mean_ms = latency_mean_ms
 	io_peer.latency_std_dev_ms = latency_std_dev_ms
 	io_peer.packet_loss_percentage = packet_loss_percentage
+	io_peer.packet_duplicate_percentage = packet_duplicate_percentage
 
 
 static func register_io_peer(ctx: Context, io_peer: IOPeer):
@@ -182,7 +185,9 @@ static func queue_reliable_packet(ctx: Context, io_peer: IOPeer, to_peer: int, d
 	io_peer.out_packets.append(pkt)
 
 
-static func queue_unreliable_packet(ctx: Context, io_peer: IOPeer, to_peer: int, data: Variant):
+static func queue_unreliable_packet(
+		ctx: Context, io_peer: IOPeer, to_peer: int, data: Variant, already_duplicated: bool = false
+	):
 	var pkt := Packet.new()
 	pkt.data = data
 	pkt.from_peer = io_peer.peer_id
@@ -190,11 +195,21 @@ static func queue_unreliable_packet(ctx: Context, io_peer: IOPeer, to_peer: int,
 	pkt._reliable = false
 	# packet.deliver_time = it's defined later, not here
 
+	var io_peer_destination := ctx.peers[to_peer]
+
+	# simulate packet duplicates
+
+	var packet_duplicate_percentage = get_worst_packet_duplicate_percentage(io_peer, io_peer_destination)
+	if (!already_duplicated &&
+		packet_duplicate_percentage > 0 &&
+		ctx.random_generator.randf() <= (packet_duplicate_percentage / 100.0)):
+
+		# send a copy
+		queue_unreliable_packet(ctx, io_peer, to_peer, data, true)
+
 	# simulate packet drop of UNRELIABLE packet
 	
-	var io_peer_destination := ctx.peers[to_peer]
 	var packet_loss_percentage = get_worst_packet_loss_percentage(io_peer, io_peer_destination)
-	
 	if (packet_loss_percentage > 0 &&
 		ctx.random_generator.randf() <= (packet_loss_percentage / 100.0)):
 		return
@@ -215,3 +230,8 @@ static func get_worst_packet_loss_percentage(lhs: IOPeer, rhs: IOPeer):
 
 static func get_worst_latency(lhs: IOPeer, rhs: IOPeer):
 	return max(lhs.latency_current_ms, rhs.latency_current_ms)
+
+
+static func get_worst_packet_duplicate_percentage(lhs: IOPeer, rhs: IOPeer):
+	return max(lhs.packet_duplicate_percentage, rhs.packet_duplicate_percentage)
+

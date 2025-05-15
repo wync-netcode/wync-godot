@@ -13,18 +13,26 @@ static func initialize_net_state(gs: Plat.GameState, is_client: bool):
 		gs.net.client.state = Plat.Client.STATE.DISCONNECTED
 
 		# DEBUG cases
-		#Loopback.setup_io_peer(gs.net.io_peer, 200, 100, 70)
-		#Loopback.setup_io_peer(gs.net.io_peer, 200, 100, 50)
-		#Loopback.setup_io_peer(gs.net.io_peer, 200, 50, 30)
-		#Loopback.setup_io_peer(gs.net.io_peer, 200, 10, 5)
-		Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 5)
-		#Loopback.setup_io_peer(gs.net.io_peer, 1, 0, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 100, 70, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 100, 50, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 100, 10, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 0, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 70, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 50, 30, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 10, 5, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 5, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 1, 0, 0, 0)
+
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 0, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 0, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 0, 100)
+		Loopback.setup_io_peer(gs.net.io_peer, 200, 100, 10, 10)
 
 	else:
 		gs.net.server = Plat.Server.new()
 		gs.net.server.peer_count = 0
 		gs.net.server.peers = []
-		Loopback.setup_io_peer(gs.net.io_peer, 1, 0, 0)
+		Loopback.setup_io_peer(gs.net.io_peer, 1, 0, 0, 0)
 
 
 static func register_peer_myself(gs: Plat.GameState):
