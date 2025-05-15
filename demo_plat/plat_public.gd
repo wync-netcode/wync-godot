@@ -385,7 +385,7 @@ static func player_input_additive(gs: Plat.GameState, player: Plat.Player, node2
 		int(Input.is_action_pressed("p1_right")) - int(Input.is_action_pressed("p1_left")),
 		int(Input.is_action_pressed("p1_down")) - int(Input.is_action_pressed("p1_up")),
 	)
-	player.input.movement_dir = Vector2(signf(sin(Time.get_ticks_msec() / 100.0)), -1)
+	#player.input.movement_dir = Vector2(signf(sin(Time.get_ticks_msec() / 100.0)), -1)
 	player.input.shoot = player.input.shoot || Input.is_action_pressed("p1_mouse1")
 	player.input.aim = PlatUtils.SCREEN_CORD_TO_GRID_CORD(gs, node2d.get_global_mouse_position())
 

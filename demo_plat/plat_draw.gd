@@ -83,11 +83,11 @@ static func draw_players(canvas: Node2D, gs: Plat.GameState, offset: Vector2i, r
 			player_rect = Rect2(Vector2(player.position.x, -player.position.y -player.size.y) + Vector2(offset), player.size)
 		else:
 			player_rect = Rect2(Vector2(player.visual_position.x, -player.visual_position.y -player.size.y) + Vector2(offset), player.size)
-		canvas.draw_rect(player_rect, color, true)
+		canvas.draw_rect(player_rect, color, true, -1, true)
 		player_rect = Rect2(player_rect.position.x +1, player_rect.position.y +1, player_rect.size.x -2, player_rect.size.y -2)
-		canvas.draw_rect(player_rect, Color.BLACK, true)
+		canvas.draw_rect(player_rect, Color.BLACK, true, -1, true)
 		player_rect = Rect2(player_rect.position.x +1, player_rect.position.y +1, player_rect.size.x -2, player_rect.size.y -2)
-		canvas.draw_rect(player_rect, color, true)
+		canvas.draw_rect(player_rect, color, true, -1, true)
 
 
 static func draw_rockets(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
@@ -96,8 +96,8 @@ static func draw_rockets(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
 		if rocket == null:
 			continue
 		rect = Rect2(Vector2(rocket.position.x, -rocket.position.y -rocket.size.y) + Vector2(offset), rocket.size)
-		canvas.draw_rect(rect, Color.GOLD, true)
-		canvas.draw_rect(rect, Color.BLACK, false)
+		canvas.draw_rect(rect, Color.GOLD, true, -1, true)
+		canvas.draw_rect(rect, Color.BLACK, false, -1, true)
 
 
 static func draw_trails(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
