@@ -82,7 +82,7 @@ static func prop_set_relative_syncable (
 	# * delta prop, server side, timewarpable: base state, real state, delta event buffer
 
 	# assuming no timewarpable
-	prop.confirmed_states = RingBuffer.new(0)
+	prop.confirmed_states = RingBuffer.new(1) # 1 for debugging purposes
 
 	var need_undo_events = false
 	if WyncUtils.is_client(ctx) && predictable:
@@ -221,7 +221,7 @@ static func merge_event_to_state_real_state \
 	if state_pointer == null:
 		return 5
 
-	var result: Array[int] = _merge_event_to_state(ctx, prop, event_id, state_pointer, true)
+	var result: Array[Variant] = _merge_event_to_state(ctx, prop, event_id, state_pointer, true)
 
 	# cache _undo delta event_ to aux_prop
 	if (is_client_predicting):
@@ -301,5 +301,22 @@ static func delta_sync_prop_initialize_clients (ctx: WyncCtx, prop_id: int) -> i
 		var knows_about_prop = client_relative_props.has(prop_id)
 		if not knows_about_prop:
 			client_relative_props[prop_id] = -1
+
+	return OK
+
+
+## returns int: Error
+static func event_is_healthy (ctx: WyncCtx, event_id: int) -> int:
+	# get event transform function
+	# TODO: Make a new function get_event(event_id)
+	
+	if not ctx.events.has(event_id):
+		Log.errc(ctx, "delta sync | couldn't find event (id %s)" % [event_id], Log.TAG_DELTA_EVENT)
+		return 1
+
+	var event_data = ctx.events[event_id]
+	if event_data is not WyncEvent:
+		Log.errc(ctx, "delta sync | event (id %s) found but invalid" % [event_id], Log.TAG_DELTA_EVENT)
+		return 2
 
 	return OK

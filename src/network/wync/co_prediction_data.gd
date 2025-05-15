@@ -10,9 +10,6 @@ var target_tick: int = 0 # co_ticks.ticks + tick_offset
 ## fixed timestamp for current tick
 ## It's the point of reference for other ticks
 var current_tick_timestamp: int = 0
-# only used for rollback for _predicted delta props_
-# might be superseeded by buffer_predicted_tick (look at the bottom)
-var delta_prop_last_tick_predicted: int = 0 
 
 # For calculating clock_offset_mean
 
@@ -36,38 +33,5 @@ var latency_buffer_head: int = 0
 var lerp_ms: int = 50
 
 
-# =====================================================
-## relation between predicted ticks to local ticks
-# TODO: BETTER NAMES OR BETTER STRUCTURE
-
-# TODO: Replace with WyncCtx.INPUT_BUFFER_SIZE
-const BUFFER_SIZE = 60 * 12  ## 1.2 seconds worth of inputs
-var buffer_predicted_tick: Array[int]  ## Array[tick_predicted: int, tick_local: int]
-var buffer_predicted_tick_prev: Array[int]  ## Array[tick_predicted: int, tick_local: int]
-var buffer_head_predicted_tick: int = 0
-
-
-func set_tick_predicted(pred_tick: int, local_tick: int) -> void:
-	buffer_head_predicted_tick = pred_tick % BUFFER_SIZE
-	buffer_predicted_tick[buffer_head_predicted_tick] = local_tick
-	buffer_predicted_tick_prev[buffer_head_predicted_tick] = pred_tick
-
-
-func get_tick_predicted(pred_tick: int):# -> Optional<int>:
-	var key = pred_tick % BUFFER_SIZE
-	var data = buffer_predicted_tick[key]
-	if pred_tick == buffer_predicted_tick_prev[key]:
-		return data
-	return null
-
-
-#func _ready() -> void:
 func _init() -> void:
 	latency_buffer.resize(LATENCY_BUFFER_SIZE)
-	
-	# TODO: get server tick rate from server
-	var physics_fps = Engine.physics_ticks_per_second
-	lerp_ms = max(lerp_ms, (1000 / physics_fps) * 2)
-
-	buffer_predicted_tick.resize(BUFFER_SIZE)
-	buffer_predicted_tick_prev.resize(BUFFER_SIZE)

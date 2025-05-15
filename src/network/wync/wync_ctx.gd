@@ -13,9 +13,38 @@ var xtrap_local_tick: Variant = null # Optional<int>
 
 var current_tick_nete_latency_ms: int
 
-## outgoing packets
+# other config
 
-var out_packets: Array[WyncPacketOut]
+var physic_ticks_per_second: int = 60
+
+## SUPERSEEDED?
+## client only
+## it's described in ticks between receiving updates from the server
+## So, 3 would mean it's 1 update every 4 ticks. 0 means updates every tick.
+var server_tick_rate: float = 0
+var server_tick_rate_sliding_window: RingBuffer
+var server_tick_rate_sliding_window_size: int = 10
+var tick_last_packet_received_from_server: int = 0
+
+## client only
+## it's described in ticks between receiving updates from the server
+## So, 3 would mean it's 1 update every 4 ticks. 0 means updates every tick.
+var low_priority_entity_update_rate: float = 0
+var low_priority_entity_update_rate_sliding_window: RingBuffer
+var low_priority_entity_update_rate_sliding_window_size: int = 10
+var low_priority_entity_tick_last_update: int = 0
+const ENTITY_ID_PROB_FOR_ENTITY_UPDATE_DELAY_TICKS = 699
+var PROP_ID_PROB = -1
+
+## outgoing packets =============================
+
+const OK_BUT_COULD_NOT_FIT_ALL_PACKETS = 1
+
+## can be used to limit the production of packets
+var out_packets_size_limit: int 
+var out_packets_size_remaining_chars: int 
+var out_reliable_packets: Array[WyncPacketOut]
+var out_unreliable_packets: Array[WyncPacketOut]
 
 ## Extra structures =============================
 
@@ -25,7 +54,7 @@ var co_predict_data: CoPredictionData = CoPredictionData.new()
 ## Server & Client ==============================
 
 const SERVER_PEER_ID = 0
-const ENTITY_ID_GLOBAL_EVENTS = 777
+const ENTITY_ID_GLOBAL_EVENTS = 700
 # NOTE: Rename to PRED_INPUT_BUFFER_SIZE
 const INPUT_BUFFER_SIZE = 60 * 12
 var max_amount_cache_events = 2 # it could be useful to have a different value for server cache
@@ -34,6 +63,9 @@ var max_channels = 12
 var max_tick_history = 60 # 1 second at 60 fps
 var max_prop_relative_sync_history_ticks = 20 # set to 1 to see if it's working alright 
 var max_delta_prop_predicted_ticks = 60 # 1000ms ping at 60fps 2000ms ping at 30fps
+
+# how many ticks in the past to keep state cache for a regular prop
+var REGULAR_PROP_CACHED_STATE_AMOUNT = 10
 
 # Map<entity_id: int, unused_bool: bool>
 var tracked_entities: Dictionary
@@ -118,6 +150,7 @@ var client_has_relative_prop_has_last_tick: Array[Dictionary]
 #var peers_entities_to_sync
 #var peers_props_to_sync
 
+# TODO: DEPRECATE this data structure
 # Array<client_id: int, ordered_set<event_id> >
 var peers_events_to_sync: Array[Dictionary]
 
@@ -165,19 +198,115 @@ var tick_action_history: RingBuffer = RingBuffer.new(tick_action_history_size)
 var currently_on_predicted_tick: bool = false
 var current_predicted_tick: int = 0 # only for debugging
 
+# tick markers for the prev prediction cycle
+var first_tick_predicted: int = 1
+var last_tick_predicted: int = 0
+# markers for the current prediction cycle
+var pred_intented_first_tick: int = 0
+
+## how many ticks before 'last_tick_received' to predict to compensate for throttling
+var max_prediction_tick_threeshold: int = 0
+
+# throttling
+# --------------------------------------------------------------------------------
+
+class PeerEntityPair:
+	var peer_id: int = -1
+	var entity_id: int = -1
+
+# Sync priorities:
+# * VIP
+# * Spawning
+# * Despawning
+# * Queue
+
+# TODO
+# Map <client_id: int, List[entity_id: int]>
+#var vip_props: Map
+
+# * Only add/remove _entity ids_ when a packet is confirmed sent (WYNC_EXTRACT_WRITE)
+# * Confirmed list of entities the client sees
+# Array <client_id: int, Set[entity_id: int]>
+var clients_sees_entities: Array[Dictionary]
+# Tener la garantía de que todo lo que está aquí se puede spawnear
+# * Every frame we check.. 
+# Array <client_id: int, Set[entity_id: int]>
+var clients_sees_new_entities: Array[Dictionary]
+# Array <client_id: int, Set[entity_id: int]>
+var clients_no_longer_sees_entities: Array[Dictionary]
+
+# * Only refill the queue once it's emptied
+# * Queue entities for eventual synchronization
+# Array <client_id: int, FIFORing[entity_id: int]>
+var queue_clients_entities_to_sync: Array[FIFORing]
+
+# Here, add what entities where synced last frame and to which client_id
+# Array <client_id: int, Set[entity_id: int]>
+var entities_synced_last_time: Array[Dictionary]
+
+# * Recomputed each tick we gather out packets
+# * TODO: Use FIFORing and preallocate all instances (pooling)
+# FIFORing < PeerEntityPair[peer: int, entity: int] > [100]
+var queue_entity_pairs_to_sync: Array[PeerEntityPair]
+
+
+# debugging
+# --------------------------------------------------------------------------------
+
+# : Array <packet_id:int, Array <prop_id:int, amount: int> >
+# : Array[Array[int]]
+var debug_packets_received: Array[Array]
+
+# mean of how much data is being transmitted each tick
+var debug_data_per_tick_sliding_window_size: int = 10
+var debug_data_per_tick_sliding_window: RingBuffer
+var debug_data_per_tick_total_mean: float = 0
+var debug_data_per_tick_sliding_window_mean: float = 0
+var debug_data_per_tick_current: float = 0
+var debug_ticks_sent: int = 0
+
 
 # TODO: Move to WyncUtils
 func _init() -> void:
 	peer_has_channel_has_events.resize(max_peers)
 	client_has_relative_prop_has_last_tick.resize(max_peers) # NOTE: index 0 not used
+
+	queue_clients_entities_to_sync.resize(max_peers)
+	queue_entity_pairs_to_sync.resize(100)
+
+	clients_sees_entities.resize(max_peers)
+	clients_sees_new_entities.resize(max_peers)
+	clients_no_longer_sees_entities.resize(max_peers)
+	entities_synced_last_time.resize(max_peers)
+
 	for peer_i in range(max_peers):
 		peer_has_channel_has_events[peer_i] = []
 		peer_has_channel_has_events[peer_i].resize(max_channels)
 		for channel_i in range(max_channels):
 			peer_has_channel_has_events[peer_i][channel_i] = []
 		client_has_relative_prop_has_last_tick[peer_i] = {}
+
+		#if peer_i != WyncCtx.SERVER_PEER_ID:
+		queue_clients_entities_to_sync[peer_i] = FIFORing.new()
+		queue_clients_entities_to_sync[peer_i].init(100)
+		clients_sees_entities[peer_i] = {}
+		clients_sees_new_entities[peer_i] = {}
+		clients_no_longer_sees_entities[peer_i] = {}
+		entities_synced_last_time[peer_i] = {}
 	
 	for i in range(tick_action_history_size):
 		tick_action_history.insert_at(i, {} as Dictionary)
 	
 	client_has_info.resize(max_peers)
+
+	debug_packets_received.resize(WyncPacket.WYNC_PKT_AMOUNT)
+	for i in range(WyncPacket.WYNC_PKT_AMOUNT):
+		debug_packets_received[i] = [] as Array[int]
+		debug_packets_received[i].resize(20) # amount of props, also 0 is reserved for 'total'
+
+	debug_data_per_tick_sliding_window = RingBuffer.new(debug_data_per_tick_sliding_window_size)
+
+	server_tick_rate_sliding_window = RingBuffer.new(server_tick_rate_sliding_window_size)
+
+	low_priority_entity_update_rate_sliding_window = RingBuffer.new(low_priority_entity_update_rate_sliding_window_size)
+		

@@ -51,8 +51,11 @@ static func wync_update_prediction_ticks (ctx: WyncCtx):
 				co_predict_data.tick_offset_prev = co_predict_data.tick_offset
 
 	# target_tick can only go forward. Use max so that we never go back
+	var _prev_target_tick = co_predict_data.target_tick
 	co_predict_data.target_tick = max(co_ticks.server_ticks + co_predict_data.tick_offset, co_predict_data.target_tick)
 	co_predict_data.current_tick_timestamp = curr_time
+
+	#Log.outc(ctx, "prev_target_tick %s, new_target_tick %s" % [_prev_target_tick, co_predict_data.target_tick])
 	
 	#Log.out(self, "ticks local %s | net %s %s %s" % [co_ticks.ticks, co_ticks.server_ticks, co_predict_data.target_tick, co_ticks.ticks + co_ticks.server_ticks_offset])
 	

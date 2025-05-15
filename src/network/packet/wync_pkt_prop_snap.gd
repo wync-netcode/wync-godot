@@ -1,35 +1,71 @@
-class_name WyncPktPropSnap
+class_name WyncPktSnap
 
-## Ideal packet structure
-## tick;[entity_id:[prop_id:prop_value,prop_id:prop_value]]
 
 ## NOTE: Build an optimized packet format exclusive for positional data
 
-class PropSnap:
+class SnapProp:
 	var prop_id: int
-	var prop_value#: (int, float, vector2)
-
-class EntitySnap:
-	var entity_id: int
-	var props: Array[PropSnap]
+	var state_size: int
+	var state#: Variant: Vector2, Quaternion, float, struct
 
 var tick: int
-var snaps: Array[EntitySnap]
+var snaps: Array[SnapProp]
 
 
-func duplicate() -> WyncPktPropSnap:
-	var i = WyncPktPropSnap.new()
-	i.tick = tick
-	
-	for snap: EntitySnap in snaps:
-		var new_snap = EntitySnap.new()
-		new_snap.entity_id = snap.entity_id
-		i.snaps.append(new_snap)
+func duplicate() -> WyncPktSnap:
+	var i = WyncPktSnap.new()
+	i.tick = self.tick
 		
-		for prop in snap.props:
-			var new_prop = PropSnap.new()
-			new_prop.prop_id = prop.prop_id
-			new_prop.prop_value = prop.prop_value
-			new_snap.props.append(new_prop)
+	for prop in self.snaps:
+		var new_prop = SnapProp.new()
+		new_prop.prop_id = prop.prop_id
+		new_prop.state_size = prop.state_size
+		new_prop.state = prop.state
+		i.snaps.append(prop)
 			
 	return i
+
+"""
+Preliminar packet structure (three packet types?)
+ExtractedInputs {
+	var size: int, # sizeof(int) * amount
+	var prop_id: int,
+	var tick_head: int,
+	var amount: int
+	var inputs: Array[int] (amount)
+}
+ExtractedEventsData {
+	var size: int,
+	var event_amount: int,
+	var event_buffer: Array[EventData],
+}
+ExtractedEventsData__Event {
+	var event_id: int,
+	var event_type_id: int,
+	var arg_count: int,
+	var arg_data_type: Array[int],
+	var arg_buffer: Array[Variant],
+}
+ExtractedState {
+	var size: int, # = prop_id + state_size
+	var tick: int,
+	var prop_id: int,
+	var state_size: int,
+	var state: Variant,
+}
+"""
+
+"""
+Packets to send
+OutInputs {
+	amount: int,
+	inputs [
+		{
+			var prop_id: int
+			var tick_head: int
+			var amount: int
+			var inputs: Array[int] (amount)
+		}
+	]
+}
+"""

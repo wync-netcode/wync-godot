@@ -22,6 +22,7 @@ enum {
 	TAG_TIMEWARP,
 	TAG_SUBTICK_EVENT,
 	TAG_THROTTLE,
+	TAG_SYNC_QUEUE,
 	# append up
 	TAG_COUNT,
 }
@@ -48,11 +49,59 @@ const tag_names: Dictionary = {
 	TAG_TIMEWARP: "Timewarp",
 	TAG_SUBTICK_EVENT: "Subtick-Event",
 	TAG_THROTTLE: "Throttle",
+	TAG_SYNC_QUEUE: "SYNC_QUEUE",
 }
 
 
 # workaround for variant arguments for now
 # https://github.com/godotengine/godot-proposals/issues/1034
+
+static func outc(ctx: WyncCtx, msg: String,
+arg1 = null, arg2 = null, arg3 = null, arg4 = null,
+arg5 = null, arg6 = null, arg7 = null, arg8 = null):
+
+	var tags: Array[int] = []
+	for argument in [arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8]:
+		if argument is int:
+			tags.push_back(argument)
+
+	var tag_text = ""
+	if tags.size():
+		tag_text = " : "
+		for tag: int in tags:
+			if tag >= 0 && tag < TAG_COUNT:
+				tag_text += "%s " % [tag_names[tag]]
+			else:
+				tag_text += "%s " % str(tag)
+
+	var prefix = "cli_%s| " % [ctx.my_peer_id] if WyncUtils.is_client(ctx) else "serve| "
+	var color = "yellow" if WyncUtils.is_client(ctx) else "magenta"
+	var function_name = get_function_name(1)
+	print_rich("[color=%s]%s%s | %s%s" % [color, prefix, msg, function_name, tag_text])
+
+
+static func errc(ctx: WyncCtx, msg: String,
+arg1 = null, arg2 = null, arg3 = null, arg4 = null,
+arg5 = null, arg6 = null, arg7 = null, arg8 = null):
+
+	var tags: Array[int] = []
+	for argument in [arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8]:
+		if argument is int:
+			tags.push_back(argument)
+
+	var tag_text = ""
+	if tags.size():
+		tag_text = " : "
+		for tag: int in tags:
+			if tag >= 0 && tag < TAG_COUNT:
+				tag_text += "%s " % [tag_names[tag]]
+			else:
+				tag_text += "%s " % str(tag)
+
+	var prefix = "cli_%s| " % [ctx.my_peer_id] if WyncUtils.is_client(ctx) else "serve| "
+	var function_name = get_function_name(1)
+	printerr("%s%s | %s%s" % [prefix, msg, function_name, tag_text])
+
 
 static func out(msg: String,
 arg1 = null, arg2 = null, arg3 = null, arg4 = null,
@@ -64,12 +113,16 @@ arg5 = null, arg6 = null, arg7 = null, arg8 = null):
 			tags.push_back(argument)
 
 	var tag_text = ""
-	for tag: int in tags:
-		if tag >= 0 && tag < TAG_COUNT:
-			tag_text += "%s " % [tag_names[tag]]
-		else:
-			tag_text += "%s " % str(tag)
-	print("%s| %s" % [tag_text, msg])
+	if tags.size():
+		tag_text = " : "
+		for tag: int in tags:
+			if tag >= 0 && tag < TAG_COUNT:
+				tag_text += "%s " % [tag_names[tag]]
+			else:
+				tag_text += "%s " % str(tag)
+
+	var function_name = get_function_name(1)
+	print("%s | %s%s" % [msg, function_name, tag_text])
 
 
 static func err(msg: String,
@@ -82,12 +135,24 @@ arg5 = null, arg6 = null, arg7 = null, arg8 = null):
 			tags.push_back(argument)
 
 	var tag_text = ""
-	for tag: int in tags:
-		if tag >= 0 && tag < TAG_COUNT:
-			tag_text += "%s " % [tag_names[tag]]
-		else:
-			tag_text += "%s " % str(tag)
-	printerr("%s| %s" % [tag_text, msg])
+	if tags.size():
+		tag_text = " : "
+		for tag: int in tags:
+			if tag >= 0 && tag < TAG_COUNT:
+				tag_text += "%s " % [tag_names[tag]]
+			else:
+				tag_text += "%s " % str(tag)
+
+	var function_name = get_function_name(1)
+	printerr("%s | %s%s" % [msg, function_name, tag_text])
+
+
+static func get_function_name(levels_up: int) -> String:
+	var stack = get_stack() as Array
+	var level = levels_up +1
+	if level >= stack.size():
+		return ""
+	return stack[level]["function"]
 
 
 ## @argument caller: Null | Node | Object

@@ -21,19 +21,68 @@ static func wync_send_event_data (ctx: WyncCtx):
 	# send events
 	
 	if WyncUtils.is_client(ctx):
-		send_events_to_peer(ctx, WyncCtx.SERVER_PEER_ID)
+		wync_system_send_events_to_peer(ctx, WyncCtx.SERVER_PEER_ID)
 	else: # server
 		for wync_peer_id in range(1, ctx.peers.size()):
-			send_events_to_peer(ctx, wync_peer_id)
+			wync_system_send_events_to_peer(ctx, wync_peer_id)
 
 
-static func send_events_to_peer (ctx: WyncCtx, wync_peer_id: int):
+## This system writes state
+static func wync_get_event_data_packet (ctx: WyncCtx, peer_id: int, event_ids: Array[int]) -> WyncPktEventData:
+	
+	var packet = WyncPktEventData.new()
+		
+	# get event data
+	
+	for event_id: int in event_ids:
+		if not ctx.events.has(event_id):
+			Log.err("couldn't find event_id %s" % event_id, Log.TAG_EVENT_DATA)
+			continue
+		
+		var wync_event = (ctx.events[event_id] as WyncEvent).data
+		
+		# check if peer already has it
+		var event_hash = HashUtils.hash_any(wync_event)
+		# NOTE: is_serve_cached could be skipped? all events should be cached on our side...
+		var is_event_cached = ctx.events_hash_to_id.has_item_hash(event_hash)
+		if (is_event_cached):
+			var cached_event_id = ctx.events_hash_to_id.get_item_by_hash(event_hash)
+			if (cached_event_id != null):
+				var peer_has_it = ctx.to_peers_i_sent_events[peer_id].has_item_hash(cached_event_id)
+				if (peer_has_it):
+					continue
+		
+		# package it
+		
+		var event_data = WyncPktEventData.EventData.new()
+		event_data.event_id = event_id
+		event_data.event_type_id = wync_event.event_type_id
+		event_data.arg_count = wync_event.arg_count
+		event_data.arg_data_type = wync_event.arg_data_type.duplicate(true)
+		event_data.arg_data.resize(event_data.arg_count)
+		
+		for j in range(wync_event.arg_count):
+			event_data.arg_data[j] = WyncUtils.duplicate_any(wync_event.arg_data[j])
+		
+		packet.events.append(event_data)
+
+		# commit
+		# since peer doesn't have it, then mark it as sent
+		ctx.to_peers_i_sent_events[peer_id].push_head_hash_and_item(event_id, true)
+
+	return packet
+
+
+## This system writes state
+## This system should run just after queue_delta_event_data_to_be_synced_to_peers
+## All queued events must be sent, they're already commited, so no throttling here
+## @returns int: 0 -> OK, 1 -> OK, but couldn't queue all packets, >1 -> Error
+static func wync_system_send_events_to_peer (ctx: WyncCtx, wync_peer_id: int) -> int:
 	
 	var event_keys = ctx.peers_events_to_sync[wync_peer_id].keys()
 	var event_amount = event_keys.size()
 	if event_amount <= 0:
-		return
-	#Log.out(self, "Event count to sync %s" % event_amount)
+		return OK
 	
 	var data = WyncPktEventData.new()
 	
@@ -49,19 +98,16 @@ static func send_events_to_peer (ctx: WyncCtx, wync_peer_id: int):
 		
 		var wync_event = (ctx.events[event_id] as WyncEvent).data
 		
-		# check if server already has it
+		# check if peer already has it
 		var event_hash = HashUtils.hash_any(wync_event)
 		# NOTE: is_serve_cached could be skipped? all events should be cached on our side...
 		var is_event_cached = ctx.events_hash_to_id.has_item_hash(event_hash)
 		if (is_event_cached):
 			var cached_event_id = ctx.events_hash_to_id.get_item_by_hash(event_hash)
 			if (cached_event_id != null):
-				var server_has_it = ctx.to_peers_i_sent_events[wync_peer_id].has_item_hash(cached_event_id)
-				if (server_has_it):
+				var peer_has_it = ctx.to_peers_i_sent_events[wync_peer_id].has_item_hash(cached_event_id)
+				if (peer_has_it):
 					continue
-		
-		# server doesn't have it
-		ctx.to_peers_i_sent_events[wync_peer_id].push_head_hash_and_item(event_id, true)
 		
 		# package it
 		
@@ -74,20 +120,16 @@ static func send_events_to_peer (ctx: WyncCtx, wync_peer_id: int):
 		
 		for j in range(wync_event.arg_count):
 			event_data.arg_data[j] = WyncUtils.duplicate_any(wync_event.arg_data[j])
-			#Log.out(node_ctx, "%s" % [wync_event.arg_data[j]])
-			#Log.out(node_ctx, "%s" % [event_data.arg_data[j]])
 		
 		data.events.append(event_data)
-		
-		#if WyncUtils.is_client(ctx):
-			#Log.out("sending this event %s" % HashUtils.object_to_dictionary(event_data), Log.TAG_DEBUG3)
-		
-		if event_id == 105:
-			print()
-			print()
+
+		# confirm commit (these events are all aready commited)
+		# since peer doesn't have it, then mark it as sent
+		ctx.to_peers_i_sent_events[wync_peer_id].push_head_hash_and_item(event_id, true)
 	
+
 	if (data.events.size() == 0):
-		return
+		return OK
 	
 	# queue
 
@@ -95,6 +137,8 @@ static func send_events_to_peer (ctx: WyncCtx, wync_peer_id: int):
 	var result = WyncFlow.wync_wrap_packet_out(ctx, wync_peer_id, WyncPacket.WYNC_PKT_EVENT_DATA, packet_dup)
 	if result[0] == OK:
 		var packet_out = result[1] as WyncPacketOut
-		ctx.out_packets.append(packet_out)
+		WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, true)
 
 	Log.out("sent", Log.TAG_EVENT_DATA)
+
+	return OK

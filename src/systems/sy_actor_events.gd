@@ -23,52 +23,52 @@ func on_process(entities: Array, _data, _delta: float, node_ctx: Node = null):
 
 static func server_simulate_events(node_ctx: Node = null):
 	var co_single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = co_single_wync.ctx
-	if not wync_ctx.connected:
+	var ctx = co_single_wync.ctx
+	if not ctx.connected:
 		return
 
 	# Handle clients' events
-	for wync_peer_id in range(1, wync_ctx.peers.size()):
-		run_client_events(node_ctx, wync_ctx, wync_peer_id)
+	for wync_peer_id in range(1, ctx.peers.size()):
+		run_client_events(node_ctx, ctx, wync_peer_id)
 		
 	# Handle server events
-	run_server_events(node_ctx, wync_ctx)
+	run_server_events(node_ctx, ctx)
 
 
 static func client_simulate_events(node_ctx: Node = null):
 	var co_single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = co_single_wync.ctx
-	if not wync_ctx.connected:
+	var ctx = co_single_wync.ctx
+	if not ctx.connected:
 		return
 	
 	# Predict handling my own events
-	run_client_events(node_ctx, wync_ctx, wync_ctx.my_peer_id)
+	run_client_events(node_ctx, ctx, ctx.my_peer_id)
 	
 	# Predict handling server events
-	run_server_events(node_ctx, wync_ctx)
+	run_server_events(node_ctx, ctx)
 	
 	# as the grid: poll events from the channel 0 and execute them
 	# NOTE: add iteration limit to avoid infinite _event loop_
 	
 	# NOTE: If we consume global events they might never be recorded... Or maybe they
 	# can be recorded the moment they are submitted...
-	#WyncEventUtils.global_event_consume(wync_ctx, channel_id, event_id)
+	#WyncEventUtils.global_event_consume(ctx, channel_id, event_id)
 	
 	# NOTE: events that generate other events can accumulate forever if not cleaned
 
 
-static func run_client_events(node_ctx: Node, wync_ctx: WyncCtx, client_wync_peer_id: int):
+static func run_client_events(node_ctx: Node, ctx: WyncCtx, client_wync_peer_id: int):
 	# Handle server events
 	
 	var channel_id = 0
-	var event_list: Array = wync_ctx.peer_has_channel_has_events[client_wync_peer_id][channel_id]
+	var event_list: Array = ctx.peer_has_channel_has_events[client_wync_peer_id][channel_id]
 
 	# NOTE: shouldn't this be ran from beggining to end?
 	for i in range(event_list.size() -1, -1, -1):
 		var event_id = event_list[i]
-		if not wync_ctx.events.has(event_id):
+		if not ctx.events.has(event_id):
 			continue
-		var event = wync_ctx.events[event_id]
+		var event = ctx.events[event_id]
 		if event is not WyncEvent:
 			continue
 		event = event as WyncEvent
@@ -81,40 +81,40 @@ static func run_client_events(node_ctx: Node, wync_ctx: WyncCtx, client_wync_pee
 	event_list.clear()
 
 
-static func run_server_events(node_ctx: Node, wync_ctx: WyncCtx):
+static func run_server_events(node_ctx: Node, ctx: WyncCtx):
 	# Handle server events
 	
 	var channel_id = 0
 	var server_wync_peer_id = 0
-	var event_list: Array = wync_ctx.peer_has_channel_has_events[server_wync_peer_id][channel_id]
+	var event_list: Array = ctx.peer_has_channel_has_events[server_wync_peer_id][channel_id]
 	while(event_list.size() > 0):
 		var event_id = event_list[event_list.size() -1]
-		if not wync_ctx.events.has(event_id):
+		if not ctx.events.has(event_id):
 			continue
-		var event = wync_ctx.events[event_id]
+		var event = ctx.events[event_id]
 		if event is not WyncEvent:
-			WyncEventUtils.global_event_consume(wync_ctx, server_wync_peer_id, channel_id, event_id)
+			WyncEventUtils.global_event_consume(ctx, server_wync_peer_id, channel_id, event_id)
 			continue
 		event = event as WyncEvent
 
 		# handle it
 		Log.out("event handling | handling server event %s" % [event_id], Log.TAG_GAME_EVENT)
 		handle_events(node_ctx, event.data, server_wync_peer_id)
-		WyncEventUtils.global_event_consume(wync_ctx, server_wync_peer_id, channel_id, event_id)
+		WyncEventUtils.global_event_consume(ctx, server_wync_peer_id, channel_id, event_id)
 
 
 static func run_local_entity_events(node_ctx: Node, entity: Entity):
 	var co_single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = co_single_wync.ctx
+	var ctx = co_single_wync.ctx
 	
 	var co_wync_events = entity.get_component(CoWyncEvents.label) as CoWyncEvents
 	
 	# check if this event has an owner
 
-	if not WyncUtils.prop_exists(wync_ctx, co_wync_events.prop_id):
+	if not WyncUtils.prop_exists(ctx, co_wync_events.prop_id):
 		Log.err("Couldn't find a Prop for this Event prop_id(%d)" % [co_wync_events.prop_id], Log.TAG_GAME_EVENT)
 		return
-	var peer_id = WyncUtils.prop_get_peer_owner(wync_ctx, co_wync_events.prop_id)
+	var peer_id = WyncUtils.prop_get_peer_owner(ctx, co_wync_events.prop_id)
 	if peer_id == -1:
 		Log.err("Couldn't find owner for prop_id(%d)" % [co_wync_events.prop_id], Log.TAG_GAME_EVENT)
 		return
@@ -124,9 +124,10 @@ static func run_local_entity_events(node_ctx: Node, entity: Entity):
 	var event_list = co_wync_events.events
 	for i in range(event_list.size() -1, -1, -1):
 		var event_id = event_list[i]
-		if not wync_ctx.events.has(event_id):
+		if not ctx.events.has(event_id):
+			Log.err("Couldn't find event(%s)" % [event_id], Log.TAG_GAME_EVENT)
 			continue
-		var event = wync_ctx.events[event_id]
+		var event = ctx.events[event_id]
 		if event is not WyncEvent:
 			continue
 		event = event as WyncEvent
@@ -173,16 +174,16 @@ static func handle_event_player_block_place(node_ctx: Node, event: WyncEvent.Eve
 		return
 
 	var co_single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = co_single_wync.ctx
+	var ctx = co_single_wync.ctx
 
-	var event_id = WyncEventUtils.instantiate_new_event(wync_ctx, GameInfo.EVENT_PLAYER_BLOCK_BREAK, 2)
-	WyncEventUtils.event_add_arg(wync_ctx, event_id, 0, WyncEntityProp.DATA_TYPE.STRING, singleton_name)
-	WyncEventUtils.event_add_arg(wync_ctx, event_id, 1, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
-	event_id = WyncEventUtils.event_wrap_up(wync_ctx, event_id)
+	var event_id = WyncEventUtils.instantiate_new_event(ctx, GameInfo.EVENT_PLAYER_BLOCK_BREAK, 2)
+	WyncEventUtils.event_add_arg(ctx, event_id, 0, WyncEntityProp.DATA_TYPE.STRING, singleton_name)
+	WyncEventUtils.event_add_arg(ctx, event_id, 1, WyncEntityProp.DATA_TYPE.VECTOR2, block_pos)
+	event_id = WyncEventUtils.event_wrap_up(ctx, event_id)
 	
 	# Out of the two ways to predict 'event generated events' here we're chosing _Option number 2_:
 	# Generate new events as a prediction of the server's actions.
-	WyncEventUtils.publish_global_event_as_server(wync_ctx, 0, event_id)
+	WyncEventUtils.publish_global_event_as_server(ctx, 0, event_id)
 
 
 static func handle_event_player_block_break_delta(node_ctx: Node, event: WyncEvent.EventData):
@@ -239,7 +240,7 @@ static func handle_event_player_block_break_delta(node_ctx: Node, event: WyncEve
 
 	var event_data = (ctx.events[event_id] as WyncEvent).data
 	if WyncUtils.is_client(ctx):
-		Log.out("delta sync debug1 | pred_tick(%s) predicted event (%s) %s" % [ctx.current_predicted_tick, event_id, HashUtils.object_to_dictionary(event_data)], Log.TAG_DELTA_EVENT)
+		Log.outc(ctx, "debug_pred_delta_event | pred_tick(%s) predicted event (%s) %s" % [ctx.current_predicted_tick, event_id, HashUtils.object_to_dictionary(event_data)])
 
 	# If this runs on the client it means prediction...
 
@@ -298,7 +299,7 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 
 	var event_data = (ctx.events[event_id] as WyncEvent).data
 	if WyncUtils.is_client(ctx):
-		Log.out("delta sync debug1 | pred_tick(%s) predicted event (%s) %s" % [ctx.current_predicted_tick, event_id, HashUtils.object_to_dictionary(event_data)], Log.TAG_DELTA_EVENT)
+		Log.outc(ctx, "debug_pred_delta_event | pred_tick(%s) predicted event (%s) %s" % [ctx.current_predicted_tick, event_id, HashUtils.object_to_dictionary(event_data)])
 
 	# purposefully misspredict
 	if WyncUtils.is_client(ctx):
@@ -326,7 +327,7 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 
 			event_data = (ctx.events[event_id] as WyncEvent).data
 			if WyncUtils.is_client(ctx):
-				Log.out("delta sync debug1 | pred_tick(%s) predicted event (%s) %s" % [ctx.current_predicted_tick, event_id, HashUtils.object_to_dictionary(event_data)], Log.TAG_DELTA_EVENT)
+				Log.outc(ctx, "debug_pred_delta_event | pred_tick(%s) predicted event (%s) %s" % [ctx.current_predicted_tick, event_id, HashUtils.object_to_dictionary(event_data)])
 		return
 
 	# secondary break event
@@ -352,18 +353,18 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 
 	event_data = (ctx.events[event_id] as WyncEvent).data
 	if WyncUtils.is_client(ctx):
-		Log.out("delta sync debug1 | pred_tick(%s) predicted event (%s) %s" % [ctx.current_predicted_tick, event_id, HashUtils.object_to_dictionary(event_data)], Log.TAG_DELTA_EVENT)
+		Log.outc(ctx, "debug_pred_delta_event | pred_tick(%s) predicted event (%s) %s" % [ctx.current_predicted_tick, event_id, HashUtils.object_to_dictionary(event_data)])
 
 
 # server only function
 static func handle_event_player_shoot(node_ctx: Node, event: WyncEvent.EventData, peer_id: int):
 	
 	var single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = single_wync.ctx as WyncCtx
-	var co_ticks = wync_ctx.co_ticks
+	var ctx = single_wync.ctx as WyncCtx
+	var co_ticks = ctx.co_ticks
 	
 	# NOTE: peer_id shouldn't be 0 (the server's)
-	var client_info = wync_ctx.client_has_info[peer_id] as WyncClientInfo
+	var client_info = ctx.client_has_info[peer_id] as WyncClientInfo
 	
 	var lerp_ms: int = client_info.lerp_ms
 	var tick_left: int = event.arg_data[0] as int
@@ -371,18 +372,21 @@ static func handle_event_player_shoot(node_ctx: Node, event: WyncEvent.EventData
 	
 	# TODO: Lerp delta is not in this format
 	if lerp_delta < 0 || lerp_delta > 1000:
-		Log.err("TIMEWARP | lerp_delta is outside [0, 1] (%s)" % [lerp_delta], Log.TAG_TIMEWARP)
+		Log.errc(ctx, "TIMEWARP | lerp_delta is outside [0, 1] (%s)" % [lerp_delta], Log.TAG_TIMEWARP)
 		return
 
-	# TODO: limit the tick to the small range defined by the client's: latency + lerp_ms + last_packet_sent
-	if ((tick_left <= co_ticks.ticks - wync_ctx.max_tick_history) ||
+	# NOTE: We can provide some modes of security, this helps against cheaters:
+	# * (1) Low. No limit, current implementation
+	# * (2) Middle. Allow ticks in the range of the _prob prop rate_
+	# * (1) High. Only allow ranges of 1 tick (the small range defined by the client's: latency + lerp_ms + last_packet_sent)
+	if ((tick_left <= co_ticks.ticks - ctx.max_tick_history) ||
 		(tick_left > co_ticks.ticks)
 		):
-		Log.err("timewarp | tick_left out of range (%s)" % [tick_left], Log.TAG_TIMEWARP)
+		Log.errc(ctx, "timewarp | tick_left out of range (%s)" % [tick_left], Log.TAG_TIMEWARP)
 		return
 
 	
-	Log.out("Client shoots at tick_left %d | lerp_delta %s | lerp_ms %s | tick_diff %s" % [ tick_left, lerp_delta, lerp_ms, co_ticks.ticks - tick_left ], Log.TAG_TIMEWARP)
+	Log.outc(ctx, "Client shoots at tick_left %d | lerp_delta %s | lerp_ms %s | tick_diff %s" % [ tick_left, lerp_delta, lerp_ms, co_ticks.ticks - tick_left ], Log.TAG_TIMEWARP)
 	
 
 	# ------------------------------------------------------------
@@ -393,12 +397,12 @@ static func handle_event_player_shoot(node_ctx: Node, event: WyncEvent.EventData
 	# 1. save current state
 	# TODO: update saved state _only_ for selected props
 	
-	SyWyncStateExtractor.extract_data_to_tick(wync_ctx, co_ticks, co_ticks.ticks)
+	SyWyncStateExtractor.extract_data_to_tick(ctx, co_ticks, co_ticks.ticks)
 	
 	var prop_ids_to_timewarp: Array[int] = []
-	for prop_id: int in range(wync_ctx.props.size()):
-		var prop = WyncUtils.get_prop(wync_ctx, prop_id)
-		if prop_id != 2:
+	for prop_id: int in range(ctx.props.size()):
+		var prop = WyncUtils.get_prop(ctx, prop_id)
+		if prop_id != 3: # ????
 			continue 
 		if prop == null:
 			continue
@@ -409,20 +413,20 @@ static func handle_event_player_shoot(node_ctx: Node, event: WyncEvent.EventData
 
 	# 2. set previous state
 	
-	SyWyncLerp.confirmed_states_set_to_tick_interpolated(wync_ctx, prop_ids_to_timewarp, tick_left, lerp_delta, co_ticks)
+	SyWyncLerp.confirmed_states_set_to_tick_interpolated(ctx, prop_ids_to_timewarp, tick_left, lerp_delta, co_ticks)
 
 	# show debug trail
 		
 	for prop_id: int in prop_ids_to_timewarp:
-		var prop = WyncUtils.get_prop(wync_ctx, prop_id)
+		var prop = WyncUtils.get_prop(ctx, prop_id)
 		if prop == null:
 			continue
-		DebugPlayerTrail.spawn(node_ctx, prop.interpolated_state, 0.8, 2)
+		DebugPlayerTrail.spawn(node_ctx, prop.interpolated_state, 0.3, 2.5)
 	
 	# integrate physics
 
-	Log.out("entities to integrate state are %s" % [wync_ctx.tracked_entities.keys()], Log.TAG_TIMEWARP)
-	SyWyncLatestValue.integrate_state(wync_ctx, wync_ctx.tracked_entities.keys())
+	Log.outc(ctx, "entities to integrate state are %s" % [ctx.tracked_entities.keys()], Log.TAG_TIMEWARP)
+	SyWyncLatestValue.integrate_state(ctx, ctx.tracked_entities.keys())
 	RapierPhysicsServer2D.space_step(space, 0)
 	RapierPhysicsServer2D.space_flush_queries(space)
 
@@ -431,16 +435,16 @@ static func handle_event_player_shoot(node_ctx: Node, event: WyncEvent.EventData
 	var world_id = ECS.find_world_up(node_ctx).get_instance_id()
 	var sy_shoot_weapon_entities = ECS.get_system_entities(world_id, SyShootWeapon.label)
 	for entity in sy_shoot_weapon_entities:
-		Log.out("event,shoot | will process SyShootWeapon on entity %s" % [entity], Log.TAG_TIMEWARP)
+		Log.outc(ctx, "event,shoot | will process SyShootWeapon on entity %s" % [entity], Log.TAG_TIMEWARP)
 		SyShootWeapon.simulate_shoot_weapon(node_ctx, entity)
 	
 	# 4. restore original state
 
-	SyWyncLerp.confirmed_states_set_to_tick(wync_ctx, prop_ids_to_timewarp, co_ticks.ticks, co_ticks)
+	SyWyncLerp.confirmed_states_set_to_tick(ctx, prop_ids_to_timewarp, co_ticks.ticks, co_ticks)
 
 	# integrate physics
 
-	SyWyncLatestValue.integrate_state(wync_ctx, wync_ctx.tracked_entities.keys())
+	SyWyncLatestValue.integrate_state(ctx, ctx.tracked_entities.keys())
 	RapierPhysicsServer2D.space_step(space, 0)
 	RapierPhysicsServer2D.space_flush_queries(space)
 

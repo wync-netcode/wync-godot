@@ -9,21 +9,17 @@ const label: StringName = StringName("SyWyncStateExtractorDeltaSync")
 
 
 func on_process(_entities, _data, _delta: float):
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var ctx = single_wync.ctx as WyncCtx
-
-	send_event_ids_to_peers(ctx)
-	queue_event_data_to_be_synced_to_peers(ctx)
+	#wync_reset_events_to_sync(ctx)
+	#queue_delta_event_data_to_be_synced_to_peers(ctx)
+	pass
 
 
 # --------------------------------------------------------------------------------
-# Service 1: Send all event_ids to clients
+# Service 1: Send all _delta event_ ids to clients
 # TODO: For now all clients know about this prop, later we can filter
+# This service doesn't write state
 
-
-static func send_event_ids_to_peers(ctx: WyncCtx):
-
-	var co_ticks = ctx.co_ticks
+static func wync_reset_events_to_sync(ctx: WyncCtx):
 
 	# reset events
 
@@ -31,116 +27,132 @@ static func send_event_ids_to_peers(ctx: WyncCtx):
 		var event_set = ctx.peers_events_to_sync[wync_client_id] as Dictionary
 		event_set.clear()
 
-	for prop_id: int in range(ctx.props.size()):
 
-		# base prop
-		var base_prop = WyncUtils.get_prop(ctx, prop_id)
-		if base_prop == null:
+# TODO: Make a separate version only for _event_ids_ different from _inputs any_
+# TODO: Make a separate version only for _delta event_ids_
+static func wync_prop_event_send_event_ids_to_peer(ctx: WyncCtx, prop_id: int) -> WyncPktInputs:
+
+	# get props: base + auxiliar
+	var prop = WyncUtils.get_prop(ctx, prop_id)
+	if prop == null:
+		return null
+	prop = prop as WyncEntityProp
+
+	# NOTE: keeping this to make the separate version
+	#if not base_prop.relative_syncable:
+		#return null
+	#var aux_prop = WyncUtils.get_prop(ctx, base_prop.auxiliar_delta_events_prop_id)
+	#if aux_prop == null:
+		#return null
+	#aux_prop = aux_prop as WyncEntityProp
+	#if aux_prop.data_type != WyncEntityProp.DATA_TYPE.EVENT:
+		#Log.err("auxiliar prop id(%s) is not EVENT" % prop_id, Log.TAG_DELTA_EVENT)
+		#return null
+
+	# prepare packet
+
+	var pkt_inputs = WyncPktInputs.new()
+
+	for tick in range(ctx.co_ticks.ticks - CoNetBufferedInputs.AMOUNT_TO_SEND, ctx.co_ticks.ticks +1):
+		var input = prop.confirmed_states.get_at(tick)
+		if input == null:
+			Log.err("we don't have an input for this tick %s" % [tick], Log.TAG_DELTA_EVENT)
 			continue
-		base_prop = base_prop as WyncEntityProp
-		if not base_prop.relative_syncable:
-			continue
-
-		# auxiliar prop
-		var aux_prop = WyncUtils.get_prop(ctx, base_prop.auxiliar_delta_events_prop_id)
-		if aux_prop == null:
-			continue
-		aux_prop = aux_prop as WyncEntityProp
-		if aux_prop.data_type != WyncEntityProp.DATA_TYPE.EVENT:
-			Log.err("auxiliar prop id(%s) is not EVENT" % prop_id, Log.TAG_DELTA_EVENT)
-			continue
-
-		# prepare packet
-
-		var pkt_inputs = WyncPktInputs.new()
-
-		for tick in range(co_ticks.ticks - CoNetBufferedInputs.AMOUNT_TO_SEND, co_ticks.ticks +1):
-			var input = aux_prop.confirmed_states.get_at(tick)
-			if input == null:
-				Log.err("we don't have an input for this tick %s" % [tick], Log.TAG_DELTA_EVENT)
-				continue
+		
+		var tick_input_wrap = WyncPktInputs.NetTickDataDecorator.new()
+		tick_input_wrap.tick = tick
+		
+		var copy = WyncUtils.duplicate_any(input)
+		if copy == null:
+			Log.errc(ctx, "WARNING: input data couldn't be duplicated %s" % [input], Log.TAG_DELTA_EVENT)
+		tick_input_wrap.data = copy if copy != null else input
 			
-			var tick_input_wrap = WyncPktInputs.NetTickDataDecorator.new()
-			tick_input_wrap.tick = tick
-			
-			var copy = WyncUtils.duplicate_any(input)
-			if copy == null:
-				Log.out("WARNING: input data couldn't be duplicated %s" % [input], Log.TAG_DELTA_EVENT)
-			tick_input_wrap.data = copy if copy != null else input
-				
-			pkt_inputs.inputs.append(tick_input_wrap)
+		pkt_inputs.inputs.append(tick_input_wrap)
 
-		pkt_inputs.amount = pkt_inputs.inputs.size()
-		pkt_inputs.prop_id = prop_id
+	pkt_inputs.amount = pkt_inputs.inputs.size()
+	pkt_inputs.prop_id = prop_id
 
-		# queue packets to send
-		# TODO: Make this upper level maybe?
-
-		for wync_client_id in range(1, ctx.peers.size()):
-			var packet_dup = WyncUtils.duplicate_any(pkt_inputs)
-			var result = WyncFlow.wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_INPUTS, packet_dup)
-			if result[0] == OK:
-				var packet_out = result[1] as WyncPacketOut
-				ctx.out_packets.append(packet_out)
+	return pkt_inputs
 
 
 # --------------------------------------------------------------------------------
-# Service 2: For each peer collect what _event data_ they need
-# collect what event_ids need their _event data_ synced depending on peer
+# Service 2: For each peer collect what _delta event data_ they need
+# collect what event_ids need their _delta event data_ synced depending on peer
+# This service writes state
 
-
-static func queue_event_data_to_be_synced_to_peers(ctx: WyncCtx):
+static func queue_delta_event_data_to_be_synced_to_peers(ctx: WyncCtx):
 
 	var co_ticks = ctx.co_ticks
+	var data_size_limit = ctx.out_packets_size_remaining_chars
+	var data_size = 0
 
-	for prop_id: int in range(ctx.props.size()):
-
-		# base prop
-		var base_prop = WyncUtils.get_prop(ctx, prop_id)
-		if base_prop == null:
-			continue
-		base_prop = base_prop as WyncEntityProp
-		if not base_prop.relative_syncable:
-			continue
-
-		# auxiliar prop
-		var aux_prop = WyncUtils.get_prop(ctx, base_prop.auxiliar_delta_events_prop_id)
-		if aux_prop == null:
-			continue
-		aux_prop = aux_prop as WyncEntityProp
-		if aux_prop.data_type != WyncEntityProp.DATA_TYPE.EVENT:
-			Log.err("auxiliar prop id(%s) is not EVENT" % prop_id, Log.TAG_DELTA_EVENT)
-			continue
-
-		# iterate through all peers
-
-		# TODO: check peer is healthy
+	for entity_id: int in ctx.tracked_entities.keys():
 
 		for wync_client_id in range(1, ctx.peers.size()):
 
-			# get last tick received by client
+			# TODO: check peer is healthy
 
-			var delta_prop_last_tick = ctx.client_has_relative_prop_has_last_tick[wync_client_id] as Dictionary
-			var client_last_tick = delta_prop_last_tick[prop_id]
-
-			# client history too old, need to perform full snapshot, continuing...
-
-			if client_last_tick < ctx.delta_base_state_tick:
-				Log.out("delta sync | client_last_tick too old, needs full snapshot, skipping...", Log.TAG_DELTA_EVENT)
+			if not ctx.clients_sees_entities[wync_client_id].has(entity_id):
 				continue
 
-			var event_set = ctx.peers_events_to_sync[wync_client_id] as Dictionary
-			var range_tick_start = max(co_ticks.ticks - CoNetBufferedInputs.AMOUNT_TO_SEND, client_last_tick +1)
+			for prop_id: int in ctx.entity_has_props[entity_id]:
 
-			for tick: int in range(range_tick_start, co_ticks.ticks + 1):
-
-				# get _delta events_ for this tick
-				var input = aux_prop.confirmed_states.get_at(tick)
-				if input is not Array[int]:
-					Log.err("we don't have an input for this tick %s" % [tick], Log.TAG_DELTA_EVENT)
+				var base_prop = WyncUtils.get_prop(ctx, prop_id)
+				if base_prop == null:
 					continue
-				
-				for event_id: int in input:
-					event_set[event_id] = true
+				base_prop = base_prop as WyncEntityProp
+				if not base_prop.relative_syncable:
+					continue
 
-			delta_prop_last_tick[prop_id] = co_ticks.ticks
+				var aux_prop = WyncUtils.get_prop(ctx, base_prop.auxiliar_delta_events_prop_id)
+				if aux_prop == null:
+					continue
+				aux_prop = aux_prop as WyncEntityProp
+				if aux_prop.data_type != WyncEntityProp.DATA_TYPE.EVENT:
+					Log.err("auxiliar prop id(%s) is not EVENT" % prop_id, Log.TAG_DELTA_EVENT)
+					continue
+
+				# get last tick received by client
+
+				var delta_prop_last_tick = ctx.client_has_relative_prop_has_last_tick[wync_client_id] as Dictionary
+				var client_last_tick = delta_prop_last_tick[prop_id]
+
+				# client history too old, need to perform full snapshot, continuing...
+
+				if client_last_tick < ctx.delta_base_state_tick:
+					Log.out("delta sync | client_last_tick too old, needs full snapshot, skipping...", Log.TAG_DELTA_EVENT)
+					continue
+
+				var event_set = ctx.peers_events_to_sync[wync_client_id] as Dictionary
+				var range_tick_start = max(co_ticks.ticks - CoNetBufferedInputs.AMOUNT_TO_SEND, client_last_tick +1)
+
+				for tick: int in range(range_tick_start, co_ticks.ticks + 1):
+
+					# get _delta events_ for this tick
+					var input = aux_prop.confirmed_states.get_at(tick)
+					if input is not Array[int]:
+						Log.err("we don't have an input for this tick %s" % [tick], Log.TAG_DELTA_EVENT)
+						continue
+
+					# necessary space for this whole tick
+					var tick_size = 0
+					
+					for event_id: int in input:
+
+						if WyncDeltaSyncUtils.event_is_healthy(ctx, event_id) != OK:
+							# FATAL
+							assert(false)
+
+						event_set[event_id] = true
+						var event = ctx.events[event_id] as WyncEvent
+						var event_size = HashUtils.calculate_object_data_size(event)
+						tick_size += event_size
+
+					# size check 
+					if ((data_size + tick_size) > data_size_limit):
+						break
+
+					# committing
+					delta_prop_last_tick[prop_id] = tick
+					WyncThrottle.wync_ocuppy_space_towards_packets_data_size_limit(ctx, tick_size)
+					data_size += tick_size

@@ -11,26 +11,7 @@ func _ready():
 	
 
 func on_process(_entities, _data, _delta: float):
-
-	var en_client = ECS.get_singleton_entity(self, "EnSingleClient")
-	if not en_client:
-		Log.err("Couldn't find singleton EnSingleClient", Log.TAG_LATEST_VALUE)
-		return
-	var co_io = en_client.get_component(CoIOPackets.label) as CoIOPackets
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = single_wync.ctx as WyncCtx
-
-	# save tick data from packets
-
-	for k in range(co_io.in_packets.size()-1, -1, -1):
-		var pkt = co_io.in_packets[k] as NetPacket
-		var data = pkt.data as WyncPktPropSnap
-		if not data:
-			continue
-
-		#WyncFlow.wync_handle_pkt_prop_snap(wync_ctx, data)
-
-		co_io.in_packets.remove_at(k)
+	pass
 
 
 """
@@ -50,7 +31,7 @@ func save_delta_snap_from_packets(ctx: WyncCtx, co_io: CoIOPackets):
 			#if not WyncUtils.is_entity_tracked(wync_ctx, snap.entity_id):
 				#continue
 			
-			#for prop: WyncPktPropSnap.PropSnap in snap.props:
+			#for prop: WyncPktSnap.PropSnap in snap.props:
 				
 			var local_prop = WyncUtils.get_prop(ctx, snap.prop_id)
 			if local_prop == null:

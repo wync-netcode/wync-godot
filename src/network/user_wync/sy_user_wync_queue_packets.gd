@@ -24,11 +24,15 @@ func on_process(_entities, _data, _delta: float):
 		Log.err("Couldn't find co_io_packets", Log.TAG_WYNC_CONNECT)
 
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = single_wync.ctx as WyncCtx
+	var ctx = single_wync.ctx as WyncCtx
+
+	# gather packets
+
+	WyncThrottle.wync_system_gather_reliable_packets(ctx)
 	
 	# queue _out packets_ for delivery
 
-	for pkt: WyncPacketOut in wync_ctx.out_packets:
+	for pkt: WyncPacketOut in ctx.out_reliable_packets:
 		
 		# queue
 		
@@ -43,4 +47,4 @@ func on_process(_entities, _data, _delta: float):
 		co_io.out_packets.append(packet)
 
 	# clear 
-	wync_ctx.out_packets.clear()
+	ctx.out_reliable_packets.clear()

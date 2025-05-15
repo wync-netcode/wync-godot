@@ -10,6 +10,9 @@ static func wync_xtrap_preparation(ctx: WyncCtx) -> int:
 	ctx.xtrap_is_local_tick_duplicated = false
 	ctx.xtrap_prev_local_tick = null # Optional<int>
 	ctx.xtrap_local_tick = null # Optional<int>
+	ctx.first_tick_predicted = ctx.last_tick_received +1
+	ctx.pred_intented_first_tick = ctx.last_tick_received +1
+
 	return OK
 
 
@@ -19,13 +22,6 @@ static func wync_xtrap_tick_init(ctx: WyncCtx, tick: int) -> int:
 	# --------------------------------------------------
 	# ALL INPUT/EVENT PROPS, no excepcion for now
 	# TODO: identify which I own and which belong to my foes'
-	
-	ctx.xtrap_prev_local_tick = ctx.xtrap_local_tick
-	ctx.xtrap_local_tick = ctx.co_predict_data.get_tick_predicted(tick)
-	if ctx.xtrap_local_tick == null || ctx.xtrap_local_tick is not int:
-		# this indicates we should skip this tick. Maybe terminate the loop?
-		return 1
-	ctx.xtrap_is_local_tick_duplicated = ctx.xtrap_prev_local_tick == ctx.xtrap_local_tick
 
 	# set events inputs to corresponding value depending on tick
 	# TODO: could this be generalized with 'wync_input_props_set_tick_value' ?
@@ -41,8 +37,7 @@ static func wync_xtrap_tick_init(ctx: WyncCtx, tick: int) -> int:
 			WyncEntityProp.DATA_TYPE.EVENT]:
 			continue
 
-		# using ctx.xtrap_local_tick for predicted states INPUT,EVENT
-		var input_snap = prop.confirmed_states.get_at(ctx.xtrap_local_tick)
+		var input_snap = prop.confirmed_states.get_at(tick)
 
 		# honor no duplication
 		if (prop.data_type == WyncEntityProp.DATA_TYPE.EVENT
@@ -64,6 +59,39 @@ static func wync_xtrap_tick_init(ctx: WyncCtx, tick: int) -> int:
 	SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(ctx)
 
 	return OK
+
+
+# which entities shouldnt' be predicted in this tick:
+# * entities containing delta props
+# * entities with an already confirmed state for this tick
+# These props need their state reset to that tick
+# * props that are predicted and already have a confirmed state for this tick
+static func wync_xtrap_dont_predict_entities(ctx: WyncCtx, tick: int) -> Array[int]:
+	var entity_ids := [] as Array[int]
+
+	var pred_start_tick = ctx.last_tick_received +1
+	if tick >= pred_start_tick:
+		return []
+
+	# iterate each entity and determine if they shouldn't be predicted
+	for entity_id in ctx.tracked_entities.keys():
+		var entity_last_tick = WyncUtils.entity_get_last_received_tick(ctx, entity_id)
+
+		# contains a delta prop
+		if WyncUtils.entity_has_delta_prop(ctx, entity_id):
+			entity_ids.append(entity_id)
+		
+		# no history
+		elif entity_last_tick == -1:
+			entity_ids.append(entity_id)
+
+		# WARNING: Do not assume that we have all -10 past tick just before 'entity_last_tick'
+
+		# already have confirmed state + it's regular prop
+		elif entity_last_tick >= tick:
+			entity_ids.append(entity_id)
+
+	return entity_ids
 
 
 static func wync_xtrap_tick_end(ctx: WyncCtx, tick: int):
@@ -95,30 +123,33 @@ static func wync_xtrap_tick_end(ctx: WyncCtx, tick: int):
 		WyncXtrap.props_update_predicted_states_ticks(ctx, ctx.entity_has_props[wync_entity_id], target_tick)
 
 	# extract / poll for generated predicted _undo delta events_
-	
-	for prop_id: int in range(ctx.props.size()):
-		var prop = WyncUtils.get_prop(ctx, prop_id)
-		if prop == null:
-			continue
-		prop = prop as WyncEntityProp
-		if not prop.relative_syncable:
-			continue
-		if not WyncUtils.prop_is_predicted(ctx, prop_id):
-			continue
+
+	if tick >= ctx.pred_intented_first_tick:
+		for prop_id: int in range(ctx.props.size()):
+			var prop = WyncUtils.get_prop(ctx, prop_id)
+			if prop == null:
+				continue
+			prop = prop as WyncEntityProp
+			if not prop.relative_syncable:
+				continue
+			if not WyncUtils.prop_is_predicted(ctx, prop_id):
+				continue
+				
+			var aux_prop = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
+			if aux_prop == null:
+				assert(false)
+				continue
+			aux_prop = aux_prop as WyncEntityProp
 			
-		var aux_prop = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
-		if aux_prop == null:
-			continue
-		aux_prop = aux_prop as WyncEntityProp
-		
-		var undo_events = aux_prop.current_undo_delta_events.duplicate(true)
-		aux_prop.confirmed_states_undo.insert_at(tick, undo_events)
-		#Log.out("for SyWyncLatestValue | saving undo_events for tick %s" % [tick], Log.TAG_XTRAP)
+			var undo_events = aux_prop.current_undo_delta_events.duplicate(true)
+			aux_prop.confirmed_states_undo.insert_at(tick, undo_events)
+			#Log.out("for SyWyncLatestValue | saving undo_events for tick %s" % [tick], Log.TAG_XTRAP)
+
+	ctx.last_tick_predicted = tick
 
 
 static func wync_xtrap_termination(ctx: WyncCtx):
 	SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(ctx)
-	ctx.co_predict_data.delta_prop_last_tick_predicted = ctx.co_predict_data.target_tick
 	ctx.currently_on_predicted_tick = false
 
 

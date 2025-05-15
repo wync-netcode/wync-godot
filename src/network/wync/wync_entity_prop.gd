@@ -39,19 +39,25 @@ var timewarpable: bool
 
 # TODO: Make this value configurable on WyncCtx
 # Ring <tick: id, data: Variant>
-var confirmed_states: RingBuffer = RingBuffer.new(10)
+var confirmed_states: RingBuffer = null
 
+## On predicted entities, only the latest value is valid
 ## Last-In-First-Out (LIFO)
 ## LIFO Queue <arrival_order: int, server_tick: int>
-var last_ticks_received: RingBuffer = RingBuffer.new(10)
+var last_ticks_received: RingBuffer = null
+
+## Corresponds to the position in confirmed_states where
+## we last stored a predicted state
+## Guaranteed to find state between last_tick_received(0) and last_cached_predicted_tick
+var last_cached_predicted_tick: int = -1
 
 ## this server tick was received at this tick (used for lerping)
 ## LIFO Queue <server_tick: int, local_tick: int>
-var arrived_at_tick: RingBuffer = RingBuffer.new(10)
+var arrived_at_tick: RingBuffer = null
 
 ## store predicted state
-var pred_curr: NetTickData = NetTickData.new()
-var pred_prev: NetTickData = NetTickData.new()
+var pred_curr: NetTickData = null
+var pred_prev: NetTickData = null
 
 # UNUSED
 # Precalculate which ticks we're gonna be interpolating between
@@ -91,4 +97,9 @@ var current_undo_delta_events: Array[int]
 
 # Exclusive to auxiliar props, here we store undo event_ids
 # Ring <tick: id, data: Array[int]>
-var confirmed_states_undo: RingBuffer = RingBuffer.new(10)
+var confirmed_states_undo: RingBuffer = null
+
+# Related to Throttling
+# --------------------------------------------------
+
+var reliable := true

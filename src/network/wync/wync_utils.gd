@@ -29,11 +29,20 @@ static func prop_register(
 	prop.getter = getter
 	prop.setter = setter
 
+	# instantiate structs
+	# todo: some might not be necessary for all
+	prop.last_ticks_received = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT)
+	prop.arrived_at_tick = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT)
+	prop.pred_curr = NetTickData.new()
+	prop.pred_prev = NetTickData.new()
+
 	# TODO: Dynamic sized buffer for all owned predicted props?
 	# TODO: Only do this if this prop is predicted, move to prop_set_predict ?
 	if (data_type == WyncEntityProp.DATA_TYPE.INPUT ||
 		data_type == WyncEntityProp.DATA_TYPE.EVENT):
 		prop.confirmed_states = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE)
+	else:
+		prop.confirmed_states = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT)
 	
 	var prop_id = ctx.props.size()
 	var entity_props = ctx.entity_has_props[entity_id] as Array
@@ -44,11 +53,16 @@ static func prop_register(
 
 
 # NOTE: rename to prop_enable_prediction
-static func prop_set_predict(ctx: WyncCtx, prop_id: int) -> bool:
-	if prop_id > ctx.props.size() -1:
-		return false
+static func prop_set_predict(ctx: WyncCtx, prop_id: int) -> int:
+	var prop := get_prop(ctx, prop_id)
+	if prop == null:
+		return 1
 	ctx.props_to_predict.append(prop_id)
-	return true
+
+	# TODO: set only if it isn't _delta prop_
+	#prop.pred_curr = NetTickData.new()
+	#prop.pred_prev = NetTickData.new()
+	return OK
 
 
 # TODO: this is not very well optimized
@@ -60,6 +74,17 @@ static func entity_is_predicted(ctx: WyncCtx, entity_id: int) -> bool:
 		return false
 	for prop_id in ctx.entity_has_props[entity_id]:
 		if prop_is_predicted(ctx, prop_id):
+			return true
+	return false
+
+static func entity_has_delta_prop(ctx: WyncCtx, entity_id: int) -> bool:
+	if not ctx.entity_has_props.has(entity_id):
+		return false
+	for prop_id in ctx.entity_has_props[entity_id]:
+		var prop := get_prop(ctx, prop_id)
+		if prop == null:
+			continue
+		if prop.relative_syncable:
 			return true
 	return false
 
@@ -93,6 +118,14 @@ static func prop_is_timewarpable(ctx: WyncCtx, prop_id: int) -> bool:
 		return false
 	var prop = ctx.props[prop_id] as WyncEntityProp
 	return prop.timewarpable
+
+# server only
+static func prop_set_reliability(ctx: WyncCtx, prop_id: int, reliable: bool) -> int:
+	if prop_id > ctx.props.size() -1:
+		return 1
+	var prop = ctx.props[prop_id] as WyncEntityProp
+	prop.reliable = reliable
+	return OK
 
 ## Only for INPUT / EVENT props
 static func prop_set_prediction_duplication(ctx: WyncCtx, prop_id: int, duplication: bool) -> bool:
@@ -328,9 +361,13 @@ static func server_setup(ctx: WyncCtx) -> int:
 		ctx.peers_events_to_sync[i] = {} as Dictionary
 
 	# setup peer channels
-	WyncUtils.setup_peer_global_events(ctx, ctx.my_peer_id)
+	WyncUtils.setup_peer_global_events(ctx, WyncCtx.SERVER_PEER_ID)
 	for i in range(1, 2):
 		WyncUtils.setup_peer_global_events(ctx, i)
+
+	WyncUtils.setup_entity_prob_for_entity_update_delay_ticks(ctx, WyncCtx.SERVER_PEER_ID)
+
+	# setup prob prop
 	return 0
 	
 
@@ -356,6 +393,8 @@ static func client_setup_my_client(ctx: WyncCtx, peer_id: int) -> bool:
 	WyncUtils.setup_peer_global_events(ctx, ctx.SERVER_PEER_ID)
 	# setup own global events
 	WyncUtils.setup_peer_global_events(ctx, ctx.my_peer_id)
+	# setup prob prop
+	WyncUtils.setup_entity_prob_for_entity_update_delay_ticks(ctx, ctx.my_peer_id)
 	return true
 
 
@@ -389,6 +428,30 @@ static func get_nete_peer_id_from_wync_peer_id (ctx: WyncCtx, wync_peer_id: int)
 	if wync_peer_id >= 0 && wync_peer_id < ctx.peers.size():
 		return ctx.peers[wync_peer_id]
 	return -1
+
+
+# NOTE: maybe we could compute this every time we get an update?
+static func entity_get_last_received_tick (ctx: WyncCtx, entity_id: int) -> int:
+	if not is_entity_tracked(ctx, entity_id):
+		return -1
+
+	var last_tick = -1 
+	for prop_id: int in ctx.entity_has_props[entity_id]:
+
+		var prop := get_prop(ctx, prop_id)
+		if prop == null:
+			continue
+
+		var prop_last_tick = prop.last_ticks_received.get_relative(0)
+		if prop_last_tick is not int:
+			continue
+
+		if last_tick == -1:
+			last_tick = prop_last_tick
+		else:
+			last_tick = min(last_tick, prop_last_tick)
+
+	return last_tick
 
 
 """
@@ -441,6 +504,42 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 	if (WyncUtils.is_client(ctx) && peer_id == ctx.my_peer_id):
 		WyncUtils.prop_set_predict(ctx, prop_channel)
 
+	# TODO: add as VIP prop
+
+	# add as local existing prop
+	if not WyncUtils.is_client(ctx):
+		WyncThrottle.wync_add_local_existing_entity(ctx, peer_id, entity_id)
+
+	return 0
+
+
+static func setup_entity_prob_for_entity_update_delay_ticks(ctx: WyncCtx, peer_id: int) -> int:
+
+	# The prob prop acts is a low priority entity to sync, it's purpose it's to
+	# allow us to measure how much ticks of delay there are between updates for
+	# a especific single prop, based on that we can get a better stimate for
+	# _prediction threeshold_
+	
+	var entity_id = WyncCtx.ENTITY_ID_PROB_FOR_ENTITY_UPDATE_DELAY_TICKS
+	WyncUtils.track_entity(ctx, entity_id, -1)
+	var prop_prob = WyncUtils.prop_register(
+		ctx,
+		entity_id,
+		"entity_prob",
+		WyncEntityProp.DATA_TYPE.INT,
+		func() -> int: # getter
+			# use any value that constantly changes, don't really need to read it
+			return ctx.co_ticks.ticks, 
+		func(_value: Variant): # setter
+			pass,
+	)
+	if prop_prob != -1:
+		ctx.PROP_ID_PROB = prop_prob
+
+	# add as local existing prop
+	if not WyncUtils.is_client(ctx):
+		WyncThrottle.wync_add_local_existing_entity(ctx, peer_id, entity_id)
+
 	return 0
 
 
@@ -478,6 +577,7 @@ static func system_publish_global_events(ctx: WyncCtx, tick: int) -> void:
 # Miscellanious
 # ================================================================
 
+# TODO: being able to determine wether we're a client or not even before connecting
 static func is_client(ctx: WyncCtx, peer_id: int = -1) -> bool:
 	if peer_id >= 0:
 		return peer_id > 0
