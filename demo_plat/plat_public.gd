@@ -365,18 +365,16 @@ static func system_player_shoot_rocket(gs: Plat.GameState):
 
 			# Simulating future movement to help client interpolation
 
-			var pair = WyncUtils.fast_modulus(Engine.get_physics_frames(), 2) == 0
-			var simulate_ticks = 1 if pair else 0
-
 			var actor: Plat.Actor = PlatPublic.get_actor(gs, actor_id)
 			var rocket: Plat.Rocket = gs.rockets[actor.instance_id]
 			var ball_spawn_data = Plat.RocketSpawnData.new()
 			var old_rocket_pos = rocket.position
 
-			for i in range(simulate_ticks):
-				PlatPublic.individual_rocket_movement(gs, rocket, true)
-			ball_spawn_data.tick = WyncWrapper.wync_get_ticks(gs.wctx) + simulate_ticks
-			ball_spawn_data.value = rocket.position
+			PlatPublic.individual_rocket_movement(gs, rocket, true)
+
+			ball_spawn_data.tick = WyncWrapper.wync_get_ticks(gs.wctx)
+			ball_spawn_data.value1 = old_rocket_pos
+			ball_spawn_data.value2 = rocket.position
 			rocket.position = old_rocket_pos
 
 			WyncThrottle.wync_entity_set_spawn_data(gs.wctx, actor_id, ball_spawn_data, 20)

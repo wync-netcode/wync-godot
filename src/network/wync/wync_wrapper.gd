@@ -232,12 +232,12 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 				curr_time, curr_time - ctx.debug_lerp_prev_curr_time,
 				prop.interpolated_state.x, (prop.interpolated_state.x - debug_previous.x)]
 			DynamicDebugInfo.custom_global_text = txt
-			Log.outc(ctx, txt)
+			#Log.outc(ctx, txt)
 
 			# Debug only
-			var val_diff = right_value.x - left_value.x
-			if val_diff < 0 && val_diff > -100:
-				assert(false)
+			#var val_diff = right_value.x - left_value.x
+			#if val_diff < 0 && val_diff > -100:
+			#	assert(false)
 
 	ctx.debug_lerp_prev_curr_time = curr_time
 	ctx.debug_lerp_prev_target = target_time_conf
@@ -317,4 +317,3 @@ static func wync_insert_state_to_entity_prop (
 
 static func wync_get_ticks(ctx: WyncCtx):
 	return ctx.co_ticks.ticks
-

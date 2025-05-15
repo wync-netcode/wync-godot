@@ -79,8 +79,6 @@ static func precompute_lerping_prop_confirmed_states(
 	prop.lerp_left_state = val_left
 	prop.lerp_right_state = val_right
 
-	Log.outc(ctx, "deblerp, precomp | l(%s,%s) s(%s,%s) v(%.3f,%.3f)" % [
-		snaps[2], snaps[3], snaps[0], snaps[1], val_left.x, val_right.x ])
 
 
 static func precompute_lerping_prop_predicted(

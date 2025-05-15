@@ -165,12 +165,14 @@ class Client:
 
 class RocketSpawnData: # This represents the position
 	var tick: int
-	var value: Vector2
+	var value1: Vector2
+	var value2: Vector2
 
 	func duplicate() -> RocketSpawnData:
 		var i = RocketSpawnData.new()
 		i.tick = tick
-		i.value = value
+		i.value1 = value1
+		i.value2 = value2
 		return i
 
 

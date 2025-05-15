@@ -499,10 +499,6 @@ static func prop_save_confirmed_state(ctx: WyncCtx, prop_id: int, tick: int, sta
 			wync_try_to_update_prob_prop_rate(ctx)
 
 	
-		if prop_id == 18:
-			#var frame = 1000.0 / ctx.physic_ticks_per_second
-			Log.outc(ctx, "deblerp | (cl)rver_tick %s | prop %s received tick %s saved as tick %s | ~%s" % [ctx.co_ticks.server_ticks, prop_id, tick, ctx.co_ticks.ticks,
-			(ctx.co_ticks.ticks + ctx.co_ticks.server_tick_offset)])
 
 
 	else:
