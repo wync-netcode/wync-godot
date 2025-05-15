@@ -26,20 +26,11 @@ func on_process(_entities, _data, _delta: float):
 	
 	for k in range(co_io.in_packets.size()-1, -1, -1):
 		var pkt = co_io.in_packets[k] as NetPacket
-		var data = pkt.data as WyncPacketResClientInfo
+		var data = pkt.data as WyncPktResClientInfo
 		if not data:
 			continue
 		
+		#WyncFlow.wync_handle_packet_res_client_info(wync_ctx, data)
+
 		# consume
 		co_io.in_packets.remove_at(k)
-		
-		# check if entity id exists
-		# NOTE: is this check enough?
-		# NOTE: maybe there's no need to check, because these props can be sync later
-		#if not WyncUtils.is_entity_tracked(wync_ctx, data.entity_id):
-			#Log.out(self, "Entity %s isn't tracked" % data.entity_id)
-			#continue
-		
-		# set prop ownership
-		WyncUtils.prop_set_client_owner(wync_ctx, data.prop_id, wync_ctx.my_peer_id)
-		Log.out("Prop %s ownership given to client %s" % [data.prop_id, wync_ctx.my_peer_id], Log.TAG_WYNC_PEER_SETUP)

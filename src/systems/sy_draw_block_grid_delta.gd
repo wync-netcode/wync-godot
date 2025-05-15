@@ -108,9 +108,9 @@ func generate_block_grid_event(
 	# NOTE current approach:
 	# Feed event into my prop array of events
 	
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
+	var co_ticks = wync_ctx.co_ticks
 	
 	# FIXME: harcoded entity with id 0
 	var player_entity_id = 0
@@ -155,5 +155,5 @@ func generate_block_grid_event(
 		wync_ctx, 0, event_id
 	)
 	
-	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
+	var co_predict_data = wync_ctx.co_predict_data
 	Log.out("debug1 lo_ticks(%s) ser_ticks(%s) target(%s) co_wync_events.events %s:%s:%s" % [co_ticks.ticks, co_ticks.server_ticks, co_predict_data.target_tick, co_wync_events, co_wync_events.events.size(), co_wync_events.events], Log.TAG_GAME_EVENT)

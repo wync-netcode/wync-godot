@@ -11,28 +11,29 @@ func on_process(_entities, _data, _delta: float):
 	if not en_client:
 		Log.err("Couldn't find singleton EnSingleClient", Log.TAG_INPUT_BUFFER)
 		return
-	var co_client = en_client.get_component(CoClient.label) as CoClient
-	if co_client.server_peer < 0:
-		Log.err("No server peer", Log.TAG_INPUT_BUFFER)
-		return
-	var co_io_packets = en_client.get_component(CoIOPackets.label) as CoIOPackets
-	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
-	var tick_pred = co_predict_data.target_tick
 	
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = single_wync.ctx as WyncCtx
-	if !wync_ctx.connected:
+	var ctx = single_wync.ctx as WyncCtx
+	wync_send_inputs (ctx)
+	
+
+static func wync_send_inputs (ctx: WyncCtx):
+
+	var co_predict_data = ctx.co_predict_data
+	var tick_pred = co_predict_data.target_tick
+
+	if !ctx.connected:
 		return
 	
 	# reset events_id to sync
-	wync_ctx.peers_events_to_sync[WyncCtx.SERVER_PEER_ID].clear()
+	ctx.peers_events_to_sync[WyncCtx.SERVER_PEER_ID].clear()
 	
-	for prop_id: int in wync_ctx.client_owns_prop[wync_ctx.my_peer_id]:
+	for prop_id: int in ctx.client_owns_prop[ctx.my_peer_id]:
 		
-		if not WyncUtils.prop_exists(wync_ctx, prop_id):
+		if not WyncUtils.prop_exists(ctx, prop_id):
 			Log.err("prop %s doesn't exists" % prop_id, Log.TAG_INPUT_BUFFER)
 			continue
-		var input_prop = wync_ctx.props[prop_id] as WyncEntityProp
+		var input_prop = ctx.props[prop_id] as WyncEntityProp
 		if not input_prop:
 			Log.err("not input_prop %s" % prop_id, Log.TAG_INPUT_BUFFER)
 			continue
@@ -44,7 +45,7 @@ func on_process(_entities, _data, _delta: float):
 
 		# prepare packet
 
-		var net_inputs = NetPacketInputs.new()
+		var pkt_inputs = WyncPktInputs.new()
 
 		for i in range(tick_pred - CoNetBufferedInputs.AMOUNT_TO_SEND, tick_pred +1):
 			var tick_local = co_predict_data.get_tick_predicted(i)
@@ -56,7 +57,7 @@ func on_process(_entities, _data, _delta: float):
 				#Log.out(self, "we don't have an input for this tick %s" % [i])
 				continue
 			
-			var tick_input_wrap = NetPacketInputs.NetTickDataDecorator.new()
+			var tick_input_wrap = WyncPktInputs.NetTickDataDecorator.new()
 			tick_input_wrap.tick = i
 			
 			var copy = WyncUtils.duplicate_any(input)
@@ -64,24 +65,24 @@ func on_process(_entities, _data, _delta: float):
 				Log.out("WARNING: input data couldn't be duplicated %s" % [input], Log.TAG_INPUT_BUFFER)
 			tick_input_wrap.data = copy if copy != null else input
 				
-			net_inputs.inputs.append(tick_input_wrap)
+			pkt_inputs.inputs.append(tick_input_wrap)
 			
 			# compile events ids
 			if (input_prop.data_type == WyncEntityProp.DATA_TYPE.EVENT &&
 				input is Array):
 				input = input as Array
 				for event_id: int in input:
-					var event_set = wync_ctx.peers_events_to_sync[WyncCtx.SERVER_PEER_ID] as Dictionary
+					var event_set = ctx.peers_events_to_sync[WyncCtx.SERVER_PEER_ID] as Dictionary
 					event_set[event_id] = true
 				
 
-		net_inputs.amount = net_inputs.inputs.size()
-		net_inputs.prop_id = prop_id
+		pkt_inputs.amount = pkt_inputs.inputs.size()
+		pkt_inputs.prop_id = prop_id
 		#Log.out(self, "INPUT Sending prop %s" % [input_prop.name_id]) 
 
 		# prepare peer packet and send (queue)
 
-		var pkt = NetPacket.new()
-		pkt.to_peer = co_client.server_peer
-		pkt.data = net_inputs
-		co_io_packets.out_packets.append(pkt)
+		var result = WyncFlow.wync_wrap_packet_out(ctx, WyncCtx.SERVER_PEER_ID, WyncPacket.WYNC_PKT_INPUTS, pkt_inputs)
+		if result[0] == OK:
+			var packet_out = result[1] as WyncPacketOut
+			ctx.out_packets.append(packet_out)

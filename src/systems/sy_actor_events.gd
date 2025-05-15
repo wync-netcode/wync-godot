@@ -72,6 +72,8 @@ static func run_client_events(node_ctx: Node, wync_ctx: WyncCtx, client_wync_pee
 		if event is not WyncEvent:
 			continue
 		event = event as WyncEvent
+		
+		#Log.out("Gonna execute this event %s" % [event_id], Log.TAG_DEBUG3)
 
 		# handle it
 		handle_events(node_ctx, event.data, client_wync_peer_id)
@@ -184,9 +186,9 @@ static func handle_event_player_block_place(node_ctx: Node, event: WyncEvent.Eve
 
 
 static func handle_event_player_block_break_delta(node_ctx: Node, event: WyncEvent.EventData):
-	var co_ticks = ECS.get_singleton_component(node_ctx, CoTicks.label) as CoTicks
-	var co_single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
-	var ctx = co_single_wync.ctx
+	var single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
+	var ctx = single_wync.ctx as WyncCtx
+	var co_ticks = ctx.co_ticks
 
 	var singleton_name = event.arg_data[0] as String
 	var block_pos = event.arg_data[1] as Vector2i
@@ -245,9 +247,9 @@ static func handle_event_player_block_break_delta(node_ctx: Node, event: WyncEve
 
 
 static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEvent.EventData):
-	var co_ticks = ECS.get_singleton_component(node_ctx, CoTicks.label) as CoTicks
-	var co_single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
-	var ctx = co_single_wync.ctx
+	var single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
+	var ctx = single_wync.ctx as WyncCtx
+	var co_ticks = ctx.co_ticks
 
 	var singleton_name = event.arg_data[0] as String
 	var block_pos = event.arg_data[1] as Vector2i
@@ -356,9 +358,9 @@ static func handle_event_player_block_place_delta(node_ctx: Node, event: WyncEve
 # server only function
 static func handle_event_player_shoot(node_ctx: Node, event: WyncEvent.EventData, peer_id: int):
 	
-	var co_ticks = ECS.get_singleton_component(node_ctx, CoTicks.label) as CoTicks
-	var co_single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = co_single_wync.ctx
+	var single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
+	var wync_ctx = single_wync.ctx as WyncCtx
+	var co_ticks = wync_ctx.co_ticks
 	
 	# NOTE: peer_id shouldn't be 0 (the server's)
 	var client_info = wync_ctx.client_has_info[peer_id] as WyncClientInfo

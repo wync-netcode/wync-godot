@@ -7,9 +7,14 @@ const label: StringName = StringName("SyNetPredictionTicks")
 	
 
 func on_process(_entities, _data, _delta: float):
+	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	wync_update_prediction_ticks (single_wync.ctx)
 
-	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+
+static func wync_update_prediction_ticks (ctx: WyncCtx):
+	
+	var co_predict_data = ctx.co_predict_data
+	var co_ticks = ctx.co_ticks
 	
 	var curr_time = ClockUtils.time_get_ticks_msec(co_ticks)
 	var physics_fps = Engine.physics_ticks_per_second
@@ -56,7 +61,4 @@ func on_process(_entities, _data, _delta: float):
 	# Run before any prediction takes places on the current tick
 	# NOTE: This could be moved elsewhere
 	
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = single_wync.ctx as WyncCtx
-	
-	WyncEventUtils.action_tick_history_reset(wync_ctx, co_predict_data.target_tick)
+	WyncEventUtils.action_tick_history_reset(ctx, co_predict_data.target_tick)

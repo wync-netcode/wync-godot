@@ -26,13 +26,9 @@ func on_process(_entities, _data, _delta: float):
 		return
 	var co_io = single_client.get_component(CoIOPackets.label) as CoIOPackets
 
-	# send connect req packet
-	
-	var packet_data = WyncPktJoinReq.new()
-	var packet = NetPacket.new()
-	packet.to_peer = co_client.server_peer
-	packet.data = packet_data
-	co_io.out_packets.append(packet)
+	# might want to move this elsewhere
+
+	WyncFlow.wync_try_to_connect(wync_ctx)
 	
 	# check for response packets
 
@@ -41,19 +37,8 @@ func on_process(_entities, _data, _delta: float):
 		var data = pkt.data as WyncPktJoinRes
 		if not data:
 			continue
-			
+
+		#WyncFlow.wync_handle_pkt_join_res(wync_ctx, data)
+
 		# consume
 		co_io.in_packets.remove_at(k)
-		
-		if not data.approved:
-			Log.err("Connection DENIED for peer %s" % [co_io.peer_id], Log.TAG_WYNC_CONNECT)
-			continue
-			
-		# setup client stuff
-		# NOTE: Move this elsewhere?
-			
-		wync_ctx.connected = true
-		wync_ctx.my_peer_id = data.wync_client_id
-		WyncUtils.client_setup_my_client(wync_ctx, data.wync_client_id)
-
-		Log.out("client wync %s connected" % [co_io.peer_id], Log.TAG_WYNC_CONNECT)

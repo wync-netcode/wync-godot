@@ -1,7 +1,4 @@
-extends Component
-class_name CoSingleNetPredictionData
-static var label = ECS.add_component()
-# TODO: Pick a better class name
+class_name CoPredictionData
 
 # periodical vars
 

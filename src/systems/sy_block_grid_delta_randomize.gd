@@ -5,10 +5,10 @@ const label: StringName = StringName("SyBlockGridDeltaRandomize")
 
 func on_process(_entities, _data, _delta):
 	
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+	var game_ticks = Engine.get_physics_frames()
 	
 	if not (
-		(co_ticks.ticks > 10 && co_ticks.ticks <= 50)
+		(game_ticks > 10 && game_ticks <= 50)
 		#|| (co_ticks.ticks > 150 && co_ticks.ticks < 170)
 		):
 		return
@@ -81,7 +81,7 @@ func insert_random_block_by_delta_event(wync_ctx: WyncCtx, en_block_grid: Entity
 
 	var random_generator = RandomNumberGenerator.new()
 	
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+	var co_ticks = wync_ctx.co_ticks
 	var co_actor = en_block_grid.get_component(CoActor.label) as CoActor
 	var co_block_grid = en_block_grid.get_component(CoBlockGrid.label) as CoBlockGrid
 

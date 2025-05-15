@@ -1,0 +1,161 @@
+class_name WyncXtrap
+
+## functions to preform extrapolation / prediction
+
+
+static func wync_xtrap_preparation(ctx: WyncCtx) -> int:
+	if ctx.last_tick_received == 0:
+		return 1
+	ctx.currently_on_predicted_tick = true
+	ctx.xtrap_is_local_tick_duplicated = false
+	ctx.xtrap_prev_local_tick = null # Optional<int>
+	ctx.xtrap_local_tick = null # Optional<int>
+	return OK
+
+
+static func wync_xtrap_tick_init(ctx: WyncCtx, tick: int) -> int:
+	ctx.current_predicted_tick = tick
+	
+	# --------------------------------------------------
+	# ALL INPUT/EVENT PROPS, no excepcion for now
+	# TODO: identify which I own and which belong to my foes'
+	
+	ctx.xtrap_prev_local_tick = ctx.xtrap_local_tick
+	ctx.xtrap_local_tick = ctx.co_predict_data.get_tick_predicted(tick)
+	if ctx.xtrap_local_tick == null || ctx.xtrap_local_tick is not int:
+		# this indicates we should skip this tick. Maybe terminate the loop?
+		return 1
+	ctx.xtrap_is_local_tick_duplicated = ctx.xtrap_prev_local_tick == ctx.xtrap_local_tick
+
+	# set events inputs to corresponding value depending on tick
+	# TODO: could this be generalized with 'wync_input_props_set_tick_value' ?
+	
+	for prop_id: int in range(ctx.props.size()):
+		
+		var prop = ctx.props[prop_id] as WyncEntityProp
+		if prop == null:
+			continue
+		if not WyncUtils.prop_is_predicted(ctx, prop_id):
+			continue
+		if prop.data_type not in [WyncEntityProp.DATA_TYPE.INPUT,
+			WyncEntityProp.DATA_TYPE.EVENT]:
+			continue
+
+		# using ctx.xtrap_local_tick for predicted states INPUT,EVENT
+		var input_snap = prop.confirmed_states.get_at(ctx.xtrap_local_tick)
+
+		# honor no duplication
+		if (prop.data_type == WyncEntityProp.DATA_TYPE.EVENT
+			&& ctx.xtrap_is_local_tick_duplicated):
+
+			if (not prop.allow_duplication_on_tick_skip):
+
+				# set default value, in the future we might support INPUT type as well
+				input_snap = [] as Array[int]
+			
+		if input_snap == null:
+			continue
+		prop.setter.call(input_snap)
+
+		# INPUT/EVENTs don't need integration functions
+
+	# clearing delta events before predicting, predicted delta events will be
+	# polled and cached at the end of the predicted tick
+	SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(ctx)
+
+	return OK
+
+
+static func wync_xtrap_tick_end(ctx: WyncCtx, tick: int):
+
+	var target_tick = ctx.co_predict_data.target_tick
+
+	# wync bookkeeping
+	# --------------------------------------------------
+
+	for wync_entity_id: int in ctx.tracked_entities.keys():
+	
+		if !WyncUtils.entity_is_predicted(ctx, wync_entity_id):
+			continue
+		
+		# store predicted states
+		# (run on last two iterations)
+		
+		if tick > (target_tick -1):
+			WyncXtrap.props_update_predicted_states_data(ctx, ctx.entity_has_props[wync_entity_id])
+
+		# integration functions
+		
+		var int_fun = WyncUtils.entity_get_integrate_fun(ctx, wync_entity_id)
+		if int_fun is Callable:
+			int_fun.call()
+
+		# update/store predicted state metadata
+	
+		WyncXtrap.props_update_predicted_states_ticks(ctx, ctx.entity_has_props[wync_entity_id], target_tick)
+
+	# extract / poll for generated predicted _undo delta events_
+	
+	for prop_id: int in range(ctx.props.size()):
+		var prop = WyncUtils.get_prop(ctx, prop_id)
+		if prop == null:
+			continue
+		prop = prop as WyncEntityProp
+		if not prop.relative_syncable:
+			continue
+		if not WyncUtils.prop_is_predicted(ctx, prop_id):
+			continue
+			
+		var aux_prop = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
+		if aux_prop == null:
+			continue
+		aux_prop = aux_prop as WyncEntityProp
+		
+		var undo_events = aux_prop.current_undo_delta_events.duplicate(true)
+		aux_prop.confirmed_states_undo.insert_at(tick, undo_events)
+		#Log.out("for SyWyncLatestValue | saving undo_events for tick %s" % [tick], Log.TAG_XTRAP)
+
+
+static func wync_xtrap_termination(ctx: WyncCtx):
+	SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(ctx)
+	ctx.co_predict_data.delta_prop_last_tick_predicted = ctx.co_predict_data.target_tick
+	ctx.currently_on_predicted_tick = false
+
+
+static func props_update_predicted_states_data(ctx: WyncCtx, props_ids: Array) -> void:
+	
+	for prop_id: int in props_ids:
+		
+		var prop = ctx.props[prop_id] as WyncEntityProp
+		if prop == null:
+			continue
+
+		var pred_curr = prop.pred_curr
+		var pred_prev = prop.pred_prev
+		
+		# Initialize stored predicted states. TODO: Move elsewhere
+		
+		if pred_curr.data == null:
+			pred_curr.data = Vector2.ZERO
+			pred_prev = pred_curr.copy()
+			continue
+			
+		# store predicted states
+		# (run on last two iterations)
+		
+		pred_prev.data = pred_curr.data
+		pred_curr.data = prop.getter.call()
+
+
+static func props_update_predicted_states_ticks(ctx: WyncCtx, props_ids: Array, target_tick: int) -> void:
+	
+	for prop_id: int in props_ids:
+		
+		var prop = ctx.props[prop_id] as WyncEntityProp
+		if prop == null:
+			continue
+
+		# update store predicted state metadata
+		
+		prop.pred_prev.server_tick = target_tick -1
+		prop.pred_curr.server_tick = target_tick

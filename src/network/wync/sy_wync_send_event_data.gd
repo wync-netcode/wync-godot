@@ -10,49 +10,24 @@ func on_process(_entities, _data, _delta: float):
 
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var ctx = single_wync.ctx as WyncCtx
+	wync_send_event_data (ctx)
+
+
+static func wync_send_event_data (ctx: WyncCtx):
 	if not ctx.connected:
 		Log.err("Not connected", Log.TAG_EVENT_DATA)
-		return
-
-	# get co_io_packets
-
-	var co_io_packets = null
-	if WyncUtils.is_client(ctx):
-		var en_client = ECS.get_singleton_entity(self, "EnSingleClient")
-		if not en_client:
-			Log.err("Couldn't find singleton EnSingleClient", Log.TAG_EVENT_DATA)
-			return
-		co_io_packets = en_client.get_component(CoIOPackets.label) as CoIOPackets
-	else:
-		var en_server = ECS.get_singleton_entity(self, "EnSingleServer")
-		if not en_server:
-			Log.err("Couldn't find singleton EnSingleServer", Log.TAG_EVENT_DATA)
-			return
-		co_io_packets = en_server.get_component(CoIOPackets.label) as CoIOPackets
-
-	if co_io_packets == null:
-		Log.err("Couldn't find CoIOPackets", Log.TAG_EVENT_DATA)
 		return
 
 	# send events
 	
 	if WyncUtils.is_client(ctx):
-		var en_client = ECS.get_singleton_entity(self, "EnSingleClient")
-		var co_client = en_client.get_component(CoClient.label) as CoClient
-		if co_client.server_peer < 0:
-			Log.err("No server peer", Log.TAG_EVENT_DATA)
-			return
-		send_events_to_peer(self, ctx, co_io_packets, WyncCtx.SERVER_PEER_ID, co_client.server_peer)
+		send_events_to_peer(ctx, WyncCtx.SERVER_PEER_ID)
 	else: # server
-		for wync_peer_id in range(ctx.peers.size()):
-			var net_peer_id = ctx.peers[wync_peer_id]
-			send_events_to_peer(self, ctx, co_io_packets, wync_peer_id, net_peer_id)
+		for wync_peer_id in range(1, ctx.peers.size()):
+			send_events_to_peer(ctx, wync_peer_id)
 
 
-static func send_events_to_peer(
-	node_ctx: Node, ctx: WyncCtx, co_io_packets: CoIOPackets,
-	wync_peer_id: int, net_peer_id: int
-	):
+static func send_events_to_peer (ctx: WyncCtx, wync_peer_id: int):
 	
 	var event_keys = ctx.peers_events_to_sync[wync_peer_id].keys()
 	var event_amount = event_keys.size()
@@ -103,15 +78,23 @@ static func send_events_to_peer(
 			#Log.out(node_ctx, "%s" % [event_data.arg_data[j]])
 		
 		data.events.append(event_data)
-		#Log.out(node_ctx, "sending this event %s" % HashUtils.object_to_dictionary(event_data))
+		
+		#if WyncUtils.is_client(ctx):
+			#Log.out("sending this event %s" % HashUtils.object_to_dictionary(event_data), Log.TAG_DEBUG3)
+		
+		if event_id == 105:
+			print()
+			print()
 	
 	if (data.events.size() == 0):
 		return
 	
 	# queue
 
-	var pkt = NetPacket.new()
-	pkt.to_peer = net_peer_id
-	pkt.data = data
-	co_io_packets.out_packets.append(pkt)
+	var packet_dup = WyncUtils.duplicate_any(data)
+	var result = WyncFlow.wync_wrap_packet_out(ctx, wync_peer_id, WyncPacket.WYNC_PKT_EVENT_DATA, packet_dup)
+	if result[0] == OK:
+		var packet_out = result[1] as WyncPacketOut
+		ctx.out_packets.append(packet_out)
+
 	Log.out("sent", Log.TAG_EVENT_DATA)

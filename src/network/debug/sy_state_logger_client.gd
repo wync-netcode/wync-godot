@@ -1,6 +1,7 @@
 extends System
 class_name SyStateLoggerClient
 const label: StringName = StringName("SyStateLoggerClient")
+"""
 
 const ACTOR_TO_LOG_ID = 0
 
@@ -51,3 +52,4 @@ func on_process_entity(entity, _data, _delta: float):
 		Log.out("(%d) server: %s client %s diff %s" % [tick_show, co_state_log.server_state[tick_show].input, co_state_log.client_state[tick_show].input, co_state_log.server_state[tick_show].input - co_state_log.client_state[tick_show].input])
 		Log.out("(%d) server: %s client %s" % [tick_show, co_state_log.server_state[tick_show].vel, co_state_log.client_state[tick_show].vel])
 		Log.out("(%d) server: %s client %s" % [tick_show, co_state_log.server_state[tick_show].pos, co_state_log.client_state[tick_show].pos])
+"""

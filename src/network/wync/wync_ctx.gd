@@ -1,5 +1,26 @@
 class_name WyncCtx
 
+## extrapolation service ??
+
+# We can detect a local_tick is duplicated by checking is the same as te previous,
+# Then we can honor the config wheter to allow duplication or not for each prop
+var xtrap_is_local_tick_duplicated = false
+var xtrap_prev_local_tick: Variant = null # Optional<int>
+var xtrap_local_tick: Variant = null # Optional<int>
+
+
+## user network info feed
+
+var current_tick_nete_latency_ms: int
+
+## outgoing packets
+
+var out_packets: Array[WyncPacketOut]
+
+## Extra structures =============================
+
+var co_ticks: CoTicks = CoTicks.new()
+var co_predict_data: CoPredictionData = CoPredictionData.new()
 
 ## Server & Client ==============================
 
@@ -22,6 +43,10 @@ var props: Array[WyncEntityProp]
 
 # Map<entity_id: int, Array<prop_id>>
 var entity_has_props: Dictionary
+
+# User defined types, so that they can know what data types to sync
+# Map<entity_id: int, entity_type_id: int>
+var entity_is_of_type: Dictionary
 
 # TODO: Separate generated events from CACHED events
 # Map<event_id: uint, WyncEvent>
@@ -109,6 +134,7 @@ var entity_has_integrate_fun: Dictionary
 var props_to_predict: Array[int]
 
 var my_peer_id: int = -1
+var my_nete_peer_id: int = -1
 
 # Array<sim_fun_id: int, Callable>
 # stores:

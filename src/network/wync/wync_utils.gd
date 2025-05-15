@@ -5,9 +5,10 @@ class_name WyncUtils
 # ================================================================
 
 
-static func track_entity(ctx: WyncCtx, entity_id: int):
+static func track_entity(ctx: WyncCtx, entity_id: int, entity_type_id: int):
 	ctx.tracked_entities[entity_id] = true
 	ctx.entity_has_props[entity_id] = []
+	ctx.entity_is_of_type[entity_id] = entity_type_id
 
 
 static func prop_register(
@@ -155,7 +156,7 @@ static func is_entity_tracked(ctx: WyncCtx, entity_id: int) -> bool:
 # ================================================================
 
 ## @returns tuple[int, int]. tick left, tick right
-static func find_closest_two_snapshots_from_prop_id(ctx: WyncCtx, target_time: int, prop_id: int, co_ticks: CoTicks, co_predict_data: CoSingleNetPredictionData) -> Array:
+static func find_closest_two_snapshots_from_prop_id(ctx: WyncCtx, target_time: int, prop_id: int, co_ticks: CoTicks, co_predict_data: CoPredictionData) -> Array:
 	
 	var prop = WyncUtils.get_prop(ctx, prop_id)
 	if prop == null:
@@ -171,7 +172,7 @@ static func find_closest_two_snapshots_from_prop_id(ctx: WyncCtx, target_time: i
 
 
 ## @returns tuple[int, int]. tick left, tick right
-static func find_closest_two_snapshots_from_prop(_ctx: WyncCtx, target_time: int, prop: WyncEntityProp, co_ticks: CoTicks, co_predict_data: CoSingleNetPredictionData) -> Array:
+static func find_closest_two_snapshots_from_prop(_ctx: WyncCtx, target_time: int, prop: WyncEntityProp, co_ticks: CoTicks, co_predict_data: CoPredictionData) -> Array:
 	
 	var snap_left = -1
 	var snap_right = -1
@@ -366,6 +367,30 @@ static func is_peer_registered(ctx: WyncCtx, peer_data: int) -> int:
 			return peer_id
 	return -1
 
+
+static func wync_set_my_nete_peer_id (ctx: WyncCtx, nete_peer_id: int) -> int:
+	ctx.my_nete_peer_id = nete_peer_id
+	return OK
+
+
+## Client only
+static func wync_set_server_nete_peer_id (ctx: WyncCtx, nete_peer_id: int) -> int:
+	if ctx.peers.size() == 0:
+		ctx.peers.resize(1)
+	ctx.peers[0] = nete_peer_id
+	ctx.my_nete_peer_id = nete_peer_id
+	return OK
+
+
+## Gets nete_peer_id from a given wync_peer_id
+## Used to know to whom to send packets
+## @returns int: nete_peer_id if found; -1 if not found
+static func get_nete_peer_id_from_wync_peer_id (ctx: WyncCtx, wync_peer_id: int) -> int:
+	if wync_peer_id >= 0 && wync_peer_id < ctx.peers.size():
+		return ctx.peers[wync_peer_id]
+	return -1
+
+
 """
 static func setup_general_global_events(ctx: WyncCtx) -> int:
 	ctx.global_events_channel.resize(WyncCtx.MAX_GLOBAL_EVENT_CHANNELS)
@@ -397,7 +422,7 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 		return 1
 	
 	var entity_id = WyncCtx.ENTITY_ID_GLOBAL_EVENTS + peer_id
-	WyncUtils.track_entity(ctx, entity_id)
+	WyncUtils.track_entity(ctx, entity_id, -1)
 	var channel_id = 0
 	var prop_channel = WyncUtils.prop_register(
 		ctx,
@@ -411,6 +436,8 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 			event_array.clear()
 			event_array.append_array(input),
 	)
+
+	# predict my own global channel
 	if (WyncUtils.is_client(ctx) && peer_id == ctx.my_peer_id):
 		WyncUtils.prop_set_predict(ctx, prop_channel)
 

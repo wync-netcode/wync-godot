@@ -20,67 +20,15 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 	var wync_ctx = single_wync.ctx as WyncCtx
 	if !wync_ctx.connected:
 		return
-	
-	var co_actor = entity.get_component(CoActor.label) as CoActor
-	var co_ball = entity.get_component(CoBall.label) as CoBall
-	var co_collider = entity.get_component(CoCollider.label) as CharacterBody2D
-	
-	# NOTE: Register just the ball for now
-	
-	WyncUtils.track_entity(wync_ctx, co_actor.id)
-	var pos_prop_id = WyncUtils.prop_register(
-		wync_ctx,
-		co_actor.id,
-		"position",
-		WyncEntityProp.DATA_TYPE.VECTOR2,
-		func() -> Vector2: return co_collider.global_position,
-		func(pos: Vector2): co_collider.global_position = pos,
-	)
-	var vel_prop_id = WyncUtils.prop_register(
-		wync_ctx,
-		co_actor.id,
-		"velocity",
-		WyncEntityProp.DATA_TYPE.VECTOR2,
-		func() -> Vector2: return co_collider.velocity,
-		func(vel: Vector2): co_collider.velocity = vel,
-	)
-	var aim_prop_id = WyncUtils.prop_register(
-		wync_ctx,
-		co_actor.id,
-		"aim",
-		WyncEntityProp.DATA_TYPE.FLOAT,
-		func() -> float: return co_ball.aim_radians,
-		func(new_aim: float): co_ball.aim_radians = new_aim,
-	)
-	
-	# integration function
 
-	var int_fun_id = WyncUtils.register_function(wync_ctx, co_collider.force_update_transform)
-	if int_fun_id < 0:
-		Log.err("Couldn't register integrate fun", Log.TAG_PROP_SETUP)
-	else:
-		WyncUtils.entity_set_integration_fun(wync_ctx, co_actor.id, int_fun_id)
+	# setup existing entity
 	
-	if WyncUtils.is_client(wync_ctx):
-		# interpolation
-		
-		WyncUtils.prop_set_interpolate(wync_ctx, pos_prop_id)
-		WyncUtils.prop_set_interpolate(wync_ctx, vel_prop_id)
-		WyncUtils.prop_set_interpolate(wync_ctx, aim_prop_id)
-		
-		# setup extrapolation
+	UserWyncUtils.setup_entity_type(self, entity, GameInfo.ENTITY_TYPE_BALL)
 
-		if co_actor.id % 2 == 0:
-			WyncUtils.prop_set_predict(wync_ctx, pos_prop_id)
-			WyncUtils.prop_set_predict(wync_ctx, vel_prop_id)
-	
-	# it is server
-	else:
-		
-		# time warp
-		WyncUtils.prop_set_timewarpable(wync_ctx, pos_prop_id) 
-		
+	# TODO: Server: On client connect setup these _map present_ entities
+	#WyncThrottle.wync_add_local_existing_entity(wync_ctx, wync_ctx.my_peer_id, co_actor.id)
 	
 	var flag = CoFlagWyncEntityTracked.new()
 	ECS.entity_add_component_node(entity, flag)
+	var co_actor = entity.get_component(CoActor.label) as CoActor
 	Log.out("wync: Registered entity %s with id %s" % [entity, co_actor.id], Log.TAG_PROP_SETUP)

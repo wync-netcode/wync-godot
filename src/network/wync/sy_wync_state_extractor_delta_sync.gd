@@ -9,9 +9,11 @@ const label: StringName = StringName("SyWyncStateExtractorDeltaSync")
 
 
 func on_process(_entities, _data, _delta: float):
+	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var ctx = single_wync.ctx as WyncCtx
 
-	send_event_ids_to_peers()
-	queue_event_data_to_be_synced_to_peers()
+	send_event_ids_to_peers(ctx)
+	queue_event_data_to_be_synced_to_peers(ctx)
 
 
 # --------------------------------------------------------------------------------
@@ -19,17 +21,9 @@ func on_process(_entities, _data, _delta: float):
 # TODO: For now all clients know about this prop, later we can filter
 
 
-func send_event_ids_to_peers():
+static func send_event_ids_to_peers(ctx: WyncCtx):
 
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
-	var single_server = ECS.get_singleton_entity(self, "EnSingleServer")
-	if not single_server:
-		print("E: Couldn't find singleton EnSingleServer")
-		return
-	var co_io_packets = single_server.get_component(CoIOPackets.label) as CoIOPackets
-	
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var ctx = single_wync.ctx as WyncCtx
+	var co_ticks = ctx.co_ticks
 
 	# reset events
 
@@ -58,7 +52,7 @@ func send_event_ids_to_peers():
 
 		# prepare packet
 
-		var net_inputs = NetPacketInputs.new()
+		var pkt_inputs = WyncPktInputs.new()
 
 		for tick in range(co_ticks.ticks - CoNetBufferedInputs.AMOUNT_TO_SEND, co_ticks.ticks +1):
 			var input = aux_prop.confirmed_states.get_at(tick)
@@ -66,7 +60,7 @@ func send_event_ids_to_peers():
 				Log.err("we don't have an input for this tick %s" % [tick], Log.TAG_DELTA_EVENT)
 				continue
 			
-			var tick_input_wrap = NetPacketInputs.NetTickDataDecorator.new()
+			var tick_input_wrap = WyncPktInputs.NetTickDataDecorator.new()
 			tick_input_wrap.tick = tick
 			
 			var copy = WyncUtils.duplicate_any(input)
@@ -74,19 +68,20 @@ func send_event_ids_to_peers():
 				Log.out("WARNING: input data couldn't be duplicated %s" % [input], Log.TAG_DELTA_EVENT)
 			tick_input_wrap.data = copy if copy != null else input
 				
-			net_inputs.inputs.append(tick_input_wrap)
+			pkt_inputs.inputs.append(tick_input_wrap)
 
-		net_inputs.amount = net_inputs.inputs.size()
-		net_inputs.prop_id = prop_id
+		pkt_inputs.amount = pkt_inputs.inputs.size()
+		pkt_inputs.prop_id = prop_id
 
 		# queue packets to send
 		# TODO: Make this upper level maybe?
 
 		for wync_client_id in range(1, ctx.peers.size()):
-			var pkt = NetPacket.new()
-			pkt.to_peer = wync_client_id
-			pkt.data = WyncUtils.duplicate_any(net_inputs)
-			co_io_packets.out_packets.append(pkt)
+			var packet_dup = WyncUtils.duplicate_any(pkt_inputs)
+			var result = WyncFlow.wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_INPUTS, packet_dup)
+			if result[0] == OK:
+				var packet_out = result[1] as WyncPacketOut
+				ctx.out_packets.append(packet_out)
 
 
 # --------------------------------------------------------------------------------
@@ -94,10 +89,9 @@ func send_event_ids_to_peers():
 # collect what event_ids need their _event data_ synced depending on peer
 
 
-func queue_event_data_to_be_synced_to_peers():
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var ctx = single_wync.ctx as WyncCtx
+static func queue_event_data_to_be_synced_to_peers(ctx: WyncCtx):
+
+	var co_ticks = ctx.co_ticks
 
 	for prop_id: int in range(ctx.props.size()):
 

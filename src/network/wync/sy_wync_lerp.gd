@@ -16,10 +16,10 @@ func _ready():
 	
 
 func on_process(_entities, _data, _delta: float):
-	var co_predict_data = ECS.get_singleton_component(self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
 	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
 	var wync_ctx = single_wync.ctx as WyncCtx
+	var co_predict_data = wync_ctx.co_predict_data
+	var co_ticks = wync_ctx.co_ticks
 
 	# TODO: Move this elsewhere
 	co_ticks.lerp_delta_accumulator_ms += int(_delta * 1000)
@@ -28,7 +28,7 @@ func on_process(_entities, _data, _delta: float):
 
 
 ## interpolates confirmed states and predicted states
-static func interpolate_all(wync_ctx: WyncCtx, co_ticks: CoTicks, co_predict_data: CoSingleNetPredictionData):
+static func interpolate_all(wync_ctx: WyncCtx, co_ticks: CoTicks, co_predict_data: CoPredictionData):
 
 	var curr_tick_time = ClockUtils.get_tick_local_time_msec(co_predict_data, co_ticks, co_ticks.ticks)
 	var curr_time = curr_tick_time + co_ticks.lerp_delta_accumulator_ms

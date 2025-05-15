@@ -68,4 +68,12 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 		co_client.identifier = data.identifier
 		co_client.server_peer = pkt.from_peer
 
+		# fill in wync nete_peer_ids
+		# wync setup should be done once we've stablished connection
+		
+		var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+		var wync_ctx = single_wync.ctx as WyncCtx
+		WyncUtils.wync_set_my_nete_peer_id(wync_ctx, co_io.peer_id)
+		WyncUtils.wync_set_server_nete_peer_id(wync_ctx, co_client.server_peer)
+
 		Log.out("client_peer_id %s connected to server_peer_id %s" % [co_io.peer_id, co_client.server_peer], Log.TAG_NETE_CONNECT)

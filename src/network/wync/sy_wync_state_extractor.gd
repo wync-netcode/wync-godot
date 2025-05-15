@@ -7,7 +7,8 @@ const label: StringName = StringName("SyWyncStateExtractor")
 
 func on_process(_entities, _data, _delta: float):
 
-	var co_ticks = ECS.get_singleton_component(self, CoTicks.label) as CoTicks
+	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+	var ctx = single_wync.ctx as WyncCtx
 
 	# throttle send rate
 	# TODO: make this configurable
@@ -19,30 +20,33 @@ func on_process(_entities, _data, _delta: float):
 	if not single_server:
 		print("E: Couldn't find singleton EnSingleServer")
 		return
-	var co_io_packets = single_server.get_component(CoIOPackets.label) as CoIOPackets
-	var co_server = single_server.get_component(CoServer.label) as CoServer
-	
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = single_wync.ctx as WyncCtx
 	
 	# extract data
 	
-	extract_data_to_tick(wync_ctx, co_ticks, co_ticks.ticks)
+	extract_data_to_tick(ctx, ctx.co_ticks, ctx.co_ticks.ticks)
+	
+	# send data
+	
+	wync_send_extracted_data(ctx)
+	
+	
+static func wync_send_extracted_data(ctx: WyncCtx):
 
 	# TODO: iterate per each client, maybe make it configurable, cause some updates might be global
 	# Only run if there is at least one client (peer_id 0 is server)
-	if wync_ctx.peers.size() <= 1:
+	if ctx.peers.size() <= 1:
 		return
 
-	var client_id = 1
+	var co_ticks = ctx.co_ticks
+	var client_id = 1 # FIXME: Remove hardcoded client_id
 
 	# build packet
 
 	var packet = WyncPktPropSnap.new()
 	packet.tick = co_ticks.ticks
 	
-	for entity_id_key in wync_ctx.entity_has_props.keys():
-		var prop_ids_array = wync_ctx.entity_has_props[entity_id_key] as Array
+	for entity_id_key in ctx.entity_has_props.keys():
+		var prop_ids_array = ctx.entity_has_props[entity_id_key] as Array
 		if not prop_ids_array.size():
 			continue
 		
@@ -50,7 +54,7 @@ func on_process(_entities, _data, _delta: float):
 		entity_snap.entity_id = entity_id_key
 		
 		for prop_id in prop_ids_array:
-			var prop = WyncUtils.get_prop(wync_ctx, prop_id)
+			var prop = WyncUtils.get_prop(ctx, prop_id)
 			if prop == null:
 				continue
 			prop = prop as WyncEntityProp
@@ -66,7 +70,7 @@ func on_process(_entities, _data, _delta: float):
 			# TODO: TYPE_EVENT props should be sent in chunks, not here
 			# Allow auxiliar props to be synced
 			if prop.relative_syncable:
-				var prop_aux = WyncUtils.get_prop(wync_ctx, prop.auxiliar_delta_events_prop_id)
+				var prop_aux = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
 				if prop_aux == null:
 					continue
 				prop_id = prop.auxiliar_delta_events_prop_id
@@ -86,7 +90,7 @@ func on_process(_entities, _data, _delta: float):
 		# --------------------------------------------------
 
 		for prop_id in prop_ids_array:
-			var prop = WyncUtils.get_prop(wync_ctx, prop_id)
+			var prop = WyncUtils.get_prop(ctx, prop_id)
 			if prop == null:
 				continue
 			prop = prop as WyncEntityProp
@@ -98,10 +102,10 @@ func on_process(_entities, _data, _delta: float):
 
 			# send fullsnapshot if client doesn't have history, or if it's too old
 
-			var client_relative_props = wync_ctx.client_has_relative_prop_has_last_tick[client_id] as Dictionary
+			var client_relative_props = ctx.client_has_relative_prop_has_last_tick[client_id] as Dictionary
 			if not client_relative_props.has(prop_id):
 				client_relative_props[prop_id] = -1
-			if client_relative_props[prop_id] >= wync_ctx.delta_base_state_tick:
+			if client_relative_props[prop_id] >= ctx.delta_base_state_tick:
 				continue
 			client_relative_props[prop_id] = co_ticks.ticks
 			
@@ -116,29 +120,32 @@ func on_process(_entities, _data, _delta: float):
 			
 			#Log.out(self, "wync: Found prop %s" % prop.name_id)
 			
+			
 		packet.snaps.append(entity_snap)
 
 
-	# prepare packets to send
+	# queue _out packets_ for delivery
 
-	for peer: CoServer.ServerPeer in co_server.peers:
-		var pkt = NetPacket.new()
-		pkt.to_peer = peer.peer_id
-		pkt.data = packet.duplicate()
-		co_io_packets.out_packets.append(pkt)
+	for wync_peer_id: int in range(1, ctx.peers.size()):
+
+		var packet_dup = WyncUtils.duplicate_any(packet)
+		var result = WyncFlow.wync_wrap_packet_out(ctx, wync_peer_id, WyncPacket.WYNC_PKT_PROP_SNAP, packet_dup)
+		if result[0] == OK:
+			var packet_out = result[1] as WyncPacketOut
+			ctx.out_packets.append(packet_out)
 
 
-static func extract_data_to_tick(wync_ctx: WyncCtx, co_ticks: CoTicks, save_on_tick: int = -1):
+static func extract_data_to_tick(ctx: WyncCtx, co_ticks: CoTicks, save_on_tick: int = -1):
 	
-	for entity_id_key in wync_ctx.entity_has_props.keys():
+	for entity_id_key in ctx.entity_has_props.keys():
 
-		var prop_ids_array = wync_ctx.entity_has_props[entity_id_key] as Array
+		var prop_ids_array = ctx.entity_has_props[entity_id_key] as Array
 		if not prop_ids_array.size():
 			continue
 		
 		for prop_id in prop_ids_array:
 			
-			var prop = wync_ctx.props[prop_id] as WyncEntityProp
+			var prop = ctx.props[prop_id] as WyncEntityProp
 			
 			# don't extract input values
 			# FIXME: should events be extracted? game event yes, but other player events? Maybe we need an option to what events to share.
@@ -150,12 +157,12 @@ static func extract_data_to_tick(wync_ctx: WyncCtx, co_ticks: CoTicks, save_on_t
 			# relative_syncable receives special treatment
 
 			if prop.relative_syncable:
-				var err = update_relative_syncable_prop(wync_ctx, co_ticks, prop_id)
+				var err = update_relative_syncable_prop(ctx, co_ticks, prop_id)
 				if err != OK:
 					Log.err("delta sync | update_relative_syncable_prop err(%s)" % [err])
 				
 				# Allow auxiliar props
-				var prop_aux = WyncUtils.get_prop(wync_ctx, prop.auxiliar_delta_events_prop_id)
+				var prop_aux = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
 				if prop_aux == null:
 					continue
 				prop = prop_aux

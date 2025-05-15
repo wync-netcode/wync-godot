@@ -24,28 +24,32 @@ func _ready():
 	super()
 	
 
-func on_process(_entities, _data, _delta: float, node_root: Node = null):
-	
-	var node_self = self if node_root == null else node_root
-	var co_ticks = ECS.get_singleton_component(node_self, CoTicks.label) as CoTicks
-	var co_predict_data = ECS.get_singleton_component(node_self, CoSingleNetPredictionData.label) as CoSingleNetPredictionData
-	var tick_curr = co_ticks.server_ticks
-	
-	var single_wync = ECS.get_singleton_component(node_self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var wync_ctx = single_wync.ctx as WyncCtx
+func on_process(_entities, _data, _delta: float, p_node_root: Node = null):
 
-	if not wync_ctx.connected:
+	var node_root = self if p_node_root == null else p_node_root
+
+	var single_wync = ECS.get_singleton_component(node_root, CoSingleWyncContext.label) as CoSingleWyncContext
+	wync_buffer_inputs(single_wync.ctx)
+	
+	
+static func wync_buffer_inputs(ctx: WyncCtx):
+	
+	var co_ticks = ctx.co_ticks
+	var co_predict_data = ctx.co_predict_data
+	var tick_curr = co_ticks.server_ticks
+
+	if not ctx.connected:
 		return
 
 	## Buffer state (extract) from props we own, to create a state history
 	
-	for prop_id: int in wync_ctx.client_owns_prop[wync_ctx.my_peer_id]:
+	for prop_id: int in ctx.client_owns_prop[ctx.my_peer_id]:
 		
 		# Log.out(node_self, "client owns prop %s" % prop_id)
-		if not WyncUtils.prop_exists(wync_ctx, prop_id):
+		if not WyncUtils.prop_exists(ctx, prop_id):
 			Log.err("prop %s doesn't exists" % prop_id, Log.TAG_INPUT_BUFFER)
 			continue
-		var input_prop = wync_ctx.props[prop_id] as WyncEntityProp
+		var input_prop = ctx.props[prop_id] as WyncEntityProp
 		if not input_prop:
 			Log.err("not input_prop %s" % prop_id, Log.TAG_INPUT_BUFFER)
 			continue
@@ -63,12 +67,12 @@ func on_process(_entities, _data, _delta: float, node_root: Node = null):
 		
 		# Log.out(node_self, "Saving event state :%s" % [new_state])
 		# TODO: Should always run once per tick regardless of props
-		wync_tick_set_input(co_predict_data, wync_ctx, prop_id, tick_curr, new_state)
+		wync_tick_set_input(co_predict_data, ctx, prop_id, tick_curr, new_state)
 	
 
-func wync_tick_set_input(
-	co_predict_data: CoSingleNetPredictionData,
-	wync_ctx: WyncCtx,
+static func wync_tick_set_input(
+	co_predict_data: CoPredictionData,
+	ctx: WyncCtx,
 	input_prop_id: int,
 	tick_curr: int,
 	input #: any
@@ -90,7 +94,7 @@ func wync_tick_set_input(
 	
 	# save input to actual prop
 	
-	var input_prop = wync_ctx.props[input_prop_id] as WyncEntityProp
+	var input_prop = ctx.props[input_prop_id] as WyncEntityProp
 	if input_prop == null:
 		return
 	

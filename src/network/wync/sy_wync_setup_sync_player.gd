@@ -24,83 +24,9 @@ func on_process_entity(entity: Entity, _data, _delta: float):
 	if !wync_ctx.connected:
 		return
 	
-	var co_actor = entity.get_component(CoActor.label) as CoActor
-	var co_collider = entity.get_component(CoCollider.label) as CharacterBody2D
-	var co_actor_input = entity.get_component(CoActorInput.label) as CoActorInput
-	var co_wync_events = entity.get_component(CoWyncEvents.label) as CoWyncEvents
-	
-	# NOTE: Register just the ball for now
-	
-	WyncUtils.track_entity(wync_ctx, co_actor.id)
-	var pos_prop_id = WyncUtils.prop_register(
-		wync_ctx,
-		co_actor.id,
-		"position",
-		WyncEntityProp.DATA_TYPE.VECTOR2,
-		func(): return co_collider.global_position,
-		func(pos: Vector2): co_collider.global_position = pos,
-	)
-	var vel_prop_id = WyncUtils.prop_register(
-		wync_ctx,
-		co_actor.id,
-		"velocity",
-		WyncEntityProp.DATA_TYPE.VECTOR2,
-		func(): return co_collider.velocity,
-		func(vel: Vector2): co_collider.velocity = vel,
-	)
-	var input_prop_id = WyncUtils.prop_register(
-		wync_ctx,
-		co_actor.id,
-		"input",
-		WyncEntityProp.DATA_TYPE.INPUT,
-		func(): return co_actor_input.copy(),
-		func(input: CoActorInput): input.copy_to_instance(co_actor_input),
-	)
-	
-	# We're gonna be using this prop to store "shoot" events for TimeWarping
-	# or subtick precision
-	var events_prop_id = WyncUtils.prop_register(
-		wync_ctx,
-		co_actor.id,
-		"events",
-		WyncEntityProp.DATA_TYPE.EVENT,
-		func():
-			return co_wync_events.events.duplicate(true),
-		func(events: Array):
-			co_wync_events.events.clear()
-			# NOTE: can't check cast like this `if events is not Array[int]:`
-			co_wync_events.events.append_array(events),
-	)
-	co_wync_events.prop_id = events_prop_id
-		
-	# integration function
-
-	var int_fun_id = WyncUtils.register_function(wync_ctx, co_collider.force_update_transform)
-	if int_fun_id < 0:
-		Log.err("Couldn't register integrate fun", Log.TAG_PROP_SETUP)
-	else:
-		WyncUtils.entity_set_integration_fun(wync_ctx, co_actor.id, int_fun_id)
-
-	if WyncUtils.is_client(wync_ctx):
-		# interpolation
-		
-		WyncUtils.prop_set_interpolate(wync_ctx, pos_prop_id)
-		WyncUtils.prop_set_interpolate(wync_ctx, vel_prop_id)
-	
-		# setup extrapolation
-			
-		WyncUtils.prop_set_predict(wync_ctx, pos_prop_id)
-		WyncUtils.prop_set_predict(wync_ctx, vel_prop_id)
-		WyncUtils.prop_set_predict(wync_ctx, input_prop_id)
-		WyncUtils.prop_set_predict(wync_ctx, events_prop_id)
-	
-	# it is server
-	else:
-		
-		# time warp
-		WyncUtils.prop_set_timewarpable(wync_ctx, pos_prop_id) 
-
+	UserWyncUtils.setup_entity_type(self, entity, GameInfo.ENTITY_TYPE_PLAYER)
 		
 	var flag = CoFlagWyncEntityTracked.new()
 	ECS.entity_add_component_node(entity, flag)
+	var co_actor = entity.get_component(CoActor.label) as CoActor
 	Log.out("wync: Registered entity %s with id %s" % [entity, co_actor.id], Log.TAG_PROP_SETUP)

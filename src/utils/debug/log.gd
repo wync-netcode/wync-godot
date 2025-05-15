@@ -2,6 +2,8 @@ class_name Log
 
 enum {
 	TAG_DEBUG1,
+	TAG_DEBUG2,
+	TAG_DEBUG3,
 	TAG_CLOCK,
 	TAG_LATENCY,
 	TAG_PRED_TICK,
@@ -19,12 +21,15 @@ enum {
 	TAG_GAME_EVENT,
 	TAG_TIMEWARP,
 	TAG_SUBTICK_EVENT,
+	TAG_THROTTLE,
 	# append up
 	TAG_COUNT,
 }
 
 const tag_names: Dictionary = {
 	TAG_DEBUG1: "Debug1",
+	TAG_DEBUG2: "Debug2",
+	TAG_DEBUG3: "Debug3",
 	TAG_CLOCK: "Clock",
 	TAG_LATENCY: "Latency",
 	TAG_PRED_TICK: "Pred-tick",
@@ -42,6 +47,7 @@ const tag_names: Dictionary = {
 	TAG_GAME_EVENT: "Game-Event",
 	TAG_TIMEWARP: "Timewarp",
 	TAG_SUBTICK_EVENT: "Subtick-Event",
+	TAG_THROTTLE: "Throttle",
 }
 
 
