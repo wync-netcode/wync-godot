@@ -69,6 +69,7 @@ func _process(_delta: float) -> void:
 func get_info_general() -> String:
 	var client_time_ms = WyncUtils.clock_get_ms(client_wctx)
 	var pred_server_time_ms = client_time_ms + client_wctx.co_predict_data.clock_offset_mean
+	var prob_prop_ms = (1000.0 / client_wctx.physic_ticks_per_second) * (client_wctx.low_priority_entity_update_rate +1)
 
 	var text = \
 	"""PhysicsFPS: %s
@@ -99,7 +100,9 @@ func get_info_general() -> String:
 	server_rate_out: %s/t
 	client_rate_out: %s/t
 	(cl)server_tick_rate %.2f (%.2f tps)
+
 	(cl)prob_prop_rate %.2f (latest %d)
+	1 update arrives each %.2fms
 	(cl)max_pred_threeshold %d
 	(cl)dummy_props %s (lost %s)
 	""" % \
@@ -134,8 +137,11 @@ func get_info_general() -> String:
 		client_wctx.debug_data_per_tick_sliding_window_mean,
 		client_wctx.server_tick_rate,
 		((1.0 / (client_wctx.server_tick_rate + 1)) * Engine.physics_ticks_per_second),
+
 		client_wctx.low_priority_entity_update_rate,
 		client_wctx.low_priority_entity_update_rate_sliding_window.get_relative(0),
+		prob_prop_ms,
+
 		client_wctx.max_prediction_tick_threeshold,
 		client_wctx.dummy_props.size(), client_wctx.stat_lost_dummy_props
 	]
