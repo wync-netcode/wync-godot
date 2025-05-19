@@ -204,11 +204,9 @@ static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 				factor = (target_time_conf - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms)
 			else:
 				factor = (target_time_pred - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms)
-			if factor < -0.1 || factor > 1.1:
+			if (factor < (0 - ctx.max_lerp_factor_symmetric) ||
+				factor > (1 + ctx.max_lerp_factor_symmetric)):
 				continue
-
-			# TODO: Make it a config toggleable option
-			# TODO: Allow extrapolation up to 1000ms (clamp?) (configurable)
 
 			var lerp_func_id = ctx.wrapper.lerp_type_to_lerp_function[prop.user_data_type]
 			var lerp_func = ctx.wrapper.lerp_function[lerp_func_id]

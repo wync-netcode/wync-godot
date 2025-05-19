@@ -896,6 +896,10 @@ static func wync_client_set_lerp_ms (ctx: WyncCtx, server_tick_rate: float, lerp
 	# TODO: also set maximum based on tick history size
 	# NOTE: what about tick differences between server and clients?
 
+## How much the lerping is allowed to extrapolate when missing packages
+static func wync_client_set_max_lerp_factor_symmetric (ctx: WyncCtx, max_lerp_factor_symmetric: float):
+	ctx.max_lerp_factor_symmetric = max_lerp_factor_symmetric
+
 
 static func wync_get_next_entity_event_spawn(ctx: WyncCtx) -> WyncCtx.EntitySpawnEvent:
 	var size = ctx.out_queue_spawn_events.size

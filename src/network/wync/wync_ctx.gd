@@ -205,6 +205,12 @@ var client_has_relative_prop_has_last_tick: Array[Dictionary]
 # maybe it can be a single int that works for all predicted props
 # var relative_prop_has_last_tick_predicted: Array[Dictionary]
 
+# some client only settings
+# --------------------------------------------------------------------------------
+
+# MAYBEDO: use ms as magnitud
+var max_lerp_factor_symmetric: float
+
 # relative synchronization
 # --------------------------------------------------------------------------------
 
@@ -481,6 +487,7 @@ func _init() -> void:
 
 
 	wrapper_initialize(self)
+	max_lerp_factor_symmetric = 1.0
 		
 
 static func wrapper_initialize(ctx: WyncCtx):
