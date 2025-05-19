@@ -16,10 +16,12 @@ static func setup_client(ctx: WyncCtx):
 	WyncUtils.clock_set_debug_time_offset(ctx, 1000)
 
 	# set server tick rate and lerp_ms
-	var server_tick_rate: int = ctx.physic_ticks_per_second
-	var desired_lerp: int = ceil((1000.0 / server_tick_rate) * 5) # 6 ticks in the past
-	WyncFlow.wync_client_set_lerp_ms(ctx, server_tick_rate, desired_lerp)
-	#WyncFlow.wync_client_set_lerp_ms(ctx, server_tick_rate, 0)
+	#var server_tick_rate: float = ctx.physic_ticks_per_second / 8.0
+	var server_tick_rate: float = ctx.physic_ticks_per_second
+	#var server_tick_rate: float = ctx.physic_ticks_per_second / 16.0
+	#var desired_lerp: float = ceil((1000.0 / server_tick_rate) * 5) # 6 ticks in the past
+	#WyncFlow.wync_client_set_lerp_ms(ctx, server_tick_rate, desired_lerp)
+	WyncFlow.wync_client_set_lerp_ms(ctx, server_tick_rate, 0)
 
 	WyncWrapper.wync_register_lerp_type(
 		ctx, Plat.LERP_TYPE_FLOAT,
@@ -128,7 +130,8 @@ static func setup_sync_for_ball_actor(gs: Plat.GameState, actor_id: int):
 		pos_prop_id,
 		ball_instance,
 		func(user_ctx: Variant) -> Vector2: return (user_ctx as Plat.Ball).position,
-		func(user_ctx: Variant, pos: Vector2): (user_ctx as Plat.Ball).position = pos,
+		#func(user_ctx: Variant, pos: Vector2): (user_ctx as Plat.Ball).position = pos,
+		func(_user_ctx , _pos): pass,
 	)
 	WyncUtils.prop_set_interpolate(
 		wctx, pos_prop_id, Plat.LERP_TYPE_VECTOR2
@@ -263,7 +266,8 @@ static func setup_sync_for_rocket_actor(gs: Plat.GameState, actor_id: int):
 		pos_prop_id,
 		rocket_instance,
 		func(user_ctx: Variant) -> Vector2: return (user_ctx as Plat.Rocket).position,
-		func(user_ctx: Variant, pos: Vector2): (user_ctx as Plat.Rocket).position = pos,
+		#func(user_ctx: Variant, pos: Vector2): (user_ctx as Plat.Rocket).position = pos,
+		func(_user_ctx, _pos): pass,
 	)
 	WyncUtils.prop_set_interpolate(
 		wctx, pos_prop_id, Plat.LERP_TYPE_VECTOR2
