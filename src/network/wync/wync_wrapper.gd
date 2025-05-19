@@ -149,11 +149,10 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 	co_ticks.lerp_delta_accumulator_ms += delta * 1000
 
 	# TODO: Replace "Engine.get_physics_interpolation_fraction" with user arg
-	var curr_time: float = Engine.get_physics_interpolation_fraction() * frame
-	var target_time_conf: float = curr_time - co_predict_data.lerp_ms - co_predict_data.lerp_latency_ms
-	var target_time_pred: float = curr_time
-
-	# then interpolate them 
+	var delta_fraction_ms: float = Engine.get_physics_interpolation_fraction() * frame
+	# Note: substracting one frame to compensate for one frame added by delta_fraction_ms
+	var target_time_conf: float = delta_fraction_ms - frame - co_predict_data.lerp_ms - co_predict_data.lerp_latency_ms
+	var target_time_pred: float = delta_fraction_ms
 
 	var left_timestamp_ms: float
 	var right_timestamp_ms: float
@@ -161,8 +160,8 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 	var right_value: Variant
 	var factor: float
 
-	#Log.outc(ctx, "deblerp | curr_tick_time %s delta_acc %s curr_time %s" % [
-		#curr_tick_time, co_ticks.lerp_delta_accumulator_ms, curr_time
+	#Log.outc(ctx, "deblerp | curr_tick_time %s delta_acc %s delta_fraction_ms %s" % [
+		#curr_tick_time, co_ticks.lerp_delta_accumulator_ms, delta_fraction_ms
 		#])
 
 	for prop_id in ctx.type_state__interpolated_regular_prop_ids:
@@ -172,7 +171,7 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 			left_value = prop.lerp_left_state
 			right_value = prop.lerp_right_state
 
-			## WARNING: getting time by ticks might be imprecise
+			## Note: getting time by ticks strictly
 
 			left_timestamp_ms = (prop.lerp_left_confirmed_state_tick
 			- ctx.co_ticks.server_tick_offset - co_ticks.ticks) * frame
@@ -180,7 +179,7 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 			- ctx.co_ticks.server_tick_offset - co_ticks.ticks) * frame
 		else:
 
-			# TODO: Come up with a better approach with less branches
+			# MAYBEDO: Come up with a better approach with less branches
 			# Maybe mark it for no lerp on precompute
 			if prop.pred_prev == null:
 				continue
@@ -188,7 +187,7 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 			left_value = prop.pred_prev.data
 			right_value = prop.pred_curr.data
 
-			# NOTE: opportunity to optimize this by not recalculating this each loop (prediction only)
+			# MAYBEDO: opportunity to optimize this by not recalculating this each loop (prediction only)
 
 			left_timestamp_ms = (prop.lerp_left_local_tick - co_ticks.ticks) * frame
 			right_timestamp_ms = (prop.lerp_right_local_tick - co_ticks.ticks) * frame
@@ -198,7 +197,7 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 
 		var debug_previous: Vector2
 
-		# NOTE: Maybe check for value integrity
+		# MAYBEDO: Maybe check for value integrity
 
 		if abs(left_timestamp_ms - right_timestamp_ms) < 0.000001:
 			prop.interpolated_state = right_value
@@ -207,6 +206,8 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 				factor = (target_time_conf - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms)
 			else:
 				factor = (target_time_pred - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms)
+			if factor < -0.1 || factor > 1.1:
+				continue
 
 			# TODO: Make it a config toggleable option
 			# TODO: Allow extrapolation up to 1000ms (clamp?) (configurable)
@@ -229,7 +230,7 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 				target_time_conf - ctx.debug_lerp_prev_target,
 				delta * 1000, co_ticks.lerp_delta_accumulator_ms, factor,
 				Engine.get_physics_interpolation_fraction(),
-				curr_time, curr_time - ctx.debug_lerp_prev_curr_time,
+				delta_fraction_ms, delta_fraction_ms - ctx.debug_lerp_prev_curr_time,
 				prop.interpolated_state.x, (prop.interpolated_state.x - debug_previous.x)]
 			DynamicDebugInfo.custom_global_text = txt
 			#Log.outc(ctx, txt)
@@ -239,7 +240,7 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 			#if val_diff < 0 && val_diff > -100:
 			#	assert(false)
 
-	ctx.debug_lerp_prev_curr_time = curr_time
+	ctx.debug_lerp_prev_curr_time = delta_fraction_ms
 	ctx.debug_lerp_prev_target = target_time_conf
 
 
