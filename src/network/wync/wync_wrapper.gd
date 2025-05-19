@@ -140,18 +140,15 @@ static func xtrap_props_update_predicted_states_data(ctx: WyncCtx, props_ids: Ar
 
 
 ## interpolates confirmed states and predicted states
-static func wync_interpolate_all(ctx: WyncCtx, delta: float):
+## @argument delta_lerp_fraction float. Usually but not always in range 0 to 1. Fraction through the current physics tick we are at the time of rendering the frame.
+static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 
 	var frame := 1000.0 / Engine.physics_ticks_per_second
 
-	var co_predict_data = ctx.co_predict_data
-	var co_ticks = ctx.co_ticks
-	co_ticks.lerp_delta_accumulator_ms += delta * 1000
-
 	# TODO: Replace "Engine.get_physics_interpolation_fraction" with user arg
-	var delta_fraction_ms: float = Engine.get_physics_interpolation_fraction() * frame
+	var delta_fraction_ms: float = delta_lerp_fraction * frame
 	# Note: substracting one frame to compensate for one frame added by delta_fraction_ms
-	var target_time_conf: float = delta_fraction_ms - frame - co_predict_data.lerp_ms - co_predict_data.lerp_latency_ms
+	var target_time_conf: float = delta_fraction_ms - frame - ctx.co_predict_data.lerp_ms - ctx.co_predict_data.lerp_latency_ms
 	var target_time_pred: float = delta_fraction_ms
 
 	var left_timestamp_ms: float
@@ -174,9 +171,10 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 			## Note: getting time by ticks strictly
 
 			left_timestamp_ms = (prop.lerp_left_confirmed_state_tick
-			- ctx.co_ticks.server_tick_offset - co_ticks.ticks) * frame
+			- ctx.co_ticks.server_tick_offset - ctx.co_ticks.ticks) * frame
 			right_timestamp_ms = (prop.lerp_right_confirmed_state_tick
-			- ctx.co_ticks.server_tick_offset - co_ticks.ticks) * frame
+			- ctx.co_ticks.server_tick_offset - ctx.co_ticks.ticks) * frame
+
 		else:
 
 			# MAYBEDO: Come up with a better approach with less branches
@@ -189,13 +187,13 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 
 			# MAYBEDO: opportunity to optimize this by not recalculating this each loop (prediction only)
 
-			left_timestamp_ms = (prop.lerp_left_local_tick - co_ticks.ticks) * frame
-			right_timestamp_ms = (prop.lerp_right_local_tick - co_ticks.ticks) * frame
+			left_timestamp_ms = (prop.lerp_left_local_tick - ctx.co_ticks.ticks) * frame
+			right_timestamp_ms = (prop.lerp_right_local_tick - ctx.co_ticks.ticks) * frame
 
 		if left_value == null:
 			continue
 
-		var debug_previous: Vector2
+		#var debug_previous: Vector2
 
 		# MAYBEDO: Maybe check for value integrity
 
@@ -215,24 +213,24 @@ static func wync_interpolate_all(ctx: WyncCtx, delta: float):
 			var lerp_func_id = ctx.wrapper.lerp_type_to_lerp_function[prop.user_data_type]
 			var lerp_func = ctx.wrapper.lerp_function[lerp_func_id]
 
-			if prop.interpolated_state != null: debug_previous = prop.interpolated_state
+			#if prop.interpolated_state != null: debug_previous = prop.interpolated_state
 
 			prop.interpolated_state = lerp_func.call(left_value, right_value, factor)
 
-		if prop_id == 18:
+		#if prop_id == 18:
 
-			var txt = "deblerp | p_id%s | l(%s,%s) s(%s,%s) | l(%.2f) r(%.2f) | left %.2f right %.2f target %.3f d %.3f | delta %.3f acu %.3f factor %.3f lerp_fra %.3f | curr %.3f d %2.3f | pos %.3f diff %2.3f" % [
-				prop_id,
-				prop.lerp_left_local_tick, prop.lerp_right_local_tick,
-				prop.lerp_left_confirmed_state_tick, prop.lerp_right_confirmed_state_tick,
-				left_value.x, right_value.x,
-				left_timestamp_ms, right_timestamp_ms, target_time_conf,
-				target_time_conf - ctx.debug_lerp_prev_target,
-				delta * 1000, co_ticks.lerp_delta_accumulator_ms, factor,
-				Engine.get_physics_interpolation_fraction(),
-				delta_fraction_ms, delta_fraction_ms - ctx.debug_lerp_prev_curr_time,
-				prop.interpolated_state.x, (prop.interpolated_state.x - debug_previous.x)]
-			DynamicDebugInfo.custom_global_text = txt
+			#var txt = "deblerp | p_id%s | l(%s,%s) s(%s,%s) | l(%.2f) r(%.2f) | left %.2f right %.2f target %.3f d %.3f | delta %.3f acu %.3f factor %.3f lerp_fra %.3f | curr %.3f d %2.3f | pos %.3f diff %2.3f" % [
+				#prop_id,
+				#prop.lerp_left_local_tick, prop.lerp_right_local_tick,
+				#prop.lerp_left_confirmed_state_tick, prop.lerp_right_confirmed_state_tick,
+				#left_value.x, right_value.x,
+				#left_timestamp_ms, right_timestamp_ms, target_time_conf,
+				#target_time_conf - ctx.debug_lerp_prev_target,
+				#delta * 1000, co_ticks.lerp_delta_accumulator_ms, factor,
+				#Engine.get_physics_interpolation_fraction(),
+				#delta_fraction_ms, delta_fraction_ms - ctx.debug_lerp_prev_curr_time,
+				#prop.interpolated_state.x, (prop.interpolated_state.x - debug_previous.x)]
+			#DynamicDebugInfo.custom_global_text = txt
 			#Log.outc(ctx, txt)
 
 			# Debug only

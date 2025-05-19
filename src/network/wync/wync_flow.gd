@@ -887,7 +887,7 @@ static func wync_peer_set_current_latency (ctx: WyncCtx, peer_id: int, latency_m
 static func wync_client_set_physics_ticks_per_second (ctx: WyncCtx, tps: int):
 	ctx.physic_ticks_per_second = tps
 
-static func wync_client_set_lerp_ms (ctx: WyncCtx, server_tick_rate: int, lerp_ms: int):
+static func wync_client_set_lerp_ms (ctx: WyncCtx, server_tick_rate: float, lerp_ms: int):
 	#var physics_fps: int = ctx.physic_ticks_per_second
 	#var server_update_rate: int = ceil((1.0 / (ctx.server_tick_rate + 1)) * physics_fps)
 	#ctx.lerp_ms = max(lerp_ms, (1000 / server_update_rate) * 2)
