@@ -24,7 +24,11 @@ func on_process(_entities, _data, _delta: float):
 		var co_actors = en_single_actors.get_component(CoSingleActors.label) as CoSingleActors
 
 		for peer_id in range(0, ctx.peers.size()):
-			for actor_id in range(co_actors.actors.size()):
+
+			# map local entities
+			for actor_id in range(0, 5 + 1):
+				if co_actors.actors.size() <= actor_id:
+					continue
 				if co_actors.actors[actor_id] == null:
 					continue
 
@@ -34,6 +38,8 @@ func on_process(_entities, _data, _delta: float):
 
 				WyncThrottle.wync_client_now_can_see_entity(ctx, peer_id, actor_id)
 				WyncThrottle.wync_add_local_existing_entity(ctx, peer_id, actor_id)
+
+			# 
 			
 			# prob prop
 			WyncThrottle.wync_client_now_can_see_entity(ctx, peer_id, WyncCtx.ENTITY_ID_PROB_FOR_ENTITY_UPDATE_DELAY_TICKS)

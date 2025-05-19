@@ -91,7 +91,7 @@ static func simulate_shoot_weapon(node_ctx: Node, entity: Entity):
 		if not is_projectile:
 			bullet_raycast(node_ctx, weapon.weapon_id, raycast, aim_angle, reach)
 		else:
-			launch_projectile(weapon.weapon_id, actor.id, collider, aim_angle)
+			launch_projectile(weapon.weapon_id, actor.id, collider, collider.global_position, aim_angle)
 
 	# fire remaining
 
@@ -100,14 +100,14 @@ static func simulate_shoot_weapon(node_ctx: Node, entity: Entity):
 		if not is_projectile:
 			bullet_raycast(node_ctx, weapon.weapon_id, raycast, angle, reach)
 		else:
-			launch_projectile(weapon.weapon_id, actor.id, collider, angle)
+			launch_projectile(weapon.weapon_id, actor.id, collider, collider.global_position, angle)
 
 
-static func launch_projectile(weapon_id: int, actor_id: int, owner_body: CoCollider, angle: float):
+static func launch_projectile(weapon_id: int, actor_id: int, node_ctx: Node, pos: Vector2, angle: float) -> Entity:
 	var projectile_ent: Entity = StaticData.en_scn_rocket.instantiate() as Entity
 	
 	# register entity and add it to the scene
-	var world = ECS.find_world_up(owner_body)
+	var world = ECS.find_world_up(node_ctx)
 	if world:
 		ECS.add_entity(world, projectile_ent)
 		world.add_entity_node(projectile_ent)
@@ -120,10 +120,11 @@ static func launch_projectile(weapon_id: int, actor_id: int, owner_body: CoColli
 	#var area_node: Area2D = projectile_ent.get_component(CoArea.label) as Area2D
 	var pro_data: CoProjectileData = projectile_ent.get_component(CoProjectileData.label) as CoProjectileData
 
-	(projectile_ent as Node as Node2D).global_position = (owner_body as Node as Node2D).global_position
+	(projectile_ent as Node as Node2D).global_position = pos
 	velocity.velocity = Vector2.from_angle(angle) * StaticData.entity.Weapons[weapon_id].projectile_speed
 	pro_data.weapon_id = weapon_id as StaticData.WEAPON
 	pro_data.owner_actor_id = actor_id
+	return projectile_ent
 
 
 static func bullet_raycast(node_ctx: Node, weapon_id: int, raycast: RayCast2D, angle: float, reach: float):

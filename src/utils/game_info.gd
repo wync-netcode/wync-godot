@@ -41,3 +41,14 @@ enum {
 	NETE_PKT_AMOUNT,
 	NETE_PKT_WYNC_PKT = 888
 }
+
+## Spawn Data
+## --------------------------------------------------------------------------------
+
+class EntityProjectileSpawnData:
+	var weapon_id: int
+	
+	func duplicate() -> EntityProjectileSpawnData:
+		var newi = EntityProjectileSpawnData.new()
+		newi.weapon_id = weapon_id
+		return newi

@@ -400,7 +400,7 @@ static func handle_event_player_shoot(node_ctx: Node, event: WyncEvent.EventData
 	SyWyncStateExtractor.extract_data_to_tick(ctx, co_ticks, co_ticks.ticks)
 	
 	var prop_ids_to_timewarp: Array[int] = []
-	for prop_id: int in range(ctx.props.size()):
+	for prop_id: int in ctx.active_prop_ids:
 		var prop = WyncUtils.get_prop(ctx, prop_id)
 		if prop_id != 3: # ????
 			continue 

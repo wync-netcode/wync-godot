@@ -34,14 +34,14 @@ func push_head_hash_and_item(item_hash: int, item: Variant):
 	
 	if ring.size >= max_size:
 		var cached_item_hash = ring.pop_tail()
-		print(self, "EVENT Remove %s" % cached_item_hash)
+		#print(self, "EVENT Remove %s" % cached_item_hash)
 		map.erase(cached_item_hash)
 		pass
 	
 	# insert new data: calculate hash and register on list
 	ring.push_head(item_hash)
 	map[item_hash] = item
-	print(self, "EVENT Add %s" % hash)
+	#print(self, "EVENT Add %s" % hash)
 
 
 func has_item_hash(item_hash: int) -> bool:

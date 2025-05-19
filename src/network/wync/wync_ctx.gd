@@ -70,8 +70,18 @@ var REGULAR_PROP_CACHED_STATE_AMOUNT = 10
 # Map<entity_id: int, unused_bool: bool>
 var tracked_entities: Dictionary
 
+
+const MAX_PROPS = 4096 # 2**16
+
 # Array<prop_id: int, WyncEntityProp>
 var props: Array[WyncEntityProp]
+
+var prop_id_cursor: int
+
+# SizedBufferList[int]
+# Set[int]
+var active_prop_ids: Array[int]
+
 
 # Map<entity_id: int, Array<prop_id>>
 var entity_has_props: Dictionary
@@ -235,6 +245,39 @@ var clients_sees_new_entities: Array[Dictionary]
 # Array <client_id: int, Set[entity_id: int]>
 var clients_no_longer_sees_entities: Array[Dictionary]
 
+# Note: One may want to update this spawn data as the entity evolves over time
+# Note: Spawn data should be small metadata just to setup an entity,
+#       For big data use _delta props_
+# Map <entity_id: int, data: Variant>
+var entity_spawn_data: Dictionary
+
+class PendingEntityToSpawn:
+	var already_spawned: bool
+	var entity_id: int
+	var entity_type_id: int
+	var spawn_data: Variant
+
+## User facing var
+## Client only
+## List<PendingEntityToSpawn>
+var out_pending_entities_to_spawn: Array[PendingEntityToSpawn]
+
+# Internal list
+# Map <entity_id: int, Tripla[prop_start: int, prop_end: int, curr: int]
+var pending_entity_to_spawn_props: Dictionary
+
+## Despawned entities
+## List<entity_id: int>
+var despawned_entity_ids: Array[int]
+
+## User facing var
+## Client only
+## List<entity_id: int>
+var out_pending_entities_to_despawn: Array[int]
+
+
+## Queues
+
 # * Only refill the queue once it's emptied
 # * Queue entities for eventual synchronization
 # Array <client_id: int, FIFORing[entity_id: int]>
@@ -249,6 +292,18 @@ var entities_synced_last_time: Array[Dictionary]
 # FIFORing < PeerEntityPair[peer: int, entity: int] > [100]
 var queue_entity_pairs_to_sync: Array[PeerEntityPair]
 
+# dummy props
+# --------------------------------------------------------------------------------
+
+class DummyProp:
+	var last_tick: int
+	var data_size: int
+	var data: Variant
+
+# Map <prop_id: int, DummyProp*>
+var dummy_props: Dictionary
+
+const MAX_DUMMY_PROP_TICKS_ALIVE: int = 100 # 1000
 
 # debugging
 # --------------------------------------------------------------------------------
@@ -268,6 +323,10 @@ var debug_ticks_sent: int = 0
 
 # TODO: Move to WyncUtils
 func _init() -> void:
+	props.resize(MAX_PROPS)
+	prop_id_cursor = 0
+	active_prop_ids = []
+
 	peer_has_channel_has_events.resize(max_peers)
 	client_has_relative_prop_has_last_tick.resize(max_peers) # NOTE: index 0 not used
 
@@ -309,4 +368,6 @@ func _init() -> void:
 	server_tick_rate_sliding_window = RingBuffer.new(server_tick_rate_sliding_window_size)
 
 	low_priority_entity_update_rate_sliding_window = RingBuffer.new(low_priority_entity_update_rate_sliding_window_size)
+
+	dummy_props = {}
 		

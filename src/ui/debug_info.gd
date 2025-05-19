@@ -43,6 +43,7 @@ func get_info_general() -> String:
 	server_data_per_tick_sliding: %s/t
 	(client)server_tick_rate %.2f (%.2f tps)
 	(client)prob_prop_rate %.2f
+	(client)dummy_props %s
 	""" % \
 	[
 		Engine.physics_ticks_per_second,
@@ -57,6 +58,7 @@ func get_info_general() -> String:
 		co_wync_ctx_client.ctx.server_tick_rate,
 		((1.0 / (co_wync_ctx_client.ctx.server_tick_rate + 1)) * Engine.physics_ticks_per_second),
 		co_wync_ctx_client.ctx.low_priority_entity_update_rate,
+		co_wync_ctx_client.ctx.dummy_props.size()
 	]
 	return text
 
@@ -88,13 +90,19 @@ static func get_info_packets_received_text(ctx: WyncCtx) -> String:
 
 static func get_info_prop_identifiers(ctx: WyncCtx) -> String:
 	var text = ""
-	for i in range(ctx.props.size()):
-		var prop := WyncUtils.get_prop(ctx, i)
-		if prop == null:
-			continue
-		text += string_exact_length(str(i), 3)
-		text += prop.name_id
-		text += "\n"
+
+	for entity_id in ctx.tracked_entities.keys():
+
+		for i in ctx.entity_has_props[entity_id]:
+			var prop := WyncUtils.get_prop(ctx, i)
+			if prop == null:
+				continue
+			text += "%s %s %s\n" % [
+				string_exact_length(str(entity_id), 3),
+				string_exact_length(str(i), 3),
+				prop.name_id,
+			]
+
 	return text
 
 

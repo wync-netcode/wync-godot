@@ -6,7 +6,10 @@ class_name WyncThrottle
 
 ## @argument commit: bool. Pass True if you're gonna send this message through the network,
 ## so that Wync can assume it will arrive
+## This system is network throttled
+## Note: as it is the first clients have priority until the out buffer fills
 static func wync_system_send_entities_to_spawn(ctx: WyncCtx, _commit: bool = true) -> int:
+	var data_used = 0
 	var ids_to_spawn: Dictionary = {} # : Set<int>
 
 	for client_id in range(1, ctx.peers.size()):
@@ -37,18 +40,70 @@ static func wync_system_send_entities_to_spawn(ctx: WyncCtx, _commit: bool = tru
 			i += 1
 
 			packet.entity_ids[i] = entity_id
-			packet.entity_type_ids[i] = 999 # TODO: Need to create entity_types !!!
+			packet.entity_type_ids[i] = ctx.entity_is_of_type[entity_id]
+			var entity_prop_ids = ctx.entity_has_props[entity_id]
+			assert(entity_prop_ids.size() > 0)
+			packet.entity_prop_id_start[i] = entity_prop_ids[0]
+			packet.entity_prop_id_end[i] = entity_prop_ids[entity_prop_ids.size() -1]
+
+			if ctx.entity_spawn_data.has(entity_id):
+				packet.entity_spawn_data[i] = WyncUtils.duplicate_any(ctx.entity_spawn_data[entity_id])
 
 			# commit / confirm as _client can see it_
 
 			wync_confirm_client_can_see_entity(ctx, client_id, entity_id)
+
+			data_used += HashUtils.calculate_object_data_size(packet)
+			if (data_used >= ctx.out_packets_size_remaining_chars):
+				break
+
+		if ((i + 1) != entity_amount):
+			packet.resize(i + 1)
 
 		# queue 
 		var res = WyncFlow.wync_wrap_packet_out(ctx, client_id, WyncPacket.WYNC_PKT_SPAWN, packet)
 		if res[0] == OK:
 			var pkt_out = res[1] as WyncPacketOut
 			WyncThrottle.wync_try_to_queue_out_packet(ctx, pkt_out, true)
+
+		if (data_used >= ctx.out_packets_size_remaining_chars):
+			break
 		
+	return OK
+
+
+# This system is not throttled
+static func wync_system_send_entities_to_despawn(ctx: WyncCtx, _commit: bool = true) -> int:
+
+	for client_id in range(1, ctx.peers.size()):
+
+		var current_entities_set = ctx.clients_sees_entities[client_id] as Dictionary
+		var entity_id_list: Array[int] = []
+		var entity_amount = 0
+
+		for entity_id: int in ctx.despawned_entity_ids:
+			if current_entities_set.has(entity_id):
+				entity_id_list.append(entity_id)
+				entity_amount += 1
+
+				# ATTENTION: Removing entity here
+				current_entities_set.erase(entity_id)
+
+		if entity_amount == 0:
+			continue
+
+		var packet = WyncPktDespawn.new(entity_amount)
+		for i in range(entity_amount):
+			packet.entity_ids[i] = entity_id_list[i]
+
+		# queue 
+		var res = WyncFlow.wync_wrap_packet_out(ctx, client_id, WyncPacket.WYNC_PKT_DESPAWN, packet)
+		if res[0] == OK:
+			var pkt_out = res[1] as WyncPacketOut
+			WyncThrottle.wync_try_to_queue_out_packet(ctx, pkt_out, true)
+
+	ctx.despawned_entity_ids.clear()
+
 	return OK
 
 
@@ -73,7 +128,8 @@ static func wync_system_gather_reliable_packets(ctx: WyncCtx):
 			data_sent_acc += ctx.debug_data_per_tick_sliding_window.get_at(i)
 	ctx.debug_data_per_tick_sliding_window_mean = data_sent_acc / ctx.debug_data_per_tick_sliding_window_size
 
-	#Log.outc(ctx, "Final space left (%s chars) data sent (%s)" % [ctx.out_packets_size_remaining_chars, data_sent])
+	#if not WyncUtils.is_client(ctx):
+		#Log.outc(ctx, "tagtps | tick(%s) Final space left (%s chars) data sent (%s)" % [ctx.co_ticks.ticks, ctx.out_packets_size_remaining_chars, data_sent])
 
 
 static func wync_system_gather_unreliable_packets(ctx: WyncCtx):
@@ -81,6 +137,7 @@ static func wync_system_gather_unreliable_packets(ctx: WyncCtx):
 	pass
 
 
+# TODO: rename
 static func wync_remove_entity_from_sync_queue(ctx: WyncCtx, peer_id: int, entity_id: int):
 	var synced_last_time = ctx.entities_synced_last_time[peer_id] as Dictionary
 	synced_last_time[entity_id] = true
@@ -104,6 +161,11 @@ static func wync_system_fill_entity_sync_queue(ctx: WyncCtx):
 		var everything_fitted = true
 
 		for entity_id_key in ctx.clients_sees_entities[client_id].keys():
+
+			# Clients can still see entities that we don't have. Not anymore?
+			if not WyncUtils.is_entity_tracked(ctx, entity_id_key):
+				continue
+
 			if not synced_last_time.has(entity_id_key) && not entity_queue.has_item(entity_id_key):
 				var err = entity_queue.push_head(entity_id_key)
 				if err != OK:
@@ -162,6 +224,16 @@ static func wync_compute_entity_sync_order(ctx: WyncCtx):
 # ----------------------------------------------------------------------
 
 
+static func wync_everyone_now_can_see_entity(ctx: WyncCtx, entity_id: int) -> void:
+	for peer_id in range(1, ctx.peers.size()):
+		wync_client_now_can_see_entity(ctx, peer_id, entity_id)
+
+
+static func wync_entity_set_spawn_data(ctx: WyncCtx, entity_id: int, data: Variant, _data_size: int):
+	assert(not ctx.entity_spawn_data.has(entity_id))
+	ctx.entity_spawn_data[entity_id] = data
+
+
 static func wync_client_now_can_see_entity(ctx: WyncCtx, client_id: int, entity_id: int) -> int:
 	# entity exists
 	if not WyncUtils.is_entity_tracked(ctx, entity_id):
@@ -192,15 +264,15 @@ static func wync_client_no_longer_sees_entity(ctx: WyncCtx, client_id: int, enti
 	return OK
 
 
-static func _wync_confirm_client_entity_visibility \
-		(ctx: WyncCtx, client_id: int, entity_id: int, visible: bool):
+#static func _wync_confirm_client_entity_visibility \
+		#(ctx: WyncCtx, client_id: int, entity_id: int, visible: bool):
 	
-	var entity_set = ctx.clients_no_longer_sees_entities[client_id] as Dictionary
+	#var entity_set = ctx.clients_no_longer_sees_entities[client_id] as Dictionary
 
-	if visible:
-		entity_set[entity_id] = true
-	else:
-		entity_set.erase(entity_id)
+	#if visible:
+		#entity_set[entity_id] = true
+	#else:
+		#entity_set.erase(entity_id)
 	
 	
 ## Superseeded? All new entities can be reported with wync_client_now_can_see_entity
@@ -221,12 +293,15 @@ static func _wync_confirm_client_entity_visibility \
 ## because it assumes the client already has it.
 
 static func wync_add_local_existing_entity \
-		(ctx: WyncCtx, client_id: int, entity_id: int):
+		(ctx: WyncCtx, client_id: int, entity_id: int) -> int:
 
 	if WyncUtils.is_client(ctx):
-		return
+		return 1
 	if client_id == WyncCtx.SERVER_PEER_ID:
-		return
+		return 2
+	if not WyncUtils.is_entity_tracked(ctx, entity_id): # entity exists
+		Log.err("entity (%s) isn't tracked", Log.TAG_THROTTLE)
+		return 3
 
 	var entity_set = ctx.clients_sees_entities[client_id]
 	entity_set[entity_id] = true
@@ -236,7 +311,11 @@ static func wync_add_local_existing_entity \
 	var new_entity_set = ctx.clients_sees_new_entities[client_id] as Dictionary
 	new_entity_set.erase(entity_id)
 
+	return OK
 
+
+## TODO: this function is too similar to wync_add_local_existing_entity
+## Removes an entity from clients_sees_new_entities
 static func wync_confirm_client_can_see_entity(ctx: WyncCtx, client_id: int, entity_id: int):
 
 	var entity_set = ctx.clients_sees_entities[client_id]
@@ -273,11 +352,12 @@ static func wync_try_to_queue_out_packet \
 	var packet_size = HashUtils.calculate_object_data_size(out_packet)
 	if packet_size >= ctx.out_packets_size_remaining_chars:
 		if already_commited:
-			Log.err("(%s) COMMITED anyways, Packet too big (%s), remaining data (%s), d(%s)" %
-			[WyncPacket.PKT_NAMES[out_packet.data.packet_type_id],
-			packet_size,
-			ctx.out_packets_size_remaining_chars,
-			packet_size-ctx.out_packets_size_remaining_chars])
+			#Log.err("(%s) COMMITED anyways, Packet too big (%s), remaining data (%s), d(%s)" %
+			#[WyncPacket.PKT_NAMES[out_packet.data.packet_type_id],
+			#packet_size,
+			#ctx.out_packets_size_remaining_chars,
+			#packet_size-ctx.out_packets_size_remaining_chars])
+			pass
 		else:
 			Log.err("(%s) DROPPED, Packet too big (%s), remaining data (%s), d(%s)" %
 			[WyncPacket.PKT_NAMES[out_packet.data.packet_type_id],

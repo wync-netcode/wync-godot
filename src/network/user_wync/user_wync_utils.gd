@@ -20,10 +20,12 @@ static func setup_entity_type(node_ctx: Node, entity: Entity, entity_type_id: in
 		GameInfo.ENTITY_TYPE_GRID_DELTA_PREDICTED:
 			setup_entity_block_grid_delta(node_ctx, entity, true)
 		GameInfo.ENTITY_TYPE_PROJECTILE:
-			# TODO
-			pass
+			setup_entity_rocket(node_ctx, entity)
 		_:
 			Log.err("setup_entity_type entity_type_id(%s) not recognized" % [entity_type_id])
+
+	var flag = CoFlagWyncEntityTracked.new()
+	ECS.entity_add_component_node(entity, flag)
 
 
 static func setup_entity_ball(node_ctx: Node, entity: Entity):
@@ -33,8 +35,6 @@ static func setup_entity_ball(node_ctx: Node, entity: Entity):
 	var co_actor = entity.get_component(CoActor.label) as CoActor
 	var co_ball = entity.get_component(CoBall.label) as CoBall
 	var co_collider = entity.get_component(CoCollider.label) as CharacterBody2D
-	
-	# NOTE: Register just the ball for now
 	
 	WyncUtils.track_entity(wync_ctx, co_actor.id, GameInfo.ENTITY_TYPE_BALL)
 	var pos_prop_id = WyncUtils.prop_register(
@@ -88,6 +88,29 @@ static func setup_entity_ball(node_ctx: Node, entity: Entity):
 		
 		# time warp
 		WyncUtils.prop_set_timewarpable(wync_ctx, pos_prop_id) 
+
+
+static func setup_entity_rocket(node_ctx: Node, entity: Entity):
+	var single_wync = ECS.get_singleton_component(node_ctx, CoSingleWyncContext.label) as CoSingleWyncContext
+	var wync_ctx = single_wync.ctx as WyncCtx
+
+	var co_actor = entity.get_component(CoActor.label) as CoActor
+	var entity_node = entity as Node as Node2D
+	
+	WyncUtils.track_entity(wync_ctx, co_actor.id, GameInfo.ENTITY_TYPE_PROJECTILE)
+	var pos_prop_id = WyncUtils.prop_register(
+		wync_ctx,
+		co_actor.id,
+		"position",
+		WyncEntityProp.DATA_TYPE.VECTOR2,
+		func() -> Vector2: return entity_node.global_position,
+		func(pos: Vector2): entity_node.global_position = pos,
+	)
+	
+	# interpolation
+
+	if WyncUtils.is_client(wync_ctx):
+		WyncUtils.prop_set_interpolate(wync_ctx, pos_prop_id)
 
 
 static func setup_entity_player(node_ctx: Node, entity: Entity):
@@ -196,8 +219,6 @@ static func setup_entity_block_grid_predicted(node_ctx: Node, entity: Entity):
 		func(block_grid: CoBlockGrid): co_block_grid.set_from_instance(block_grid),
 	)
 	
-	var flag = CoFlagWyncEntityTracked.new()
-	ECS.entity_add_component_node(entity, flag)
 	Log.out("wync: Registered entity %s with id %s" % [entity, co_actor.id], Log.TAG_PROP_SETUP, Log.TAG_DEBUG2)
 
 
@@ -246,8 +267,6 @@ static func setup_entity_block_grid_delta(node_ctx: Node, entity: Entity, predic
 
 	#WyncDeltaSyncUtils.delta_sync_prop_extract_state(wync_ctx, blocks_prop)
 	
-	var flag = CoFlagWyncEntityTracked.new()
-	ECS.entity_add_component_node(entity, flag)
 	Log.out("wync: Registered entity %s with id %s" % [entity, co_actor.id], Log.TAG_PROP_SETUP, Log.TAG_DEBUG2)
 
 

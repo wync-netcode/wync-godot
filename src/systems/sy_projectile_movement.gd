@@ -14,13 +14,12 @@ func on_process_entity(entity: Entity, _data, delta: float):
 	var area_node: Area2D = entity.get_component(CoArea.label) as Area2D
 	var pro_data = entity.get_component(CoProjectileData.label) as CoProjectileData
 
+	var explode = false
 	if area_node.has_overlapping_bodies():
-		var explode = false
 		var bodies = area_node.get_overlapping_bodies()
 		for body in bodies:
 
 			# collided with an actor
-
 			if body is Component:
 				var actor: CoActor = get_actor_from_component(body)
 				if actor:
@@ -32,17 +31,35 @@ func on_process_entity(entity: Entity, _data, delta: float):
 						explode = true
 
 			# collided with solid
-
 			else:
 				explode = true
 				print("D: Collided iwht solid")
 
-		# explode
+	# dead by timer
+	if pro_data.ticks_alive >= floori(Engine.physics_ticks_per_second * 1):
+		explode = true
+		pass
+	pro_data.ticks_alive += 1
 
-		if explode:
-			print("D: Projectile Exploded")
-			ECS.remove_entity(entity)
-			return
+	# explode
+	if explode:
+		pro_data.alive = false
+		var co_actor = entity.get_component(CoActor.label) as CoActor
+		var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
+		var ctx = single_wync.ctx as WyncCtx
+
+		print("D: Projectile Exploded actor_id(%s)" % [co_actor.id])
+
+		# unregister
+		SyActorRegister.remove_actor(self, co_actor.id)
+
+		# remove from Wync
+		WyncUtils.untrack_entity(ctx, co_actor.id)
+
+		# remove from ECS
+		ECS.remove_entity(entity)
+
+		return
 
 	entity_node.position += velocity.velocity * delta
 

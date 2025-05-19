@@ -26,9 +26,9 @@ static func wync_xtrap_tick_init(ctx: WyncCtx, tick: int) -> int:
 	# set events inputs to corresponding value depending on tick
 	# TODO: could this be generalized with 'wync_input_props_set_tick_value' ?
 	
-	for prop_id: int in range(ctx.props.size()):
+	for prop_id: int in ctx.active_prop_ids:
 		
-		var prop = ctx.props[prop_id] as WyncEntityProp
+		var prop := WyncUtils.get_prop(ctx, prop_id)
 		if prop == null:
 			continue
 		if not WyncUtils.prop_is_predicted(ctx, prop_id):
@@ -125,7 +125,7 @@ static func wync_xtrap_tick_end(ctx: WyncCtx, tick: int):
 	# extract / poll for generated predicted _undo delta events_
 
 	if tick >= ctx.pred_intented_first_tick:
-		for prop_id: int in range(ctx.props.size()):
+		for prop_id: int in ctx.active_prop_ids:
 			var prop = WyncUtils.get_prop(ctx, prop_id)
 			if prop == null:
 				continue

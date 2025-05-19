@@ -16,6 +16,7 @@ static func wync_server_tick_start(ctx: WyncCtx):
 
 
 static func wync_server_tick_end(ctx: WyncCtx):
+	SyWyncStateExtractor.update_delta_base_state_tick(ctx)
 
 	# NOTE: maybe a way to extract data but only events, since that is unskippable?
 	# This function extracts regular props, plus _auxiliar delta event props_
@@ -32,6 +33,9 @@ static func wync_server_tick_end(ctx: WyncCtx):
 
 	# send
 
+	WyncThrottle.wync_system_send_entities_to_despawn(ctx)
+	WyncThrottle.wync_system_send_entities_to_spawn(ctx)
+
 	WyncThrottle.wync_system_fill_entity_sync_queue(ctx)
 	WyncThrottle.wync_compute_entity_sync_order(ctx)
 	SyWyncStateExtractor.wync_send_extracted_data(ctx)
@@ -47,7 +51,6 @@ static func wync_server_tick_end(ctx: WyncCtx):
 	## these two must be called in this order:
 	#SyWyncStateExtractorDeltaSync.queue_delta_event_data_to_be_synced_to_peers(ctx)
 	#SyWyncSendEventData.wync_send_event_data (ctx)
-	#WyncThrottle.wync_system_send_entities_to_spawn(ctx)
 	#"""
 
 	#TODO : WyncThrottle.wync_system_send_entities_updates(ctx)
@@ -73,6 +76,8 @@ static func wync_client_tick_start(ctx: WyncCtx):
 	SyWyncTickStartAfter.auxiliar_props_clear_current_delta_events(ctx)
 
 	SyWyncTickStartAfter.predicted_props_clear_events(ctx)
+
+	WyncFlow.wync_dummy_props_cleanup(ctx) # before consuming
 
 	# SyUserWyncConsumePacketsSecond # consume packets would go after this function
 
@@ -122,7 +127,7 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 	# tick rate calculation	
 	if is_client:
 		wync_report_update_received(ctx)
-		Log.outc(ctx, "tagtps | tag1 | tick(%s) received packet %s" % [ctx.co_ticks.ticks, WyncPacket.PKT_NAMES[wync_pkt.packet_type_id]])
+		#Log.outc(ctx, "tagtps | tag1 | tick(%s) received packet %s" % [ctx.co_ticks.ticks, WyncPacket.PKT_NAMES[wync_pkt.packet_type_id]])
 
 	match wync_pkt.packet_type_id:
 		WyncPacket.WYNC_PKT_JOIN_REQ:
@@ -151,6 +156,12 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 		WyncPacket.WYNC_PKT_CLIENT_SET_LERP_MS:
 			if not is_client:
 				wync_handle_packet_client_set_lerp_ms(ctx, wync_pkt.data, from_nete_peer_id)
+		WyncPacket.WYNC_PKT_SPAWN:
+			if is_client:
+				wync_handle_pkt_spawn(ctx, wync_pkt.data)
+		WyncPacket.WYNC_PKT_DESPAWN:
+			if is_client:
+				wync_handle_pkt_despawn(ctx, wync_pkt.data)
 		_:
 			Log.err("wync packet_type_id(%s) not recognized skipping (%s)" % [wync_pkt.packet_type_id, wync_pkt.data])
 			return -1
@@ -281,7 +292,7 @@ static func wync_handle_pkt_event_data(ctx: WyncCtx, data: Variant) -> int:
 		wync_event.data.arg_data = event.arg_data # std::move(std::unique_pointer)
 		ctx.events[event.event_id] = wync_event
 	
-		Log.out("events | got this events %s" % [event.event_id], Log.TAG_EVENT_DATA)
+		#Log.out("events | got this events %s" % [event.event_id], Log.TAG_EVENT_DATA)
 		if event.event_id == 105:
 			print_debug("")
 		# NOTE: what if we already have this event data? Maybe it's better to receive it anyway?
@@ -390,7 +401,9 @@ static func wync_server_handle_pkt_inputs(ctx: WyncCtx, data: Variant, from_nete
 	if not client_owns_prop:
 		return 5
 	
-	var input_prop = ctx.props[prop_id] as WyncEntityProp
+	var input_prop := WyncUtils.get_prop(ctx, prop_id)
+	if input_prop == null:
+		return 6
 	
 	# save the input in the prop before simulation
 	# TODO: data.copy is not standarized
@@ -458,8 +471,8 @@ static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 		for prop_id in ctx.client_owns_prop[client_id]:
 			if not WyncUtils.prop_exists(ctx, prop_id):
 				continue
-			var prop = ctx.props[prop_id] as WyncEntityProp
-			if not prop:
+			var prop := WyncUtils.get_prop(ctx, prop_id)
+			if prop == null:
 				continue
 			if (prop.data_type != WyncEntityProp.DATA_TYPE.INPUT &&
 				prop.data_type != WyncEntityProp.DATA_TYPE.EVENT):
@@ -487,7 +500,8 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 
 		var prop = WyncUtils.get_prop(ctx, snap_prop.prop_id)
 		if prop == null:
-			Log.err("couldn't find prop (%s) skipping..." % [snap_prop.prop_id], Log.TAG_LATEST_VALUE)
+			Log.errc(ctx, "couldn't find prop (%s) saving as dummy prop..." % [snap_prop.prop_id], Log.TAG_LATEST_VALUE)
+			WyncUtils.prop_register_update_dummy(ctx, snap_prop.prop_id, data.tick, 99, snap_prop.state)
 			continue
 		prop = prop as WyncEntityProp
 		if prop.relative_syncable:
@@ -515,7 +529,6 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 		
 		var prop = WyncUtils.get_prop(ctx, snap_prop.prop_id)
 		if prop == null:
-			Log.err("couldn't find prop (%s) skipping..." % [snap_prop.prop_id], Log.TAG_LATEST_VALUE)
 			continue
 
 		prop = prop as WyncEntityProp
@@ -547,6 +560,64 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 			prop.confirmed_states.insert_at(0, state_dup)
 
 	wync_client_update_last_tick_received(ctx, data.tick)
+
+
+static func wync_handle_pkt_spawn(ctx: WyncCtx, data: Variant):
+
+	if data is not WyncPktSpawn:
+		return 1
+	data = data as WyncPktSpawn
+
+	var entity_to_spawn: WyncCtx.PendingEntityToSpawn = null
+	for i: int in range(data.entity_amount):
+
+		var entity_id = data.entity_ids[i]
+		var entity_type_id = data.entity_type_ids[i]
+		var prop_start = data.entity_prop_id_start[i]
+		var prop_end = data.entity_prop_id_end[i]
+		var spawn_data = data.entity_spawn_data[i]
+
+		# "flag" it
+		ctx.pending_entity_to_spawn_props[entity_id] = [prop_start, prop_end, 0] as Array[int]
+
+		# queue it to user facing variable
+		entity_to_spawn = WyncCtx.PendingEntityToSpawn.new()
+		entity_to_spawn.already_spawned = false
+		entity_to_spawn.entity_id = entity_id
+		entity_to_spawn.entity_type_id = entity_type_id
+		entity_to_spawn.spawn_data = spawn_data
+
+		ctx.out_pending_entities_to_spawn.append(entity_to_spawn)
+
+
+static func wync_handle_pkt_despawn(ctx: WyncCtx, data: Variant):
+
+	if data is not WyncPktDespawn:
+		return 1
+	data = data as WyncPktDespawn
+
+	for i: int in range(data.entity_amount):
+
+		var entity_id = data.entity_ids[i]
+		ctx.out_pending_entities_to_despawn.append(entity_id)
+
+		WyncUtils.untrack_entity(ctx, entity_id)
+
+
+static func wync_clear_entities_pending_to_despawn(ctx: WyncCtx):
+	ctx.out_pending_entities_to_despawn.clear()
+
+
+static func _wync_add_new_dummy_prop(ctx: WyncCtx, prop_id: int, data: Variant):
+	pass
+	#var pos_prop_id = WyncUtils.prop_register(
+		#ctx,
+		#co_actor.id,
+		#"position",
+		#WyncEntityProp.DATA_TYPE.VECTOR2,
+		#func() -> Vector2: return co_collider.global_position,
+		#func(pos: Vector2): co_collider.global_position = pos,
+	#)
 
 
 static func wync_handle_packet_res_client_info(ctx: WyncCtx, data: Variant):
@@ -690,6 +761,33 @@ static func wync_system_calculate_prob_prop_rate(ctx: WyncCtx):
 	# 'REGULAR_PROP_CACHED_STATE_AMOUNT -1' because for xtrap we need to set it
 	# to the value just before 'ctx.max_prediction_tick_threeshold -1'
 	ctx.max_prediction_tick_threeshold = min(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT-1, ctx.max_prediction_tick_threeshold)
+
+
+static func wync_dummy_props_cleanup(ctx: WyncCtx):
+	# run every few frames
+	if ctx.co_ticks.ticks % 10 != 0:
+		return
+
+	var curr_tick = ctx.co_ticks.server_ticks
+	var dummy: WyncCtx.DummyProp = null
+
+	for prop_id: int in ctx.dummy_props.keys():
+
+		dummy = ctx.dummy_props[prop_id]
+		if (curr_tick - dummy.last_tick) < WyncCtx.MAX_DUMMY_PROP_TICKS_ALIVE:
+			continue
+
+		# delete dummy prop
+
+		ctx.dummy_props.erase(prop_id)
+
+
+## Call after finishing spawning entities
+static func wync_system_spawned_props_cleanup(ctx: WyncCtx):
+	for i in range(ctx.out_pending_entities_to_spawn.size()-1, -1, -1):
+		var entity_to_spawn: WyncCtx.PendingEntityToSpawn = ctx.out_pending_entities_to_spawn[i]
+		if entity_to_spawn.already_spawned:
+			ctx.out_pending_entities_to_spawn.remove_at(i)
 
 
 ## client only

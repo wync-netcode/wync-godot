@@ -35,8 +35,8 @@ static func wync_client_send_inputs (ctx: WyncCtx):
 		if not WyncUtils.prop_exists(ctx, prop_id):
 			Log.err("prop %s doesn't exists" % prop_id, Log.TAG_INPUT_BUFFER)
 			continue
-		var input_prop = ctx.props[prop_id] as WyncEntityProp
-		if not input_prop:
+		var input_prop := WyncUtils.get_prop(ctx, prop_id)
+		if input_prop == null:
 			Log.err("not input_prop %s" % prop_id, Log.TAG_INPUT_BUFFER)
 			continue
 		if input_prop.data_type not in [WyncEntityProp.DATA_TYPE.INPUT,
