@@ -310,13 +310,14 @@ static func setup_sync_for_chunk_actor(gs: Plat.GameState, actor_id: int):
 		func(user_ctx: Variant, blocks: Array[Array]): (user_ctx as Plat.Chunk).blocks = blocks,
 	)
 
+
 	# hook blueprint to prop
 	var err = WyncDeltaSyncUtils.prop_set_relative_syncable(
 		wctx,
 		actor_id,
 		blocks_prop,
 		Plat.BLUEPRINT_ID_BLOCK_GRID_DELTA,
-		false
+		true
 	)
 	assert(err == OK)
 
@@ -500,12 +501,31 @@ static func extrapolate(gs: Plat.GameState, delta: float):
 	if (base_tick - 30 < 0):
 		return
 	for tick in range(ctx.pred_intented_first_tick - ctx.max_prediction_tick_threeshold, target_tick +1):
+	#for tick in range(ctx.pred_intented_first_tick - 8, target_tick +1):
 		#Log.outc(ctx, "pred_tick %s" % [tick])
 		WyncXtrap.wync_xtrap_tick_init(ctx, tick)
-		var entity_ids_to_predict = WyncXtrap.wync_xtrap_dont_predict_entities(ctx, tick)
+		var entity_ids_to_predict = WyncXtrap.wync_xtrap_regular_entities_to_predict(ctx, tick)
 		#Log.outc(ctx, "dont_predict_entities %s" % [dont_predict_entity_ids])
 		#Log.outc(ctx, "xtrap, entity_ids_to_predict %s" % [entity_ids_to_predict])
 		PlatPublic.system_player_movement(gs, Plat.LOGIC_DELTA_MS, true, entity_ids_to_predict)
+
+		#if tick >= ctx.pred_intented_first_tick:
+		#if true:
+		#if tick > ctx.last_tick_predicted_events:
+			#ctx.last_tick_predicted_events = tick
+
+		var relative_to_not_predict = WyncXtrap.wync_xtrap_relative_entities_to_not_predict(ctx, tick)
+		ctx.global_entity_ids_to_not_predrict.clear()
+		ctx.global_entity_ids_to_not_predrict.append_array(relative_to_not_predict)
+
+		#if ctx.global_entity_ids_to_not_predrict.has(16):
+			#Log.outc(ctx, "debugrela prop 16 last predicted tick %s" % [ctx.entity_last_predicted_tick[16]])
+
+		# And then maybe from the wync side reject the changes???
+
+		#Log.outc(ctx, "debugrela, delta props do not predict these %s" % [ctx.global_entity_ids_to_not_predrict])
+		PlatPublic.system_client_simulate_own_events(gs, tick)
+
 
 		# debug trail
 		if WyncUtils.fast_modulus(tick, 2) == 0:
@@ -527,7 +547,38 @@ static func extrapolate(gs: Plat.GameState, delta: float):
 
 
 		WyncXtrap.wync_xtrap_tick_end(ctx, tick)
+		#PlatPublic.debug_print_last_chunk(gs)
 	#Log.outc(ctx, "debugging prediction range (%s : %s) d %s | server_ticks %s" % [ctx.pred_intented_first_tick, target_tick +1, (target_tick+1-ctx.pred_intented_first_tick), ctx.co_ticks.server_ticks])
+
+	"""
+	3,2,2,0,0,3 original
+	2,2,2,0,0,3 first action
+	1,2,2,0,0,3 second action
+	3,2,2,0,0,3 rollbacked +
+	3,1,2,0,0,3 applied first canonic
+	2,1,2,0,0,3 re- second action
+	2,0,2,0,0,3 applied second canonic
+	3,0,2,0,0,3 <-- server's canonic
+
+	3,3,3,3,0,3 after 1st, 2nd and 3rd action
+	3,3,3,3,3,3 rollback
+	3,3,3,3,3,2 1st canonic
+	3,3,3,3,2,2 after 2nd action
+	3,3,3,3,1,2 after 3rd action
+	3,3,3,3,3,2 rollback
+	3,3,3,3,3,1 2st canonic
+
+	[...] FIXME: The problem:
+		1. We store undo events
+		2. After we rollback...
+		3. We assume we're gonna predict the original event again?
+		If this is the same undo event as before, then possible solution is:
+		Just remove already applied undo events...
+		
+	3,3,3,3,0,3 1st 2nd 3rd action
+	3,3,3,3,2,2 
+
+	"""
 	
 	WyncXtrap.wync_xtrap_termination(ctx)
 

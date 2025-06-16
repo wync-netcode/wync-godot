@@ -266,7 +266,6 @@ static func setup_entity_block_grid_delta(node_ctx: Node, entity: Entity, predic
 		wync_entity_id,
 		blocks_prop,
 		GameInfo.BLUEPRINT_ID_BLOCK_GRID_DELTA,
-		co_block_grid,
 		predicted
 	)
 	if err > 0:

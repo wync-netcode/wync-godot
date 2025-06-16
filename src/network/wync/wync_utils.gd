@@ -355,9 +355,8 @@ static func prop_set_reliability(ctx: WyncCtx, prop_id: int, reliable: bool) -> 
 	prop.reliable = reliable
 	return OK
 
-# server only
+# server only?
 static func prop_set_module_events_consumed(ctx: WyncCtx, prop_id: int) -> int:
-	# TODO:
 	var prop := WyncUtils.get_prop(ctx, prop_id)
 	if prop == null:
 		return 1
@@ -846,7 +845,9 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 	if (ctx.is_client && peer_id == ctx.my_peer_id):
 		WyncUtils.prop_set_predict(ctx, channel_prop_id)
 
-	if not ctx.is_client:
+	# TODO: why only run on server? Q: ...
+	#if not ctx.is_client:
+	if true:
 		# add as local existing prop
 		WyncThrottle.wync_add_local_existing_entity(ctx, peer_id, entity_id)
 		# server module for consuming user events

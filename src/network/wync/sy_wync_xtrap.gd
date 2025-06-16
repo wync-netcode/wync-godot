@@ -1,3 +1,4 @@
+"""
 class_name SyWyncXtrap
 extends System
 const label: StringName = StringName("SyWyncXtrap")
@@ -36,7 +37,7 @@ func on_process(entities, _data, delta: float):
 	for tick in range(ctx.pred_intented_first_tick - ctx.max_prediction_tick_threeshold, target_tick +1):
 
 		WyncXtrap.wync_xtrap_tick_init(ctx, tick)
-		var dont_predict_entity_ids = WyncXtrap.wync_xtrap_dont_predict_entities(ctx, tick)
+		var dont_predict_entity_ids = WyncXtrap.wync_xtrap_regular_entities_to_predict(ctx, tick)
 
 		# ------- START USER PREDICTION FUNCTIONS -------
 		# All state modified here is Predicted / Extrapolated
@@ -73,10 +74,10 @@ func on_process(entities, _data, delta: float):
 			# (a). with condition: simple single trail
 			# (b). without condition: long trail
 			#if tick == target_tick || tick == ctx.pred_intented_first_tick:
-			var progress = (float(tick) - ctx.last_tick_received) / (target_tick - ctx.last_tick_received)
-			var prop_position = WyncUtils.entity_get_prop(ctx, co_actor.id, "position")
-			if prop_position:
-				DebugPlayerTrail.spawn(self, prop_position.getter.call(prop_position.user_ctx_pointer), progress, 0, false, -10)
+			#var progress = (float(tick) - ctx.last_tick_received) / (target_tick - ctx.last_tick_received)
+			#var prop_position = WyncUtils.entity_get_prop(ctx, co_actor.id, "position")
+			#if prop_position:
+				#DebugPlayerTrail.spawn(self, prop_position.getter.call(prop_position.user_ctx_pointer), progress, 0, false, -10)
 
 		# ------- END USER PREDICTION FUNCTIONS -------
 
@@ -88,3 +89,4 @@ func on_process(entities, _data, delta: float):
 		pass
 
 	WyncXtrap.wync_xtrap_termination(ctx)
+"""

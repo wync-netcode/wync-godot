@@ -1,34 +1,4 @@
-extends System
 class_name SyWyncStateExtractor
-const label: StringName = StringName("SyWyncStateExtractor")
-
-## Extracts state from actors
-
-
-"""
-func on_process(_entities, _data, _delta: float):
-
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	var ctx = single_wync.ctx as WyncCtx
-
-	# throttle send rate
-	# TODO: make this configurable
-	#if co_ticks.ticks % 10 != 0:
-		#return
-	
-	var single_server = ECS.get_singleton_entity(self, "EnSingleServer")
-	if not single_server:
-		print("E: Couldn't find singleton EnSingleServer")
-		return
-	
-	# extract data
-	
-	extract_data_to_tick(ctx, ctx.co_ticks, ctx.co_ticks.ticks)
-	
-	# send data
-	
-	wync_send_extracted_data(ctx)
-"""
 	
 	
 ## Ideal loop
@@ -223,7 +193,7 @@ static func _wync_sync_relative_prop_base_only(
 	client_id: int
 	) -> WyncPktSnap.SnapProp:
 
-	# Optimization ideas:
+	# FIXME: Optimization ideas:
 	# 1. (probably not) Adelantar ticks en los que no pasó nada. Es decir automaticamente
 	# aumentar el número del tick de un peer 'last_tick_confirmed'. Esto trae problemas por el
 	# determinismo, pues no se enviaría ticks intermedios, es decir, el cliente debe saber.
@@ -237,8 +207,9 @@ static func _wync_sync_relative_prop_base_only(
 		client_relative_props[prop_id] = -1
 
 	var peer_latency_info = ctx.peer_latency_info[client_id] as WyncCtx.PeerLatencyInfo
-	var latency_ticks: int = (peer_latency_info.latency_stable_ms * 2) / (1000.0 / ctx.physic_ticks_per_second)
-	if (client_relative_props[prop_id] + latency_ticks) >= ctx.delta_base_state_tick:
+	var latency_ticks: int = (peer_latency_info.latency_stable_ms) / (1000.0 / ctx.physic_ticks_per_second)
+
+	if (ctx.delta_base_state_tick - client_relative_props[prop_id] < (latency_ticks * 4)):
 		return null
 
 	Log.outc(ctx, "debugack | client_has (%s) (%s) , base_tick (%s)" % [

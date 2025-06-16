@@ -6,22 +6,6 @@ const label: StringName = StringName("SyWyncLatestValue")
 ## NOTE: optimize which to reset, by knowing which were modified/new state gotten
 ## NOTE: reset only when new data is available
 
-"""
-func _ready():
-	components = [
-		CoActor.label,
-		CoActorRegisteredFlag.label,
-		CoFlagWyncEntityTracked.label
-	]
-	super()
-
-
-func on_process(_entities, _data, _delta: float):
-	
-	var single_wync = ECS.get_singleton_component(self, CoSingleWyncContext.label) as CoSingleWyncContext
-	wync_reset_props_to_latest_value (single_wync.ctx)
-"""
-
 	
 static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 	# Reset all extrapolated entities to last confirmed tick
@@ -34,32 +18,51 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 	ctx.type_state__newstate_regular_prop_ids.clear()
 	for prop_id: int in ctx.active_prop_ids:
 		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
-		if prop.prop_type == WyncEntityProp.PROP_TYPE.STATE:
-			if not prop.relative_syncable:
-				if prop.just_received_new_state:
-					prop.just_received_new_state = false
-					ctx.type_state__newstate_regular_prop_ids.append(prop_id)
 
-					if WyncUtils.prop_is_predicted(ctx, prop_id):
-						var entity_id = WyncUtils.prop_get_entity(ctx, prop_id)
-						ctx.entity_last_predicted_tick[entity_id] = prop.last_ticks_received.get_relative(0)
+		if prop.prop_type != WyncEntityProp.PROP_TYPE.STATE:
+			continue
+		if prop.relative_syncable:
+			continue
+		if not prop.just_received_new_state:
+			continue
+
+		prop.just_received_new_state = false
+		ctx.type_state__newstate_regular_prop_ids.append(prop_id)
+
+		if WyncUtils.prop_is_predicted(ctx, prop_id):
+			var entity_id = WyncUtils.prop_get_entity(ctx, prop_id)
+			ctx.entity_last_predicted_tick[entity_id] = prop.last_ticks_received.get_relative(0)
+
+	# TODO: DELETE?
+	for prop_id: int in ctx.active_prop_ids:
+		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
+
+		if prop.prop_type != WyncEntityProp.PROP_TYPE.STATE:
+			continue
+		if not prop.relative_syncable:
+			continue
+		if not prop.just_received_new_state:
+			continue
+
+		prop.just_received_new_state = false
 		
 	# rest state to _canonic_
 
 	WyncWrapper.reset_all_state_to_confirmed_tick_relative(ctx, ctx.type_state__newstate_regular_prop_ids, 0)
 
+
+	for prop_id: int in ctx.type_state__predicted_delta_prop_ids:
+		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
+
+		if not prop.just_received_new_state:
+			continue
+
+		prop.just_received_new_state = false
+	
+
 	# delta props ---- vvv
-	
-	# Note: might need to reenable this when doing _delta prop prediction_
-	#WyncWrapper.reset_all_state_to_confirmed_tick_relative(ctx, ctx.type_state__predicted_regular_prop_ids, 0)
+	# only rollback if new state was received and is applicable:
 
-	predicted_delta_props_rollback_to_canonic_state \
-			(ctx, ctx.type_state__predicted_delta_prop_ids)
-
-	# --------------------------------------------------------------------------------
-
-	# apply newly received delta events to catch up to _canonic_
-	
 	delta_props_update_and_apply_delta_events(ctx, ctx.type_state__delta_prop_ids)
 	
 	# call integration function to sync new transforms with physics server
@@ -76,7 +79,7 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 	for prop_id: int in prop_ids:
 		var prop = WyncUtils.get_prop(ctx, prop_id)
 		if prop == null:
-			Log.err("SyWyncLatestValue | delta sync | couldn't find prop id(%s)" % [prop_id], Log.TAG_LATEST_VALUE)
+			Log.err("SyWyncLatestValue | delta sync | couldn't find prop id(%s)" % [prop_id])
 			continue 
 		prop = prop as WyncEntityProp
 
@@ -90,11 +93,16 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 		if not delta_props_last_tick.has(prop_id) || delta_props_last_tick[prop_id] == -1:
 			continue
 
-		var applied_events_until = -1
+		# vars for rollback of predicted states
 
-		# Fixed now? FIXME: There will be UB if between the range before last_tick_received we didn't receive an input
+		var already_rollbacked = false
+
+		# Fixed now? FIXME: There will be UB if between the range before last_tick_received we didn't
+		# receive an input
 		# resulting in usage of old values
 		# apply events in order
+
+		var applied_events_until = -1
 
 		for tick: int in range(delta_props_last_tick[prop_id] +1, ctx.last_tick_received +1):
 
@@ -121,25 +129,76 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 				#	assert(false)
 				break
 
-			for event_id: int in delta_event_list:
-				var err = WyncDeltaSyncUtils.merge_event_to_state_real_state(ctx, prop_id, event_id)
+			# if delta_event_list.size() <= 0: also rollback if this current tick
+			# contains undo events...... But what about previous ticks? No problem
+			# because ticks are applied sequencially, so no ticks will be skipped.
 
-				# this error is almost fatal, should never happen, it could fail because of not finding the event
-				# in that case we're gonna continue in hopes we eventually get the event data
-				# TODO: implement measures against this ever happening
-				if err:
-					Log.err("delta sync | VERY BAD, couldn't apply event id(%s) err(%s)" % [event_id, err], Log.TAG_LATEST_VALUE)
-					assert(false)
-					break
-				Log.out("delta sync | client consumed delta event %d" % [event_id], Log.TAG_LATEST_VALUE)
+			# NOTE: if we don't apply any events, then there is no need to modify
+			# ctx.entity_last_predicted_tick, that way there is no need to repredict
+			# for no reason.
+
+			var we_modified_or_applied_events = false
+
+			if delta_event_list.size() <= 0:
+
+				if SyWyncLatestValue.does_delta_prop_has_undo_events(ctx, prop_id, tick):
+
+					if !already_rollbacked:
+						already_rollbacked = true
+						predicted_delta_props_rollback_to_canonic_state (ctx, [prop_id])
+						we_modified_or_applied_events = true
+
+						Log.outc(ctx, "debugrela applied NO events (and therefore rollbacked) tick %s UNDO DELTA FOUND" % [tick])
+
+			if delta_event_list.size() > 0:
+
+				we_modified_or_applied_events = true
+
+				if !already_rollbacked:
+					already_rollbacked = true
+					predicted_delta_props_rollback_to_canonic_state (ctx, [prop_id])
+
+				for event_id: int in delta_event_list:
+					var err = WyncDeltaSyncUtils.merge_event_to_state_real_state(ctx, prop_id, event_id)
+
+					# this error is almost fatal, should never happen, it could fail because of not finding the event
+					# in that case we're gonna continue in hopes we eventually get the event data
+					# TODO: implement measures against this ever happening, write tests againts this.
+					if err:
+						Log.err("delta sync | VERY BAD, couldn't apply event id(%s) err(%s)" % [event_id, err], Log.TAG_LATEST_VALUE)
+						assert(false)
+						break
+					Log.out("delta sync | client consumed delta event %d" % [event_id], Log.TAG_LATEST_VALUE)
 
 			# commit
 
+				Log.outc(ctx, "debugrela applied events %s (and therefore rollbacked) tick %s" % [delta_event_list, tick])
+
 			applied_events_until = tick
 			delta_props_last_tick[prop_id] = applied_events_until
+			if prop_id == 16:
+				Log.outc(ctx, "debugrela,,, updated last canonic tick to %s" % [tick])
+
+			# Note: this should work but it feels like a workaround. Question: when can
+			# this variable be modified?
+
+			# if predicted
+			var entity_id = WyncUtils.prop_get_entity(ctx, prop_id)
+			if (we_modified_or_applied_events || 
+				ctx.entity_last_predicted_tick[entity_id] < applied_events_until):
+				ctx.entity_last_predicted_tick[entity_id] = applied_events_until
+
+			# Note: you have last tick applied per prop and globally, so the user
+			# can choose what to use
+
 
 
 static func predicted_delta_props_rollback_to_canonic_state (ctx: WyncCtx, prop_ids: Array[int]):
+
+	#if (ctx.last_tick_predicted - ctx.first_tick_predicted) == 0:
+		#return
+
+	var delta_props_last_tick = ctx.client_has_relative_prop_has_last_tick[ctx.my_peer_id] as Dictionary
 
 	for prop_id: int in prop_ids:
 		var prop = WyncUtils.get_prop(ctx, prop_id)
@@ -157,18 +216,18 @@ static func predicted_delta_props_rollback_to_canonic_state (ctx: WyncCtx, prop_
 			continue
 		aux_prop = aux_prop as WyncEntityProp
 
-		#Log.out("SyWyncLatestValue | server_ticks(%s) target_pred_tick(%s) last_tick_pred(%s)" % [
-			#co_ticks.server_ticks,
-			#co_predict_data.target_tick,
-			#ctx.last_tick_predicted
-		#], Log.TAG_LATEST_VALUE)
+		# NOTE: Are we sure we have delta_props_last_tick[prop_id]?
+		if not delta_props_last_tick.has(prop_id) || delta_props_last_tick[prop_id] == -1:
+			continue
 
 		# apply events in order
+		# FIXME: last_tick_predicted is not reliable, use a var custom for this prop
 
-		for tick: int in range(ctx.last_tick_predicted, ctx.first_tick_predicted -1, -1):
+		var last_uptodate_tick = delta_props_last_tick[prop_id]
+
+		for tick: int in range(ctx.last_tick_predicted, last_uptodate_tick, -1):
 
 			if aux_prop.confirmed_states_undo_tick.get_at(tick) != tick:
-				# FIXME: this assertion was hit, but I couldn't repro it
 				assert(false)
 				break
 			var undo_event_id_list = aux_prop.confirmed_states_undo.get_at(tick)
@@ -178,6 +237,8 @@ static func predicted_delta_props_rollback_to_canonic_state (ctx: WyncCtx, prop_
 					
 			undo_event_id_list = undo_event_id_list as Array[int]
 
+			#Log.outc(ctx, "debugrela | gonna rollback prop %s tick %s event_list %s" % [prop_id, tick, undo_event_id_list])
+
 			# merge state
 
 			for event_id: int in undo_event_id_list:
@@ -186,8 +247,36 @@ static func predicted_delta_props_rollback_to_canonic_state (ctx: WyncCtx, prop_
 				if not ctx.events.has(event_id):
 					assert(false)
 					continue
-				var event_data = (ctx.events[event_id] as WyncEvent).data
-				Log.out("debug_pred_delta_event | applied undo_events predicted_tick(%s) %s %s" % [tick, undo_event_id_list, HashUtils.object_to_dictionary(event_data)])
+
+				#var event_data = (ctx.events[event_id] as WyncEvent).data
+				#Log.outc(ctx, "debugrela debug_pred_delta_event | applied undo_events predicted_tick(%s) %s %s" % [tick, undo_event_id_list, HashUtils.object_to_dictionary(event_data)])
+
+			# clear already applied undo events
+
+			undo_event_id_list.clear()
+
+
+static func does_delta_prop_has_undo_events(ctx: WyncCtx, prop_id: int, tick: int) -> bool:
+	var prop = WyncUtils.get_prop(ctx, prop_id)
+	if prop == null:
+		Log.err("couldn't find prop id(%s)" % [prop_id], Log.TAG_LATEST_VALUE)
+		return false
+	prop = prop as WyncEntityProp
+
+	var aux_prop = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
+	if aux_prop == null:
+		Log.err("SyWyncLatestValue | delta sync | couldn't find aux_prop id(%s)" % [prop.auxiliar_delta_events_prop_id], Log.TAG_LATEST_VALUE)
+		return false
+	aux_prop = aux_prop as WyncEntityProp
+
+	if aux_prop.confirmed_states_undo_tick.get_at(tick) != tick:
+		return false
+
+	var undo_event_id_list = aux_prop.confirmed_states_undo.get_at(tick)
+	if undo_event_id_list == null || undo_event_id_list is not Array[int]:
+		return false
+			
+	return not (undo_event_id_list as Array).is_empty()
 
 
 # TODO: Move to wrapper

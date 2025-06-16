@@ -13,9 +13,6 @@ enum PROP_TYPE {
 var name_id: String
 var prop_type: PROP_TYPE
 var user_data_type: int
-var user_ctx_pointer: Variant #: VariantPointer
-var getter: Callable #: func(user_ctx: Variant) -> Variant
-var setter: Callable #: func(user_ctx: Variant, new_state: Variant) -> void
 
 # Optional properties:
 # TODO: Move these elsewhere

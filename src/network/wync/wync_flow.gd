@@ -42,7 +42,7 @@ static func wync_client_tick_end(ctx: WyncCtx):
 	# CANNOT reset events BEFORE polling inputs, WHERE do we put this?
 	
 	WyncDeltaSyncUtils.auxiliar_props_clear_current_delta_events(ctx)
-	WyncDeltaSyncUtils.predicted_props_clear_events(ctx)
+	WyncDeltaSyncUtils.predicted_event_props_clear_events(ctx)
 
 	SyWyncLatestValue.wync_reset_props_to_latest_value(ctx)
 	
@@ -528,7 +528,9 @@ static func prop_save_confirmed_state(ctx: WyncCtx, prop_id: int, tick: int, sta
 				aux_prop.confirmed_states_undo_tick.insert_at(j, j)
 
 			# debugging: save canonic state to compare it later
-			var state_dup = WyncUtils.duplicate_any(prop.getter.call(prop.user_ctx_pointer))
+			# TODO: remove
+			var getter = ctx.wrapper.prop_getter[prop_id]
+			var state_dup = WyncUtils.duplicate_any(getter.call(user_ctx))
 			WyncEntityProp.saved_state_insert(ctx, prop, 0, state_dup)
 
 	return OK

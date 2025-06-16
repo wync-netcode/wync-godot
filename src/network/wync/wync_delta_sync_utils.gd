@@ -214,7 +214,7 @@ static func merge_event_to_state_real_state \
 # every time we merge a delta event WHILE PREDICTING (that is, not when merging received data)
 # we make sure to always produce an _undo delta event_ 
 
-	var is_client_predicting = WyncUtils.is_client(ctx) \
+	var is_client_predicting = ctx.is_client \
 			&& WyncUtils.prop_is_predicted(ctx, prop_id) \
 			&& ctx.currently_on_predicted_tick 
 	var aux_prop = null # : WyncEntityProp*
@@ -239,6 +239,7 @@ static func merge_event_to_state_real_state \
 		if result[0] == OK:
 			if result[1] != null:
 				aux_prop.current_undo_delta_events.append(result[1])
+				Log.outc(ctx, "debugrela produced undo delta event %s" % [aux_prop.current_undo_delta_events])
 	
 	return result[0]
 
@@ -343,7 +344,7 @@ static func auxiliar_props_clear_current_delta_events(ctx: WyncCtx):
 		aux_prop.current_undo_delta_events.clear()
 
 
-static func predicted_props_clear_events(ctx: WyncCtx):
+static func predicted_event_props_clear_events(ctx: WyncCtx):
 	for prop_id in ctx.type_event__predicted_prop_ids:
 		var setter = ctx.wrapper.prop_setter[prop_id]
 		var user_cxt = ctx.wrapper.prop_user_ctx[prop_id]
