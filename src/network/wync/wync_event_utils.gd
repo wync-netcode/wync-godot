@@ -65,7 +65,7 @@ static func event_set_data(
 
 
 ## @returns Optional<int>. null -> error, int -> event id
-static func event_wrap_up(
+static func _event_wrap_up(
 		ctx: WyncCtx,
 		event_id: int,
 	) -> Variant:
@@ -99,7 +99,7 @@ static func new_event_wrap_up(
 	if event_id == null:
 		return null
 	WyncEventUtils.event_set_data(ctx, event_id, event_data)
-	return WyncEventUtils.event_wrap_up(ctx, event_id)
+	return WyncEventUtils._event_wrap_up(ctx, event_id)
 
 
 ## Call this function whenever creating a global event
@@ -147,6 +147,21 @@ static func publish_global_event_as_server \
 	return 0
 
 
+# ==================================================================
+# "Events Consumed" prop module / add-on
+
+
+# server only?
+static func prop_set_module_events_consumed(ctx: WyncCtx, prop_id: int) -> int:
+	var prop := WyncUtils.get_prop(ctx, prop_id)
+	if prop == null:
+		return 1
+	prop.module_events_consumed = true
+	prop.events_consumed_at_tick = RingBuffer.new(ctx.max_age_user_events_for_consumption, [] as Array[int])
+	prop.events_consumed_at_tick_tick = RingBuffer.new(ctx.max_age_user_events_for_consumption, -1)
+	return OK
+
+
 static func global_event_consume_tick \
 	(ctx: WyncCtx, wync_peer_id: int, channel: int, tick: int, event_id: int) -> void:
 	
@@ -175,23 +190,6 @@ static func module_events_consumed_advance_tick(ctx: WyncCtx):
 		prop.events_consumed_at_tick_tick.insert_at(tick, tick)
 		var event_ids: Array[int] = prop.events_consumed_at_tick.get_at(tick)
 		event_ids.clear()
-
-
-# DEPRECATED
-#static func global_event_consume \
-	#(ctx: WyncCtx, peer_id: int, channel_id: int, event_id: int) -> int:
-	#if channel_id < 0 || channel_id >= ctx.max_channels:
-		#return 1
-	
-	#if not ctx.peer_has_channel_has_events[peer_id][channel_id].has(event_id):
-		#return 2
-	
-	#ctx.peer_has_channel_has_events[peer_id][channel_id].erase(event_id)
-	#return 0
-	
-	# NOTE: What about the duplicated state
-	# on the user's event container?
-	#return 0 if ctx.events.erase(event_id) else 1
 
 
 # ==================================================================

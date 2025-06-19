@@ -355,16 +355,6 @@ static func prop_set_reliability(ctx: WyncCtx, prop_id: int, reliable: bool) -> 
 	prop.reliable = reliable
 	return OK
 
-# server only?
-static func prop_set_module_events_consumed(ctx: WyncCtx, prop_id: int) -> int:
-	var prop := WyncUtils.get_prop(ctx, prop_id)
-	if prop == null:
-		return 1
-	prop.module_events_consumed = true
-	prop.events_consumed_at_tick = RingBuffer.new(ctx.max_age_user_events_for_consumption, [] as Array[int])
-	prop.events_consumed_at_tick_tick = RingBuffer.new(ctx.max_age_user_events_for_consumption, -1)
-	return OK
-
 
 ## Only for INPUT / EVENT props
 #static func prop_set_prediction_duplication(ctx: WyncCtx, prop_id: int, duplication: bool) -> bool:
@@ -851,7 +841,7 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 		# add as local existing prop
 		WyncThrottle.wync_add_local_existing_entity(ctx, peer_id, entity_id)
 		# server module for consuming user events
-		prop_set_module_events_consumed(ctx, channel_prop_id)
+		WyncEventUtils.prop_set_module_events_consumed(ctx, channel_prop_id)
 		# populate ctx var
 		ctx.prop_id_by_peer_by_channel[peer_id][channel_id] = channel_prop_id
 

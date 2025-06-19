@@ -310,7 +310,6 @@ static func setup_sync_for_chunk_actor(gs: Plat.GameState, actor_id: int):
 		func(user_ctx: Variant, blocks: Array[Array]): (user_ctx as Plat.Chunk).blocks = blocks,
 	)
 
-
 	# hook blueprint to prop
 	var err = WyncDeltaSyncUtils.prop_set_relative_syncable(
 		wctx,

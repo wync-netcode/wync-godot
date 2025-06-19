@@ -303,6 +303,7 @@ static func _merge_event_to_state \
 ## and periodically? for clients that are just joining...
 ## Need to make sure clients have a history of last state received about _delta sync props_
 ## NOTE: Is this necessary at all?
+"""
 static func delta_sync_prop_initialize_clients (ctx: WyncCtx, prop_id: int) -> int:
 	var prop = WyncUtils.get_prop(ctx, prop_id)
 	if prop == null:
@@ -320,6 +321,7 @@ static func delta_sync_prop_initialize_clients (ctx: WyncCtx, prop_id: int) -> i
 			client_relative_props[prop_id] = -1
 
 	return OK
+"""
 
 
 ## returns int: Error
@@ -355,6 +357,7 @@ static func predicted_event_props_clear_events(ctx: WyncCtx):
 		setter.call(user_cxt, [] as Array[int])
 
 
+"""
 static func owned_props_clear_events(ctx: WyncCtx):
 	for prop_id in ctx.type_input_event__owned_prop_ids:
 		var prop = WyncUtils.get_prop_unsafe(ctx, prop_id)
@@ -363,3 +366,4 @@ static func owned_props_clear_events(ctx: WyncCtx):
 		var setter = ctx.wrapper.prop_setter[prop_id]
 		var user_cxt = ctx.wrapper.prop_user_ctx[prop_id]
 		setter.call(user_cxt, [] as Array[int])
+"""
