@@ -276,7 +276,7 @@ static func extract_data_to_tick(ctx: WyncCtx, co_ticks: CoTicks, save_on_tick: 
 
 ## This function must be ran each frame
 
-static func update_delta_base_state_tick(ctx: WyncCtx) -> void:
+static func system_update_delta_base_state_tick(ctx: WyncCtx) -> void:
 
 	# move base_state_tick forward
 

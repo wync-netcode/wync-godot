@@ -549,36 +549,6 @@ static func extrapolate(gs: Plat.GameState, delta: float):
 		WyncXtrap.wync_xtrap_tick_end(ctx, tick)
 		#PlatPublic.debug_print_last_chunk(gs)
 	#Log.outc(ctx, "debugging prediction range (%s : %s) d %s | server_ticks %s" % [ctx.pred_intented_first_tick, target_tick +1, (target_tick+1-ctx.pred_intented_first_tick), ctx.co_ticks.server_ticks])
-
-	"""
-	3,2,2,0,0,3 original
-	2,2,2,0,0,3 first action
-	1,2,2,0,0,3 second action
-	3,2,2,0,0,3 rollbacked +
-	3,1,2,0,0,3 applied first canonic
-	2,1,2,0,0,3 re- second action
-	2,0,2,0,0,3 applied second canonic
-	3,0,2,0,0,3 <-- server's canonic
-
-	3,3,3,3,0,3 after 1st, 2nd and 3rd action
-	3,3,3,3,3,3 rollback
-	3,3,3,3,3,2 1st canonic
-	3,3,3,3,2,2 after 2nd action
-	3,3,3,3,1,2 after 3rd action
-	3,3,3,3,3,2 rollback
-	3,3,3,3,3,1 2st canonic
-
-	[...] FIXME: The problem:
-		1. We store undo events
-		2. After we rollback...
-		3. We assume we're gonna predict the original event again?
-		If this is the same undo event as before, then possible solution is:
-		Just remove already applied undo events...
-		
-	3,3,3,3,0,3 1st 2nd 3rd action
-	3,3,3,3,2,2 
-
-	"""
 	
 	WyncXtrap.wync_xtrap_termination(ctx)
 

@@ -681,9 +681,9 @@ static func server_setup(ctx: WyncCtx) -> int:
 	for i in range(1, ctx.max_peers):
 		WyncUtils.setup_peer_global_events(ctx, i)
 
+	# setup prob prop
 	WyncUtils.setup_entity_prob_for_entity_update_delay_ticks(ctx, WyncCtx.SERVER_PEER_ID)
 
-	# setup prob prop
 	return 0
 
 

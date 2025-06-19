@@ -273,6 +273,8 @@ var last_tick_predicted: int = 0
 # markers for the current prediction cycle
 var pred_intented_first_tick: int = 0
 
+var global_entity_ids_to_not_predrict: Array[int] = []
+
 ## how many ticks before 'last_tick_received' to predict to compensate for throttling
 ## * Limited by REGULAR_PROP_CACHED_STATE_AMOUNT
 ## TODO: rename

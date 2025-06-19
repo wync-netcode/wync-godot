@@ -84,6 +84,10 @@ static func generate_world(gs: Plat.GameState):
 static func duplicate_chunk_blocks(chunk: Plat.Chunk) -> Array[Array]:
 	var blocks: Array[Array] = []
 
+	if Input.is_action_just_pressed("key_debug_2"):
+		print_stack()
+		assert(false)
+
 	for k in range(Plat.CHUNK_AMOUNT):
 		blocks.resize(Plat.CHUNK_WIDTH_BLOCKS)
 

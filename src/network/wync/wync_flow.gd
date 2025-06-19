@@ -5,7 +5,7 @@ class_name WyncFlow
 
 static func wync_server_tick_start(ctx: WyncCtx):
 
-	SyTicks.wync_advance_ticks(ctx)
+	WyncClock.wync_advance_ticks(ctx)
 
 	WyncEventUtils.module_events_consumed_advance_tick(ctx)
 
@@ -16,12 +16,11 @@ static func wync_server_tick_start(ctx: WyncCtx):
 
 static func wync_server_tick_end(ctx: WyncCtx):
 	for peer_id: int in range(1, ctx.peers.size()):
-		WyncThrottle.wync_system_stabilize_latency(ctx, ctx.peer_latency_info[peer_id])
+		WyncClock.wync_system_stabilize_latency(ctx, ctx.peer_latency_info[peer_id])
 
-	# TODO: Run only on prop added/removed events
-	WyncXtrap.wync_server_tick_end_cache_filtered_input_ids(ctx)
+	WyncXtrap.wync_server_filter_prop_ids(ctx)
 
-	SyWyncStateExtractor.update_delta_base_state_tick(ctx)
+	SyWyncStateExtractor.system_update_delta_base_state_tick(ctx)
 
 	# NOTE: maybe a way to extract data but only events, since that is unskippable?
 	# This function extracts regular props, plus _auxiliar delta event props_
@@ -33,9 +32,9 @@ static func wync_server_tick_end(ctx: WyncCtx):
 static func wync_client_tick_end(ctx: WyncCtx):
 
 	WyncXtrap.wync_client_filter_prop_ids(ctx)
-	SyTicks.wync_advance_ticks(ctx)
-	WyncThrottle.wync_system_stabilize_latency(ctx, ctx.peer_latency_info[WyncCtx.SERVER_PEER_ID])
-	SyNetPredictionTicks.wync_update_prediction_ticks(ctx)
+	WyncClock.wync_advance_ticks(ctx)
+	WyncClock.wync_system_stabilize_latency(ctx, ctx.peer_latency_info[WyncCtx.SERVER_PEER_ID])
+	WyncClock.wync_update_prediction_ticks(ctx)
 	
 	WyncWrapper.wync_buffer_inputs(ctx)
 
@@ -92,7 +91,7 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 				wync_handle_packet_res_client_info(ctx, wync_pkt.data)
 		WyncPacket.WYNC_PKT_CLOCK:
 			if is_client:
-				wync_handle_pkt_clock(ctx, wync_pkt.data)
+				WyncClock.wync_handle_pkt_clock(ctx, wync_pkt.data)
 			else:
 				SyWyncClockServer.wync_server_handle_clock_req(ctx, wync_pkt.data, from_nete_peer_id)
 		WyncPacket.WYNC_PKT_CLIENT_SET_LERP_MS:
@@ -529,9 +528,10 @@ static func prop_save_confirmed_state(ctx: WyncCtx, prop_id: int, tick: int, sta
 
 			# debugging: save canonic state to compare it later
 			# TODO: remove
-			var getter = ctx.wrapper.prop_getter[prop_id]
-			var state_dup = WyncUtils.duplicate_any(getter.call(user_ctx))
-			WyncEntityProp.saved_state_insert(ctx, prop, 0, state_dup)
+			if false:
+				var getter = ctx.wrapper.prop_getter[prop_id]
+				var state_dup = WyncUtils.duplicate_any(getter.call(user_ctx))
+				WyncEntityProp.saved_state_insert(ctx, prop, 0, state_dup)
 
 	return OK
 
@@ -697,67 +697,6 @@ static func wync_handle_packet_client_set_lerp_ms(ctx: WyncCtx, data: Variant, f
 	client_info.lerp_ms = data.lerp_ms
 
 	return OK
-
-
-static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
-
-	# see https://en.wikipedia.org/wiki/Cristian%27s_algorithm
-
-	if data is not WyncPktClock:
-		return 1
-	data = data as WyncPktClock
-
-	var co_ticks = ctx.co_ticks
-	var co_predict_data = ctx.co_predict_data
-	var curr_time = WyncUtils.clock_get_ms(ctx)
-	var physics_fps = ctx.physic_ticks_per_second
-	var curr_clock_offset = (data.time + (curr_time - data.time_og) / 2.0) - curr_time
-
-	# calculate mean
-	# Note: To improve accurace modify _server clock sync_ throttling or sliding window size
-	# Note: Use a better algorithm for calculating a stable long lasting value of the clock offset
-	#   Resistant to sudden lag spikes. Look into 'Trimmed mean'
-
-	co_predict_data.clock_offset_sliding_window.push(curr_clock_offset)
-
-	var count: int = 0
-	var acc: float = 0
-	for i: int in range(co_predict_data.clock_offset_sliding_window.size):
-		var i_clock_offset = co_predict_data.clock_offset_sliding_window.get_at(i)
-		if i_clock_offset == 0:
-			continue
-
-		count += 1
-		acc += i_clock_offset
-
-	co_predict_data.clock_offset_mean = ceil(acc / count)
-	var current_server_time: float = curr_time + co_predict_data.clock_offset_mean
-	
-	# update ticks
-
-	var cal_server_ticks: float = (data.tick + ((curr_time - data.time_og) / 2.0) / (1000.0 / physics_fps))
-	var new_server_ticks_offset: int = roundi(cal_server_ticks - co_ticks.ticks)
-
-	# Note: needs further reviewing
-	# to avoid fluctuations by one unit, always prefer the biggest value
-	#if (abs(new_server_ticks_offset - co_ticks.server_tick_offset) == 1):
-		#new_server_ticks_offset = max(co_ticks.server_tick_offset, new_server_ticks_offset)
-
-	# Note: at the beggining 'server_ticks' will be equal to 0
-
-	CoTicks.server_tick_offset_collection_add_value(co_ticks, new_server_ticks_offset)
-	co_ticks.server_tick_offset = CoTicks.server_tick_offset_collection_get_most_common(co_ticks)
-	co_ticks.server_ticks = co_ticks.ticks + co_ticks.server_tick_offset
-
-	Log.out("Servertime %s, real %s, d %s | server_ticks_aprox %s | latency %s | clock %s | %s" % [
-		int(current_server_time),
-		Time.get_ticks_msec(),
-		str(Time.get_ticks_msec() - current_server_time).pad_zeros(2).pad_decimals(1),
-		co_ticks.server_ticks,
-		Time.get_ticks_msec() - data.time,
-		str(co_predict_data.clock_offset_mean).pad_decimals(2),
-		co_ticks.server_tick_offset,
-	])
 
 
 ## Call every time a packet is received

@@ -35,7 +35,7 @@ static func wync_xtrap_preparation(ctx: WyncCtx) -> int:
 
 
 # Note: further optimization could involve removing adding singular props from the list
-static func wync_server_tick_end_cache_filtered_input_ids(ctx: WyncCtx):
+static func wync_server_filter_prop_ids(ctx: WyncCtx):
 	if not ctx.was_any_prop_added_deleted:
 		return
 	ctx.was_any_prop_added_deleted = false

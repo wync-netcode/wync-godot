@@ -119,6 +119,8 @@ static func xtrap_props_update_predicted_states_data(ctx: WyncCtx, props_ids: Ar
 		var prop = ctx.props[prop_id] as WyncEntityProp
 		if prop == null:
 			continue
+		if prop.relative_syncable:
+			continue
 
 		var pred_curr = prop.pred_curr
 		var pred_prev = prop.pred_prev

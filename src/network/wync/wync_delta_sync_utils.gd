@@ -83,10 +83,14 @@ static func prop_set_relative_syncable (
 
 	# assuming no timewarpable
 	# (actually just 1) for debugging purposes, should be 0
-	prop.saved_states = RingBuffer.new(2, null) 
-	prop.tick_to_state_id = RingBuffer.new(2, -1)
-	prop.state_id_to_tick = RingBuffer.new(2, -1)
-	prop.state_id_to_local_tick = RingBuffer.new(2, -1)
+	prop.saved_states = RingBuffer.new(0, null) 
+	prop.tick_to_state_id = RingBuffer.new(0, -1)
+	prop.state_id_to_tick = RingBuffer.new(0, -1)
+	prop.state_id_to_local_tick = RingBuffer.new(0, -1)
+	#prop.saved_states = RingBuffer.new(2, null) 
+	#prop.tick_to_state_id = RingBuffer.new(2, -1)
+	#prop.state_id_to_tick = RingBuffer.new(2, -1)
+	#prop.state_id_to_local_tick = RingBuffer.new(2, -1)
 
 
 	var need_undo_events = false

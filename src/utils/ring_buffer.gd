@@ -31,6 +31,7 @@ func get_relative(position: int = 0): # -> Any
 ## func push(item: Any)
 ## @returns int: position for new element
 func push(item) -> int:
+	if size == 0: return -1
 	head_pointer = WyncUtils.fast_modulus(head_pointer + 1, size)
 	buffer[head_pointer] = item
 	return head_pointer
@@ -38,18 +39,21 @@ func push(item) -> int:
 
 ## @argument i (int): position in the ring
 ## @argument item (any)
-func insert_at(i: int, item):
+func insert_at(i: int, item) -> void:
+	if size == 0: return
 	buffer[WyncUtils.fast_modulus(i, size)] = item
 	# Note: Maybe implement an insert_at_absolute
 	
 
 ## @returns: Optional<any>
 func get_at(i: int):# -> any
+	if size == 0: return null
 	return buffer[WyncUtils.fast_modulus(i, size)]
 
 
 ## @returns: Optional<any>
 func get_absolute(i: int):# -> any
+	if size == 0: return null
 	return buffer[i]
 
 
