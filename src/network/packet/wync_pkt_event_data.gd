@@ -11,7 +11,7 @@ class EventData:
 		var newi = EventData.new()
 		newi.event_id = event_id
 		newi.event_type_id = event_type_id
-		newi.event_data = WyncUtils.duplicate_any(event_data)
+		newi.event_data = WyncMisc.duplicate_any(event_data)
 		return newi
 
 

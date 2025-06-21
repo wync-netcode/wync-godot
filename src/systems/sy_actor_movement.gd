@@ -80,12 +80,12 @@ static func simulate_particle_on_start_moving(entity: Entity, _delta: float, pre
 		
 		# Demonstrates how to execute a visual effect only once even though we're
 		# resimulating this tick multiple times for extrapolation/self-prediction
-		if WyncUtils.is_client(wync_ctx, wync_ctx.my_peer_id):
+		if WyncTrack.is_client(wync_ctx, wync_ctx.my_peer_id):
 			var action_id = "visual_effects"
 			if WyncEventUtils.action_already_ran_on_tick(wync_ctx, predicted_tick, action_id):
 				return
 			WyncEventUtils.action_mark_as_ran_on_tick(wync_ctx, predicted_tick, action_id)
 		
-		var is_client = WyncUtils.is_client(wync_ctx)
+		var is_client = WyncTrack.is_client(wync_ctx)
 		var particle_color = Color.RED if is_client else Color.BLUE
 		DebugParticle.spawn(entity.get_tree().root, body.global_position, particle_color)

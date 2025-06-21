@@ -78,8 +78,8 @@ static func despawn_actor(gs: Plat.GameState, actor_id: int):
 	gs.actors[actor_index] = null
 
 	# clean from wync
-	if WyncUtils.is_entity_tracked(gs.wctx, actor_id):
-		WyncUtils.untrack_entity(gs.wctx, actor_id)
+	if WyncTrack.is_entity_tracked(gs.wctx, actor_id):
+		WyncTrack.untrack_entity(gs.wctx, actor_id)
 	
 	Log.outc(gs.wctx, "spawn, despawned entity %s" % [actor_id])
 
@@ -499,7 +499,7 @@ static func grid_block_break(gs: Plat.GameState, block_pos: Vector2i):
 	event_data.block_type = new_block_type
 
 	# get block prop id
-	var blocks_prop_id = WyncUtils.entity_get_prop_id(gs.wctx, chunk.actor_id, "blocks")
+	var blocks_prop_id = WyncTrack.entity_get_prop_id(gs.wctx, chunk.actor_id, "blocks")
 	assert(blocks_prop_id != -1)
 
 	#Log.outc(gs.wctx, "debugrela prop %s last predicted tick %s" % [chunk.actor_id, gs.wctx.entity_last_predicted_tick[chunk.actor_id]])

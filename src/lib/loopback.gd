@@ -39,7 +39,7 @@ class Packet:
 
 
 static func system_fluctuate_latency(ctx: Context):
-	if WyncUtils.fast_modulus(Engine.get_physics_frames(), 4) != 0:
+	if WyncMisc.fast_modulus(Engine.get_physics_frames(), 4) != 0:
 		return
 
 	for peer: IOPeer in ctx.peers:

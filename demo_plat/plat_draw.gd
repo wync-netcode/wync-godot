@@ -2,7 +2,7 @@ class_name PlatDraw
 
 
 static func draw_game(canvas: Node2D, gs: Plat.GameState):
-	if not gs.net.is_client:
+	if gs.net.is_client:
 		draw_block_grid(canvas, gs, gs.camera_offset)
 		pass
 	else:
@@ -20,7 +20,7 @@ static func draw_block_grid(canvas: Node2D, gs: Plat.GameState, offset: Vector2i
 	
 	for k in range(Plat.CHUNK_AMOUNT):
 		var chunk := gs.chunks[k]
-		var odd_chunk = WyncUtils.fast_modulus(k, 2) == 0
+		var odd_chunk = WyncMisc.fast_modulus(k, 2) == 0
 
 		for i in range(Plat.CHUNK_WIDTH_BLOCKS):
 			var x = k * Plat.CHUNK_WIDTH_BLOCKS + i

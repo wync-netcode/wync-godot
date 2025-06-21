@@ -58,7 +58,7 @@ func insert_random_block_by_global_event(wync_ctx: WyncCtx, en_block_grid: Entit
 
 	# get prop_id from entity
 
-	var prop_blocks_id = WyncUtils.entity_get_prop_id(wync_ctx, co_actor.id, "blocks")
+	var prop_blocks_id = WyncTrack.entity_get_prop_id(wync_ctx, co_actor.id, "blocks")
 	if prop_blocks_id == -1:
 		Log.err(self, "Couldn't find prop [blocks] for entity %s" % [co_actor.id])
 
@@ -93,7 +93,7 @@ func insert_random_block_by_delta_event(wync_ctx: WyncCtx, en_block_grid: Entity
 
 	# get prop_id from entity
 
-	var prop_blocks_id = WyncUtils.entity_get_prop_id(wync_ctx, co_actor.id, "blocks")
+	var prop_blocks_id = WyncTrack.entity_get_prop_id(wync_ctx, co_actor.id, "blocks")
 	if prop_blocks_id == -1:
 		Log.err("Couldn't find prop [blocks] for entity %s" % [co_actor.id])
 

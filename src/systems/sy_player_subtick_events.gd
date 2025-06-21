@@ -11,6 +11,8 @@ func _ready():
 	super()
 
 
+## TIMEWARP IMPLEMENTATION REFERENCE
+
 func on_process_entity(entity: Entity, _data, _delta: float):
 	return
 	"""
@@ -62,7 +64,7 @@ static func debug_show_timewarpable_lerped_positions(node_ctx: Node, wync_ctx: W
 	var co_ticks = wync_ctx.co_ticks
 	var co_predict_data = wync_ctx.co_predict_data
 	
-	var curr_tick_time = WyncUtils.clock_get_tick_timestamp_ms(wync_ctx, co_ticks.ticks)
+	var curr_tick_time = WyncTrack.clock_get_tick_timestamp_ms(wync_ctx, co_ticks.ticks)
 	var curr_time = curr_tick_time + co_ticks.lerp_delta_accumulator_ms
 	var target_time_conf = curr_time - co_predict_data.lerp_ms
 	
@@ -71,13 +73,13 @@ static func debug_show_timewarpable_lerped_positions(node_ctx: Node, wync_ctx: W
 	var left_value: Variant
 	var right_value: Variant
 	var interpolated_value: Variant
-	var prop = WyncUtils.entity_get_prop(wync_ctx, entity_id, "position")
+	var prop = WyncTrack.entity_get_prop(wync_ctx, entity_id, "position")
 
 
 	# NOTE: opportunity to optimize this by not recalculating this each loop
 
-	left_timestamp_ms = WyncUtils.clock_get_tick_timestamp_ms(wync_ctx, prop.lerp_left_local_tick)
-	right_timestamp_ms = WyncUtils.clock_get_tick_timestamp_ms(wync_ctx, prop.lerp_right_local_tick)
+	left_timestamp_ms = WyncTrack.clock_get_tick_timestamp_ms(wync_ctx, prop.lerp_left_local_tick)
+	right_timestamp_ms = WyncTrack.clock_get_tick_timestamp_ms(wync_ctx, prop.lerp_right_local_tick)
 
 	if (prop.confirmed_states_tick.get_at(prop.lerp_left_confirmed_state_tick) != prop.lerp_left_confirmed_state_tick
 	|| prop.confirmed_states_tick.get_at(prop.lerp_right_confirmed_state_tick) != prop.lerp_right_confirmed_state_tick

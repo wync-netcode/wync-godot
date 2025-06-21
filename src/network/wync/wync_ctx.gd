@@ -424,7 +424,7 @@ var debug_lerp_prev_curr_time: float
 var debug_lerp_prev_target: float
 
 
-# TODO: Move to WyncUtils
+# TODO: Move to WyncTrack
 func _init() -> void:
 	props.resize(MAX_PROPS)
 	prop_id_cursor = 0

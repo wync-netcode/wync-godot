@@ -87,7 +87,7 @@ func clear() -> void:
 
 ## @returns Optional<Variant>
 func get_relative_to_tail(pos: int) -> Variant:
-	var index = WyncUtils.fast_modulus(tail + pos, capacity)
+	var index = WyncMisc.fast_modulus(tail + pos, capacity)
 	return ring[index]
 
 
@@ -98,14 +98,14 @@ func remove_relative_to_tail(pos: int) -> int:
 
 	else:
 		for i: int in range(pos, size):
-			var index_curr = WyncUtils.fast_modulus(tail + i, capacity)
+			var index_curr = WyncMisc.fast_modulus(tail + i, capacity)
 			if i < (size -1):
-				var index_next = WyncUtils.fast_modulus(tail + i + 1, capacity)
+				var index_next = WyncMisc.fast_modulus(tail + i + 1, capacity)
 				ring[index_curr] = ring[index_next]
 			if i == (size -1):
 				ring[index_curr] = null
 
-		head = WyncUtils.fast_modulus(head -1, capacity)
+		head = WyncMisc.fast_modulus(head -1, capacity)
 
 	size -= 1
 	return OK

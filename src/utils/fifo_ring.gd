@@ -91,12 +91,12 @@ func get_tail() -> int:
 
 ## @returns Optional<Variant>
 #func get_relative_to_head(pos: int) -> int:
-	#return ring[WyncUtils.fast_modulus(head + pos, capacity)]
+	#return ring[WyncTrack.fast_modulus(head + pos, capacity)]
 
 
 ## @returns Optional<Variant>
 func get_relative_to_tail(pos: int) -> int:
-	return ring[WyncUtils.fast_modulus(tail + pos, capacity)]
+	return ring[WyncMisc.fast_modulus(tail + pos, capacity)]
 
 func clear() -> void:
 	tail = 0

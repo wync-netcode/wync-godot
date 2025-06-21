@@ -24,7 +24,7 @@ func _init(ar_size: int, default_value: Variant) -> void:
 ## Returns the item in position relative to head
 ## e.g. get(0) will return head, but get(-1) will return the item before head
 func get_relative(position: int = 0): # -> Any
-	return buffer[WyncUtils.fast_modulus(head_pointer + position, size)]
+	return buffer[WyncMisc.fast_modulus(head_pointer + position, size)]
 	
 
 ## Adds item to the head overwritting the tail if necessary
@@ -32,7 +32,7 @@ func get_relative(position: int = 0): # -> Any
 ## @returns int: position for new element
 func push(item) -> int:
 	if size == 0: return -1
-	head_pointer = WyncUtils.fast_modulus(head_pointer + 1, size)
+	head_pointer = WyncMisc.fast_modulus(head_pointer + 1, size)
 	buffer[head_pointer] = item
 	return head_pointer
 
@@ -41,14 +41,14 @@ func push(item) -> int:
 ## @argument item (any)
 func insert_at(i: int, item) -> void:
 	if size == 0: return
-	buffer[WyncUtils.fast_modulus(i, size)] = item
+	buffer[WyncMisc.fast_modulus(i, size)] = item
 	# Note: Maybe implement an insert_at_absolute
 	
 
 ## @returns: Optional<any>
 func get_at(i: int):# -> any
 	if size == 0: return null
-	return buffer[WyncUtils.fast_modulus(i, size)]
+	return buffer[WyncMisc.fast_modulus(i, size)]
 
 
 ## @returns: Optional<any>

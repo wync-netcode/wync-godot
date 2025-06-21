@@ -63,7 +63,7 @@ static func saved_state_get_throughout(
 
 	# look up tick
 	for i in range(prop.saved_states.size):
-		#var state_id = WyncUtils.fast_modulus(
+		#var state_id = WyncTrack.fast_modulus(
 			#prop.state_id_to_tick.head_pointer -i, prop.state_id_to_tick.size)
 		var state_id = i
 		var saved_tick = prop.state_id_to_tick.get_absolute(state_id) 
@@ -159,7 +159,7 @@ var confirmed_states_undo_tick: RingBuffer = null
 # Related to Throttling
 # --------------------------------------------------
 
-var reliable := true
+#var reliable := true
 
 # Event consumed module
 # --------------------------------------------------

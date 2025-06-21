@@ -30,7 +30,7 @@ static func wync_buffer_inputs(ctx: WyncCtx):
 	
 	for prop_id: int in ctx.type_input_event__owned_prop_ids:
 
-		var input_prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
+		var input_prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
 		var getter = ctx.wrapper.prop_getter[prop_id]
 		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
 		var new_state = getter.call(user_ctx)
@@ -45,7 +45,7 @@ static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
 
 	for prop_id in ctx.filtered_regular_extractable_prop_ids:
 		
-		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
+		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
 		var getter = ctx.wrapper.prop_getter[prop_id]
 		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
 		WyncEntityProp.saved_state_insert(ctx, prop, save_on_tick, getter.call(user_ctx))
@@ -53,8 +53,8 @@ static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
 
 	for prop_id in ctx.filtered_delta_prop_ids:
 		
-		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
-		var prop_aux := WyncUtils.get_prop_unsafe(ctx, prop.auxiliar_delta_events_prop_id)
+		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
+		var prop_aux := WyncTrack.get_prop_unsafe(ctx, prop.auxiliar_delta_events_prop_id)
 		prop_id = prop.auxiliar_delta_events_prop_id
 		prop = prop_aux
 		
@@ -66,7 +66,7 @@ static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
 static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: Array[int], tick: int):
 	
 	for prop_id: int in prop_ids:
-		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
+		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
 		
 		var last_confirmed_tick = prop.last_ticks_received.get_relative(tick)
 		if last_confirmed_tick == -1:
@@ -86,7 +86,7 @@ static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: A
 static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 		
 	for prop_id in ctx.filtered_clients_input_and_event_prop_ids:
-		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)	
+		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)	
 
 		var input = WyncEntityProp.saved_state_get(prop, ctx.co_ticks.ticks)
 		if input == null:
@@ -164,7 +164,7 @@ static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 		#])
 
 	for prop_id in ctx.type_state__interpolated_regular_prop_ids:
-		var prop := WyncUtils.get_prop_unsafe(ctx, prop_id)
+		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
 
 		if prop.lerp_use_confirmed_state:
 			left_value = prop.lerp_left_state
@@ -255,7 +255,7 @@ static func wync_get_events_from_channel_from_peer(
 		return out_events_id
 
 	var prop_id: int = ctx.prop_id_by_peer_by_channel[wync_peer_id][channel]
-	var prop_channel := WyncUtils.get_prop_unsafe(ctx, prop_id)
+	var prop_channel := WyncTrack.get_prop_unsafe(ctx, prop_id)
 
 	var consumed_event_ids_tick: int = prop_channel.events_consumed_at_tick_tick.get_at(tick)
 	if tick != consumed_event_ids_tick:
@@ -290,7 +290,7 @@ static func wync_get_events_from_channel_from_peer(
 static func wync_insert_state_to_entity_prop (
 	ctx: WyncCtx, entity_id: int, prop_name_id: String, tick: int, state: Variant) -> int:
 
-	var prop = WyncUtils.entity_get_prop(ctx, entity_id, prop_name_id)
+	var prop = WyncTrack.entity_get_prop(ctx, entity_id, prop_name_id)
 	if prop == null:
 		return 1
 	prop = prop as WyncEntityProp
@@ -308,7 +308,7 @@ static func wync_insert_state_to_entity_prop (
 
 	if prop.is_auxiliar_prop:
 		# notify _main delta prop_ about the updates
-		var delta_prop = WyncUtils.get_prop(ctx, prop.auxiliar_delta_events_prop_id) as WyncEntityProp
+		var delta_prop = WyncTrack.get_prop(ctx, prop.auxiliar_delta_events_prop_id) as WyncEntityProp
 		delta_prop.just_received_new_state = true
 
 	return OK

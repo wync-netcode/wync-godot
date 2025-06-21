@@ -48,7 +48,7 @@ static func wync_system_send_entities_to_spawn(ctx: WyncCtx, _commit: bool = tru
 			packet.entity_prop_id_end[i] = entity_prop_ids[entity_prop_ids.size() -1]
 
 			if ctx.entity_spawn_data.has(entity_id):
-				packet.entity_spawn_data[i] = WyncUtils.duplicate_any(ctx.entity_spawn_data[entity_id])
+				packet.entity_spawn_data[i] = WyncMisc.duplicate_any(ctx.entity_spawn_data[entity_id])
 
 			# commit / confirm as _client can see it_
 
@@ -62,7 +62,7 @@ static func wync_system_send_entities_to_spawn(ctx: WyncCtx, _commit: bool = tru
 			packet.resize(i + 1)
 
 		# queue 
-		var res = WyncFlow.wync_wrap_packet_out(ctx, client_id, WyncPacket.WYNC_PKT_SPAWN, packet)
+		var res = WyncPacketUtil.wync_wrap_packet_out(ctx, client_id, WyncPacket.WYNC_PKT_SPAWN, packet)
 		if res[0] == OK:
 			var pkt_out = res[1] as WyncPacketOut
 			WyncThrottle.wync_try_to_queue_out_packet(ctx, pkt_out, WyncCtx.RELIABLE, true)
@@ -101,7 +101,7 @@ static func wync_system_send_entities_to_despawn(ctx: WyncCtx, _commit: bool = t
 			packet.entity_ids[i] = entity_id_list[i]
 
 		# queue 
-		var res = WyncFlow.wync_wrap_packet_out(ctx, client_id, WyncPacket.WYNC_PKT_DESPAWN, packet)
+		var res = WyncPacketUtil.wync_wrap_packet_out(ctx, client_id, WyncPacket.WYNC_PKT_DESPAWN, packet)
 		assert(res[0] == OK)
 		var pkt_out = res[1] as WyncPacketOut
 		WyncThrottle.wync_try_to_queue_out_packet(ctx, pkt_out, WyncCtx.RELIABLE, true)
@@ -117,21 +117,21 @@ static func wync_system_gather_packets(ctx: WyncCtx):
 
 	if ctx.is_client:
 		if not ctx.connected:
-			WyncFlow.wync_try_to_connect(ctx)                     # reliable, commited
+			WyncJoin.service_wync_try_to_connect(ctx)                     # reliable, commited
 		else:
-			SyWyncClockServer.wync_client_ask_for_clock(ctx)      # unreliable
-			WyncFlow.wync_system_client_send_delta_prop_acks(ctx) # unreliable
-			SyWyncSendInputs.wync_client_send_inputs(ctx)         # unreliable
-			SyWyncSendEventData.wync_send_event_data(ctx)         # reliable, commited
+			WyncClock.wync_client_ask_for_clock(ctx)      # unreliable
+			WyncDeltaSyncUtils.wync_system_client_send_delta_prop_acks(ctx) # unreliable
+			WyncStateSend.wync_client_send_inputs(ctx)         # unreliable
+			WyncEventUtils.wync_send_event_data(ctx)         # reliable, commited
 
 	else:
 		WyncThrottle.wync_system_send_entities_to_despawn(ctx) # reliable, commited
 		WyncThrottle.wync_system_send_entities_to_spawn(ctx)   # reliable, commited
-		WyncUtils.wync_system_sync_client_ownership(ctx)       # reliable, commited
+		WyncInput.wync_system_sync_client_ownership(ctx)       # reliable, commited
 
 		WyncThrottle.wync_system_fill_entity_sync_queue(ctx)
 		WyncThrottle.wync_compute_entity_sync_order(ctx)
-		SyWyncStateExtractor.wync_send_extracted_data(ctx) # both reliable/unreliable
+		WyncStateSend.wync_send_extracted_data(ctx) # both reliable/unreliable
 
 	WyncThrottle.wync_system_calculate_data_per_tick(ctx)
 
@@ -257,7 +257,7 @@ static func wync_entity_set_spawn_data(ctx: WyncCtx, entity_id: int, data: Varia
 
 static func wync_client_now_can_see_entity(ctx: WyncCtx, client_id: int, entity_id: int) -> int:
 	# entity exists
-	if not WyncUtils.is_entity_tracked(ctx, entity_id):
+	if not WyncTrack.is_entity_tracked(ctx, entity_id):
 		Log.err("entity (%s) isn't tracked", Log.TAG_THROTTLE)
 		return 1
 
@@ -274,7 +274,7 @@ static func wync_client_now_can_see_entity(ctx: WyncCtx, client_id: int, entity_
 
 static func wync_client_no_longer_sees_entity(ctx: WyncCtx, client_id: int, entity_id: int) -> int:
 	# entity exists
-	if not WyncUtils.is_entity_tracked(ctx, entity_id):
+	if not WyncTrack.is_entity_tracked(ctx, entity_id):
 		Log.err("entity (%s) isn't tracked", Log.TAG_THROTTLE)
 		return 1
 
@@ -316,11 +316,11 @@ static func wync_client_no_longer_sees_entity(ctx: WyncCtx, client_id: int, enti
 static func wync_add_local_existing_entity \
 		(ctx: WyncCtx, wync_client_id: int, entity_id: int) -> int:
 
-	if WyncUtils.is_client(ctx):
+	if ctx.is_client:
 		return 1
 	if wync_client_id == WyncCtx.SERVER_PEER_ID:
 		return 2
-	if not WyncUtils.is_entity_tracked(ctx, entity_id): # entity exists
+	if not WyncTrack.is_entity_tracked(ctx, entity_id): # entity exists
 		Log.err("entity (%s) isn't tracked", Log.TAG_THROTTLE)
 		return 3
 
@@ -343,7 +343,7 @@ static func _wync_confirm_client_can_see_entity(ctx: WyncCtx, client_id: int, en
 	entity_set[entity_id] = true
 
 	for prop_id: int in ctx.entity_has_props[entity_id]:
-		var prop = WyncUtils.get_prop(ctx, prop_id)
+		var prop = WyncTrack.get_prop(ctx, prop_id)
 		if prop == null:
 			Log.err("Couldn't find prop(%s) in entity(%s)" % [prop_id, entity_id])
 			continue

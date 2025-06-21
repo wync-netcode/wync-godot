@@ -7,7 +7,7 @@ class NetTickDataDecorator:
 	func duplicate() -> NetTickDataDecorator:
 		var newi = NetTickDataDecorator.new()
 		newi.tick = tick
-		newi.data = WyncUtils.duplicate_any(data)
+		newi.data = WyncMisc.duplicate_any(data)
 		return newi
 
 var prop_id: int = -1 # inputs to which prop

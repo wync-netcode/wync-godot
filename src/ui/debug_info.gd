@@ -39,7 +39,7 @@ func initialize(loopback_ctx: Loopback.Context, server_wctx: WyncCtx, client_wct
 func _physics_process(_delta: float) -> void:
 	if not initialized:
 		return
-	if WyncUtils.fast_modulus(Engine.get_physics_frames(), 2) != 0:
+	if WyncMisc.fast_modulus(Engine.get_physics_frames(), 2) != 0:
 		return
 	match info_to_show:
 		INFO.INFO_FPS:
@@ -67,7 +67,7 @@ func _process(_delta: float) -> void:
 
 
 func get_info_general() -> String:
-	var client_time_ms = WyncUtils.clock_get_ms(client_wctx)
+	var client_time_ms = WyncClock.clock_get_ms(client_wctx)
 	var pred_server_time_ms = client_time_ms + client_wctx.co_predict_data.clock_offset_mean
 	var prob_prop_ms = (1000.0 / client_wctx.physic_ticks_per_second) * (client_wctx.low_priority_entity_update_rate +1)
 
@@ -120,9 +120,9 @@ func get_info_general() -> String:
 		client_wctx.co_ticks.server_ticks,
 		(client_wctx.co_ticks.server_ticks -server_wctx.co_ticks.ticks), 
 		client_wctx.co_ticks.server_tick_offset,
-		WyncUtils.clock_get_ms(server_wctx),
+		WyncClock.clock_get_ms(server_wctx),
 		pred_server_time_ms,
-		(WyncUtils.clock_get_ms(server_wctx) - pred_server_time_ms),
+		(WyncClock.clock_get_ms(server_wctx) - pred_server_time_ms),
 		client_wctx.co_predict_data.clock_offset_mean,
 
 		client_wctx.co_ticks.ticks,
@@ -192,7 +192,7 @@ static func get_info_packets_received_text(ctx: WyncCtx, prop_amount: int) -> St
 	var number_length = 4
 
 	var text = ""
-	var prefix = "client_%s" % [ctx.my_peer_id] if WyncUtils.is_client(ctx) else "server"
+	var prefix = "client_%s" % [ctx.my_peer_id] if ctx.is_client else "server"
 
 	text += prefix + " Received \n"
 	text += string_exact_length("", name_length) + " "
@@ -217,7 +217,7 @@ static func get_info_prop_identifiers(ctx: WyncCtx) -> String:
 	for entity_id in ctx.tracked_entities.keys():
 
 		for i in ctx.entity_has_props[entity_id]:
-			var prop := WyncUtils.get_prop(ctx, i)
+			var prop := WyncTrack.get_prop(ctx, i)
 			if prop == null:
 				continue
 			text += "%s %s %s\n" % [

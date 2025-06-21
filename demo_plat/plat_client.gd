@@ -36,7 +36,7 @@ func _physics_process(delta: float) -> void:
 			PlatPublic.player_input_additive(gs, gs.players[gs.i_control_player_id], self)
 			PlatPublic.system_player_grid_events(gs, gs.players[gs.i_control_player_id])
 		
-		WyncFlow.wync_peer_set_current_latency(gs.wctx, WyncCtx.SERVER_PEER_ID, gs.net.io_peer.latency_current_ms)
+		WyncClock.wync_peer_set_current_latency(gs.wctx, WyncCtx.SERVER_PEER_ID, gs.net.io_peer.latency_current_ms)
 		WyncFlow.wync_client_tick_end(gs.wctx)
 
 		PlatWync.extrapolate(gs, delta)

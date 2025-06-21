@@ -54,7 +54,7 @@ func on_process_entity(entity: Entity, _data, delta: float):
 		SyActorRegister.remove_actor(self, co_actor.id)
 
 		# remove from Wync
-		WyncUtils.untrack_entity(ctx, co_actor.id)
+		WyncTrack.untrack_entity(ctx, co_actor.id)
 
 		# remove from ECS
 		ECS.remove_entity(entity)

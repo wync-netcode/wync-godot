@@ -14,6 +14,7 @@ static func initialize_net_state(gs: Plat.GameState, is_client: bool):
 
 		# DEBUG cases
 		#Loopback.setup_io_peer(gs.net.io_peer, 200, 100, 70, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 200, 50, 100)
 		#Loopback.setup_io_peer(gs.net.io_peer, 200, 100, 50, 0)
 		#Loopback.setup_io_peer(gs.net.io_peer, 200, 100, 10, 0)
 		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 0, 0)
@@ -23,10 +24,10 @@ static func initialize_net_state(gs: Plat.GameState, is_client: bool):
 		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 5, 0)
 		#Loopback.setup_io_peer(gs.net.io_peer, 1, 0, 0, 0)
 
-		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 0, 0)
+		Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 0, 0)
 		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 0, 0)
 		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 0, 100)
-		Loopback.setup_io_peer(gs.net.io_peer, 200, 30, 10, 10)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 30, 10, 10)
 
 	else:
 		gs.net.server = Plat.Server.new()
@@ -61,8 +62,8 @@ static func client_handle_connection_request_response(gs: Plat.GameState, data: 
 	# fill in wync nete_peer_ids
 	# wync setup should be done once we've stablished connection
 	
-	WyncUtils.wync_set_my_nete_peer_id(gs.wctx, io_peer.peer_id)
-	WyncUtils.wync_set_server_nete_peer_id(gs.wctx, client.server_peer)
+	WyncJoin.wync_set_my_nete_peer_id(gs.wctx, io_peer.peer_id)
+	WyncJoin.wync_set_server_nete_peer_id(gs.wctx, client.server_peer)
 	Log.out("client_peer_id %s connected to server_peer_id %s" % [io_peer.peer_id, client.server_peer], Log.TAG_NETE_CONNECT)
 
 

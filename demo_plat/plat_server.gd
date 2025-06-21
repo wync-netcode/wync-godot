@@ -40,7 +40,7 @@ func _physics_process(delta: float) -> void:
 	for wync_peer_id: int in range(1, gs.wctx.peers.size()):
 		var nete_peer_id = gs.wctx.peers[wync_peer_id]
 		var io_peer := PlatGlobals.loopback_ctx.peers[nete_peer_id]
-		WyncFlow.wync_peer_set_current_latency(gs.wctx, wync_peer_id, io_peer.latency_current_ms)
+		WyncClock.wync_peer_set_current_latency(gs.wctx, wync_peer_id, io_peer.latency_current_ms)
 
 	WyncFlow.wync_server_tick_end(gs.wctx)
 
