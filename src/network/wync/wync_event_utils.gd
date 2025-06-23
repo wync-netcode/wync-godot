@@ -225,7 +225,7 @@ static func wync_system_send_events_to_peer (ctx: WyncCtx, wync_peer_id: int) ->
 	var result = WyncPacketUtil.wync_wrap_packet_out(ctx, wync_peer_id, WyncPacket.WYNC_PKT_EVENT_DATA, packet_dup)
 	if result[0] == OK:
 		var packet_out = result[1] as WyncPacketOut
-		WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.RELIABLE, true)
+		WyncPacketUtil.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.RELIABLE, true)
 
 	Log.out("sent", Log.TAG_EVENT_DATA)
 
@@ -448,7 +448,7 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 	#if not ctx.is_client:
 	if true:
 		# add as local existing prop
-		WyncThrottle.wync_add_local_existing_entity(ctx, peer_id, entity_id)
+		WyncTrack.wync_add_local_existing_entity(ctx, peer_id, entity_id)
 		# server module for consuming user events
 		WyncEventUtils.prop_set_module_events_consumed(ctx, channel_prop_id)
 		# populate ctx var

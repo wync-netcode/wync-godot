@@ -49,8 +49,8 @@ func _physics_process(delta: float) -> void:
 	#if Engine.get_physics_frames() % 4 == 0:
 	#if Engine.get_physics_frames() % 2 == 0:
 	if true:
-		WyncThrottle.wync_set_data_limit_chars_for_out_packets(gs.wctx, 10000)
-		WyncThrottle.wync_system_gather_packets(gs.wctx)
+		WyncPacketUtil.wync_set_data_limit_chars_for_out_packets(gs.wctx, 10000)
+		WyncFlow.wync_system_gather_packets(gs.wctx)
 
 	PlatNet.queue_wync_packets(gs)
 	queue_redraw()

@@ -47,4 +47,4 @@ static func wync_system_sync_client_ownership(ctx: WyncCtx):
 			var result = WyncPacketUtil.wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_RES_CLIENT_INFO, packet)
 			if result[0] == OK:
 				var packet_out = result[1] as WyncPacketOut
-				WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.RELIABLE, true)
+				WyncPacketUtil.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.RELIABLE, true)

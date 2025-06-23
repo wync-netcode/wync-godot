@@ -453,7 +453,7 @@ static func update_what_the_clients_can_see(gs: Plat.GameState):
 			# prob prop
 			# Note: Move this to peer setup
 			WyncThrottle.wync_client_now_can_see_entity(ctx, peer_id, WyncCtx.ENTITY_ID_PROB_FOR_ENTITY_UPDATE_DELAY_TICKS)
-			WyncThrottle.wync_add_local_existing_entity(ctx, peer_id, WyncCtx.ENTITY_ID_PROB_FOR_ENTITY_UPDATE_DELAY_TICKS)
+			WyncTrack.wync_add_local_existing_entity(ctx, peer_id, WyncCtx.ENTITY_ID_PROB_FOR_ENTITY_UPDATE_DELAY_TICKS)
 
 
 static func find_out_what_player_i_control(gs: Plat.GameState):

@@ -13,7 +13,6 @@ config_version=5
 config/name="combies-ecs"
 run/main_scene="uid://40h8mrqmmmcf"
 config/features=PackedStringArray("4.4", "GL Compatibility")
-run/max_fps=75
 config/icon="res://icon.svg"
 
 [autoload]
@@ -26,6 +25,7 @@ ECSRootManagerSingleton="*res://src/utils/ecs_root_manager.gd"
 
 window/size/viewport_width=950
 window/size/viewport_height=640
+window/vsync/vsync_mode=0
 
 [editor_plugins]
 

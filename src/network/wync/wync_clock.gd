@@ -195,7 +195,7 @@ static func wync_server_handle_clock_req(ctx: WyncCtx, data: Variant, from_nete_
 	var result = WyncPacketUtil.wync_wrap_packet_out(ctx, wync_peer_id, WyncPacket.WYNC_PKT_CLOCK, packet)
 	if result[0] == OK:
 		var packet_out = result[1] as WyncPacketOut
-		WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.UNRELIABLE, false)
+		WyncPacketUtil.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.UNRELIABLE, false)
 
 
 static func wync_client_ask_for_clock(ctx: WyncCtx):
@@ -213,7 +213,7 @@ static func wync_client_ask_for_clock(ctx: WyncCtx):
 	var result = WyncPacketUtil.wync_wrap_packet_out(ctx, WyncCtx.SERVER_PEER_ID, WyncPacket.WYNC_PKT_CLOCK, packet)
 	if result[0] == OK:
 		var packet_out = result[1] as WyncPacketOut
-		WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.UNRELIABLE, false)
+		WyncPacketUtil.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.UNRELIABLE, false)
 
 
 ## ==================================================

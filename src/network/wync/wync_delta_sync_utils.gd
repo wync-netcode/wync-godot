@@ -430,7 +430,7 @@ static func wync_system_client_send_delta_prop_acks(ctx: WyncCtx):
 	var result = WyncPacketUtil.wync_wrap_packet_out(ctx, WyncCtx.SERVER_PEER_ID, WyncPacket.WYNC_PKT_DELTA_PROP_ACK, packet)
 	if result[0] == OK:
 		var packet_out = result[1] as WyncPacketOut
-		WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.UNRELIABLE, false)
+		WyncPacketUtil.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.UNRELIABLE, false)
 
 
 static func entity_has_delta_prop(ctx: WyncCtx, entity_id: int) -> bool:

@@ -57,6 +57,31 @@ static func wync_client_tick_end(ctx: WyncCtx):
 	WyncLerp.wync_lerp_precompute(ctx)
 
 
+## Calls all the systems that produce packets to send whilst respecting the data limit
+
+static func wync_system_gather_packets(ctx: WyncCtx):
+
+	if ctx.is_client:
+		if not ctx.connected:
+			WyncJoin.service_wync_try_to_connect(ctx)                     # reliable, commited
+		else:
+			WyncClock.wync_client_ask_for_clock(ctx)      # unreliable
+			WyncDeltaSyncUtils.wync_system_client_send_delta_prop_acks(ctx) # unreliable
+			WyncStateSend.wync_client_send_inputs(ctx)         # unreliable
+			WyncEventUtils.wync_send_event_data(ctx)         # reliable, commited
+
+	else:
+		WyncSpawn.wync_system_send_entities_to_despawn(ctx) # reliable, commited
+		WyncSpawn.wync_system_send_entities_to_spawn(ctx)   # reliable, commited
+		WyncInput.wync_system_sync_client_ownership(ctx)       # reliable, commited
+
+		WyncThrottle.wync_system_fill_entity_sync_queue(ctx)
+		WyncThrottle.wync_compute_entity_sync_order(ctx)
+		WyncStateSend.wync_send_extracted_data(ctx) # both reliable/unreliable
+
+	WyncStats.wync_system_calculate_data_per_tick(ctx)
+
+
 static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_id: int) -> int:
 
 	# debug statistics

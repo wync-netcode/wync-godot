@@ -21,7 +21,7 @@ static func service_wync_try_to_connect(ctx: WyncCtx) -> int:
 	var result = WyncPacketUtil.wync_wrap_packet_out(ctx, WyncCtx.SERVER_PEER_ID, WyncPacket.WYNC_PKT_JOIN_REQ, packet_data)
 	if result[0] == OK:
 		var packet_out = result[1] as WyncPacketOut
-		WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.RELIABLE, true)
+		WyncPacketUtil.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.RELIABLE, true)
 
 	# TODO: Ser lerpms could be moved somewhere else, since it could be sent anytime
 
@@ -30,7 +30,7 @@ static func service_wync_try_to_connect(ctx: WyncCtx) -> int:
 	result = WyncPacketUtil.wync_wrap_packet_out(ctx, WyncCtx.SERVER_PEER_ID, WyncPacket.WYNC_PKT_CLIENT_SET_LERP_MS, packet_data_lerp)
 	if result[0] == OK:
 		var packet_out = result[1] as WyncPacketOut
-		WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.RELIABLE, true)
+		WyncPacketUtil.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.RELIABLE, true)
 	return OK
 
 
@@ -82,7 +82,7 @@ static func wync_handle_pkt_join_req(ctx: WyncCtx, data: Variant, from_nete_peer
 	packet.wync_client_id = wync_client_id
 	var result = WyncPacketUtil.wync_wrap_packet_out(ctx, wync_client_id, WyncPacket.WYNC_PKT_JOIN_RES, packet)
 	if result[0] == OK:
-		WyncThrottle.wync_try_to_queue_out_packet(ctx, result[1], WyncCtx.RELIABLE, true)
+		WyncPacketUtil.wync_try_to_queue_out_packet(ctx, result[1], WyncCtx.RELIABLE, true)
 
 	# let client own it's own global events
 	# NOTE: Maybe move this where all channels are defined

@@ -236,3 +236,34 @@ static func prop_register_update_dummy(
 	dummy.data = data
 
 	return OK
+
+
+## * Use it after setting up an entity and it's props
+## * Use it to add entities that already exist on the server & client
+## * Useful for map provided entities.
+## Make sure to reserve some of your _game entity ids_ for static entities
+## * Once a peer connects, make sure to setup all map _entity ids_ for him.
+## * WARNING: entity_id must be the same on server & client
+## * It will prevent the generation of a Spawn packet for that client
+## because it assumes the client already has it.
+
+static func wync_add_local_existing_entity \
+		(ctx: WyncCtx, wync_client_id: int, entity_id: int) -> int:
+
+	if ctx.is_client:
+		return 1
+	if wync_client_id == WyncCtx.SERVER_PEER_ID:
+		return 2
+	if not WyncTrack.is_entity_tracked(ctx, entity_id): # entity exists
+		Log.err("entity (%s) isn't tracked", Log.TAG_THROTTLE)
+		return 3
+
+	var entity_set = ctx.clients_sees_entities[wync_client_id]
+	entity_set[entity_id] = true
+
+	# remove from new entities
+
+	var new_entity_set = ctx.clients_sees_new_entities[wync_client_id] as Dictionary
+	new_entity_set.erase(entity_id)
+
+	return OK

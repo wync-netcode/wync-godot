@@ -26,7 +26,7 @@ func _physics_process(delta: float) -> void:
 
 	if not gs.wctx.connected:
 		WyncClock.wync_advance_ticks(gs.wctx)
-		WyncThrottle.wync_system_gather_packets(gs.wctx)
+		WyncFlow.wync_system_gather_packets(gs.wctx)
 	else:
 		PlatWync.client_event_connected_to_server(gs)
 		PlatWync.client_handle_spawn_events(gs)
@@ -41,8 +41,8 @@ func _physics_process(delta: float) -> void:
 
 		PlatWync.extrapolate(gs, delta)
 
-		WyncThrottle.wync_set_data_limit_chars_for_out_packets(gs.wctx, 50000)
-		WyncThrottle.wync_system_gather_packets(gs.wctx)
+		WyncPacketUtil.wync_set_data_limit_chars_for_out_packets(gs.wctx, 50000)
+		WyncFlow.wync_system_gather_packets(gs.wctx)
 		PlatPublic.system_trail_lives(gs)
 
 		if gs.i_control_player_id != -1:

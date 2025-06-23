@@ -150,7 +150,7 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 			var result = WyncPacketUtil.wync_wrap_packet_out(ctx, client_id, packet.packet_type_id, packet_dup)
 			if result[0] == OK:
 				var packet_out = result[1] as WyncPacketOut
-				WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.UNRELIABLE, true)
+				WyncPacketUtil.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.UNRELIABLE, true)
 			else:
 				Log.errc(ctx, "error wrapping packet")
 
@@ -160,7 +160,7 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 			var result = WyncPacketUtil.wync_wrap_packet_out(ctx, client_id, packet.packet_type_id, packet_dup)
 			if result[0] == OK:
 				var packet_out = result[1] as WyncPacketOut
-				WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.RELIABLE, true)
+				WyncPacketUtil.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.RELIABLE, true)
 			else:
 				Log.errc(ctx, "error wrapping packet")
 
@@ -373,7 +373,7 @@ static func wync_client_send_inputs (ctx: WyncCtx):
 		var result = WyncPacketUtil.wync_wrap_packet_out(ctx, WyncCtx.SERVER_PEER_ID, WyncPacket.WYNC_PKT_INPUTS, pkt_inputs)
 		if result[0] == OK:
 			var packet_out = result[1] as WyncPacketOut
-			var err = WyncThrottle.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.UNRELIABLE, false)
+			var err = WyncPacketUtil.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.UNRELIABLE, false)
 			if err != OK: # Out of space
 				break
 
