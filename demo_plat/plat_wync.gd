@@ -397,9 +397,9 @@ static func client_spawn_actor(gs: Plat.GameState, actor_type: int, actor_id: in
 
 			# insert tick to help interpolation
 			var res: bool = (
-			(WyncWrapper.wync_insert_state_to_entity_prop(
+			(WyncStateStore.wync_insert_state_to_entity_prop(
 				gs.wctx, actor_id, "position", ball_spawn_data.tick, ball_spawn_data.value1) == OK) &&
-			(WyncWrapper.wync_insert_state_to_entity_prop(
+			(WyncStateStore.wync_insert_state_to_entity_prop(
 				gs.wctx, actor_id, "position", ball_spawn_data.tick + 1, ball_spawn_data.value2) == OK))
 			Log.outc(gs.wctx, "success inserting state? %s" % [res])
 

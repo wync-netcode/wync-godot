@@ -20,7 +20,7 @@ static func wync_server_tick_end(ctx: WyncCtx):
 	for peer_id: int in range(1, ctx.peers.size()):
 		WyncClock.wync_system_stabilize_latency(ctx, ctx.peer_latency_info[peer_id])
 
-	WyncXtrap.wync_server_filter_prop_ids(ctx)
+	WyncXtrapInternal.wync_xtrap_server_filter_prop_ids(ctx)
 
 	WyncStateSend.system_update_delta_base_state_tick(ctx)
 
@@ -33,7 +33,7 @@ static func wync_server_tick_end(ctx: WyncCtx):
 
 static func wync_client_tick_end(ctx: WyncCtx):
 
-	WyncXtrap.wync_client_filter_prop_ids(ctx)
+	WyncXtrapInternal.wync_xtrap_client_filter_prop_ids(ctx)
 	WyncClock.wync_advance_ticks(ctx)
 	WyncClock.wync_system_stabilize_latency(ctx, ctx.peer_latency_info[WyncCtx.SERVER_PEER_ID])
 	WyncClock.wync_update_prediction_ticks(ctx)

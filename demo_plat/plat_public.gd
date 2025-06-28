@@ -372,7 +372,7 @@ static func system_player_shoot_rocket(gs: Plat.GameState):
 
 			PlatPublic.individual_rocket_movement(gs, rocket, true)
 
-			ball_spawn_data.tick = WyncWrapper.wync_get_ticks(gs.wctx)
+			ball_spawn_data.tick = WyncClock.wync_get_ticks(gs.wctx)
 			ball_spawn_data.value1 = old_rocket_pos
 			ball_spawn_data.value2 = rocket.position
 			rocket.position = old_rocket_pos
@@ -450,7 +450,7 @@ static func system_server_events(gs: Plat.GameState):
 	#var something_happened = false
 	for tick: int in range(tick_start, tick_end):
 
-		var event_list: Array[int] = WyncWrapper.wync_get_events_from_channel_from_peer(
+		var event_list: Array[int] = WyncEventUtils.wync_get_events_from_channel_from_peer(
 			gs.wctx, server_wync_peer_id, channel_id, tick)
 
 		for event_id in event_list:

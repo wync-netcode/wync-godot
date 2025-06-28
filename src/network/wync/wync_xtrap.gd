@@ -1,6 +1,12 @@
 class_name WyncXtrap
+## wync_xtrap.h, includes public and wrapper
 
 ## functions to preform extrapolation / prediction
+
+
+# ==================================================
+# PUBLIC
+# ==================================================
 
 
 static func wync_xtrap_preparation(ctx: WyncCtx) -> int:
@@ -32,133 +38,6 @@ static func wync_xtrap_preparation(ctx: WyncCtx) -> int:
 		return 3
 
 	return OK
-
-
-# Note: further optimization could involve removing adding singular props from the list
-static func wync_server_filter_prop_ids(ctx: WyncCtx):
-	if not ctx.was_any_prop_added_deleted:
-		return
-	ctx.was_any_prop_added_deleted = false
-	Log.outc(ctx, "debug filters")
-
-	ctx.filtered_clients_input_and_event_prop_ids.clear()
-	ctx.filtered_delta_prop_ids.clear()
-	ctx.filtered_regular_extractable_prop_ids.clear()
-
-	for client_id in range(1, ctx.peers.size()):
-		for prop_id in ctx.client_owns_prop[client_id]:
-			var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
-			if (prop.prop_type != WyncEntityProp.PROP_TYPE.INPUT &&
-				prop.prop_type != WyncEntityProp.PROP_TYPE.EVENT):
-				continue
-			ctx.filtered_clients_input_and_event_prop_ids.append(prop_id)
-
-	for prop_id in ctx.active_prop_ids:
-		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
-		if prop.prop_type in [
-			WyncEntityProp.PROP_TYPE.INPUT,
-			WyncEntityProp.PROP_TYPE.EVENT
-		]:
-			continue
-		if prop.relative_syncable:
-			ctx.filtered_delta_prop_ids.append(prop_id)
-			# TODO: Check if it has a healthy _auxiliar prop_
-		else:
-			ctx.filtered_regular_extractable_prop_ids.append(prop_id)
-
-
-static func wync_client_filter_prop_ids(ctx: WyncCtx):
-	if not ctx.was_any_prop_added_deleted:
-		return
-	ctx.was_any_prop_added_deleted = false
-	Log.outc(ctx, "debug filters")
-
-	ctx.type_input_event__owned_prop_ids.clear()
-	ctx.type_input_event__predicted_owned_prop_ids.clear()
-	ctx.type_event__predicted_prop_ids.clear()
-	ctx.type_event__predicted_auxiliar_prop_ids.clear()
-	ctx.type_state__delta_prop_ids.clear()
-	ctx.type_state__predicted_delta_prop_ids.clear()
-	ctx.type_state__predicted_regular_prop_ids.clear()
-	ctx.type_state__interpolated_regular_prop_ids.clear()
-
-	ctx.predicted_integrable_entity_ids.clear()
-	ctx.predicted_entity_ids.clear()
-
-	# Where are active props set?
-
-	for prop_id in ctx.client_owns_prop[ctx.my_peer_id]:
-		var prop := WyncTrack.get_prop(ctx, prop_id)
-		if prop == null:
-			continue
-		if prop.prop_type != WyncEntityProp.PROP_TYPE.STATE:
-			ctx.type_input_event__owned_prop_ids.append(prop_id)
-			if WyncXtrap.prop_is_predicted(ctx, prop_id):
-				ctx.type_input_event__predicted_owned_prop_ids.append(prop_id)
-
-	for prop_id in ctx.active_prop_ids:
-		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
-		var is_predicted := WyncXtrap.prop_is_predicted(ctx, prop_id)
-
-		if prop.prop_type == WyncEntityProp.PROP_TYPE.EVENT:
-			if is_predicted:
-				ctx.type_event__predicted_prop_ids.append(prop_id)
-
-			# MAYBEDO: check if we don't own it?
-			if prop.is_auxiliar_prop:
-				# MAYBEDO: drop this check
-				var master_prop = WyncTrack.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
-				assert(master_prop != null)
-				if WyncXtrap.prop_is_predicted(ctx, prop.auxiliar_delta_events_prop_id):
-					ctx.type_event__predicted_auxiliar_prop_ids.append(prop_id)
-
-		if prop.prop_type == WyncEntityProp.PROP_TYPE.STATE:
-			if prop.relative_syncable:
-				ctx.type_state__delta_prop_ids.append(prop_id)
-				if is_predicted:
-					ctx.type_state__predicted_delta_prop_ids.append(prop_id)
-			else: # regular
-				if is_predicted:
-					ctx.type_state__predicted_regular_prop_ids.append(prop_id)
-				if prop.interpolated:
-					ctx.type_state__interpolated_regular_prop_ids.append(prop_id)
-
-	for wync_entity_id: int in ctx.entity_has_integrate_fun.keys():
-		if not WyncXtrap.entity_is_predicted(ctx, wync_entity_id):
-			continue
-		ctx.predicted_integrable_entity_ids.append(wync_entity_id)
-
-	for wync_entity_id in ctx.tracked_entities.keys():
-		if not WyncXtrap.entity_is_predicted(ctx, wync_entity_id):
-			continue
-		#if WyncTrack.entity_has_delta_prop(ctx, wync_entity_id):
-			#continue
-		ctx.predicted_entity_ids.append(wync_entity_id)
-
-	if ctx.is_client:
-		Log.outc(ctx, "debugrela %s" % [ctx.type_event__predicted_auxiliar_prop_ids])
-
-
-static func wync_xtrap_tick_init(ctx: WyncCtx, tick: int):
-	ctx.current_predicted_tick = tick
-
-	# reset predicted inputs / events
-	WyncWrapper.xtrap_reset_all_state_to_confirmed_tick_absolute(ctx, ctx.type_input_event__predicted_owned_prop_ids, tick)
-
-	# reset predicted regular
-	#WyncWrapper.xtrap_reset_all_state_to_confirmed_tick_absolute(ctx, ctx.type_state__predicted_regular_prop_ids, tick)
-
-	# clearing delta events before predicting, predicted delta events will be
-	# polled and cached at the end of the predicted tick
-	WyncXtrap.auxiliar_props_clear_current_delta_events(ctx)
-
-
-static func auxiliar_props_clear_current_delta_events(ctx: WyncCtx):
-	for prop_id: int in ctx.type_state__delta_prop_ids:
-		var prop := ctx.props[prop_id]
-		var aux_prop = ctx.props[prop.auxiliar_delta_events_prop_id]
-		prop.current_delta_events.clear()
-		aux_prop.current_undo_delta_events.clear()
 
 
 # TODO: Redo these comments
@@ -217,8 +96,8 @@ static func wync_xtrap_relative_entities_to_not_predict(ctx: WyncCtx, tick: int)
 
 		entity_last_predicted_tick = ctx.entity_last_predicted_tick[entity_id]
 
-		if entity_id == 505:
-			Log.outc(ctx, "debugrela, flagD tick %s entity %s last %s" % [tick, entity_id, entity_last_predicted_tick])
+		#if entity_id == 505:
+			#Log.outc(ctx, "debugrela, flagD tick %s entity %s last %s" % [tick, entity_id, entity_last_predicted_tick])
 		if tick <= entity_last_predicted_tick:
 			entity_ids.append(entity_id)
 			continue
@@ -231,68 +110,12 @@ static func wync_xtrap_relative_entities_to_not_predict(ctx: WyncCtx, tick: int)
 	return entity_ids
 
 
-static func wync_xtrap_tick_end(ctx: WyncCtx, tick: int):
-
-	# wync bookkeeping
-	# --------------------------------------------------
-
-	# (run on last two iterations)
-
-	var store_predicted_states = tick > (ctx.co_predict_data.target_tick - 1)
-	if store_predicted_states:
-		for wync_entity_id: int in ctx.predicted_entity_ids:
-			# TODO: Make this call user-level
-			# store predicted states
-			WyncWrapper.xtrap_props_update_predicted_states_data(ctx, ctx.entity_has_props[wync_entity_id])
-
-			# update/store predicted state metadata
-			WyncXtrap.props_update_predicted_states_ticks(ctx, ctx.entity_has_props[wync_entity_id], ctx.co_predict_data.target_tick)
-
-	# integration functions
-
-	for wync_entity_id: int in ctx.predicted_integrable_entity_ids:
-		# TODO: Move this to user level wrapper
-		var int_fun = WyncIntegrate.entity_get_integrate_fun(ctx, wync_entity_id)
-		int_fun.call()
-
-	# extract / poll for generated predicted _undo delta events_
-
-	for prop_id: int in ctx.type_event__predicted_auxiliar_prop_ids:
-
-		var aux_prop := ctx.props[prop_id]
-
-		var entity_id = WyncTrack.prop_get_entity(ctx, aux_prop.auxiliar_delta_events_prop_id)
-		if ctx.global_entity_ids_to_not_predrict.has(entity_id):
-			continue
-		
-		var undo_events = aux_prop.current_undo_delta_events.duplicate(true)
-		aux_prop.confirmed_states_undo.insert_at(tick, undo_events)
-		aux_prop.confirmed_states_undo_tick.insert_at(tick, tick)
-
-	ctx.last_tick_predicted = tick
-
 
 static func wync_xtrap_termination(ctx: WyncCtx):
 	WyncDeltaSyncUtils.auxiliar_props_clear_current_delta_events(ctx)
 	WyncDeltaSyncUtils.predicted_event_props_clear_events(ctx)
 	ctx.currently_on_predicted_tick = false
 	ctx.global_entity_ids_to_not_predrict.clear()
-
-
-static func props_update_predicted_states_ticks(ctx: WyncCtx, props_ids: Array, target_tick: int) -> void:
-	
-	for prop_id: int in props_ids:
-		
-		var prop := ctx.props[prop_id]
-		if prop == null:
-			continue
-		if not WyncXtrap.prop_is_predicted(ctx, prop_id):
-			continue
-
-		# update store predicted state metadata
-		
-		prop.pred_prev.server_tick = target_tick -1
-		prop.pred_curr.server_tick = target_tick
 
 
 # NOTE: rename to prop_enable_prediction
@@ -322,31 +145,84 @@ static func entity_is_predicted(ctx: WyncCtx, entity_id: int) -> bool:
 	return false
 
 
-## TODO: maybe we could compute this every time we get an update?
-## Only predicted props
-## Exclude props I own (Or just exclude TYPE_INPUT?) What about events or delta props?
-static func entity_get_last_received_tick_from_pred_props (ctx: WyncCtx, entity_id: int) -> int:
-	if not WyncTrack.is_entity_tracked(ctx, entity_id):
-		return -1
+# ==================================================
+# WRAPPER
+# ==================================================
 
-	var last_tick = -1 
-	for prop_id: int in ctx.entity_has_props[entity_id]:
 
-		var prop := WyncTrack.get_prop(ctx, prop_id)
+static func wync_xtrap_tick_init(ctx: WyncCtx, tick: int):
+	ctx.current_predicted_tick = tick
+
+	# reset predicted inputs / events
+	WyncXtrap.wync_xtrap_reset_all_state_to_confirmed_tick_absolute(ctx, ctx.type_input_event__predicted_owned_prop_ids, tick)
+
+	# reset predicted regular
+	#WyncWrapper.wync_xtrap_reset_all_state_to_confirmed_tick_absolute(ctx, ctx.type_state__predicted_regular_prop_ids, tick)
+
+	# clearing delta events before predicting, predicted delta events will be
+	# polled and cached at the end of the predicted tick
+	WyncXtrapInternal.wync_xtrap_auxiliar_props_clear_current_delta_events(ctx)
+
+
+static func wync_xtrap_tick_end(ctx: WyncCtx, tick: int):
+
+	wync_xtrap_save_latest_predicted_state(ctx, tick)
+	WyncXtrapInternal.wync_xtrap_internal_tick_end(ctx, tick)
+
+
+## private
+## for inputs / events
+static func wync_xtrap_reset_all_state_to_confirmed_tick_absolute(ctx: WyncCtx, prop_ids: Array[int], tick: int):
+	for prop_id: int in prop_ids:
+		var prop := ctx.props[prop_id]
+		var value = WyncEntityProp.saved_state_get(prop, tick)
+		if value == null:
+			continue
+		var setter = ctx.wrapper.prop_setter[prop_id]
+		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
+		setter.call(user_ctx, value)
+
+
+## private
+static func wync_xtrap_props_update_predicted_states_data(ctx: WyncCtx, props_ids: Array) -> void:
+	
+	for prop_id: int in props_ids:
+		
+		var prop = ctx.props[prop_id] as WyncEntityProp
 		if prop == null:
 			continue
-
-		var prop_last_tick = prop.last_ticks_received.get_relative(0)
-		if prop_last_tick == -1:
+		if prop.relative_syncable:
 			continue
 
-		if ctx.client_owns_prop[ctx.my_peer_id].has(prop_id):
+		var pred_curr = prop.pred_curr
+		var pred_prev = prop.pred_prev
+		
+		# Initialize stored predicted states. TODO: Move elsewhere
+		
+		if pred_curr.data == null:
+			pred_curr.data = Vector2.ZERO
+			pred_prev = pred_curr.copy()
 			continue
+			
+		# store predicted states
+		# (run on last two iterations)
+		
+		var getter = ctx.wrapper.prop_getter[prop_id]
+		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
+		pred_prev.data = pred_curr.data
+		pred_curr.data = getter.call(user_ctx)
 
-		if last_tick == -1:
-			last_tick = prop_last_tick
-		else:
-			last_tick = min(last_tick, prop_last_tick)
 
-	#Log.outc(ctx, "entity_id %s last_tick %s" % [entity_id, last_tick])
-	return last_tick
+static func wync_xtrap_save_latest_predicted_state(ctx: WyncCtx, tick: int):
+
+	# (run on last two iterations)
+
+	var store_predicted_states = tick > (ctx.co_predict_data.target_tick - 1)
+	if store_predicted_states:
+		for wync_entity_id: int in ctx.predicted_entity_ids:
+			# TODO: Make this call user-level
+			# store predicted states
+			WyncXtrap.wync_xtrap_props_update_predicted_states_data(ctx, ctx.entity_has_props[wync_entity_id])
+
+			# update/store predicted state metadata
+			WyncXtrapInternal.wync_xtrap_props_update_predicted_states_ticks(ctx, ctx.entity_has_props[wync_entity_id], ctx.co_predict_data.target_tick)

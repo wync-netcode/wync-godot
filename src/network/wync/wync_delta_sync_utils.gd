@@ -1,6 +1,7 @@
 class_name WyncDeltaSyncUtils
 
 ## Relative Synchronization functions
+## Blueprint functions are part of the Wrapper
 
 
 ## Delta Blueprints Setup

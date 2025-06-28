@@ -3,7 +3,7 @@ class_name WyncWrapper
 
 ## User facing functions, these must not be used elsewhere by the library
 
-
+## FIXME
 static func wync_set_prop_callbacks \
 	(ctx: WyncCtx, prop_id: int, user_ctx: Variant, getter: Callable, setter: Callable):
 	ctx.wrapper.prop_user_ctx[prop_id] = user_ctx
@@ -21,6 +21,7 @@ static func wync_register_lerp_type (ctx: WyncCtx, user_type_id: int, lerp_fun: 
 ## Systems
 
 
+# TODO: wync_flow
 static func wync_buffer_inputs(ctx: WyncCtx):
 	
 	if not ctx.connected:
@@ -39,30 +40,37 @@ static func wync_buffer_inputs(ctx: WyncCtx):
 		WyncEntityProp.saved_state_insert(ctx, input_prop, ctx.co_predict_data.target_tick, new_state)
 
 
+# TODO: wync_flow
 static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
+
+	var prop: WyncEntityProp = null
+	var prop_aux: WyncEntityProp = null
+	var getter: Variant = null # Callable*
+	var user_ctx: Variant = null
 
 	# Save state history per tick
 
 	for prop_id in ctx.filtered_regular_extractable_prop_ids:
+		prop = WyncTrack.get_prop_unsafe(ctx, prop_id)
+		getter = ctx.wrapper.prop_getter[prop_id]
+		user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
 		
-		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
-		var getter = ctx.wrapper.prop_getter[prop_id]
-		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
 		WyncEntityProp.saved_state_insert(ctx, prop, save_on_tick, getter.call(user_ctx))
 		# Note: safe to call user getter like that?
 
+	# extracts events ids from auxiliar delta props
+
 	for prop_id in ctx.filtered_delta_prop_ids:
 		
-		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
-		var prop_aux := WyncTrack.get_prop_unsafe(ctx, prop.auxiliar_delta_events_prop_id)
-		prop_id = prop.auxiliar_delta_events_prop_id
-		prop = prop_aux
+		prop = WyncTrack.get_prop_unsafe(ctx, prop_id)
+		prop_aux = WyncTrack.get_prop_unsafe(ctx, prop.auxiliar_delta_events_prop_id)
 		
-		var getter = ctx.wrapper.prop_getter[prop_id]
-		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
-		WyncEntityProp.saved_state_insert(ctx, prop, save_on_tick, getter.call(user_ctx))
+		getter = ctx.wrapper.prop_getter[prop.auxiliar_delta_events_prop_id]
+		user_ctx = ctx.wrapper.prop_user_ctx[prop.auxiliar_delta_events_prop_id]
+		WyncEntityProp.saved_state_insert(ctx, prop_aux, save_on_tick, getter.call(user_ctx))
 
 
+# FIXME: Move calling function to wrapper (or mark it as wrapper, or to wync_state_set_wrapper.gd)
 static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: Array[int], tick: int):
 	
 	for prop_id: int in prop_ids:
@@ -83,6 +91,7 @@ static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: A
 		setter.call(user_ctx, last_confirmed)
 
 
+# TODO: wync_flow
 static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 		
 	for prop_id in ctx.filtered_clients_input_and_event_prop_ids:
@@ -100,45 +109,9 @@ static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 	return OK
 
 
-## for inputs / events
-static func xtrap_reset_all_state_to_confirmed_tick_absolute(ctx: WyncCtx, prop_ids: Array[int], tick: int):
-	for prop_id: int in prop_ids:
-		var prop := ctx.props[prop_id]
-		var value = WyncEntityProp.saved_state_get(prop, tick)
-		if value == null:
-			continue
-		var setter = ctx.wrapper.prop_setter[prop_id]
-		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
-		setter.call(user_ctx, value)
 
 
-static func xtrap_props_update_predicted_states_data(ctx: WyncCtx, props_ids: Array) -> void:
-	
-	for prop_id: int in props_ids:
-		
-		var prop = ctx.props[prop_id] as WyncEntityProp
-		if prop == null:
-			continue
-		if prop.relative_syncable:
-			continue
-
-		var pred_curr = prop.pred_curr
-		var pred_prev = prop.pred_prev
-		
-		# Initialize stored predicted states. TODO: Move elsewhere
-		
-		if pred_curr.data == null:
-			pred_curr.data = Vector2.ZERO
-			pred_prev = pred_curr.copy()
-			continue
-			
-		# store predicted states
-		# (run on last two iterations)
-		
-		var getter = ctx.wrapper.prop_getter[prop_id]
-		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
-		pred_prev.data = pred_curr.data
-		pred_curr.data = getter.call(user_ctx)
+# FIXME: mark wync_xtrap_tick_end for wrapper
 
 
 ## interpolates confirmed states and predicted states
@@ -242,77 +215,3 @@ static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 	ctx.debug_lerp_prev_target = target_time_conf
 
 
-## Q: Is it possible that event_ids accumulate infinitely if they are never consumed?
-## A: No, if events are never consumed they remain in the confirmed_states buffer until eventually replaced.
-## Returns events from this tick, that aren't consumed
-## TODO: Move out of wrapper
-static func wync_get_events_from_channel_from_peer(
-	ctx: WyncCtx, wync_peer_id: int, channel: int, tick: int
-	) -> Array[int]:
-
-	var out_events_id: Array[int] = []
-	if tick < 0:
-		return out_events_id
-
-	var prop_id: int = ctx.prop_id_by_peer_by_channel[wync_peer_id][channel]
-	var prop_channel := WyncTrack.get_prop_unsafe(ctx, prop_id)
-
-	var consumed_event_ids_tick: int = prop_channel.events_consumed_at_tick_tick.get_at(tick)
-	if tick != consumed_event_ids_tick:
-		return out_events_id
-
-	var consumed_event_ids: Array[int] = prop_channel.events_consumed_at_tick.get_at(tick)
-	var confirmed_event_ids: Array
-
-	if ctx.co_ticks.ticks == tick:
-		confirmed_event_ids = ctx.peer_has_channel_has_events[wync_peer_id][channel]
-	else:
-		# TODO: Rewrite me
-		var state = WyncEntityProp.saved_state_get(prop_channel, tick)
-		if state == null:
-			return out_events_id
-		confirmed_event_ids = state
-
-	for i in range(confirmed_event_ids.size()):
-		var event_id = confirmed_event_ids[i]
-		if consumed_event_ids.has(event_id):
-			continue
-		if not ctx.events.has(event_id):
-			continue
-
-		var event := ctx.events[event_id]
-		assert(event != null)
-		out_events_id.append(event_id)
-
-	return out_events_id
-
-
-static func wync_insert_state_to_entity_prop (
-	ctx: WyncCtx, entity_id: int, prop_name_id: String, tick: int, state: Variant) -> int:
-
-	var prop = WyncTrack.entity_get_prop(ctx, entity_id, prop_name_id)
-	if prop == null:
-		return 1
-	prop = prop as WyncEntityProp
-
-	# Note: The code below was copied from 'prop_save_confirmed_state'
-
-	prop.last_ticks_received.push(tick)
-	prop.last_ticks_received.sort()
-
-	WyncEntityProp.saved_state_insert(ctx, prop, tick, state)
-
-	prop.state_id_to_local_tick.insert_at(prop.saved_states.head_pointer, ctx.co_ticks.ticks)
-
-	prop.just_received_new_state = true
-
-	if prop.is_auxiliar_prop:
-		# notify _main delta prop_ about the updates
-		var delta_prop = WyncTrack.get_prop(ctx, prop.auxiliar_delta_events_prop_id) as WyncEntityProp
-		delta_prop.just_received_new_state = true
-
-	return OK
-
-
-static func wync_get_ticks(ctx: WyncCtx):
-	return ctx.co_ticks.ticks

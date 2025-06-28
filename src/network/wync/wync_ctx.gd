@@ -10,7 +10,7 @@ class Wrapper:
 	# Array<prop_id: int, Callable>
 	var prop_user_ctx: Array[Variant]
 	var prop_getter: Array[Callable]
-	var prop_setter: Array[Callable]
+	var prop_setter: Array[Callable] # Maybe use a b-tree set?
 
 	# Array[256] <user_type_id: int, lerp_function_id: int>
 	var lerp_type_to_lerp_function: Array[int]
@@ -422,6 +422,8 @@ var debug_ticks_sent: int = 0
 
 var debug_lerp_prev_curr_time: float
 var debug_lerp_prev_target: float
+
+static var debug_flag1: bool = false
 
 
 # TODO: Move to WyncTrack

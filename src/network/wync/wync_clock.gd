@@ -249,3 +249,7 @@ static func clock_get_ms(ctx: WyncCtx) -> float:
 static func clock_get_tick_timestamp_ms(ctx: WyncCtx, ticks: int) -> float:
 	var frame = 1000.0 / Engine.physics_ticks_per_second
 	return ctx.co_predict_data.current_tick_timestamp + (ticks - ctx.co_ticks.ticks) * frame
+
+
+static func wync_get_ticks(ctx: WyncCtx):
+	return ctx.co_ticks.ticks

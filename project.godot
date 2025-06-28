@@ -25,7 +25,6 @@ ECSRootManagerSingleton="*res://src/utils/ecs_root_manager.gd"
 
 window/size/viewport_width=950
 window/size/viewport_height=640
-window/vsync/vsync_mode=0
 
 [editor_plugins]
 
@@ -119,3 +118,7 @@ limits/debugger/max_chars_per_second=9999999
 limits/debugger/max_queued_messages=9999999
 limits/debugger/max_errors_per_second=9999999
 limits/debugger/max_warnings_per_second=9999999
+
+[physics]
+
+common/physics_ticks_per_second=30
