@@ -42,63 +42,22 @@ static func prop_save_confirmed_state(ctx: WyncCtx, prop_id: int, tick: int, sta
 	if prop == null:
 		return 1
 	prop = prop as WyncEntityProp
-	if not prop.relative_syncable:
-	
-		# NOTE: two tick datas could have arrive at the same tick
-		prop.last_ticks_received.push(tick)
-		prop.last_ticks_received.sort()
 
-		WyncEntityProp.saved_state_insert(ctx, prop, tick, state)
+	prop.just_received_new_state = true
+	prop.last_ticks_received.push(tick)
+	prop.last_ticks_received.sort()
+	prop.state_id_to_local_tick.insert_at(prop.saved_states.head_pointer, ctx.co_ticks.ticks)
 
-		# TODO: check if interpolable?
-		prop.state_id_to_local_tick.insert_at(prop.saved_states.head_pointer, ctx.co_ticks.ticks)
+	WyncEntityProp.saved_state_insert(ctx, prop, tick, state)
 
-		prop.just_received_new_state = true
-
-		if prop.is_auxiliar_prop:
-			# notify _main delta prop_ about the updates
-			var delta_prop = WyncTrack.get_prop(ctx, prop.auxiliar_delta_events_prop_id) as WyncEntityProp
-			delta_prop.just_received_new_state = true
-
-		# update prob prop update rate
-		if prop_id == ctx.PROP_ID_PROB:
-			WyncStats.wync_try_to_update_prob_prop_rate(ctx)
-
-	
-
-
-	else:
-
-		# if a delta prop receives a fullsnapshot we have no other option but to comply
-		# TODO: This might not be true on high _jitter_
-
-		var setter = ctx.wrapper.prop_setter[prop_id]
-		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
-		setter.call(user_ctx, state)
-		prop.just_received_new_state = true
+	if prop.relative_syncable:
+		# FIXME: check for max? what about unordered packets?
 		var delta_props_last_tick = ctx.client_has_relative_prop_has_last_tick[ctx.my_peer_id] as Dictionary
-		delta_props_last_tick[prop_id] = tick # max?
-		#Log.out("debug_pred_delta_event | ser_tick(%s) delta_prop_last_tick %s" % [ctx.co_ticks.server_ticks, delta_props_last_tick], Log.TAG_LATEST_VALUE)
+		delta_props_last_tick[prop_id] = tick 
 
-		# clean up predicted data TODO
-
-		if WyncXtrap.prop_is_predicted(ctx, prop_id):
-
-			# get aux_prop and clean the confirmed_states_undo
-			var aux_prop = WyncTrack.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
-			for j in range(ctx.first_tick_predicted, ctx.last_tick_predicted +1):
-
-				WyncEntityProp.saved_state_insert(ctx, aux_prop, j, [] as Array[int])
-
-				aux_prop.confirmed_states_undo.insert_at(j, [] as Array[int])
-				aux_prop.confirmed_states_undo_tick.insert_at(j, j)
-
-			# debugging: save canonic state to compare it later
-			# TODO: remove
-			#if false:
-				#var getter = ctx.wrapper.prop_getter[prop_id]
-				#var state_dup = WyncMisc.duplicate_any(getter.call(user_ctx))
-				#WyncEntityProp.saved_state_insert(ctx, prop, 0, state_dup)
+	# update prob prop update rate
+	if prop_id == ctx.PROP_ID_PROB:
+		WyncStats.wync_try_to_update_prob_prop_rate(ctx)
 
 	return OK
 
@@ -198,15 +157,6 @@ static func wync_client_handle_pkt_inputs(ctx: WyncCtx, data: Variant) -> int:
 		WyncEntityProp.saved_state_insert(ctx, prop, input.tick, to_insert)
 		max_tick = max(max_tick, input.tick)
 
-	if prop.is_auxiliar_prop:
-		# TODO: See if this is necessary
-		#var delta_props_last_tick = ctx.client_has_relative_prop_has_last_tick[ctx.my_peer_id] as Dictionary
-		#delta_props_last_tick[data.prop_id] = max_tick
-
-		# notify _main delta prop_ about the updates
-		var delta_prop = WyncTrack.get_prop(ctx, prop.auxiliar_delta_events_prop_id) as WyncEntityProp
-		delta_prop.just_received_new_state = true
-
 	wync_client_update_last_tick_received(ctx, max_tick)
 
 	return OK
@@ -230,10 +180,5 @@ static func wync_insert_state_to_entity_prop (
 	prop.state_id_to_local_tick.insert_at(prop.saved_states.head_pointer, ctx.co_ticks.ticks)
 
 	prop.just_received_new_state = true
-
-	if prop.is_auxiliar_prop:
-		# notify _main delta prop_ about the updates
-		var delta_prop = WyncTrack.get_prop(ctx, prop.auxiliar_delta_events_prop_id) as WyncEntityProp
-		delta_prop.just_received_new_state = true
 
 	return OK

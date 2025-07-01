@@ -6,69 +6,53 @@ class_name WyncStateSet
 
 	
 static func wync_reset_props_to_latest_value (ctx: WyncCtx):
-	# Reset all extrapolated entities to last confirmed tick
-	# Don't affect predicted entities?
-	# TODO: store props in HashMap instead of Array
-	# TODO: when receiving new state store the prop_id in a set,
-	# Also, don't include extrapolated props, since they're always set anyway
-	# TODO: optimize this query
 	
-	ctx.type_state__newstate_regular_prop_ids.clear()
+	ctx.type_state__newstate_prop_ids.clear()
+
 	for prop_id: int in ctx.active_prop_ids:
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
 
 		if prop.prop_type != WyncEntityProp.PROP_TYPE.STATE:
 			continue
-		if prop.relative_syncable:
-			continue
 		if not prop.just_received_new_state:
 			continue
 
 		prop.just_received_new_state = false
-		ctx.type_state__newstate_regular_prop_ids.append(prop_id)
+		ctx.type_state__newstate_prop_ids.append(prop_id)
 
 		if WyncXtrap.prop_is_predicted(ctx, prop_id):
-			var entity_id = WyncTrack.prop_get_entity(ctx, prop_id)
-			ctx.entity_last_predicted_tick[entity_id] = prop.last_ticks_received.get_relative(0)
 
-	# TODO: DELETE?
-	for prop_id: int in ctx.active_prop_ids:
-		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
+			if not prop.relative_syncable: # regular prop
+				var entity_id = WyncTrack.prop_get_entity(ctx, prop_id)
+				ctx.entity_last_predicted_tick[entity_id] = prop.last_ticks_received.get_relative(0)
+			else:
 
-		if prop.prop_type != WyncEntityProp.PROP_TYPE.STATE:
-			continue
-		if not prop.relative_syncable:
-			continue
-		if not prop.just_received_new_state:
-			continue
+				# get aux_prop and clean the confirmed_states_undo
+				var aux_prop = WyncTrack.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
+				for j in range(ctx.first_tick_predicted, ctx.last_tick_predicted +1):
 
-		prop.just_received_new_state = false
+					WyncEntityProp.saved_state_insert(ctx, aux_prop, j, [] as Array[int])
+
+					aux_prop.confirmed_states_undo.insert_at(j, [] as Array[int])
+					aux_prop.confirmed_states_undo_tick.insert_at(j, j)
 		
 	# rest state to _canonic_
 
-	WyncWrapper.reset_all_state_to_confirmed_tick_relative(ctx, ctx.type_state__newstate_regular_prop_ids, 0)
+	WyncWrapper.reset_all_state_to_confirmed_tick_relative(ctx, ctx.type_state__newstate_prop_ids, 0)
 
-
-	for prop_id: int in ctx.type_state__predicted_delta_prop_ids:
-		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
-
-		if not prop.just_received_new_state:
-			continue
-
-		prop.just_received_new_state = false
-	
-
-	# delta props ---- vvv
 	# only rollback if new state was received and is applicable:
 
 	delta_props_update_and_apply_delta_events(ctx, ctx.type_state__delta_prop_ids)
 	
 	# call integration function to sync new transforms with physics server
+
 	integrate_state(ctx)
 
 
 # should be run on client each logic frame
 # applies delta events and keeps delta props healthy
+# FIXME: it seems this functions is not well optimized, I think it's running
+#     like 30 cycles per individual prop_id.
 
 static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Array[int]):
 
@@ -225,7 +209,7 @@ static func predicted_delta_props_rollback_to_canonic_state (ctx: WyncCtx, prop_
 		for tick: int in range(ctx.last_tick_predicted, last_uptodate_tick, -1):
 
 			if aux_prop.confirmed_states_undo_tick.get_at(tick) != tick:
-				assert(false)
+				assert(false) # FIXME: issue above should solve this
 				break
 			var undo_event_id_list = aux_prop.confirmed_states_undo.get_at(tick)
 			if undo_event_id_list == null || undo_event_id_list is not Array[int]:

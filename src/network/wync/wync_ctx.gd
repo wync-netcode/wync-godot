@@ -296,7 +296,7 @@ var type_state__predicted_regular_prop_ids: Array[int] = []
 var type_state__interpolated_regular_prop_ids: Array[int] = []
 
 ## Note: This one requires special treatment
-var type_state__newstate_regular_prop_ids: Array[int] = [] # props that just received new state
+var type_state__newstate_prop_ids: Array[int] = [] # props that just received new state
 
 ## precompile props for prediction ticks
 var predicted_integrable_entity_ids: Array[int] = []

@@ -100,11 +100,12 @@ static func prop_set_relative_syncable (
 	# * delta prop, server side, timewarpable: base state, real state, delta event buffer
 
 	# assuming no timewarpable
-	# (actually just 1) for debugging purposes, should be 0
-	prop.saved_states = RingBuffer.new(0, null) 
-	prop.tick_to_state_id = RingBuffer.new(0, -1)
-	prop.state_id_to_tick = RingBuffer.new(0, -1)
-	prop.state_id_to_local_tick = RingBuffer.new(0, -1)
+	# minimum storage allowed 0 or 2
+	var buffer_items = 2
+	prop.saved_states = RingBuffer.new(buffer_items, null) 
+	prop.tick_to_state_id = RingBuffer.new(buffer_items, -1)
+	prop.state_id_to_tick = RingBuffer.new(buffer_items, -1)
+	prop.state_id_to_local_tick = RingBuffer.new(buffer_items, -1)
 	#prop.saved_states = RingBuffer.new(2, null) 
 	#prop.tick_to_state_id = RingBuffer.new(2, -1)
 	#prop.state_id_to_tick = RingBuffer.new(2, -1)
