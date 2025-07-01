@@ -18,58 +18,6 @@ static func wync_register_lerp_type (ctx: WyncCtx, user_type_id: int, lerp_fun: 
 	ctx.wrapper.lerp_function.append(lerp_fun)
 
 
-## Systems
-
-
-# TODO: wync_flow
-static func wync_buffer_inputs(ctx: WyncCtx):
-	
-	if not ctx.connected:
-		return
-
-	## Buffer state (extract) from props we own, to create a state history
-	
-	for prop_id: int in ctx.type_input_event__owned_prop_ids:
-
-		var input_prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
-		var getter = ctx.wrapper.prop_getter[prop_id]
-		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
-		var new_state = getter.call(user_ctx)
-		assert(new_state != null)
-
-		WyncEntityProp.saved_state_insert(ctx, input_prop, ctx.co_predict_data.target_tick, new_state)
-
-
-# TODO: wync_flow
-static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
-
-	var prop: WyncEntityProp = null
-	var prop_aux: WyncEntityProp = null
-	var getter: Variant = null # Callable*
-	var user_ctx: Variant = null
-
-	# Save state history per tick
-
-	for prop_id in ctx.filtered_regular_extractable_prop_ids:
-		prop = WyncTrack.get_prop_unsafe(ctx, prop_id)
-		getter = ctx.wrapper.prop_getter[prop_id]
-		user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
-		
-		WyncEntityProp.saved_state_insert(ctx, prop, save_on_tick, getter.call(user_ctx))
-		# Note: safe to call user getter like that?
-
-	# extracts events ids from auxiliar delta props
-
-	for prop_id in ctx.filtered_delta_prop_ids:
-		
-		prop = WyncTrack.get_prop_unsafe(ctx, prop_id)
-		prop_aux = WyncTrack.get_prop_unsafe(ctx, prop.auxiliar_delta_events_prop_id)
-		
-		getter = ctx.wrapper.prop_getter[prop.auxiliar_delta_events_prop_id]
-		user_ctx = ctx.wrapper.prop_user_ctx[prop.auxiliar_delta_events_prop_id]
-		WyncEntityProp.saved_state_insert(ctx, prop_aux, save_on_tick, getter.call(user_ctx))
-
-
 # FIXME: Move calling function to wrapper (or mark it as wrapper, or to wync_state_set_wrapper.gd)
 static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: Array[int], tick: int):
 	
@@ -89,25 +37,6 @@ static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: A
 		var setter = ctx.wrapper.prop_setter[prop_id]
 		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
 		setter.call(user_ctx, last_confirmed)
-
-
-# TODO: wync_flow
-static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
-		
-	for prop_id in ctx.filtered_clients_input_and_event_prop_ids:
-		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)	
-
-		var input = WyncEntityProp.saved_state_get(prop, ctx.co_ticks.ticks)
-		if input == null:
-			Log.errc(ctx, "couldn't find input (%s) for tick (%s)" % [prop.name_id, ctx.co_ticks.ticks])
-			continue
-
-		var setter = ctx.wrapper.prop_setter[prop_id]
-		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
-		setter.call(user_ctx, input)
-
-	return OK
-
 
 
 ## interpolates confirmed states and predicted states
@@ -210,4 +139,76 @@ static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 	ctx.debug_lerp_prev_curr_time = delta_fraction_ms
 	ctx.debug_lerp_prev_target = target_time_conf
 
+
+# ==================================================
+# Wrapper functions that aren't worth creating a 
+# wrapper version of their respective modules
+# ==================================================
+
+
+# Part of module 'wync_input'. Used in 'wync_flow'
+static func wync_buffer_inputs(ctx: WyncCtx):
+	
+	if not ctx.connected:
+		return
+
+	## Buffer state (extract) from props we own, to create a state history
+	
+	for prop_id: int in ctx.type_input_event__owned_prop_ids:
+
+		var input_prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
+		var getter = ctx.wrapper.prop_getter[prop_id]
+		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
+		var new_state = getter.call(user_ctx)
+		assert(new_state != null)
+
+		WyncEntityProp.saved_state_insert(ctx, input_prop, ctx.co_predict_data.target_tick, new_state)
+
+
+# Part of module 'wync_state_store'. Used in 'wync_flow'
+static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
+
+	var prop: WyncEntityProp = null
+	var prop_aux: WyncEntityProp = null
+	var getter: Variant = null # Callable*
+	var user_ctx: Variant = null
+
+	# Save state history per tick
+
+	for prop_id in ctx.filtered_regular_extractable_prop_ids:
+		prop = WyncTrack.get_prop_unsafe(ctx, prop_id)
+		getter = ctx.wrapper.prop_getter[prop_id]
+		user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
+		
+		WyncEntityProp.saved_state_insert(ctx, prop, save_on_tick, getter.call(user_ctx))
+		# Note: safe to call user getter like that?
+
+	# extracts events ids from auxiliar delta props
+
+	for prop_id in ctx.filtered_delta_prop_ids:
+		
+		prop = WyncTrack.get_prop_unsafe(ctx, prop_id)
+		prop_aux = WyncTrack.get_prop_unsafe(ctx, prop.auxiliar_delta_events_prop_id)
+		
+		getter = ctx.wrapper.prop_getter[prop.auxiliar_delta_events_prop_id]
+		user_ctx = ctx.wrapper.prop_user_ctx[prop.auxiliar_delta_events_prop_id]
+		WyncEntityProp.saved_state_insert(ctx, prop_aux, save_on_tick, getter.call(user_ctx))
+
+
+# Part of module 'wync_input'. Used in 'wync_flow'
+static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
+		
+	for prop_id in ctx.filtered_clients_input_and_event_prop_ids:
+		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)	
+
+		var input = WyncEntityProp.saved_state_get(prop, ctx.co_ticks.ticks)
+		if input == null:
+			Log.errc(ctx, "couldn't find input (%s) for tick (%s)" % [prop.name_id, ctx.co_ticks.ticks])
+			continue
+
+		var setter = ctx.wrapper.prop_setter[prop_id]
+		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
+		setter.call(user_ctx, input)
+
+	return OK
 

@@ -1,61 +1,11 @@
 class_name WyncFlow
 
+
+# ==================================================
+# PUBLIC API
+# ==================================================
+
 ## High level functions related to logic cycles
-
-
-## Note. Before running this, make sure to receive packets from the network
-
-static func wync_server_tick_start(ctx: WyncCtx):
-
-	WyncClock.wync_advance_ticks(ctx)
-
-	WyncEventUtils.module_events_consumed_advance_tick(ctx)
-
-	WyncWrapper.wync_input_props_set_tick_value(ctx)
-
-	WyncDeltaSyncUtilsInternal.auxiliar_props_clear_current_delta_events(ctx)
-
-
-static func wync_server_tick_end(ctx: WyncCtx):
-	for peer_id: int in range(1, ctx.peers.size()):
-		WyncClock.wync_system_stabilize_latency(ctx, ctx.peer_latency_info[peer_id])
-
-	WyncXtrapInternal.wync_xtrap_server_filter_prop_ids(ctx)
-
-	WyncStateSend.system_update_delta_base_state_tick(ctx)
-
-	# NOTE: maybe a way to extract data but only events, since that is unskippable?
-	# This function extracts regular props, plus _auxiliar delta event props_
-	# We need a function to extract data exclusively of events... Like the equivalent
-	# of the client's _input_bufferer_
-	WyncWrapper.extract_data_to_tick(ctx, ctx.co_ticks.ticks)
-
-
-static func wync_client_tick_end(ctx: WyncCtx):
-
-	WyncXtrapInternal.wync_xtrap_client_filter_prop_ids(ctx)
-	WyncClock.wync_advance_ticks(ctx)
-	WyncClock.wync_system_stabilize_latency(ctx, ctx.peer_latency_info[WyncCtx.SERVER_PEER_ID])
-	WyncClock.wync_update_prediction_ticks(ctx)
-	
-	WyncWrapper.wync_buffer_inputs(ctx)
-
-	# CANNOT reset events BEFORE polling inputs, WHERE do we put this?
-	
-	WyncDeltaSyncUtilsInternal.auxiliar_props_clear_current_delta_events(ctx)
-	WyncDeltaSyncUtils.predicted_event_props_clear_events(ctx)
-
-	WyncStateSet.wync_reset_props_to_latest_value(ctx)
-	
-	# NOTE: Maybe this one should be called AFTER consuming packets, and BEFORE xtrap
-	WyncStats.wync_system_calculate_prob_prop_rate(ctx)
-
-	WyncStats.wync_system_calculate_server_tick_rate(ctx)
-
-	WyncStateStore.wync_service_cleanup_dummy_props(ctx)
-
-	WyncLerp.wync_lerp_precompute(ctx)
-
 
 ## Calls all the systems that produce packets to send whilst respecting the data limit
 
@@ -180,3 +130,61 @@ static func server_setup(ctx: WyncCtx) -> int:
 static func client_init(ctx: WyncCtx) -> int:
 	ctx.is_client = true
 	return OK
+
+
+# ==================================================
+# WRAPPER
+# ==================================================
+
+## Note. Before running this, make sure to receive packets from the network
+
+static func wync_server_tick_start(ctx: WyncCtx):
+
+	WyncClock.wync_advance_ticks(ctx)
+
+	WyncEventUtils.module_events_consumed_advance_tick(ctx)
+
+	WyncWrapper.wync_input_props_set_tick_value(ctx) # wrapper function
+
+	WyncDeltaSyncUtilsInternal.auxiliar_props_clear_current_delta_events(ctx)
+
+
+static func wync_server_tick_end(ctx: WyncCtx):
+	for peer_id: int in range(1, ctx.peers.size()):
+		WyncClock.wync_system_stabilize_latency(ctx, ctx.peer_latency_info[peer_id])
+
+	WyncXtrapInternal.wync_xtrap_server_filter_prop_ids(ctx)
+
+	WyncStateSend.system_update_delta_base_state_tick(ctx)
+
+	# NOTE: maybe a way to extract data but only events, since that is unskippable?
+	# This function extracts regular props, plus _auxiliar delta event props_
+	# We need a function to extract data exclusively of events... Like the equivalent
+	# of the client's _input_bufferer_
+	WyncWrapper.extract_data_to_tick(ctx, ctx.co_ticks.ticks) # wrapper function
+
+
+static func wync_client_tick_end(ctx: WyncCtx):
+
+	WyncXtrapInternal.wync_xtrap_client_filter_prop_ids(ctx)
+	WyncClock.wync_advance_ticks(ctx)
+	WyncClock.wync_system_stabilize_latency(ctx, ctx.peer_latency_info[WyncCtx.SERVER_PEER_ID])
+	WyncClock.wync_update_prediction_ticks(ctx)
+	
+	WyncWrapper.wync_buffer_inputs(ctx) # wrapper function
+
+	# CANNOT reset events BEFORE polling inputs, WHERE do we put this?
+	
+	WyncDeltaSyncUtilsInternal.auxiliar_props_clear_current_delta_events(ctx)
+	WyncDeltaSyncUtils.predicted_event_props_clear_events(ctx)
+
+	WyncStateSet.wync_reset_props_to_latest_value(ctx)
+	
+	# NOTE: Maybe this one should be called AFTER consuming packets, and BEFORE xtrap
+	WyncStats.wync_system_calculate_prob_prop_rate(ctx)
+
+	WyncStats.wync_system_calculate_server_tick_rate(ctx)
+
+	WyncStateStore.wync_service_cleanup_dummy_props(ctx)
+
+	WyncLerp.wync_lerp_precompute(ctx)

@@ -460,7 +460,6 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 ## Q: Is it possible that event_ids accumulate infinitely if they are never consumed?
 ## A: No, if events are never consumed they remain in the confirmed_states buffer until eventually replaced.
 ## Returns events from this tick, that aren't consumed
-## TODO: Move out of wrapper
 static func wync_get_events_from_channel_from_peer(
 	ctx: WyncCtx, wync_peer_id: int, channel: int, tick: int
 	) -> Array[int]:
