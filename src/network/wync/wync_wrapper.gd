@@ -110,10 +110,6 @@ static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 
 
 
-
-# FIXME: mark wync_xtrap_tick_end for wrapper
-
-
 ## interpolates confirmed states and predicted states
 ## @argument delta_lerp_fraction float. Usually but not always in range 0 to 1. Fraction through the current physics tick we are at the time of rendering the frame.
 static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):

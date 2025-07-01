@@ -13,7 +13,7 @@ static func wync_server_tick_start(ctx: WyncCtx):
 
 	WyncWrapper.wync_input_props_set_tick_value(ctx)
 
-	WyncDeltaSyncUtils.auxiliar_props_clear_current_delta_events(ctx)
+	WyncDeltaSyncUtilsInternal.auxiliar_props_clear_current_delta_events(ctx)
 
 
 static func wync_server_tick_end(ctx: WyncCtx):
@@ -42,7 +42,7 @@ static func wync_client_tick_end(ctx: WyncCtx):
 
 	# CANNOT reset events BEFORE polling inputs, WHERE do we put this?
 	
-	WyncDeltaSyncUtils.auxiliar_props_clear_current_delta_events(ctx)
+	WyncDeltaSyncUtilsInternal.auxiliar_props_clear_current_delta_events(ctx)
 	WyncDeltaSyncUtils.predicted_event_props_clear_events(ctx)
 
 	WyncStateSet.wync_reset_props_to_latest_value(ctx)
@@ -66,7 +66,7 @@ static func wync_system_gather_packets(ctx: WyncCtx):
 			WyncJoin.service_wync_try_to_connect(ctx)                     # reliable, commited
 		else:
 			WyncClock.wync_client_ask_for_clock(ctx)      # unreliable
-			WyncDeltaSyncUtils.wync_system_client_send_delta_prop_acks(ctx) # unreliable
+			WyncDeltaSyncUtilsInternal.wync_system_client_send_delta_prop_acks(ctx) # unreliable
 			WyncStateSend.wync_client_send_inputs(ctx)         # unreliable
 			WyncEventUtils.wync_send_event_data(ctx)         # reliable, commited
 
@@ -134,7 +134,7 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 				WyncSpawn.wync_handle_pkt_despawn(ctx, wync_pkt.data)
 		WyncPacket.WYNC_PKT_DELTA_PROP_ACK:
 			if not is_client:
-				WyncDeltaSyncUtils.wync_handle_pkt_delta_prop_ack(ctx, wync_pkt.data, from_nete_peer_id)
+				WyncDeltaSyncUtilsInternal.wync_handle_pkt_delta_prop_ack(ctx, wync_pkt.data, from_nete_peer_id)
 		_:
 			Log.err("wync packet_type_id(%s) not recognized skipping (%s)" % [wync_pkt.packet_type_id, wync_pkt.data])
 			return -1

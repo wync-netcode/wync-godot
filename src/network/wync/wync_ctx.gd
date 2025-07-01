@@ -17,6 +17,9 @@ class Wrapper:
 	# DynArr[0] <order_id: int, Callable[a: Variant, b: Variant, c: float]>
 	var lerp_function: Array[Callable]
 
+	# Array<delta_blueprint_id: int, Blueprint>
+	var delta_blueprints: Array[WyncDeltaBlueprint]
+
 var wrapper: Wrapper
 
 # ------------------------------
@@ -160,9 +163,6 @@ var to_peers_i_sent_events: Array[FIFOMap]
 # this solves deterministicly knowing where an event came from
 # > What about just storing this metadata in the event wrapper?
 # var entities_that_published_global_events_this_tick: Array[int]
-
-# Array<delta_blueprint_id: int, Blueprint>
-var delta_blueprints: Array[WyncDeltaBlueprint]
 
 # how far in the past we can go
 # Updated every frame, should correspond to current_tick - max_history_ticks

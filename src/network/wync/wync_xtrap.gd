@@ -5,7 +5,7 @@ class_name WyncXtrap
 
 
 # ==================================================
-# PUBLIC
+# PUBLIC API
 # ==================================================
 
 
@@ -112,7 +112,7 @@ static func wync_xtrap_relative_entities_to_not_predict(ctx: WyncCtx, tick: int)
 
 
 static func wync_xtrap_termination(ctx: WyncCtx):
-	WyncDeltaSyncUtils.auxiliar_props_clear_current_delta_events(ctx)
+	WyncDeltaSyncUtilsInternal.auxiliar_props_clear_current_delta_events(ctx)
 	WyncDeltaSyncUtils.predicted_event_props_clear_events(ctx)
 	ctx.currently_on_predicted_tick = false
 	ctx.global_entity_ids_to_not_predrict.clear()

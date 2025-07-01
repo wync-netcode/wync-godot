@@ -116,7 +116,7 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 			var events_we_dont_have := []
 
 			for event_id: int in delta_event_list:
-				if WyncDeltaSyncUtils.event_is_healthy(ctx, event_id) != OK:
+				if WyncDeltaSyncUtilsInternal.event_is_healthy(ctx, event_id) != OK:
 					has_all_event_data = false
 					events_we_dont_have.append(event_id)
 					#break
