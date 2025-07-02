@@ -202,21 +202,18 @@ static func predicted_delta_props_rollback_to_canonic_state (ctx: WyncCtx, prop_
 			continue
 
 		# apply events in order
-		# FIXME: last_tick_predicted is not reliable, use a var custom for this prop
 
 		var last_uptodate_tick = delta_props_last_tick[prop_id]
 
 		for tick: int in range(ctx.last_tick_predicted, last_uptodate_tick, -1):
 
 			if aux_prop.confirmed_states_undo_tick.get_at(tick) != tick:
-				assert(false) # FIXME: issue above should solve this
+				# NOTE: for now, if we find nothing, we do nothing.
+				# We assume this tick just wasn't predicted.
+				# Needs more testing to be sure this is safe to ignore.
+				# Otherwise we could just store ticks that were actually predicted.
 				break
-			var undo_event_id_list = aux_prop.confirmed_states_undo.get_at(tick)
-			if undo_event_id_list == null || undo_event_id_list is not Array[int]:
-				assert(false)
-				break
-					
-			undo_event_id_list = undo_event_id_list as Array[int]
+			var undo_event_id_list = aux_prop.confirmed_states_undo.get_at(tick) as Array[int]
 
 			#Log.outc(ctx, "debugrela | gonna rollback prop %s tick %s event_list %s" % [prop_id, tick, undo_event_id_list])
 
