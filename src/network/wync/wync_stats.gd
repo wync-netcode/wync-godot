@@ -62,6 +62,29 @@ static func _wync_report_update_received(ctx: WyncCtx):
 	ctx.tick_last_packet_received_from_server = ctx.co_ticks.ticks
 
 
+## calculate statistic data per tick
+static func wync_system_calculate_data_per_tick(ctx: WyncCtx):
+
+	var data_sent = ctx.out_packets_size_limit - ctx.out_packets_size_remaining_chars
+	ctx.debug_data_per_tick_current = data_sent
+
+	ctx.debug_ticks_sent += 1
+	ctx.debug_data_per_tick_total_mean = (ctx.debug_data_per_tick_total_mean * (ctx.debug_ticks_sent -1) + data_sent) / float(ctx.debug_ticks_sent)
+
+	ctx.debug_data_per_tick_sliding_window.push(data_sent)
+	var data_sent_acc = 0
+	for i in range(ctx.debug_data_per_tick_sliding_window_size):
+		var value = ctx.debug_data_per_tick_sliding_window.get_at(i)
+		if value is int:
+			data_sent_acc += ctx.debug_data_per_tick_sliding_window.get_at(i)
+	ctx.debug_data_per_tick_sliding_window_mean = data_sent_acc / ctx.debug_data_per_tick_sliding_window_size
+
+
+# ==================================================
+# WRAPPER
+# ==================================================
+
+
 # setup "prob prop"
 static func setup_entity_prob_for_entity_update_delay_ticks(ctx: WyncCtx, peer_id: int) -> int:
 
@@ -99,21 +122,3 @@ static func setup_entity_prob_for_entity_update_delay_ticks(ctx: WyncCtx, peer_i
 		WyncTrack.wync_add_local_existing_entity(ctx, peer_id, entity_id)
 
 	return 0
-
-
-## calculate statistic data per tick
-static func wync_system_calculate_data_per_tick(ctx: WyncCtx):
-
-	var data_sent = ctx.out_packets_size_limit - ctx.out_packets_size_remaining_chars
-	ctx.debug_data_per_tick_current = data_sent
-
-	ctx.debug_ticks_sent += 1
-	ctx.debug_data_per_tick_total_mean = (ctx.debug_data_per_tick_total_mean * (ctx.debug_ticks_sent -1) + data_sent) / float(ctx.debug_ticks_sent)
-
-	ctx.debug_data_per_tick_sliding_window.push(data_sent)
-	var data_sent_acc = 0
-	for i in range(ctx.debug_data_per_tick_sliding_window_size):
-		var value = ctx.debug_data_per_tick_sliding_window.get_at(i)
-		if value is int:
-			data_sent_acc += ctx.debug_data_per_tick_sliding_window.get_at(i)
-	ctx.debug_data_per_tick_sliding_window_mean = data_sent_acc / ctx.debug_data_per_tick_sliding_window_size

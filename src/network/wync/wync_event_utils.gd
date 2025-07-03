@@ -1,5 +1,11 @@
 class_name WyncEventUtils
 
+
+# ==================================================
+# Public API
+# ==================================================
+
+
 # Events utilities
 # ================================================================
 # TODO: write tests for this
@@ -102,32 +108,6 @@ static func new_event_wrap_up(
 	return WyncEventUtils._event_wrap_up(ctx, event_id)
 
 
-## Call this function whenever creating a global event
-# TODO: Save client_id of origin or entity_id of origin somewhere
-
-# static func prop_global_event_publish
-"""
-static func global_event_publish_on_demand \
-	(ctx: WyncCtx, prop_id: int, event_id: int) -> int:
-	if (not WyncTrack.prop_exists(ctx, prop_id)):
-		return 1
-	var prop = ctx.props[prop_id] as WyncEntityProp
-	if (prop == null):
-		return 2
-	if (!prop.push_to_global_event):
-		return 3
-	if (prop.data_type != WyncEntityProp.DATA_TYPE.EVENT):
-		return 4
-	var channel = prop.global_event_channel
-	if (channel < 0 || channel > ctx.max_channels):
-		return 5
-
-	# no need to check event_id here, we check it when consuming
-	ctx.global_events_channel[channel].append(event_id)
-	# event.prop_id = prop_id
-	return 0"""
-
-
 static func publish_global_event_as_client \
 	(ctx: WyncCtx, channel: int, event_id: int) -> int:
 	if (channel < 0 || channel > ctx.max_channels):
@@ -163,7 +143,6 @@ static func wync_send_event_data (ctx: WyncCtx):
 	else: # server
 		for wync_peer_id in range(1, ctx.peers.size()):
 			wync_system_send_events_to_peer(ctx, wync_peer_id)
-
 
 
 ## This system writes state
@@ -311,84 +290,6 @@ static func action_tick_history_reset(ctx: WyncCtx, predicted_tick: int) -> int:
 	return 0
 
 
-# FIXME: This func isn't being used, despite being important from optimization
-# Currently events are being added by extraction
-
-"""
-static func add_event_to_prop_tick(
-		ctx: WyncCtx,
-		event_id: int,
-		prop_id: int,
-		tick_current: int,
-	) -> int:
-	
-	# TODO: Where to define if this event can be duplicated?
-	#var tick_pred = co_predict_data.target_tick
-	# save tick relationship
-	#co_predict_data.set_tick_predicted(tick_pred, tick_curr)
-	# Compensate for UP smooth tick_offset transition
-	# check if previous input is missing -> then duplicate
-	#if not co_predict_data.get_tick_predicted(tick_pred-1):
-		#co_predict_data.set_tick_predicted(tick_pred-1, tick_curr)
-	
-	# save input to actual prop
-	
-	if !(prop_id >= 0 && prop_id < ctx.props.size()):
-		return 1
-	var input_prop = ctx.props[prop_id] as WyncEntityProp
-	if input_prop == null:
-		return 2
-	
-	# reset in case it doesn't exist
-	var data_wrap = input_prop.confirmed_states.get_at(tick_current)
-	if data_wrap == null || data_wrap is not WyncPktInputs.NetTickDataDecorator:
-		data_wrap = WyncPktInputs.NetTickDataDecorator.new()
-		data_wrap.tick = tick_current
-		data_wrap.data = []
-		input_prop.confirmed_states.insert_at(tick_current, data_wrap)
-	
-	data_wrap = data_wrap as WyncPktInputs.NetTickDataDecorator
-	if data_wrap.tick != tick_current:
-		data_wrap.tick = tick_current
-		(data_wrap.data as Array).clear() # NOTE: maybe just Array.clear()?
-	
-	(data_wrap.data as Array).append(event_id)
-	return 0
-"""
-"""
-instantiate_new_event(event_type_id) -> event_id
-
-event_add_arg(arg_type: enum, arg_data: any)
-
-entity_event_prop_add_new(event_type_id, tick)
-
-func tick_set_event(
-	co_predict_data: CoPredictionData,
-	wync_ctx: WyncCtx,
-	input_prop_id: int,
-	tick_curr: int,
-	event_id: uint
-	) -> void:
-		
-	var tick_pred = co_predict_data.target_tick
-	
-	# save tick relationship
-	
-	co_predict_data.set_tick_predicted(tick_pred, tick_curr)
-	# Compensate for UP smooth tick_offset transition
-	# check if previous input is missing -> then duplicate
-	if not co_predict_data.get_tick_predicted(tick_pred-1):
-		co_predict_data.set_tick_predicted(tick_pred-1, tick_curr)
-	
-	# save input to actual prop
-	
-	var input_prop = wync_ctx.props[input_prop_id] as WyncEntityProp
-	if input_prop == null:
-		return
-	
-	input_prop.confirmed_states.insert_at(tick_curr, input)
-"""
-
 # TODO: as the server, only receive event data from a client if they own a prop with it
 # There might not be a very performant way of doing that
 static func wync_handle_pkt_event_data(ctx: WyncCtx, data: Variant) -> int:
@@ -410,6 +311,55 @@ static func wync_handle_pkt_event_data(ctx: WyncCtx, data: Variant) -> int:
 		# NOTE: what if we already have this event data? Maybe it's better to receive it anyway?
 
 	return OK
+
+
+## Q: Is it possible that event_ids accumulate infinitely if they are never consumed?
+## A: No, if events are never consumed they remain in the confirmed_states buffer until eventually replaced.
+## Returns events from this tick, that aren't consumed
+static func wync_get_events_from_channel_from_peer(
+	ctx: WyncCtx, wync_peer_id: int, channel: int, tick: int
+	) -> Array[int]:
+
+	var out_events_id: Array[int] = []
+	if tick < 0:
+		return out_events_id
+
+	var prop_id: int = ctx.prop_id_by_peer_by_channel[wync_peer_id][channel]
+	var prop_channel := WyncTrack.get_prop_unsafe(ctx, prop_id)
+
+	var consumed_event_ids_tick: int = prop_channel.events_consumed_at_tick_tick.get_at(tick)
+	if tick != consumed_event_ids_tick:
+		return out_events_id
+
+	var consumed_event_ids: Array[int] = prop_channel.events_consumed_at_tick.get_at(tick)
+	var confirmed_event_ids: Array
+
+	if ctx.co_ticks.ticks == tick:
+		confirmed_event_ids = ctx.peer_has_channel_has_events[wync_peer_id][channel]
+	else:
+		# TODO: Rewrite me
+		var state = WyncEntityProp.saved_state_get(prop_channel, tick)
+		if state == null:
+			return out_events_id
+		confirmed_event_ids = state
+
+	for i in range(confirmed_event_ids.size()):
+		var event_id = confirmed_event_ids[i]
+		if consumed_event_ids.has(event_id):
+			continue
+		if not ctx.events.has(event_id):
+			continue
+
+		var event := ctx.events[event_id]
+		assert(event != null)
+		out_events_id.append(event_id)
+
+	return out_events_id
+
+
+# ==================================================
+# WRAPPER
+# ==================================================
 
 
 # run on both server & client to set up peer channel
@@ -455,47 +405,3 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 		ctx.prop_id_by_peer_by_channel[peer_id][channel_id] = channel_prop_id
 
 	return 0
-
-
-## Q: Is it possible that event_ids accumulate infinitely if they are never consumed?
-## A: No, if events are never consumed they remain in the confirmed_states buffer until eventually replaced.
-## Returns events from this tick, that aren't consumed
-static func wync_get_events_from_channel_from_peer(
-	ctx: WyncCtx, wync_peer_id: int, channel: int, tick: int
-	) -> Array[int]:
-
-	var out_events_id: Array[int] = []
-	if tick < 0:
-		return out_events_id
-
-	var prop_id: int = ctx.prop_id_by_peer_by_channel[wync_peer_id][channel]
-	var prop_channel := WyncTrack.get_prop_unsafe(ctx, prop_id)
-
-	var consumed_event_ids_tick: int = prop_channel.events_consumed_at_tick_tick.get_at(tick)
-	if tick != consumed_event_ids_tick:
-		return out_events_id
-
-	var consumed_event_ids: Array[int] = prop_channel.events_consumed_at_tick.get_at(tick)
-	var confirmed_event_ids: Array
-
-	if ctx.co_ticks.ticks == tick:
-		confirmed_event_ids = ctx.peer_has_channel_has_events[wync_peer_id][channel]
-	else:
-		# TODO: Rewrite me
-		var state = WyncEntityProp.saved_state_get(prop_channel, tick)
-		if state == null:
-			return out_events_id
-		confirmed_event_ids = state
-
-	for i in range(confirmed_event_ids.size()):
-		var event_id = confirmed_event_ids[i]
-		if consumed_event_ids.has(event_id):
-			continue
-		if not ctx.events.has(event_id):
-			continue
-
-		var event := ctx.events[event_id]
-		assert(event != null)
-		out_events_id.append(event_id)
-
-	return out_events_id

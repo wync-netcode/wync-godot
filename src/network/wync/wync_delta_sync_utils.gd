@@ -49,7 +49,6 @@ static func get_delta_blueprint (ctx: WyncCtx, delta_blueprint_id: int) -> WyncD
 	return null
 
 
-# TODO: Move to wrapper
 static func delta_blueprint_register_event (
 	ctx: WyncCtx,
 	delta_blueprint_id: int,
@@ -106,10 +105,6 @@ static func prop_set_relative_syncable (
 	prop.tick_to_state_id = RingBuffer.new(buffer_items, -1)
 	prop.state_id_to_tick = RingBuffer.new(buffer_items, -1)
 	prop.state_id_to_local_tick = RingBuffer.new(buffer_items, -1)
-	#prop.saved_states = RingBuffer.new(2, null) 
-	#prop.tick_to_state_id = RingBuffer.new(2, -1)
-	#prop.state_id_to_tick = RingBuffer.new(2, -1)
-	#prop.state_id_to_local_tick = RingBuffer.new(2, -1)
 
 
 	var need_undo_events = false
@@ -147,8 +142,6 @@ static func prop_set_relative_syncable (
 	return OK
 
 
-
-
 ## commits a delta event to this tick
 static func delta_prop_push_event_to_current \
 	(ctx: WyncCtx, prop_id: int, event_type_id: int, event_id: int) -> int:
@@ -172,23 +165,6 @@ static func delta_prop_push_event_to_current \
 	Log.out("delta_prop_push_event_to_current | delta sync | ticks(%s) event_list %s" % [ctx.co_ticks.ticks, prop.current_delta_events], Log.TAG_DELTA_EVENT)
 	return OK
 
-
-"""
-static func merge_event_to_state_real_state(ctx: WyncCtx, prop_id: int, event_id: int) -> int:
-	var prop = WyncTrack.get_prop(ctx, prop_id)
-	if prop == null:
-		return 1
-	prop = prop as WyncEntityProp
-	if not prop.relative_syncable:
-		return 2
-
-	var state_pointer = prop.state_pointer.call()
-	if state_pointer == null:
-		return 3
-
-	var result = _merge_event_to_state(ctx, prop, event_id, state_pointer, false)
-	return result[0]
-"""
 
 static func merge_event_to_state_real_state \
 	(ctx: WyncCtx, prop_id: int, event_id: int) -> int:
@@ -261,57 +237,7 @@ static func _merge_event_to_state \
 	var result: Array[int] = handler.call(state, event_data, requires_undo, ctx if requires_undo else null)
 	if result[0] != OK: result[0] += 100
 
-	# Reminder: Handler interface
-	# (state: Variant, event: WyncEvent.EventData, requires_undo: bool, ctx: WyncCtx*) -> [err, undo_event_id]:
-
 	return result
-
-
-## Use this function when setting up an relative_syncable prop.
-## Use this function when you need to reset the state after you modified it to something
-## you rather not represent with events
-
-#static func delta_sync_prop_extract_state (ctx: WyncCtx, prop_id: int) -> int:
-	#var prop = WyncTrack.get_prop(ctx, prop_id)
-	#if prop == null:
-		#return 1
-	#prop = prop as WyncEntityProp
-	#if not prop.relative_syncable:
-		#return 2
-	#prop.confirmed_states.insert_at(0, prop.getter.call(prop.user_ctx_pointer))
-
-	## TODO: clear all events, they're all invalid now
-	## TODO: copy to state 1	
-	#return OK
-
-
-## Logic Loops
-## ================================================================
-
-
-## execute this function on prop creation
-## and periodically? for clients that are just joining...
-## Need to make sure clients have a history of last state received about _delta sync props_
-## NOTE: Is this necessary at all?
-"""
-static func delta_sync_prop_initialize_clients (ctx: WyncCtx, prop_id: int) -> int:
-	var prop = WyncTrack.get_prop(ctx, prop_id)
-	if prop == null:
-		return 1
-	prop = prop as WyncEntityProp
-	if not prop.relative_syncable:
-		return 2
-
-	for client_id in range(1, ctx.peers.size()):
-		# TODO: check client is healthy
-
-		var client_relative_props = ctx.client_has_relative_prop_has_last_tick[client_id] as Dictionary
-		var knows_about_prop = client_relative_props.has(prop_id)
-		if not knows_about_prop:
-			client_relative_props[prop_id] = -1
-
-	return OK
-"""
 
 
 static func predicted_event_props_clear_events(ctx: WyncCtx):
@@ -319,19 +245,3 @@ static func predicted_event_props_clear_events(ctx: WyncCtx):
 		var setter = ctx.wrapper.prop_setter[prop_id]
 		var user_cxt = ctx.wrapper.prop_user_ctx[prop_id]
 		setter.call(user_cxt, [] as Array[int])
-
-
-"""
-static func owned_props_clear_events(ctx: WyncCtx):
-	for prop_id in ctx.type_input_event__owned_prop_ids:
-		var prop = WyncTrack.get_prop_unsafe(ctx, prop_id)
-		if prop.prop_type != WyncEntityProp.PROP_TYPE.EVENT:
-			continue
-		var setter = ctx.wrapper.prop_setter[prop_id]
-		var user_cxt = ctx.wrapper.prop_user_ctx[prop_id]
-		setter.call(user_cxt, [] as Array[int])
-"""
-
-
-
-

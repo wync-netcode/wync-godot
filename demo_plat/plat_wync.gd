@@ -16,19 +16,22 @@ static func setup_client(ctx: WyncCtx):
 	WyncClock.clock_set_debug_time_offset(ctx, 1000)
 
 	# set server tick rate and lerp_ms
+
+	#var server_tick_rate: float = ctx.physic_ticks_per_second 
+	var server_tick_rate: float = ctx.physic_ticks_per_second / 2.0
 	#var server_tick_rate: float = ctx.physic_ticks_per_second / 8.0
-	var server_tick_rate: float = ctx.physic_ticks_per_second
 	#var server_tick_rate: float = ctx.physic_ticks_per_second / 16.0
+
 	#var desired_lerp: float = ceil((1000.0 / server_tick_rate) * 5) # 6 ticks in the past
 	#WyncFlow.wync_client_set_lerp_ms(ctx, server_tick_rate, desired_lerp)
 	WyncLerp.wync_client_set_lerp_ms(ctx, server_tick_rate, 0)
 	WyncLerp.wync_client_set_max_lerp_factor_symmetric(ctx, 3.5)
 
-	WyncWrapper.wync_register_lerp_type(
+	WyncLerp.wync_register_lerp_type(
 		ctx, Plat.LERP_TYPE_FLOAT,
 		func (a: float, b: float, weight: float): return lerp(a, b, weight)
 	)
-	WyncWrapper.wync_register_lerp_type(
+	WyncLerp.wync_register_lerp_type(
 		ctx, Plat.LERP_TYPE_VECTOR2,
 		func (a: Vector2, b: Vector2, weight: float): return lerp(a, b, weight)
 	)
