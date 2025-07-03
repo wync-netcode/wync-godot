@@ -500,30 +500,16 @@ static func extrapolate(gs: Plat.GameState, delta: float):
 		return
 	for tick in range(ctx.pred_intented_first_tick - ctx.max_prediction_tick_threeshold, target_tick +1):
 	#for tick in range(ctx.pred_intented_first_tick - 8, target_tick +1):
-		#Log.outc(ctx, "pred_tick %s" % [tick])
+
 		WyncXtrap.wync_xtrap_tick_init(ctx, tick)
-		var entity_ids_to_predict = WyncXtrap.wync_xtrap_regular_entities_to_predict(ctx, tick)
-		#Log.outc(ctx, "dont_predict_entities %s" % [dont_predict_entity_ids])
-		#Log.outc(ctx, "xtrap, entity_ids_to_predict %s" % [entity_ids_to_predict])
-		PlatPublic.system_player_movement(gs, Plat.LOGIC_DELTA_MS, true, entity_ids_to_predict)
+		WyncXtrap.wync_xtrap_regular_entities_to_predict(ctx, tick)
 
-		#if tick >= ctx.pred_intented_first_tick:
-		#if true:
-		#if tick > ctx.last_tick_predicted_events:
-			#ctx.last_tick_predicted_events = tick
+		#Log.outc(ctx, "debugrela to predict %s" % [ctx.global_entity_ids_to_predict])
 
-		var relative_to_not_predict = WyncXtrap.wync_xtrap_relative_entities_to_not_predict(ctx, tick)
-		ctx.global_entity_ids_to_not_predrict.clear()
-		ctx.global_entity_ids_to_not_predrict.append_array(relative_to_not_predict)
+		PlatPublic.system_player_movement(
+			gs, Plat.LOGIC_DELTA_MS, true, ctx.global_entity_ids_to_predict)
 
-		#if ctx.global_entity_ids_to_not_predrict.has(16):
-			#Log.outc(ctx, "debugrela prop 16 last predicted tick %s" % [ctx.entity_last_predicted_tick[16]])
-
-		# And then maybe from the wync side reject the changes???
-
-		#Log.outc(ctx, "debugrela, delta props do not predict these %s" % [ctx.global_entity_ids_to_not_predrict])
 		PlatPublic.system_client_simulate_own_events(gs, tick)
-
 
 		# debug trail
 		if WyncMisc.fast_modulus(tick, 2) == 0:

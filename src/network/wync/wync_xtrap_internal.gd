@@ -99,12 +99,7 @@ static func wync_xtrap_client_filter_prop_ids(ctx: WyncCtx):
 	for wync_entity_id in ctx.tracked_entities.keys():
 		if not WyncXtrap.entity_is_predicted(ctx, wync_entity_id):
 			continue
-		#if WyncTrack.entity_has_delta_prop(ctx, wync_entity_id):
-			#continue
 		ctx.predicted_entity_ids.append(wync_entity_id)
-
-	if ctx.is_client:
-		Log.outc(ctx, "debugrela %s" % [ctx.type_event__predicted_auxiliar_prop_ids])
 
 
 static func wync_xtrap_auxiliar_props_clear_current_delta_events(ctx: WyncCtx):
@@ -145,6 +140,10 @@ static func wync_xtrap_entity_get_last_received_tick_from_pred_props (ctx: WyncC
 		if prop == null:
 			continue
 
+		# for rela props, ignore base, instead count auxiliar last tick
+		if prop.relative_syncable:
+			continue
+
 		var prop_last_tick = prop.last_ticks_received.get_relative(0)
 		if prop_last_tick == -1:
 			continue
@@ -157,7 +156,6 @@ static func wync_xtrap_entity_get_last_received_tick_from_pred_props (ctx: WyncC
 		else:
 			last_tick = min(last_tick, prop_last_tick)
 
-	#Log.outc(ctx, "entity_id %s last_tick %s" % [entity_id, last_tick])
 	return last_tick
 
 
@@ -180,7 +178,7 @@ static func wync_xtrap_internal_tick_end(ctx: WyncCtx, tick: int):
 		var aux_prop := ctx.props[prop_id]
 
 		var entity_id = WyncTrack.prop_get_entity(ctx, aux_prop.auxiliar_delta_events_prop_id)
-		if ctx.global_entity_ids_to_not_predrict.has(entity_id):
+		if !ctx.global_entity_ids_to_predict.has(entity_id):
 			continue
 		
 		var undo_events = aux_prop.current_undo_delta_events.duplicate(true)

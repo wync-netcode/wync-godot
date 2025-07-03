@@ -140,7 +140,7 @@ static func prop_set_relative_syncable (
 	# the main prop IS marked as predicted, however, auxiliar props are NOT marked
 	# but we still ALLOCATE and USE the extra buffer space, including space for 'confirmed_states_undo'
 	WyncDeltaSyncUtilsInternal.prop_set_auxiliar(ctx, events_prop_id, prop_id, need_undo_events)
-	#WyncTrack.prop_set_prediction_duplication(ctx, events_prop_id, false)
+	WyncXtrap.prop_set_predict(ctx, events_prop_id)
 
 	prop.auxiliar_delta_events_prop_id = events_prop_id
 

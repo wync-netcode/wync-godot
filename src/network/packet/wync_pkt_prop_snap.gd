@@ -8,6 +8,14 @@ class SnapProp:
 	var state_size: int
 	var state#: Variant: Vector2, Quaternion, float, struct
 
+	func duplicate () -> SnapProp:
+		var i = SnapProp.new()
+		i.prop_id = self.prop_id
+		i.state_size = self.state_size
+		i.state = self.state
+		return i
+
+
 var tick: int
 var snaps: Array[SnapProp]
 

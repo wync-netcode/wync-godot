@@ -1,50 +1,30 @@
 class_name WyncStateSend
 	
 	
-## Ideal loop
-## * Sync all VIP props
-## * Sync all other props
 ## This service writes state (ctx.client_has_relative_prop_has_last_tick)
 static func wync_send_extracted_data(ctx: WyncCtx):
 
-	var data_used = 0
-
-	# TODO: Allocate a LIST OF PACKETS, because we're gonna be generating all kinds of packets:
-	# * On C use a custom byte buffer, it's only use locally so no need to make it complex
+	# TODO: Allocate a LIST OF PACKETS, because we're gonna be generating all
+	# kinds of packets: * On C use a custom byte buffer, it's only use locally
+	# so no need to make it complex
 	# 1. WyncPktSnap (each varies in size...)
 	# 2. WyncPktInputs (are all the same size, but their size is (User) configurable)
 	# 3. WyncPktEventData (varies in size)
 
-	# byte buffer
-	# Array < client_id: int, List < WyncPacket > >
-	# Array < client_id: int, Array < idx: int, WyncPacket > >
-	# Array[Array[WyncPacket]]
-	var clients_packet_buffer_reliable: Array[Array] = []
-	var clients_packet_buffer_unreliable: Array[Array] = []
-	clients_packet_buffer_reliable.resize(ctx.peers.size())
-	clients_packet_buffer_unreliable.resize(ctx.peers.size())
-	for client_id: int in range(1, ctx.peers.size()):
-		clients_packet_buffer_reliable[client_id] = [] as Array[WyncPacket]
-		clients_packet_buffer_unreliable[client_id] = [] as Array[WyncPacket]
+	var data_used = 0
+
+	ctx.rela_prop_ids_for_full_snapshot.clear()
+	ctx.pending_rela_props_to_sync_to_peer.clear()
+
+	for client_id: int in range(1, ctx.max_peers):
+		ctx.clients_cached_reliable_snapshots[client_id].clear()
+		ctx.clients_cached_unreliable_snapshots[client_id].clear()
 
 	# build packet
 
 	for pair: WyncCtx.PeerEntityPair in ctx.queue_entity_pairs_to_sync:
 		var client_id = pair.peer_id
 		var entity_id = pair.entity_id
-
-		var reliable_buffer := clients_packet_buffer_reliable[client_id] as Array[WyncPacket]
-		var unreliable_buffer := clients_packet_buffer_unreliable[client_id] as Array[WyncPacket]
-		var reliable_snap := WyncPktSnap.new()
-		reliable_snap.tick = ctx.co_ticks.ticks
-		var unreliable_snap := WyncPktSnap.new()
-		unreliable_snap.tick = ctx.co_ticks.ticks
-
-		# TODO (1): Notify wync this entity was successfully updated
-		# wync_mark_entity_as_updated
-		# wync_remove_entity_from_update_queue(ctx, entity_id, client_id)
-		# TODO (2): Notify wync user has last tick
-		# client_prop_last_tick[prop_id] = co_ticks.tick
 
 		WyncThrottle._wync_remove_entity_from_sync_queue(ctx, client_id, entity_id)
 
@@ -74,93 +54,99 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 				var pkt_input := wync_prop_event_send_event_ids_to_peer (ctx, prop, prop_id)
 
 				# commit
-				var packet = WyncPacket.new()
-				packet.packet_type_id = WyncPacket.WYNC_PKT_INPUTS
-				packet.data = pkt_input
 				data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_INPUTS)
-				unreliable_buffer.append(packet)
+				var result = WyncPacketUtil.wync_wrap_packet_out(
+					ctx, client_id, WyncPacket.WYNC_PKT_INPUTS, pkt_input)
+				if result[0] == OK:
+					WyncPacketUtil.wync_try_to_queue_out_packet(
+						ctx, result[1], WyncCtx.UNRELIABLE, true)
 
 				# compile event ids
 				var event_ids := [] as Array[int] # TODO: Use a C friendly expression
 				for input: WyncPktInputs.NetTickDataDecorator in pkt_input.inputs:
 					for event_id in (input.data):
 						event_ids.append(event_id)
-						#if event_id is Array:
-							#assert(false)
 
 				# get event data
 				var pkt_event_data = wync_get_event_data_packet(ctx, client_id, event_ids)
-				if pkt_event_data.events.size() > 0:
-					# commit
-					var packet_events = WyncPacket.new()
-					packet_events.packet_type_id = WyncPacket.WYNC_PKT_EVENT_DATA
-					packet_events.data = pkt_event_data
-					reliable_buffer.append(packet_events)
-					data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_EVENT_DATA)
+				if pkt_event_data.events.size() <= 0:
+					continue
 
-				#Log.outc(ctx, "tag1 | this is my pkt_input %s" % [JsonClassConverter.class_to_json_string(pkt_input)])
-				#Log.outc(ctx, "tag1 | this is my pkt_event_data %s" % [JsonClassConverter.class_to_json_string(pkt_event_data)])
+				# commit
+				data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_EVENT_DATA)
+
+				result = WyncPacketUtil.wync_wrap_packet_out(
+					ctx, client_id, WyncPacket.WYNC_PKT_EVENT_DATA, pkt_event_data)
+				if result[0] == OK:
+					WyncPacketUtil.wync_try_to_queue_out_packet(
+						ctx, result[1], WyncCtx.RELIABLE, true)
 
 			# relative syncable receives special treatment?
 			elif prop.relative_syncable:
 				if prop.timewarpable: # NOT supported: relative_syncable + timewarpable
 					continue
-				var snap_prop := _wync_sync_relative_prop_base_only(ctx, prop, prop_id, client_id)
-				if snap_prop != null:
-					reliable_snap.snaps.append(snap_prop)
-
+				var err := _wync_sync_queue_rela_prop_fullsnap(ctx, prop_id, client_id)
+				if err == 0: 
+					# TODO: use fixed sized provided by the user
+					#     or the prop data structure size
+					data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_PROP_SNAP)
 
 			## regular declarative prop
 			else:
 
-				var snap_prop := _wync_sync_regular_prop(ctx, prop, prop_id, ctx.co_ticks.ticks)
-				if snap_prop != null:
-					unreliable_snap.snaps.append(snap_prop)
+				var snap_prop: WyncPktSnap.SnapProp = _wync_sync_regular_prop\
+					(ctx, prop, prop_id, ctx.co_ticks.ticks)
+				if snap_prop == null:
+					continue
 
-		# commit snap packet
-
-		if unreliable_snap.snaps.size() > 0:
-			var packet = WyncPacket.new()
-			packet.packet_type_id = WyncPacket.WYNC_PKT_PROP_SNAP
-			packet.data = unreliable_snap
-			unreliable_buffer.append(packet)
-			data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_PROP_SNAP)
-
-		if reliable_snap.snaps.size() > 0:
-			var packet = WyncPacket.new()
-			packet.packet_type_id = WyncPacket.WYNC_PKT_PROP_SNAP
-			packet.data = reliable_snap
-			reliable_buffer.append(packet)
-			data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_PROP_SNAP)
+				ctx.clients_cached_unreliable_snapshots[client_id].append(snap_prop)
+				data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_PROP_SNAP)
 
 		# exceeded size, stop
 
 		if (data_used >= ctx.out_packets_size_remaining_chars):
 			break
 
+
+static func _wync_queue_out_snapshots_for_delivery (ctx: WyncCtx):
+
 	# queue _out packets_ for delivery
 
 	for client_id: int in range(1, ctx.peers.size()):
-		var reliable_buffer := clients_packet_buffer_reliable[client_id] as Array[WyncPacket]
-		var unreliable_buffer := clients_packet_buffer_unreliable[client_id] as Array[WyncPacket]
 
-		for packet: WyncPacket in unreliable_buffer:
-			var packet_dup = WyncMisc.duplicate_any(packet.data)
+		var reliable_snap := WyncPktSnap.new()
+		reliable_snap.tick = ctx.co_ticks.ticks
+		var unreliable_snap := WyncPktSnap.new()
+		unreliable_snap.tick = ctx.co_ticks.ticks
 
-			var result = WyncPacketUtil.wync_wrap_packet_out(ctx, client_id, packet.packet_type_id, packet_dup)
+		if ctx.clients_cached_reliable_snapshots[client_id].size() > 0:
+			for packet: WyncPktSnap.SnapProp in ctx.clients_cached_reliable_snapshots[client_id]:
+
+				## duplicating here in gdscript to be safe
+				var packet_dup = WyncMisc.duplicate_any(packet)
+				reliable_snap.snaps.append(packet_dup)
+
+			var result = WyncPacketUtil.wync_wrap_packet_out(
+				ctx, client_id, WyncPacket.WYNC_PKT_PROP_SNAP, reliable_snap)
 			if result[0] == OK:
-				var packet_out = result[1] as WyncPacketOut
-				WyncPacketUtil.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.UNRELIABLE, true)
+				WyncPacketUtil.wync_try_to_queue_out_packet(
+					ctx, result[1] as WyncPacketOut, WyncCtx.RELIABLE, true)
 			else:
 				Log.errc(ctx, "error wrapping packet")
 
-		for packet: WyncPacket in reliable_buffer:
-			var packet_dup = WyncMisc.duplicate_any(packet.data)
+		if ctx.clients_cached_unreliable_snapshots[client_id].size() > 0:
+			for packet: WyncPktSnap.SnapProp in ctx.clients_cached_unreliable_snapshots[client_id]:
 
-			var result = WyncPacketUtil.wync_wrap_packet_out(ctx, client_id, packet.packet_type_id, packet_dup)
+				## duplicating here in gdscript to be safe
+				var packet_dup = WyncMisc.duplicate_any(packet)
+				unreliable_snap.snaps.append(packet_dup)
+
+			var result = WyncPacketUtil.wync_wrap_packet_out(
+				ctx, client_id, WyncPacket.WYNC_PKT_PROP_SNAP, unreliable_snap)
+
 			if result[0] == OK:
-				var packet_out = result[1] as WyncPacketOut
-				WyncPacketUtil.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.RELIABLE, true)
+				WyncPacketUtil.wync_try_to_queue_out_packet(
+					ctx, result[1] as WyncPacketOut, WyncCtx.UNRELIABLE, true)
 			else:
 				Log.errc(ctx, "error wrapping packet")
 
@@ -183,15 +169,14 @@ static func _wync_sync_regular_prop(_ctx: WyncCtx, prop: WyncEntityProp, prop_id
 
 			
 ## Sends to clients the latest _base state_ of a delta prop
-## Assumes recepeit, send as reliable
+## Assumes receipt, send as reliable
 ## TODO: Move to wrapper
 
-static func _wync_sync_relative_prop_base_only(
+static func _wync_sync_queue_rela_prop_fullsnap(
 	ctx: WyncCtx,
-	prop: WyncEntityProp,
 	prop_id: int,
 	client_id: int
-	) -> WyncPktSnap.SnapProp:
+	) -> int:
 
 	# FIXME: Optimization ideas:
 	# 1. (probably not) Adelantar ticks en los que no pasó nada. Es decir automaticamente
@@ -210,25 +195,39 @@ static func _wync_sync_relative_prop_base_only(
 	var latency_ticks: int = (peer_latency_info.latency_stable_ms) / (1000.0 / ctx.physic_ticks_per_second)
 
 	if (ctx.delta_base_state_tick - client_relative_props[prop_id] < (latency_ticks * 4)):
-		return null
+		return 1
 
 	Log.outc(ctx, "debugack | client_has (%s) (%s) , base_tick (%s)" % [
 		client_relative_props[prop_id], client_relative_props[prop_id] + latency_ticks, ctx.delta_base_state_tick])
-	
-	# ===========================================================
-	# Save state history per tick
-	
-	var getter = ctx.wrapper.prop_getter[prop_id]
-	var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
-	var state = getter.call(user_ctx) # getter already gives a copy
-	var prop_snap = WyncPktSnap.SnapProp.new()
-	prop_snap.prop_id = prop_id
-	prop_snap.state = state
 
-	client_relative_props[prop_id] = ctx.co_ticks.ticks
-	Log.outc(ctx, "debugdelta | client_has (%s) , base_tick (%s)" % [client_relative_props[prop_id], ctx.delta_base_state_tick])
+	# queue to sync later (+ queue for state extraction)
 
-	return prop_snap
+	var peer_prop_pair = WyncCtx.PeerPropPair.new()
+	peer_prop_pair.peer_id = client_id
+	peer_prop_pair.prop_id = prop_id
+
+	ctx.pending_rela_props_to_sync_to_peer.append(peer_prop_pair)
+	ctx.rela_prop_ids_for_full_snapshot.append(prop_id)
+
+	return 0
+
+
+static func wync_send_pending_rela_props_fullsnapshot(ctx: WyncCtx):
+
+	var prop_id: int
+
+	for pair: WyncCtx.PeerPropPair in ctx.pending_rela_props_to_sync_to_peer:
+		prop_id = pair.prop_id
+		var prop = WyncTrack.get_prop_unsafe(ctx, prop_id)
+
+		var snap_prop := _wync_sync_regular_prop(ctx, prop, prop_id, ctx.co_ticks.ticks)
+		if snap_prop != null:
+
+			ctx.clients_cached_reliable_snapshots[pair.peer_id].append(snap_prop)
+
+			ctx.client_has_relative_prop_has_last_tick[pair.peer_id][prop_id] = ctx.co_ticks.ticks
+
+			## Note: data consumed was already calculated before when queuing
 
 
 # TODO: Make a separate version only for _event_ids_ different from _inputs any_

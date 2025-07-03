@@ -84,6 +84,12 @@ var out_packets_size_remaining_chars: int
 var out_reliable_packets: Array[WyncPacketOut]
 var out_unreliable_packets: Array[WyncPacketOut]
 
+
+## temporary snapshot cache for later packet size optimization
+## Array < client_id: int, DynArr < WyncPacket > >
+var clients_cached_reliable_snapshots: Array[Array] = []
+var clients_cached_unreliable_snapshots: Array[Array] = []
+
 ## Extra structures =============================
 
 var co_ticks: CoTicks = CoTicks.new()
@@ -273,7 +279,8 @@ var last_tick_predicted: int = 0
 # markers for the current prediction cycle
 var pred_intented_first_tick: int = 0
 
-var global_entity_ids_to_not_predrict: Array[int] = []
+# user facing variable, tells the user which entities are safe to predict this tick
+var global_entity_ids_to_predict: Array[int] = []
 
 ## how many ticks before 'last_tick_received' to predict to compensate for throttling
 ## * Limited by REGULAR_PROP_CACHED_STATE_AMOUNT
@@ -317,6 +324,10 @@ var predicted_entity_ids: Array[int] = []
 class PeerEntityPair:
 	var peer_id: int = -1
 	var entity_id: int = -1
+
+class PeerPropPair:
+	var peer_id: int = -1
+	var prop_id: int = -1
 
 # Sync priorities:
 # * VIP
@@ -385,6 +396,11 @@ var entities_synced_last_time: Array[Dictionary]
 # FIFORing < PeerEntityPair[peer: int, entity: int] > [100]
 var queue_entity_pairs_to_sync: Array[PeerEntityPair]
 
+# * Used to reduce state extraction to only the props requested
+# Simple dynamic array list
+var rela_prop_ids_for_full_snapshot: Array[int]
+var pending_rela_props_to_sync_to_peer: Array[PeerPropPair]
+
 ## setup new connected peer
 ## Array <order: int, nete_peer_id: int>
 var out_peer_pending_to_setup: Array[int]
@@ -445,6 +461,9 @@ func _init() -> void:
 	clients_no_longer_sees_entities.resize(max_peers)
 	entities_synced_last_time.resize(max_peers)
 
+	clients_cached_unreliable_snapshots.resize(max_peers)
+	clients_cached_reliable_snapshots.resize(max_peers)
+
 	peer_latency_info.resize(max_peers)
 
 	for peer_i in range(max_peers):
@@ -470,6 +489,9 @@ func _init() -> void:
 		var latency_info = WyncCtx.PeerLatencyInfo.new()
 		latency_info.latency_buffer.resize(WyncCtx.LATENCY_BUFFER_SIZE)
 		peer_latency_info[peer_i] = latency_info
+
+		clients_cached_reliable_snapshots[peer_i] = [] as Array[WyncPktSnap.SnapProp]
+		clients_cached_unreliable_snapshots[peer_i] = [] as Array[WyncPktSnap.SnapProp]
 	
 	for i in range(tick_action_history_size):
 		tick_action_history.insert_at(i, {} as Dictionary)
@@ -489,6 +511,7 @@ func _init() -> void:
 
 	dummy_props = {}
 
+	## TODO: Move wrapper initialization elsewhere
 
 	wrapper_initialize(self)
 	max_lerp_factor_symmetric = 1.0

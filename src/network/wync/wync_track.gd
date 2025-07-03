@@ -180,6 +180,7 @@ static func entity_get_prop_id(ctx: WyncCtx, entity_id: int, prop_name_id: Strin
 
 
 ## @returns int. entity_id; -1 if not found
+## TODO: have a structure for direct access instead of searching
 static func prop_get_entity(ctx: WyncCtx, prop_id: int) -> int:
 	for entity_id: int in ctx.tracked_entities.keys():
 		if ctx.entity_has_props[entity_id].has(prop_id):

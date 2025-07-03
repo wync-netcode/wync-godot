@@ -29,7 +29,7 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 		prop_save_confirmed_state(ctx, snap_prop.prop_id, data.tick, snap_prop.state)
 
 		# update entity last received
-		# TODO: assume snap props always include all snaps for an entity
+		# TODO: assume snap props always include all snaps for an entity ???
 		if WyncXtrap.prop_is_predicted(ctx, snap_prop.prop_id):
 			var entity_id = WyncTrack.prop_get_entity(ctx, snap_prop.prop_id)
 			ctx.entity_last_received_tick[entity_id] = WyncXtrapInternal.wync_xtrap_entity_get_last_received_tick_from_pred_props(ctx, entity_id)
@@ -153,11 +153,20 @@ static func wync_client_handle_pkt_inputs(ctx: WyncCtx, data: Variant) -> int:
 		if copy == null:
 			Log.out("WARNING: input data can't be duplicated %s" % [input.data], Log.TAG_INPUT_RECEIVE)
 		var to_insert = copy if copy != null else input.data
+
+		prop.last_ticks_received.push(input.tick)
 		
 		WyncEntityProp.saved_state_insert(ctx, prop, input.tick, to_insert)
 		max_tick = max(max_tick, input.tick)
 
+	prop.last_ticks_received.sort()
+
 	wync_client_update_last_tick_received(ctx, max_tick)
+
+	# update entity last received
+	if WyncXtrap.prop_is_predicted(ctx, data.prop_id):
+		var entity_id = WyncTrack.prop_get_entity(ctx, data.prop_id)
+		ctx.entity_last_received_tick[entity_id] = WyncXtrapInternal.wync_xtrap_entity_get_last_received_tick_from_pred_props(ctx, entity_id)
 
 	return OK
 

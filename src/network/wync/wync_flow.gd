@@ -9,27 +9,32 @@ class_name WyncFlow
 
 ## Calls all the systems that produce packets to send whilst respecting the data limit
 
-static func wync_system_gather_packets(ctx: WyncCtx):
-
+static func _internal_wync_system_gather_packets_start(ctx: WyncCtx):
 	if ctx.is_client:
 		if not ctx.connected:
-			WyncJoin.service_wync_try_to_connect(ctx)                     # reliable, commited
+			WyncJoin.service_wync_try_to_connect(ctx)  # reliable, commited
 		else:
-			WyncClock.wync_client_ask_for_clock(ctx)      # unreliable
+			WyncClock.wync_client_ask_for_clock(ctx)   # unreliable
 			WyncDeltaSyncUtilsInternal.wync_system_client_send_delta_prop_acks(ctx) # unreliable
-			WyncStateSend.wync_client_send_inputs(ctx)         # unreliable
-			WyncEventUtils.wync_send_event_data(ctx)         # reliable, commited
+			WyncStateSend.wync_client_send_inputs(ctx) # unreliable
+			WyncEventUtils.wync_send_event_data(ctx)   # reliable, commited
 
 	else:
 		WyncSpawn.wync_system_send_entities_to_despawn(ctx) # reliable, commited
 		WyncSpawn.wync_system_send_entities_to_spawn(ctx)   # reliable, commited
-		WyncInput.wync_system_sync_client_ownership(ctx)       # reliable, commited
+		WyncInput.wync_system_sync_client_ownership(ctx)    # reliable, commited
 
 		WyncThrottle.wync_system_fill_entity_sync_queue(ctx)
 		WyncThrottle.wync_compute_entity_sync_order(ctx)
 		WyncStateSend.wync_send_extracted_data(ctx) # both reliable/unreliable
-
 	WyncStats.wync_system_calculate_data_per_tick(ctx)
+
+
+static func _internal_wync_system_gather_packets_end(ctx: WyncCtx):
+	# pending delta props fullsnapshots should be extracted by now
+	WyncStateSend.wync_send_pending_rela_props_fullsnapshot(ctx)
+	WyncStateSend._wync_queue_out_snapshots_for_delivery(ctx) # both reliable/unreliable
+
 
 
 static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_id: int) -> int:
@@ -188,3 +193,10 @@ static func wync_client_tick_end(ctx: WyncCtx):
 	WyncStateStore.wync_service_cleanup_dummy_props(ctx)
 
 	WyncLerp.wync_lerp_precompute(ctx)
+
+
+static func wync_system_gather_packets(ctx: WyncCtx):
+	_internal_wync_system_gather_packets_start(ctx)
+	if !ctx.is_client:
+		WyncWrapper.extract_rela_prop_fullsnapshot_to_tick(ctx, ctx.co_ticks.ticks)
+	_internal_wync_system_gather_packets_end(ctx)

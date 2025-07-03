@@ -195,6 +195,33 @@ static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
 		WyncEntityProp.saved_state_insert(ctx, prop_aux, save_on_tick, getter.call(user_ctx))
 
 
+static func extract_rela_prop_fullsnapshot_to_tick (
+	ctx: WyncCtx, save_on_tick: int = -1):
+
+	var prop: WyncEntityProp = null
+	var getter: Variant = null # Callable*
+	var user_ctx: Variant = null
+
+	ctx.rela_prop_ids_for_full_snapshot.sort()
+	var last_prop_id = -1
+
+	for prop_id: int in ctx.rela_prop_ids_for_full_snapshot:
+
+		# sorted list might contain duplicated entries
+		if prop_id == last_prop_id:
+			continue
+		last_prop_id = prop_id
+
+		prop = WyncTrack.get_prop_unsafe(ctx, prop_id)
+		getter = ctx.wrapper.prop_getter[prop_id]
+		user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
+		
+		WyncEntityProp.saved_state_insert(ctx, prop, save_on_tick, getter.call(user_ctx))
+
+		Log.outc(ctx, "debugdelta, extracting fullsnap for prop(%s) %s" %
+		[ prop_id, prop.name_id ])
+
+
 # Part of module 'wync_input'. Used in 'wync_flow'
 static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 		

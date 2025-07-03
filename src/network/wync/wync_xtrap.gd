@@ -48,9 +48,9 @@ static func wync_xtrap_preparation(ctx: WyncCtx) -> int:
 # These props need their state reset to that tick. Why here this ???
 # * props that are predicted and already have a confirmed state for this tick
 
-# Returns a list of ids of entitys TO PREDICT THIS TICK
-static func wync_xtrap_regular_entities_to_predict(ctx: WyncCtx, tick: int) -> Array[int]:
-	var entity_ids := [] as Array[int]
+# Composes a list of ids of entities TO PREDICT THIS TICK
+static func wync_xtrap_regular_entities_to_predict(ctx: WyncCtx, tick: int):
+	ctx.global_entity_ids_to_predict.clear()
 
 	var entity_last_tick: int
 	var entity_last_predicted_tick: int
@@ -64,58 +64,28 @@ static func wync_xtrap_regular_entities_to_predict(ctx: WyncCtx, tick: int) -> A
 		if entity_last_tick == -1:
 			continue
 
-		# WARNING: Do not assume that we have all -10 past tick just before 'entity_last_tick'
-
 		# already have confirmed state + it's regular prop
 		elif entity_last_tick >= tick:
 			continue
 
 		entity_last_predicted_tick = ctx.entity_last_predicted_tick[entity_id]
 
+		# already predicted
 		if tick <= entity_last_predicted_tick:
 			continue
 
-		# else, assume this entity will be predicted
-		# Note: Maybe the user could report this
+		# else, aprove prediction and assume this tick as predicted
 		if tick > entity_last_predicted_tick:
 			ctx.entity_last_predicted_tick[entity_id] = tick
 
-		entity_ids.append(entity_id)
-
-
-	return entity_ids
-
-
-static func wync_xtrap_relative_entities_to_not_predict(ctx: WyncCtx, tick: int) -> Array[int]:
-	var entity_ids := [] as Array[int]
-
-	var entity_last_predicted_tick: int
-
-	# iterate each entity and determine if they should be predicted
-	for entity_id in ctx.predicted_entity_ids:
-
-		entity_last_predicted_tick = ctx.entity_last_predicted_tick[entity_id]
-
-		#if entity_id == 505:
-			#Log.outc(ctx, "debugrela, flagD tick %s entity %s last %s" % [tick, entity_id, entity_last_predicted_tick])
-		if tick <= entity_last_predicted_tick:
-			entity_ids.append(entity_id)
-			continue
-
-		# else, assume this entity will be predicted
-		# Note: Maybe the user could report this
-		if tick > entity_last_predicted_tick:
-			ctx.entity_last_predicted_tick[entity_id] = tick
-
-	return entity_ids
-
+		ctx.global_entity_ids_to_predict.append(entity_id)
 
 
 static func wync_xtrap_termination(ctx: WyncCtx):
 	WyncDeltaSyncUtilsInternal.auxiliar_props_clear_current_delta_events(ctx)
 	WyncDeltaSyncUtils.predicted_event_props_clear_events(ctx)
 	ctx.currently_on_predicted_tick = false
-	ctx.global_entity_ids_to_not_predrict.clear()
+	ctx.global_entity_ids_to_predict.clear()
 
 
 # NOTE: rename to prop_enable_prediction

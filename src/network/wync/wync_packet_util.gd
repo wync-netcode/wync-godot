@@ -30,6 +30,7 @@ static func wync_wrap_packet_out(ctx: WyncCtx, to_wync_peer_id: int, packet_type
 	return [OK, wync_pkt_out]
 
 
+## FIXME: do not return an array, return a struct
 ## In case we can't queue a packet stop generatin' packets
 ## @argument dont_occuppy: bool. Used for inserting packets which size was already reserved
 ## @returns int: Error

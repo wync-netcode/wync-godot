@@ -507,7 +507,7 @@ static func grid_block_break(gs: Plat.GameState, block_pos: Vector2i):
 
 	# allowed to predict this entity?
 	# TODO: make a wrapper maybe?
-	if gs.wctx.is_client && gs.wctx.global_entity_ids_to_not_predrict.has(chunk.actor_id):
+	if gs.wctx.is_client && !gs.wctx.global_entity_ids_to_predict.has(chunk.actor_id):
 		Log.outc(gs.wctx, "debugrela DENIED delta change, prop(%s)" % [blocks_prop_id])
 		return
 
