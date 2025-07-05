@@ -207,7 +207,8 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 
 			var delta_event_list = WyncEntityProp.saved_state_get(aux_prop, tick)
 			if delta_event_list is not Array[int]:
-				Log.errc(ctx, "WyncStateSet | delta sync | we don't have an input for this tick %s" % [tick], Log.TAG_LATEST_VALUE)
+				# FIXME: document this
+				#Log.errc(ctx, "WyncStateSet | delta sync | we don't have an input for this tick %s" % [tick], Log.TAG_LATEST_VALUE)
 				break
 
 			# before applying any events:
@@ -275,8 +276,8 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 
 			applied_events_until = tick
 			delta_props_last_tick[prop_id] = applied_events_until
-			if prop_id == 16:
-				Log.outc(ctx, "debugrela,,, updated last canonic tick to %s" % [tick])
+			#if prop_id == 16:
+				#Log.outc(ctx, "debugrela,,, updated last canonic tick to %s" % [tick])
 
 			# Note: this should work but it feels like a workaround. Question: when can
 			# this variable be modified?
