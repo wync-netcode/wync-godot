@@ -529,7 +529,7 @@ static func extrapolate(gs: Plat.GameState, delta: float):
 				if prop_position:
 					var getter = ctx.wrapper.prop_getter[prop_position]
 					var user_ctx = ctx.wrapper.prop_user_ctx[prop_position]
-					PlatPublic.spawn_trail(gs, getter.call(user_ctx), progress, 1)
+					PlatPublic.spawn_box_trail(gs, getter.call(user_ctx), progress, 1)
 
 
 
@@ -635,8 +635,8 @@ static func debug_draw_confirmed_interpolated_states(gs: Plat.GameState):
 
 			# create debug hulls
 
-			PlatPublic.spawn_trail(gs, left_value + Vector2(0,-15), 0.5, 0)
-			PlatPublic.spawn_trail(gs, right_value + Vector2(0,-15), 0.0, 0)
+			PlatPublic.spawn_box_trail(gs, left_value + Vector2(0,-15), 0.5, 0)
+			PlatPublic.spawn_box_trail(gs, right_value + Vector2(0,-15), 0.0, 0)
 			#if last_value is Vector2: PlatPublic.spawn_trail(gs, last_value, 0.4, 0)
 
 
@@ -653,5 +653,5 @@ static func debug_draw_confirmed_states(gs: Plat.GameState, prop_id: int):
 	for i in range(prop.saved_states.size):
 		var state = prop.saved_states.get_relative(-i)
 		if state is Vector2:
-			PlatPublic.spawn_trail(gs, state, (float(i) / prop.saved_states.size) / 4.0, 0)
+			PlatPublic.spawn_box_trail(gs, state, (float(i) / prop.saved_states.size) / 4.0, 0)
 			#Log.outc(gs.wctx, "debtrail, got state %s" % state)

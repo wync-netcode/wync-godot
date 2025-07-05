@@ -74,6 +74,13 @@ class Trail:
 	var tick_duration: int
 
 
+class RayTrail:
+	var from: Vector2
+	var to: Vector2
+	var hue: float # [0.0 - 1.0]
+	var tick_duration: int
+
+
 class Block:
 	var type: int
 
@@ -123,7 +130,8 @@ class GameState:
 	var balls: Array[Ball]     # Array[Ball*]
 	var players: Array[Player] # Array[Player*]
 	var rockets: Array[Rocket] # Array[Rocket*]
-	var trails: Array[Trail]   # List[Trail]
+	var box_trails: Array[Trail]   # List[Trail]
+	var ray_trails: Array[RayTrail]   # List[Trail]
 	var actors_added_or_deleted: bool
 	var i_control_player_id: int # players actor id
 	var camera_offset: Vector2

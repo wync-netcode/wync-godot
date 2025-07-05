@@ -154,21 +154,38 @@ static func spawn_rocket(gs: Plat.GameState, origin: Vector2, direction: Vector2
 	return actor_id
 
 
-static func spawn_trail(gs: Plat.GameState, origin: Vector2, hue: float, tick_duration: int):
+static func spawn_box_trail(gs: Plat.GameState, origin: Vector2, hue: float, tick_duration: int):
 	var trail = Plat.Trail.new()
 	trail.position = origin
 	trail.hue = hue
 	trail.tick_duration = tick_duration
-	gs.trails.append(trail)
+	gs.box_trails.append(trail)
+
+
+static func spawn_ray_trail(gs: Plat.GameState, from: Vector2, to: Vector2, hue: float, tick_duration: int):
+	var ray = Plat.RayTrail.new()
+	ray.from = from
+	ray.to = to
+	ray.hue = hue
+	ray.tick_duration = tick_duration
+	gs.ray_trails.append(ray)
 
 
 static func system_trail_lives(gs: Plat.GameState):
-	for trail_id: int in range(gs.trails.size()-1, -1, -1):
-		var trail := gs.trails[trail_id]
+	for trail_id: int in range(gs.box_trails.size()-1, -1, -1):
+		var trail := gs.box_trails[trail_id]
 		if trail == null:
-			gs.trails.remove_at(trail_id)
+			gs.box_trails.remove_at(trail_id)
 		if trail.tick_duration <= 0:
-			gs.trails.remove_at(trail_id)
+			gs.box_trails.remove_at(trail_id)
+		trail.tick_duration -= 1
+
+	for trail_id: int in range(gs.ray_trails.size()-1, -1, -1):
+		var trail := gs.ray_trails[trail_id]
+		if trail == null:
+			gs.ray_trails.remove_at(trail_id)
+		if trail.tick_duration <= 0:
+			gs.ray_trails.remove_at(trail_id)
 		trail.tick_duration -= 1
 
 

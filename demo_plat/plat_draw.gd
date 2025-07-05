@@ -7,7 +7,8 @@ static func draw_game(canvas: Node2D, gs: Plat.GameState):
 		pass
 	else:
 		draw_block_grid(canvas, gs, gs.camera_offset + Vector2(0, 300))
-	draw_trails(canvas, gs, gs.camera_offset)
+	draw_box_trails(canvas, gs, gs.camera_offset)
+	draw_ray_trails(canvas, gs, gs.camera_offset)
 	draw_balls(canvas, gs, gs.camera_offset)
 	draw_players(canvas, gs, gs.camera_offset, not gs.net.is_client)
 	draw_rockets(canvas, gs, gs.camera_offset)
@@ -100,12 +101,19 @@ static func draw_rockets(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
 		canvas.draw_rect(rect, Color.BLACK, false, -1, true)
 
 
-static func draw_trails(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
+static func draw_box_trails(canvas: Node2D, gs: Plat.GameState, offset: Vector2):
 	var trail_rect = Rect2(Vector2.ZERO, Vector2(round(Plat.BLOCK_LENGTH_PIXELS * 0.66), Plat.BLOCK_LENGTH_PIXELS * 1.5))
 	trail_rect.size.y = 10
 	var color = Color.RED
-	for trail: Plat.Trail in gs.trails:
-		trail_rect.position = Vector2(trail.position.x, -trail.position.y -trail_rect.size.y) + Vector2(offset)
+	for trail: Plat.Trail in gs.box_trails:
+		trail_rect.position = Vector2(trail.position.x, -trail.position.y -trail_rect.size.y) + offset
 		trail_rect.position.y += 10
 		color.h = trail.hue
 		canvas.draw_rect(trail_rect, color, false)
+
+
+static func draw_ray_trails(canvas: Node2D, gs: Plat.GameState, offset: Vector2):
+	var color = Color.RED
+	for trail: Plat.RayTrail in gs.ray_trails:
+		color.h = trail.hue
+		canvas.draw_line(Vector2(trail.from.x, -trail.from.y) + offset, Vector2(trail.to.x, -trail.to.y) + offset, color, -1, true)

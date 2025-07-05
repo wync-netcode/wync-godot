@@ -28,6 +28,7 @@ func _physics_process(delta: float) -> void:
 
 	#PlatPublic.player_input_additive(gs, gs.players[0], self)
 	PlatPublic.system_ball_movement(gs)
+	PlatPublic.system_trail_lives(gs)
 	PlatPublic.system_player_movement(gs, Plat.LOGIC_DELTA_MS, false, [])
 	PlatPublic.system_rocket_movement(gs, false)
 	PlatPublic.system_rocket_time_to_live(gs, Plat.LOGIC_DELTA_MS)
