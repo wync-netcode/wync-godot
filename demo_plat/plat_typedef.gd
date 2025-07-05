@@ -84,6 +84,16 @@ class RayTrail:
 	var tick_duration: int
 
 
+class Particle:
+	var pos: Vector2
+	var scale: float
+	var hue: float
+	var particle_amount: int
+	var rotation: float
+	var tick_duration: int
+	var tick_max_duration: int
+
+
 class Block:
 	var type: int
 
@@ -135,6 +145,7 @@ class GameState:
 	var rockets: Array[Rocket] # Array[Rocket*]
 	var box_trails: Array[Trail]   # List[Trail]
 	var ray_trails: Array[RayTrail]   # List[Trail]
+	var particles: Array[Particle]   # List[Trail]
 	var actors_added_or_deleted: bool
 	var i_control_player_id: int # players actor id
 	var camera_offset: Vector2

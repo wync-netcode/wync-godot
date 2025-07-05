@@ -67,12 +67,26 @@ static func AABB_ray_intersects(origin: Vector2, dir: Vector2, box: Rect2) -> Va
 
 ## @arg dir: must be a unit vector
 ## @returns float: >= 0 collision; -1 no collision
-static func AABB_raycast (origin: Vector2, dir: Vector2, box: Rect2) -> float:
+#static func AABB_raycast (origin: Vector2, dir: Vector2, box: Rect2) -> float:
+	#var coll_point = AABB_ray_intersects(origin, dir, box)
+	#if coll_point == null: return -1
+	#var dot_b = coll_point - origin
+	#var distance = dir.x * dot_b.x + dir.y * dot_b.y
+	#return distance
+
+
+## @arg dir: must be a unit vector
+## @returns float: >= 0 collision; -1 no collision
+## @returns Vector3:
+##     X: contact point x
+##     Y: contact point y
+##     Z: distance from origin: < 0 no collision, >= 0 collision
+static func AABB_raycast (origin: Vector2, dir: Vector2, box: Rect2) -> Vector3:
 	var coll_point = AABB_ray_intersects(origin, dir, box)
-	if coll_point == null: return -1
+	if coll_point == null: return Vector3(0, 0, -1)
 	var dot_b = coll_point - origin
 	var distance = dir.x * dot_b.x + dir.y * dot_b.y
-	return distance
+	return Vector3(coll_point.x, coll_point.y, distance)
 
 
 static func AABB_has_point (box: Rect2, point: Vector2) -> bool:

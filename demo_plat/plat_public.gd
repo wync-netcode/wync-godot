@@ -171,7 +171,21 @@ static func spawn_ray_trail(gs: Plat.GameState, from: Vector2, to: Vector2, hue:
 	gs.ray_trails.append(ray)
 
 
+static func spawn_particle(gs: Plat.GameState, pos: Vector2, scale: float, hue: float, particle_amount: int, rotation: float):
+	var particle = Plat.Particle.new()
+	particle.pos = pos
+	particle.scale = scale
+	particle.hue = hue
+	particle.particle_amount = particle_amount
+	particle.rotation = rotation
+	particle.tick_duration = 15
+	particle.tick_max_duration = particle.tick_duration
+	particle.rotation = randf()
+	gs.particles.append(particle)
+	
+
 static func system_trail_lives(gs: Plat.GameState):
+
 	for trail_id: int in range(gs.box_trails.size()-1, -1, -1):
 		var trail := gs.box_trails[trail_id]
 		if trail == null:
@@ -187,6 +201,14 @@ static func system_trail_lives(gs: Plat.GameState):
 		if trail.tick_duration <= 0:
 			gs.ray_trails.remove_at(trail_id)
 		trail.tick_duration -= 1
+
+	for id: int in range(gs.particles.size()-1, -1, -1):
+		var particle := gs.particles[id]
+		if particle == null:
+			gs.particles.remove_at(id)
+		if particle.tick_duration <= 0:
+			gs.particles.remove_at(id)
+		particle.tick_duration -= 1
 
 
 static func block_is_solid(block: Plat.Block) -> bool:
@@ -420,11 +442,12 @@ static func system_player_shoot_bullet(gs: Plat.GameState):
 			#Log.outc(gs.wctx, "debugwarp, gonna check %s" % [box])
 			spawn_ray_trail(gs, origin, origin + direction * ray_length, 0, 1)
 
-			var distance = Rect2Col.AABB_raycast(origin, direction, box)
-			if distance < 0:
+			var coll = Rect2Col.AABB_raycast(origin, direction, box)
+			if coll.z < 0:
 				continue
 
 			Log.outc(gs.wctx, "debugwarp, collided with %s" % [ball])
+			spawn_particle(gs, Vector2(coll.x, coll.y), 1, 0, 5, 0)
 
 
 static func player_input_additive(gs: Plat.GameState, player: Plat.Player, node2d: Node2D):

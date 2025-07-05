@@ -42,17 +42,20 @@ size_flags_vertical = 0
 
 [node name="debug_info3" parent="CanvasLayer/VBoxContainer" instance=ExtResource("5_mx31v")]
 layout_mode = 2
+theme_override_font_sizes/font_size = 10
 horizontal_alignment = 2
 info_to_show = 0
 
 [node name="debug_info" parent="CanvasLayer/VBoxContainer" instance=ExtResource("5_mx31v")]
 layout_mode = 2
+theme_override_font_sizes/font_size = 10
 horizontal_alignment = 2
 info_to_show = 6
 enabled = false
 
 [node name="debug_info4" parent="CanvasLayer/VBoxContainer" instance=ExtResource("5_mx31v")]
 layout_mode = 2
+theme_override_font_sizes/font_size = 10
 text = "Info Label
 Info Label
 Info Label..."
@@ -62,6 +65,7 @@ enabled = false
 
 [node name="debug_info2" parent="CanvasLayer/VBoxContainer" instance=ExtResource("5_mx31v")]
 layout_mode = 2
+theme_override_font_sizes/font_size = 10
 
 [node name="debug_info2" parent="CanvasLayer" instance=ExtResource("5_mx31v")]
 anchors_preset = 2

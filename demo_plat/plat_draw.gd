@@ -8,10 +8,11 @@ static func draw_game(canvas: Node2D, gs: Plat.GameState):
 	else:
 		draw_block_grid(canvas, gs, gs.camera_offset + Vector2(0, 300))
 	draw_box_trails(canvas, gs, gs.camera_offset)
-	draw_ray_trails(canvas, gs, gs.camera_offset)
 	draw_balls(canvas, gs, gs.camera_offset)
 	draw_players(canvas, gs, gs.camera_offset, not gs.net.is_client)
 	draw_rockets(canvas, gs, gs.camera_offset)
+	draw_ray_trails(canvas, gs, gs.camera_offset)
+	draw_particles(canvas, gs, gs.camera_offset)
 
 
 static func draw_block_grid(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
@@ -116,4 +117,28 @@ static func draw_ray_trails(canvas: Node2D, gs: Plat.GameState, offset: Vector2)
 	var color = Color.RED
 	for trail: Plat.RayTrail in gs.ray_trails:
 		color.h = trail.hue
-		canvas.draw_line(Vector2(trail.from.x, -trail.from.y) + offset, Vector2(trail.to.x, -trail.to.y) + offset, color, -1, true)
+		canvas.draw_line(Vector2(trail.from.x, -trail.from.y) + offset, Vector2(trail.to.x, -trail.to.y) + offset, color, -1, false)
+
+
+static func draw_particles(canvas: Node2D, gs: Plat.GameState, offset: Vector2):
+	var color = Color.RED
+	var size: Vector2
+
+	for particle: Plat.Particle in gs.particles:
+		color.h = particle.hue
+		size = Vector2.ONE * 3 * particle.scale
+
+		for i in range(particle.particle_amount):
+
+			var angle = (2 * PI) * (1.0 / particle.particle_amount * i + particle.rotation)
+			var pos = particle.pos - size/2 + Vector2.from_angle(angle) * (particle.tick_max_duration - particle.tick_duration)
+
+			canvas.draw_rect(Rect2(v_to_draw(pos, offset), size), color, true, -1, true)
+
+		canvas.draw_circle(v_to_draw(particle.pos, offset), 1.2, Color.BLACK, true, -1, true)
+		canvas.draw_circle(v_to_draw(particle.pos, offset), 0.8, Color.WHITE, true, -1, true)
+
+
+## Transforms vector from internal cords to godot draw cords
+static func v_to_draw(v: Vector2, offset: Vector2) -> Vector2:
+	return Vector2(v.x, -v.y) + offset
