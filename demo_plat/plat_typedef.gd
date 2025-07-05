@@ -54,18 +54,21 @@ class PlayerInput:
 	var movement_dir: Vector2
 	var aim: Vector2
 	var shoot: bool
+	var shoot_secondary: bool
 
 	func copy() -> PlayerInput:
 		var i = PlayerInput.new()
 		i.movement_dir = movement_dir
 		i.aim = aim
 		i.shoot = shoot
+		i.shoot_secondary = shoot_secondary
 		return i
 
 	func copyTo(i: PlayerInput):
 		i.movement_dir = movement_dir
 		i.aim = aim
 		i.shoot = shoot
+		i.shoot_secondary = shoot_secondary
 
 
 class Trail:

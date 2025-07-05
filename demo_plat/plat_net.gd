@@ -13,6 +13,8 @@ static func initialize_net_state(gs: Plat.GameState, is_client: bool):
 		gs.net.client.state = Plat.Client.STATE.DISCONNECTED
 
 		# DEBUG cases
+		# latency, latency_std_dev, loss%, duplicate%
+
 		#Loopback.setup_io_peer(gs.net.io_peer, 200, 100, 70, 0)
 		#Loopback.setup_io_peer(gs.net.io_peer, 200, 200, 50, 100)
 		#Loopback.setup_io_peer(gs.net.io_peer, 200, 100, 50, 0)
@@ -24,10 +26,10 @@ static func initialize_net_state(gs: Plat.GameState, is_client: bool):
 		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 5, 0)
 		#Loopback.setup_io_peer(gs.net.io_peer, 1, 0, 0, 0)
 
-		Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 0, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 0, 0)
 		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 0, 0)
 		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 0, 100)
-		#Loopback.setup_io_peer(gs.net.io_peer, 200, 30, 10, 10)
+		Loopback.setup_io_peer(gs.net.io_peer, 200, 30, 10, 10)
 
 	else:
 		gs.net.server = Plat.Server.new()

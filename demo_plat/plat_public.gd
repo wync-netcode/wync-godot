@@ -397,6 +397,35 @@ static func system_player_shoot_rocket(gs: Plat.GameState):
 			WyncThrottle.wync_entity_set_spawn_data(gs.wctx, actor_id, ball_spawn_data, 20)
 
 
+static func system_player_shoot_bullet(gs: Plat.GameState):
+	for player: Plat.Player in gs.players:
+		if player == null:
+			continue
+		if player.input.shoot_secondary == false:
+			continue
+
+		# player center
+		var origin = player.position + Vector2(player.size.x, player.size.y) / 2
+		var direction = origin.direction_to(player.input.aim)
+		var ray_length = 400
+		var box = Rect2()
+
+		for ball: Plat.Ball in gs.balls:
+			if ball == null:
+				continue
+			box.position = ball.position
+			box.size = ball.size
+
+			#Log.outc(gs.wctx, "debugwarp, gonna check %s" % [box])
+			spawn_ray_trail(gs, origin, origin + direction * ray_length, 0, 1)
+
+			var distance = Rect2Col.AABB_raycast(origin, direction, box)
+			if distance < 0:
+				continue
+
+			Log.outc(gs.wctx, "debugwarp, collided with %s" % [ball])
+
+
 static func player_input_additive(gs: Plat.GameState, player: Plat.Player, node2d: Node2D):
 	player.input.movement_dir = Vector2(
 		int(Input.is_action_pressed("p1_right")) - int(Input.is_action_pressed("p1_left")),
@@ -404,11 +433,13 @@ static func player_input_additive(gs: Plat.GameState, player: Plat.Player, node2
 	)
 	#player.input.movement_dir = Vector2(signf(sin(Time.get_ticks_msec() / 100.0)), -1)
 	player.input.shoot = player.input.shoot || Input.is_action_pressed("p1_mouse1")
+	player.input.shoot_secondary = player.input.shoot_secondary || Input.is_action_pressed("p1_mouse2")
 	player.input.aim = PlatUtils.SCREEN_CORD_TO_GRID_CORD(gs, node2d.get_global_mouse_position())
 
 
-static func player_input_reset(gs: Plat.GameState, player: Plat.Player):
+static func player_input_reset(_gs: Plat.GameState, player: Plat.Player):
 	player.input.shoot = false
+	player.input.shoot_secondary = false
 
 
 static func system_player_grid_events(gs: Plat.GameState, player: Plat.Player):

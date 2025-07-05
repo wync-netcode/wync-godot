@@ -48,14 +48,12 @@ static func generate_world(gs: Plat.GameState):
 			for y in range(Plat.CHUNK_HEIGHT_BLOCKS):
 				var block = chunk.blocks[i][y] as Plat.Block
 
-				"""
-				var sinus_value = sin(x / 2.0) * 1.2 + 5
+				var sinus_value = sin(x / 2.0) * 1.2 + 3
 				print(x, " ", sin(x), " ", sinus_value)
 				if y < sinus_value:
 					block.type = Plat.BLOCK_TYPE_DIRT
 				else:
 					block.type = Plat.BLOCK_TYPE_AIR
-				"""
 
 				if y <= 0:
 					block.type = Plat.BLOCK_TYPE_IRON
@@ -72,11 +70,11 @@ static func generate_world(gs: Plat.GameState):
 		block.type = Plat.BLOCK_TYPE_GOLD
 
 	# ceiling
-	for i in range(Plat.CHUNK_AMOUNT):
-		chunk = gs.chunks[i]
-		for j in range(Plat.CHUNK_WIDTH_BLOCKS):
-			var block = chunk.blocks[j][Plat.CHUNK_HEIGHT_BLOCKS-1] as Plat.Block
-			block.type = Plat.BLOCK_TYPE_GOLD
+	#for i in range(Plat.CHUNK_AMOUNT):
+		#chunk = gs.chunks[i]
+		#for j in range(Plat.CHUNK_WIDTH_BLOCKS):
+			#var block = chunk.blocks[j][Plat.CHUNK_HEIGHT_BLOCKS-1] as Plat.Block
+			#block.type = Plat.BLOCK_TYPE_GOLD
 
 
 

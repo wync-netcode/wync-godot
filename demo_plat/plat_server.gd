@@ -33,6 +33,7 @@ func _physics_process(delta: float) -> void:
 	PlatPublic.system_rocket_movement(gs, false)
 	PlatPublic.system_rocket_time_to_live(gs, Plat.LOGIC_DELTA_MS)
 	PlatPublic.system_player_shoot_rocket(gs)
+	PlatPublic.system_player_shoot_bullet(gs)
 	PlatPublic.system_server_events(gs)
 	#PlatPublic.player_input_reset(gs, gs.players[0], self)
 
