@@ -193,17 +193,18 @@ static func block_is_solid(block: Plat.Block) -> bool:
 	return block.type != Plat.BLOCK_TYPE_AIR
 
 
-static func system_ball_movement(gs: Plat.GameState):
+static func system_ball_movement(gs: Plat.GameState, delta: float):
+	var curr_tick = Engine.get_physics_frames()
 	for ball: Plat.Ball in gs.balls:
 		if ball == null:
 			continue
 		# velocity
-		ball.velocity.y -= Plat.BALL_GRAVITY
+		ball.velocity.y -= Plat.BALL_GRAVITY * delta
 		#ball.velocity.x = min(Plat.BALL_MAX_SPEED, abs(ball.velocity.x)) * sign(ball.velocity.x)
 		#ball.velocity.y = min(Plat.BALL_MAX_SPEED, abs(ball.velocity.y)) * sign(ball.velocity.y)
-		#var new_pos = ball.position + ball.velocity
+		#var new_pos = ball.position + Vector2(ball.velocity.x, ball.velocity.y) * delta
 		#var new_pos = ball.position + Vector2(ball.velocity.x, 0)
-		var new_pos = ball.position + Vector2(ball.velocity.x, 3*sin(Time.get_ticks_msec()/120.0))
+		var new_pos = ball.position + Vector2(ball.velocity.x, 100*sin(curr_tick/15.0)) * delta
 
 		# collision
 		var collision_horizontal = Rect2Col.rect_collides_with_tile_map(
@@ -231,7 +232,7 @@ static func system_ball_movement(gs: Plat.GameState):
 		else:
 			ball.position.y = new_pos.y
 
-		if ball.position.x > 1500: ball.position.x = 300
+		if ball.position.x > 800: ball.position.x = 300
 
 
 static func system_player_movement(gs: Plat.GameState, delta: float, filter: bool, to_predict_entity_ids: Array[int]):
