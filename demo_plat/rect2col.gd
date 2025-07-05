@@ -1,5 +1,5 @@
 extends Node
-class_name Rect2Col
+class_name Rect2Col # rename to plat_physics.gd?
 
 
 static func rect_collides_with_tile_map(
@@ -50,3 +50,32 @@ static func rect_collides_with_tile_map(
 				return true
 						
 	return false
+
+
+## Note: No inside collisions, for that check point in AABB function
+## @returns: Vector2 if collided, null if not collided
+static func AABB_ray_intersects(origin: Vector2, dir: Vector2, box: Rect2) -> Variant:
+	if origin == dir: return null
+	var x_axis = box.position.x - box.size.x/2 * (1 if dir.x > 0 else -1)
+	var y_axis = box.position.y - box.size.y/2 * (1 if dir.y > 0 else -1)
+	var m      = INF      if dir.x == 0 else dir.y / dir.x
+	var b      = 0.0      if dir.x == 0 else origin.y - m * origin.x
+	var x_cast = origin.x if dir.x == 0 else (y_axis - b) / m
+	var y_cast = m * x_axis + b
+	return Vector2(x_axis, y_cast) if (y_cast >= box.position.y - box.size.y/2 && y_cast <= box.position.y + box.size.y/2)  else Vector2(x_cast, y_axis) if (x_cast >= box.position.x - box.size.x/2 && x_cast <= box.position.x + box.size.x/2) else null
+
+
+## @arg dir: must be a unit vector
+## @returns float: >= 0 collision; -1 no collision
+static func AABB_raycast (origin: Vector2, dir: Vector2, box: Rect2) -> float:
+	var coll_point = AABB_ray_intersects(origin, dir, box)
+	if coll_point == null: return -1
+	var dot_b = coll_point - origin
+	var distance = dir.x * dot_b.x + dir.y * dot_b.y
+	return distance
+
+
+static func AABB_has_point (box: Rect2, point: Vector2) -> bool:
+	point += box.size/2
+	return point.x >= box.position.x && point.x <= box.position.x + box.size.x &&\
+		point.y >= box.position.y && point.y <= box.position.y + box.size.y
