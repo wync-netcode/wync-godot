@@ -85,14 +85,14 @@ static func despawn_actor(gs: Plat.GameState, actor_id: int):
 
 
 ## @returns int. actor_id or -1
-static func spawn_ball_server(gs: Plat.GameState, origin: Vector2) -> int:
+static func spawn_ball_server(gs: Plat.GameState, origin: Vector2, behaviour: int) -> int:
 	var actor_id = actor_find_available_id(gs)
 	gs.actors_added_or_deleted = true
-	return spawn_ball(gs, origin, actor_id)
+	return spawn_ball(gs, origin, actor_id, behaviour)
 
 
 ## @returns int. actor_id or -1
-static func spawn_ball(gs: Plat.GameState, origin: Vector2, actor_id: int) -> int:
+static func spawn_ball(gs: Plat.GameState, origin: Vector2, actor_id: int, behaviour: int) -> int:
 	var ball_id = ball_find_available_id(gs)
 	if actor_id == -1 || ball_id == -1:
 		return -1
@@ -102,6 +102,7 @@ static func spawn_ball(gs: Plat.GameState, origin: Vector2, actor_id: int) -> in
 	ball.position = origin
 	ball.size = Vector2(round(Plat.BLOCK_LENGTH_PIXELS * 0.66), Plat.BLOCK_LENGTH_PIXELS * 1.5)
 	ball.velocity.x = Plat.BALL_MAX_SPEED
+	ball.behaviour = behaviour
 	gs.balls[ball_id] = ball
 	spawn_actor(gs, actor_id, Plat.ACTOR_TYPE_BALL, ball_id)
 	return actor_id
@@ -220,13 +221,27 @@ static func system_ball_movement(gs: Plat.GameState, delta: float):
 	for ball: Plat.Ball in gs.balls:
 		if ball == null:
 			continue
+
+		var new_pos: Vector2
+
+		match ball.behaviour:
+			Plat.BALL_BEHAVIOUR_STATIC:
+				continue
+			Plat.BALL_BEHAVIOUR_SINE:
+				new_pos = ball.position + Vector2(ball.velocity.x, 100*sin(curr_tick/15.0)) * delta
+				pass
+			Plat.BALL_BEHAVIOUR_BUNNY:
+				ball.velocity.y -= Plat.BALL_GRAVITY * delta
+				new_pos = ball.position + Vector2(ball.velocity.x, 0)
+				pass
+
 		# velocity
-		ball.velocity.y -= Plat.BALL_GRAVITY * delta
+		#ball.velocity.y -= Plat.BALL_GRAVITY * delta
 		#ball.velocity.x = min(Plat.BALL_MAX_SPEED, abs(ball.velocity.x)) * sign(ball.velocity.x)
 		#ball.velocity.y = min(Plat.BALL_MAX_SPEED, abs(ball.velocity.y)) * sign(ball.velocity.y)
 		#var new_pos = ball.position + Vector2(ball.velocity.x, ball.velocity.y) * delta
 		#var new_pos = ball.position + Vector2(ball.velocity.x, 0)
-		var new_pos = ball.position + Vector2(ball.velocity.x, 100*sin(curr_tick/15.0)) * delta
+		#var new_pos = ball.position + Vector2(ball.velocity.x, 100*sin(curr_tick/15.0)) * delta
 
 		# collision
 		var collision_horizontal = Rect2Col.rect_collides_with_tile_map(

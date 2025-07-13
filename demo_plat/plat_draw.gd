@@ -67,7 +67,7 @@ static func draw_balls(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
 	for ball: Plat.Ball in gs.balls:
 		if ball == null:
 			continue
-		ball_rect = Rect2(Vector2(ball.position.x, -ball.position.y -ball.size.y) + Vector2(offset), ball.size)
+		ball_rect = Rect2(v_to_draw(ball.position + Vector2(-ball.size.x/2, ball.size.y/2), offset), ball.size)
 		canvas.draw_rect(ball_rect, color, true, -1, true)
 		ball_rect = Rect2(ball_rect.position.x +1, ball_rect.position.y +1, ball_rect.size.x -2, ball_rect.size.y -2)
 		canvas.draw_rect(ball_rect, Color.BLACK, true, -1, true)

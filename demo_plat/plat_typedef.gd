@@ -50,6 +50,13 @@ enum {
 }
 
 
+enum {
+	BALL_BEHAVIOUR_STATIC,
+	BALL_BEHAVIOUR_BUNNY,
+	BALL_BEHAVIOUR_SINE,
+}
+
+
 class PlayerInput:
 	var movement_dir: Vector2
 	var aim: Vector2
@@ -124,6 +131,7 @@ class Ball:
 	var size: Vector2
 	var position: Vector2
 	var velocity: Vector2
+	var behaviour: int
 
 
 class Rocket:

@@ -48,7 +48,7 @@ static func setup_connect_client(gs: Plat.GameState):
 		assert(wync_peer_id != -1)
 
 		# spawn some entity
-		var actor_id = PlatPublic.spawn_player_server(gs, PlatUtils.GRID_CORD(5, 5))
+		var actor_id = PlatPublic.spawn_player_server(gs, PlatUtils.GRID_CORD(17, 6))
 
 		# setup actor with wync
 		setup_sync_for_player_actor(gs, actor_id)
@@ -370,7 +370,7 @@ static func client_spawn_actor(gs: Plat.GameState, actor_type: int, actor_id: in
 
 		Plat.ACTOR_TYPE_BALL:
 			# spawn some entity
-			var new_actor_id = PlatPublic.spawn_ball(gs, PlatUtils.GRID_CORD(5, 10), actor_id)
+			var new_actor_id = PlatPublic.spawn_ball(gs, PlatUtils.GRID_CORD(5, 10), actor_id, Plat.BALL_BEHAVIOUR_STATIC)
 			assert(new_actor_id != -1)
 			assert(new_actor_id == actor_id)
 
