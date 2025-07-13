@@ -53,7 +53,7 @@ static func draw_block_grid(canvas: Node2D, gs: Plat.GameState, offset: Vector2i
 				# tile
 				block_rect = Rect2(
 					x * Plat.BLOCK_LENGTH_PIXELS + x_offset,
-					(-j) * Plat.BLOCK_LENGTH_PIXELS + y_offset,
+					(-j-1) * Plat.BLOCK_LENGTH_PIXELS + y_offset,
 					Plat.BLOCK_LENGTH_PIXELS,
 					Plat.BLOCK_LENGTH_PIXELS
 				)
@@ -78,13 +78,13 @@ static func draw_balls(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
 static func draw_players(canvas: Node2D, gs: Plat.GameState, offset: Vector2i, real_pos: bool):
 	var player_rect: Rect2
 	var color = Color.PINK
+	var draw_pos: Vector2
 	for player: Plat.Player in gs.players:
 		if player == null:
 			continue
-		if real_pos:
-			player_rect = Rect2(Vector2(player.position.x, -player.position.y -player.size.y) + Vector2(offset), player.size)
-		else:
-			player_rect = Rect2(Vector2(player.visual_position.x, -player.visual_position.y -player.size.y) + Vector2(offset), player.size)
+		draw_pos = player.position if real_pos else player.visual_position
+
+		player_rect = Rect2(v_to_draw(draw_pos +Vector2(-player.size.x/2, player.size.y/2), offset), player.size)
 		canvas.draw_rect(player_rect, color, true, -1, true)
 		player_rect = Rect2(player_rect.position.x +1, player_rect.position.y +1, player_rect.size.x -2, player_rect.size.y -2)
 		canvas.draw_rect(player_rect, Color.BLACK, true, -1, true)
@@ -94,11 +94,12 @@ static func draw_players(canvas: Node2D, gs: Plat.GameState, offset: Vector2i, r
 
 static func draw_rockets(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
 	var rect: Rect2
+	var color = Color.GOLD if !gs.net.is_client else Color.LIGHT_YELLOW
 	for rocket: Plat.Rocket in gs.rockets:
 		if rocket == null:
 			continue
-		rect = Rect2(Vector2(rocket.position.x, -rocket.position.y -rocket.size.y) + Vector2(offset), rocket.size)
-		canvas.draw_rect(rect, Color.GOLD, true, -1, true)
+		rect = Rect2(v_to_draw(rocket.position + Vector2(-rocket.size.x/2, rocket.size.y/2), offset), rocket.size)
+		canvas.draw_rect(rect, color, true, -1, true)
 		canvas.draw_rect(rect, Color.BLACK, false, -1, true)
 
 
@@ -107,8 +108,7 @@ static func draw_box_trails(canvas: Node2D, gs: Plat.GameState, offset: Vector2)
 	trail_rect.size.y = 10
 	var color = Color.RED
 	for trail: Plat.Trail in gs.box_trails:
-		trail_rect.position = Vector2(trail.position.x, -trail.position.y -trail_rect.size.y) + offset
-		trail_rect.position.y += 10
+		trail_rect.position = Vector2(trail.position.x -trail_rect.size.x/2, -trail.position.y -trail_rect.size.y/2) + offset
 		color.h = trail.hue
 		canvas.draw_rect(trail_rect, color, false)
 

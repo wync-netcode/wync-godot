@@ -410,7 +410,7 @@ static func system_player_shoot_rocket(gs: Plat.GameState):
 			continue
 		if player.input.shoot == false:
 			continue
-		var player_center = player.position + Vector2(player.size.x, player.size.y) / 2
+		var player_center = player.position
 		var direction = player_center.direction_to(player.input.aim)
 
 		var actor_id = spawn_rocket_server(gs, player_center, direction)
@@ -443,7 +443,7 @@ static func system_player_shoot_bullet(gs: Plat.GameState):
 			continue
 
 		# player center
-		var origin = player.position + Vector2(player.size.x, player.size.y) / 2
+		var origin = player.position
 		var direction = origin.direction_to(player.input.aim)
 		var ray_length = 400
 		var box = Rect2()
@@ -463,6 +463,7 @@ static func system_player_shoot_bullet(gs: Plat.GameState):
 
 			Log.outc(gs.wctx, "debugwarp, collided with %s" % [ball])
 			spawn_particle(gs, Vector2(coll.x, coll.y), 1, 0, 5, 0)
+			spawn_particle(gs, Vector2.ZERO, 1, 0.5, 5, 0)
 
 
 static func player_input_additive(gs: Plat.GameState, player: Plat.Player, node2d: Node2D):
@@ -488,7 +489,7 @@ static func system_player_grid_events(gs: Plat.GameState, player: Plat.Player):
 	# get cursor grid position
 	var cursor_grid_pos: Vector2i = Vector2i(
 		floor(player.input.aim.x / Plat.BLOCK_LENGTH_PIXELS),
-		floor(player.input.aim.y / Plat.BLOCK_LENGTH_PIXELS) +1,
+		floor(player.input.aim.y / Plat.BLOCK_LENGTH_PIXELS),
 	)
 
 	# is it valid?

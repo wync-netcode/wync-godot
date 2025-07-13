@@ -2,6 +2,13 @@ extends Node
 class_name Rect2Col # rename to plat_physics.gd?
 
 
+static func AABB2_collide (lhs_box: Rect2, rhs_box: Rect2) -> bool:
+	return (
+	(abs(lhs_box.position.x - rhs_box.position.x) <= (lhs_box.size.x + rhs_box.size.x)/2) &&
+	(abs(lhs_box.position.y - rhs_box.position.y) <= (lhs_box.size.y + rhs_box.size.y)/2)
+	)
+
+
 static func rect_collides_with_tile_map(
 	rect: Rect2,
 	chunks: Array[Plat.Chunk],
@@ -12,26 +19,25 @@ static func rect_collides_with_tile_map(
 	) -> bool:
 			
 	# convert to the tile coordinates system
-	var corner_topleft  = rect.position + Vector2(0, rect.size.y)- chunks_offset
-	var corner_botright = rect.position + Vector2(rect.size.x, 0) - chunks_offset
+	var corner_topleft  = rect.position + Vector2(-rect.size.x/2, rect.size.y/2) - chunks_offset
+	var corner_botright = rect.position + Vector2(rect.size.x/2, -rect.size.y/2) - chunks_offset
 	
 	var rect_topleft_pos: Vector2i = Vector2i(
 		floor(corner_topleft.x / block_length_pixels),
-		floor(corner_topleft.y / block_length_pixels) +1,
+		ceil(corner_topleft.y / block_length_pixels),
 	)
 	var rect_botright_pos: Vector2i = Vector2i(
-		floor(corner_botright.x / block_length_pixels),
-		floor(corner_botright.y / block_length_pixels) +1,
+		ceil(corner_botright.x / block_length_pixels),
+		floor(corner_botright.y / block_length_pixels),
 	)
 	var transformed_rect = Rect2(
-		corner_topleft.x / block_length_pixels,
-		corner_topleft.y / block_length_pixels + 1,
-		rect.size.x / block_length_pixels,
-		rect.size.y / block_length_pixels,
+		rect.position / block_length_pixels,
+		rect.size / block_length_pixels
 	)
-	transformed_rect.position.y -= transformed_rect.size.y
+	if (WyncDebug.debug_flag1):
+		print(rect_topleft_pos, " : ", rect_botright_pos, " : ", transformed_rect.position, " : ", transformed_rect.size)
 
-	for i in range(rect_topleft_pos.x, rect_botright_pos.x+1):
+	for i in range(rect_topleft_pos.x, rect_botright_pos.x +1):
 		if (i < 0 || i >= chunks.size() * chunk_width_blocks):
 			continue
 		var chunk_id: int = i / chunk_width_blocks
@@ -45,8 +51,9 @@ static func rect_collides_with_tile_map(
 			if not PlatPublic.block_is_solid(block):
 				continue
 
-			var block_rect = Rect2(i, j, 1, 1)
-			if transformed_rect.intersects(block_rect):
+			var block_rect = Rect2(i +0.5, j +0.5, 1, 1)
+
+			if AABB2_collide(transformed_rect, block_rect):
 				return true
 						
 	return false
