@@ -16,8 +16,10 @@ func _ready() -> void:
 	PlatPrivate.generate_world(gs)
 
 	PlatWync.setup_sync_for_all_chunks(gs)
-	var ball_actor_id = PlatPublic.spawn_ball_server(gs, PlatUtils.GRID_CORD(5, 10), Plat.BALL_BEHAVIOUR_STATIC)
+	var ball_actor_id = PlatPublic.spawn_ball_server(gs, PlatUtils.GRID_CORD(5, 10), Plat.BALL_BEHAVIOUR_LINE)
 	PlatWync.setup_sync_for_ball_actor(gs, ball_actor_id)
+	#ball_actor_id = PlatPublic.spawn_ball_server(gs, PlatUtils.GRID_CORD(7, 7), Plat.BALL_BEHAVIOUR_SINE)
+	#PlatWync.setup_sync_for_ball_actor(gs, ball_actor_id)
 
 
 func _physics_process(delta: float) -> void:
@@ -33,8 +35,8 @@ func _physics_process(delta: float) -> void:
 	PlatPublic.system_rocket_movement(gs, false)
 	PlatPublic.system_rocket_time_to_live(gs, Plat.LOGIC_DELTA_MS)
 	PlatPublic.system_player_shoot_rocket(gs)
-	PlatPublic.system_player_shoot_bullet(gs)
 	PlatPublic.system_server_events(gs)
+	PlatPublic.system_player_shoot_bullet(gs)
 	#PlatPublic.player_input_reset(gs, gs.players[0], self)
 
 	PlatWync.update_what_the_clients_can_see(gs)
@@ -48,8 +50,8 @@ func _physics_process(delta: float) -> void:
 
 	#if Engine.get_physics_frames() % 16 == 0:
 	#if Engine.get_physics_frames() % 8 == 0:
-	#if Engine.get_physics_frames() % 4 == 0:
-	if Engine.get_physics_frames() % 2 == 0:
+	if Engine.get_physics_frames() % 4 == 0:
+	#if Engine.get_physics_frames() % 2 == 0:
 	#if true:
 		WyncPacketUtil.wync_set_data_limit_chars_for_out_packets(gs.wctx, 10000)
 		WyncFlow.wync_system_gather_packets(gs.wctx)

@@ -12,7 +12,7 @@ const CHUNK_WIDTH_BLOCKS := 6
 const CHUNK_HEIGHT_BLOCKS := 10
 const BLOCK_LENGTH_PIXELS := 24
 const BALL_GRAVITY := 1
-static var BALL_MAX_SPEED := 200.5
+static var BALL_MAX_SPEED := 150.5
 const PLAYER_ACC := 30
 const PLAYER_FRICTION := 4
 const PLAYER_MAX_SPEED := 3.5
@@ -54,6 +54,7 @@ enum {
 	BALL_BEHAVIOUR_STATIC,
 	BALL_BEHAVIOUR_BUNNY,
 	BALL_BEHAVIOUR_SINE,
+	BALL_BEHAVIOUR_LINE,
 }
 
 
@@ -124,6 +125,10 @@ class Player:
 	var velocity: Vector2
 	var input: PlayerInput
 	var visual_position: Vector2
+	# timewarp: the last tick we polled for events, used to
+	# ensure only one event is sent per tick (otherwise we
+	# could generate multiples events each draw frame)
+	var last_tick_polled: int 
 
 
 class Ball:
@@ -216,9 +221,9 @@ enum {
 	EVENT_DELTA_BLOCK_REPLACE,
 
 	# player input
-	EVENT_PLAYER_SHOOT,
 	EVENT_PLAYER_BLOCK_BREAK,
 	EVENT_PLAYER_BLOCK_PLACE,
+	EVENT_PLAYER_SHOOT_TIMEWARP,
 }
 
 # later filled on blueprint setup
@@ -240,4 +245,14 @@ class EventDeltaBlockReplace:
 		var newi = EventDeltaBlockReplace.new()
 		newi.pos = pos
 		newi.block_type = block_type
+		return newi
+
+class EventPlayerShootTimewarp:
+	var last_tick_rendered_left: int
+	var lerp_delta: float
+
+	func duplicate() -> EventPlayerShootTimewarp:
+		var newi = EventPlayerShootTimewarp.new()
+		newi.last_tick_rendered_left = last_tick_rendered_left
+		newi.lerp_delta = lerp_delta
 		return newi

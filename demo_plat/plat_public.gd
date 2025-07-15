@@ -230,9 +230,12 @@ static func system_ball_movement(gs: Plat.GameState, delta: float):
 			Plat.BALL_BEHAVIOUR_SINE:
 				new_pos = ball.position + Vector2(ball.velocity.x, 100*sin(curr_tick/15.0)) * delta
 				pass
+			Plat.BALL_BEHAVIOUR_LINE:
+				new_pos = ball.position + Vector2(ball.velocity.x, 0) * delta
+				pass
 			Plat.BALL_BEHAVIOUR_BUNNY:
 				ball.velocity.y -= Plat.BALL_GRAVITY * delta
-				new_pos = ball.position + Vector2(ball.velocity.x, 0)
+				new_pos = ball.position + ball.velocity * delta
 				pass
 
 		# velocity
@@ -461,7 +464,7 @@ static func system_player_shoot_bullet(gs: Plat.GameState):
 			if coll.z < 0:
 				continue
 
-			Log.outc(gs.wctx, "debugwarp, collided with %s" % [ball])
+			#Log.outc(gs.wctx, "debugwarp, collided with %s" % [ball])
 			spawn_particle(gs, Vector2(coll.x, coll.y), 1, 0, 5, 0)
 			spawn_particle(gs, Vector2.ZERO, 1, 0.5, 5, 0)
 
@@ -473,7 +476,7 @@ static func player_input_additive(gs: Plat.GameState, player: Plat.Player, node2
 	)
 	#player.input.movement_dir = Vector2(signf(sin(Time.get_ticks_msec() / 100.0)), -1)
 	player.input.shoot = player.input.shoot || Input.is_action_pressed("p1_mouse1")
-	player.input.shoot_secondary = player.input.shoot_secondary || Input.is_action_pressed("p1_mouse2")
+	player.input.shoot_secondary = player.input.shoot_secondary || Input.is_action_just_pressed("p1_mouse2")
 	player.input.aim = PlatUtils.SCREEN_CORD_TO_GRID_CORD(gs, node2d.get_global_mouse_position())
 
 
@@ -507,8 +510,38 @@ static func system_player_grid_events(gs: Plat.GameState, player: Plat.Player):
 	WyncEventUtils.publish_global_event_as_client(gs.wctx, 0, event_id)
 
 
+static func system_player_timewarp_shoot_event(gs: Plat.GameState, player: Plat.Player):
+
+	if not player.input.shoot_secondary:
+		return
+	player.input.shoot_secondary = false
+
+	var ctx = gs.wctx
+
+	# poll once per tick
+
+	if player.last_tick_polled == ctx.co_ticks.ticks:
+		Log.outc(ctx, "skipping %s" % Log.TAG_SUBTICK_EVENT)
+		return
+	player.last_tick_polled = ctx.co_ticks.ticks
+
+	# build and queue event
+
+	var event_data = Plat.EventPlayerShootTimewarp.new()
+	event_data.last_tick_rendered_left = ctx.co_ticks.last_tick_rendered_left
+	event_data.lerp_delta = ctx.co_ticks.minimum_lerp_fraction_accumulated_ms
+
+	var event_id = WyncEventUtils.new_event_wrap_up(gs.wctx, Plat.EVENT_PLAYER_SHOOT_TIMEWARP, event_data)
+	WyncEventUtils.publish_global_event_as_client(gs.wctx, 0, event_id)
+
+	Log.outc(gs.wctx, "debugtimewarpevent | sending event (left_tick %s lerp_delta %.2f)" % [event_data.last_tick_rendered_left, event_data.lerp_delta])
+
+	PlatWync.debug_draw_timewarped_state(gs, [18])
+
+
 static func system_client_simulate_own_events(gs: Plat.GameState, tick: int):
 
+	var EVENTS_TO_PREDICT = [Plat.EVENT_PLAYER_BLOCK_BREAK]
 	var channel_id = 0
 	var wync_peer_id = gs.wctx.my_peer_id
 
@@ -519,6 +552,9 @@ static func system_client_simulate_own_events(gs: Plat.GameState, tick: int):
 
 	for event_id in event_list:
 		var event := gs.wctx.events[event_id]
+
+		if event.data.event_type_id not in EVENTS_TO_PREDICT:
+			continue
 
 		# handle it
 		Log.outc(gs.wctx, "debugrela event handling | tick(%s) handling peer%s event %s" % [tick, wync_peer_id, event_id], Log.TAG_GAME_EVENT)
@@ -554,11 +590,16 @@ static func system_server_events(gs: Plat.GameState):
 		#Log.outc(gs.wctx, "event handling start (tick_curr %s)========================================" % [tick_end-1])
 
 
-static func handle_events(gs: Plat.GameState, event_data: WyncEvent.EventData, _peer_id: int):
+static func handle_events(gs: Plat.GameState, event_data: WyncEvent.EventData, peer_id: int):
 	match event_data.event_type_id:
 		Plat.EVENT_PLAYER_BLOCK_BREAK:
 			var data = event_data.event_data as Plat.EventPlayerBlockBreak
 			grid_block_break(gs, data.pos)
+		Plat.EVENT_PLAYER_SHOOT_TIMEWARP:
+			var data = event_data.event_data as Plat.EventPlayerShootTimewarp
+			handle_player_shoot_timewarp(gs, data, peer_id)
+		_:
+			Log.errc(gs.wctx, "Event not recognized %s" % [event_data.event_type_id])
 
 
 static func grid_block_break(gs: Plat.GameState, block_pos: Vector2i):
@@ -614,6 +655,79 @@ static func grid_block_break(gs: Plat.GameState, block_pos: Vector2i):
 		return
 
 	Log.outc(gs.wctx, "debugrela applied successfully grid_block_break")
+
+
+## temporarily resets props to a previous state to perform physics checks
+static func handle_player_shoot_timewarp(
+	gs: Plat.GameState, data: Plat.EventPlayerShootTimewarp, peer_id: int):
+
+	var ctx = gs.wctx
+	if data is not Plat.EventPlayerShootTimewarp:
+		Log.errc(ctx, "timewarp, wrong data type %s" % [data])
+		return
+
+	if peer_id == 0:
+		Log.errc(ctx, "timewarp, peer_id == 0, server event, ignoring")
+		return
+
+	var co_ticks = ctx.co_ticks
+	var client_info := ctx.client_has_info[peer_id] as WyncClientInfo
+	var lerp_ms: int = client_info.lerp_ms
+	var tick_left: int = data.last_tick_rendered_left
+	var lerp_delta: float = data.lerp_delta
+	
+	# Notes for anti-cheat measures:
+	# * One could add some guards like "if lerp_delta < 0 || lerp_delta > 1"
+	# * Range allowed:
+	# * (1) Low. No limit, current implementation
+	# * (2) Middle. Allow ticks in the range of the _prob prop rate_
+	# * (3) High. Only allow ranges of 1 tick (the small range defined by the
+	#   client's: latency + lerp_ms + last_packet_sent)
+
+	if ((tick_left <= co_ticks.ticks - ctx.max_tick_history_timewarp) ||
+		(tick_left > co_ticks.ticks)
+		):
+		Log.errc(ctx, "debugtimewarp, tick_left out of range (%s)" % [tick_left], Log.TAG_TIMEWARP)
+		return
+	
+	Log.outc(ctx, "debugtimewarp, client shoots at tick_left %d | lerp_delta %s | lerp_ms %s | tick_diff %s" % [ tick_left, lerp_delta, lerp_ms, co_ticks.ticks - tick_left ], Log.TAG_TIMEWARP)
+
+
+	# 1. save current state (for selcted timewarpable props)
+
+	WyncWrapper.extract_data_to_tick_for_regular_state_props(
+		ctx, co_ticks.ticks, ctx.filtered_regular_timewarpable_prop_ids)
+
+	# 2. set previous state
+
+	WyncLerp.wync_reset_state_to_interpolated_absolute(
+		ctx, ctx.filtered_regular_timewarpable_prop_ids, tick_left, lerp_delta)
+
+	# show debug trail
+		
+	for prop_id: int in ctx.filtered_regular_timewarpable_prop_ids:
+		var prop := WyncTrack.get_prop(ctx, prop_id)
+		if prop == null:
+			continue
+		if prop.user_data_type != Plat.LERP_TYPE_VECTOR2:
+			continue
+
+		var getter = ctx.wrapper.prop_getter[prop_id]
+		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
+		var position = getter.call(user_ctx)
+
+		PlatPublic.spawn_box_trail(gs, position, 0.7, 1.5*60)
+
+	# 2.1. optional: integrate physics
+
+	# 3. do my physics checks
+
+	# 4. restore original state
+
+	WyncStateSet.wync_reset_state_to_saved_absolute(
+		ctx, ctx.filtered_regular_timewarpable_prop_ids, co_ticks.ticks)
+
+	# 4.1. optional: integrate physics
 
 
 static func debug_print_last_chunk(gs: Plat.GameState):

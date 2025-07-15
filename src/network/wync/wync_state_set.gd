@@ -33,8 +33,30 @@ static func does_delta_prop_has_undo_events(ctx: WyncCtx, prop_id: int, tick: in
 # WRAPPER
 # ==================================================
 
+## timewarp, server only
+static func wync_reset_state_to_saved_absolute (
+	ctx: WyncCtx, prop_ids: Array[int], tick: int):
 
-static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: Array[int], tick: int):
+	var value
+
+	# then interpolate them
+
+	for prop_id: int in prop_ids:
+
+		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
+
+		value = WyncEntityProp.saved_state_get(prop, tick)
+		if value == null:
+			Log.outc(ctx, "debugtimewarp, NOT FOUND tick %s" % [tick])
+			continue
+
+		var setter = ctx.wrapper.prop_setter[prop_id]
+		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
+		setter.call(user_ctx, value)
+
+
+static func reset_all_state_to_confirmed_tick_relative(
+	ctx: WyncCtx, prop_ids: Array[int], tick: int):
 	
 	for prop_id: int in prop_ids:
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
@@ -43,15 +65,15 @@ static func reset_all_state_to_confirmed_tick_relative(ctx: WyncCtx, prop_ids: A
 		if last_confirmed_tick == -1:
 			continue
 
-		var last_confirmed = WyncEntityProp.saved_state_get(prop, last_confirmed_tick as int)
-		if last_confirmed == null:
+		var state = WyncEntityProp.saved_state_get(prop, last_confirmed_tick as int)
+		if state == null:
 			continue
 		
 		# TODO: check type before applying (shouldn't be necessary if we ensure we're filling the correct data)
 		# Log.out(ctx, "LatestValue | setted prop_name_id %s" % [prop.name_id])
 		var setter = ctx.wrapper.prop_setter[prop_id]
 		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
-		setter.call(user_ctx, last_confirmed)
+		setter.call(user_ctx, state)
 
 		if prop.relative_syncable:
 			Log.outc(ctx, "debugdelta, Setted absolute state for prop(%s) %s" % [

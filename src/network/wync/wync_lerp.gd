@@ -111,13 +111,12 @@ static func wync_handle_packet_client_set_lerp_ms(ctx: WyncCtx, data: Variant, f
 
 
 static func prop_set_interpolate(ctx: WyncCtx, prop_id: int, user_data_type: int) -> int:
-	if not ctx.is_client:
-		return OK
 	var prop := WyncTrack.get_prop(ctx, prop_id)
 	if prop == null:
 		return 1
 	prop.user_data_type = user_data_type
-	prop.interpolated = true
+	if ctx.is_client:
+		prop.interpolated = true
 	return OK
 	
 
@@ -236,6 +235,13 @@ static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 	var target_time_conf: float = delta_fraction_ms - frame - ctx.co_predict_data.lerp_ms - ctx.co_predict_data.lerp_latency_ms
 	var target_time_pred: float = delta_fraction_ms
 
+	# time between last rendered tick and current frame target
+	var last_tick_rendered_left_timestamp = frame * (
+		ctx.co_ticks.last_tick_rendered_left - ctx.co_ticks.server_tick_offset - ctx.co_ticks.ticks)
+	ctx.co_ticks.minimum_lerp_fraction_accumulated_ms = target_time_conf - last_tick_rendered_left_timestamp
+
+	# NOTE, Expanded equation: frame * (ctx.co_ticks.server_tick_offset + ctx.co_ticks.ticks + delta_lerp_fraction - ctx.co_ticks.last_tick_rendered_left -1) - ctx.co_predict_data.lerp_ms - ctx.co_predict_data.lerp_latency_ms
+
 	var left_timestamp_ms: float
 	var right_timestamp_ms: float
 	var left_value: Variant
@@ -294,3 +300,44 @@ static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 
 	ctx.debug_lerp_prev_curr_time = delta_fraction_ms
 	ctx.debug_lerp_prev_target = target_time_conf
+
+
+## timewarp, server only
+## @argument tick_left: int. Base tick to restore state from
+static func wync_reset_state_to_interpolated_absolute (
+	ctx: WyncCtx,
+	prop_ids: Array[int],
+	tick_left: int,
+	lerp_delta_ms: float,
+	):
+
+	var frame = 1000.0 / ctx.physic_ticks_per_second
+
+	# then interpolate them
+
+	var left_value: Variant
+	var right_value: Variant
+
+	for prop_id: int in prop_ids:
+
+		var prop := WyncTrack.get_prop(ctx, prop_id)
+		if prop == null:
+			continue
+
+		left_value = WyncEntityProp.saved_state_get(prop, tick_left)
+		right_value = WyncEntityProp.saved_state_get(prop, tick_left +1)
+		if left_value == null || right_value == null:
+			Log.outc(ctx, "debugtimewarp, NOT FOUND one of: left %s right %s" % [left_value, right_value])
+			continue
+
+		# TODO: wrap this into a function
+		var lerp_func_id = ctx.wrapper.lerp_type_to_lerp_function[prop.user_data_type]
+		var lerp_func: Callable = ctx.wrapper.lerp_function[lerp_func_id]
+		var lerped_state = lerp_func.call(left_value, right_value, lerp_delta_ms/frame)
+
+		var setter = ctx.wrapper.prop_setter[prop_id]
+		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
+		setter.call(user_ctx, lerped_state)
+
+		#Log.outc(ctx, "debugtimewarpevent, left %s right %s lerped %s delta %s (%s) --- prop_id %s name %s" % [left_value, right_value, lerped_state, lerp_delta_ms, lerp_delta_ms/frame, prop_id, prop.name_id])
+

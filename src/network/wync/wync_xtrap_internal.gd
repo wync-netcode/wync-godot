@@ -3,6 +3,7 @@ class_name WyncXtrapInternal
 
 
 # Note: further optimization could involve removing adding singular props from the list
+# TODO: rename, server doesn't do any xtrap related
 static func wync_xtrap_server_filter_prop_ids(ctx: WyncCtx):
 	if not ctx.was_any_prop_added_deleted:
 		return
@@ -12,6 +13,7 @@ static func wync_xtrap_server_filter_prop_ids(ctx: WyncCtx):
 	ctx.filtered_clients_input_and_event_prop_ids.clear()
 	ctx.filtered_delta_prop_ids.clear()
 	ctx.filtered_regular_extractable_prop_ids.clear()
+	ctx.filtered_regular_timewarpable_prop_ids.clear()
 
 	for client_id in range(1, ctx.peers.size()):
 		for prop_id in ctx.client_owns_prop[client_id]:
@@ -23,16 +25,16 @@ static func wync_xtrap_server_filter_prop_ids(ctx: WyncCtx):
 
 	for prop_id in ctx.active_prop_ids:
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
-		if prop.prop_type in [
-			WyncEntityProp.PROP_TYPE.INPUT,
-			WyncEntityProp.PROP_TYPE.EVENT
-		]:
+		if prop.prop_type != WyncEntityProp.PROP_TYPE.STATE:
 			continue
 		if prop.relative_syncable:
 			ctx.filtered_delta_prop_ids.append(prop_id)
 			# TODO: Check if it has a healthy _auxiliar prop_
 		else:
 			ctx.filtered_regular_extractable_prop_ids.append(prop_id)
+
+			if prop.timewarpable:
+				ctx.filtered_regular_timewarpable_prop_ids.append(prop_id)
 
 
 static func wync_xtrap_client_filter_prop_ids(ctx: WyncCtx):

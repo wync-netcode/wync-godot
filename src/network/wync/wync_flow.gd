@@ -163,6 +163,7 @@ static func wync_server_tick_end(ctx: WyncCtx):
 	WyncStateSend.system_update_delta_base_state_tick(ctx)
 
 	# NOTE: maybe a way to extract data but only events, since that is unskippable?
+	# (shouldn't be throttled)
 	# This function extracts regular props, plus _auxiliar delta event props_
 	# We need a function to extract data exclusively of events... Like the equivalent
 	# of the client's _input_bufferer_

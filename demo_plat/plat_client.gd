@@ -55,9 +55,17 @@ func _physics_process(delta: float) -> void:
 	PlatWync.debug_draw_confirmed_interpolated_states(gs)
 	PlatWync.debug_draw_confirmed_states(gs, 18)
 
+
 func _process(_delta: float) -> void:
+
 	WyncLerp.wync_interpolate_all(gs.wctx, Engine.get_physics_interpolation_fraction())
 	PlatWync.set_interpolated_state(gs)
+
+	# sub-tick inputs
+	if gs.i_control_player_id != -1:
+		PlatPublic.player_input_additive(gs, gs.players[gs.i_control_player_id], self)
+		PlatPublic.system_player_timewarp_shoot_event(gs, gs.players[gs.i_control_player_id])
+
 	queue_redraw()
 
 

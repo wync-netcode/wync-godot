@@ -63,6 +63,31 @@ static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
 		WyncEntityProp.saved_state_insert(ctx, prop_aux, save_on_tick, getter.call(user_ctx))
 
 
+
+# Used for timewarp
+# Note: Receives a list of prop_ids, that way the user can
+# determine which to extract, instead of extracting them all, maybe 
+# useful for chunked big worlds.
+static func extract_data_to_tick_for_regular_state_props(
+	ctx: WyncCtx, save_on_tick: int, prop_ids: Array[int]):
+
+	var prop: WyncEntityProp = null
+	var getter: Variant = null # Callable*
+	var user_ctx: Variant = null
+
+	# Save state history per tick
+
+	for prop_id in prop_ids:
+		prop = WyncTrack.get_prop(ctx, prop_id)
+		if prop == null:
+			Log.errc(ctx, "Invalid prop id %s" % [prop_id])
+			continue
+		getter = ctx.wrapper.prop_getter[prop_id]
+		user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
+		
+		WyncEntityProp.saved_state_insert(ctx, prop, save_on_tick, getter.call(user_ctx))
+
+
 static func extract_rela_prop_fullsnapshot_to_tick (
 	ctx: WyncCtx, save_on_tick: int = -1):
 

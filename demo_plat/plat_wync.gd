@@ -5,6 +5,7 @@ static func setup_server(ctx: WyncCtx):
 	ctx.co_ticks.ticks = 0
 	WyncFlow.server_setup(ctx)
 	WyncClock.wync_client_set_physics_ticks_per_second(ctx, Engine.physics_ticks_per_second)
+	setup_lerp_types(ctx)
 	setup_blueprints(ctx)
 
 
@@ -27,14 +28,7 @@ static func setup_client(ctx: WyncCtx):
 	WyncLerp.wync_client_set_lerp_ms(ctx, server_tick_rate, 0)
 	WyncLerp.wync_client_set_max_lerp_factor_symmetric(ctx, 3.5)
 
-	WyncLerp.wync_register_lerp_type(
-		ctx, Plat.LERP_TYPE_FLOAT,
-		func (a: float, b: float, weight: float): return lerp(a, b, weight)
-	)
-	WyncLerp.wync_register_lerp_type(
-		ctx, Plat.LERP_TYPE_VECTOR2,
-		func (a: Vector2, b: Vector2, weight: float): return lerp(a, b, weight)
-	)
+	setup_lerp_types(ctx)
 	setup_blueprints(ctx)
 
 
@@ -74,6 +68,17 @@ static func setup_new_client_level_props(gs: Plat.GameState, wync_peer_id: int):
 		#if chunk == null:
 			#continue
 		#WyncThrottle.wync_add_local_existing_entity(gs.wctx, wync_peer_id, chunk.actor_id)
+
+
+static func setup_lerp_types(ctx: WyncCtx):
+	WyncLerp.wync_register_lerp_type(
+		ctx, Plat.LERP_TYPE_FLOAT,
+		func (a: float, b: float, weight: float): return lerp(a, b, weight)
+	)
+	WyncLerp.wync_register_lerp_type(
+		ctx, Plat.LERP_TYPE_VECTOR2,
+		func (a: Vector2, b: Vector2, weight: float): return lerp(a, b, weight)
+	)
 
 
 static func setup_blueprints(ctx: WyncCtx):
@@ -134,49 +139,22 @@ static func setup_sync_for_ball_actor(gs: Plat.GameState, actor_id: int):
 		pos_prop_id,
 		ball_instance,
 		func(user_ctx: Variant) -> Vector2: return (user_ctx as Plat.Ball).position,
-		#func(user_ctx: Variant, pos: Vector2): (user_ctx as Plat.Ball).position = pos,
-		func(_user_ctx , _pos): pass,
+		func(user_ctx: Variant, pos: Vector2): (user_ctx as Plat.Ball).position = pos,
 	)
 	WyncLerp.prop_set_interpolate(
 		wctx, pos_prop_id, Plat.LERP_TYPE_VECTOR2
 	)
 
-	#var pos_prop_id = WyncTrack.prop_register(
-		#wctx,
-		#actor_id,
-		#"position",
-		#WyncEntityProp.DATA_TYPE.VECTOR2,
-		#ball_instance,
-		#func(user_ctx: Variant) -> Vector2: return (user_ctx as Plat.Ball).position,
-		#func(user_ctx: Variant, pos: Vector2): (user_ctx as Plat.Ball).position = pos,
-	#)
-	#var vel_prop_id = WyncTrack.prop_register(
-		#wctx,
-		#actor_id,
-		#"velocity",
-		#WyncEntityProp.DATA_TYPE.VECTOR2,
-		#ball_instance,
-		#func(user_ctx: Variant) -> Vector2: return (user_ctx as Plat.Ball).velocity,
-		#func(user_ctx: Variant, vel: Vector2): (user_ctx as Plat.Ball).velocity = vel,
-	#)
+	if not wctx.is_client: # server
+		WyncTimeWarp.prop_set_timewarpable(wctx, pos_prop_id) 
 
 	#if WyncTrack.is_client(wctx):
-		## interpolation
-		
-		#WyncTrack.prop_set_interpolate(wctx, pos_prop_id)
-		#WyncTrack.prop_set_interpolate(wctx, vel_prop_id)
-		##WyncTrack.prop_set_interpolate(wctx, aim_prop_id) # TODO
 		
 		## setup extrapolation
 
 		##if co_actor.id % 2 == 0:
 			##WyncTrack.prop_set_predict(wctx, pos_prop_id)
 			##WyncTrack.prop_set_predict(wctx, vel_prop_id)
-	
-	## it is server
-	#else:
-		## time warp
-		#WyncTrack.prop_set_timewarpable(wctx, pos_prop_id) 
 
 
 static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
@@ -245,9 +223,9 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 		#WyncTrack.prop_set_predict(wctx, events_prop_id)
 	
 	# it is server
-	else:
-		# time warp
-		WyncTimeWarp.prop_set_timewarpable(wctx, pos_prop_id) 
+	#else:
+		## time warp
+		#WyncTimeWarp.prop_set_timewarpable(wctx, pos_prop_id) 
 
 
 static func setup_sync_for_rocket_actor(gs: Plat.GameState, actor_id: int):
@@ -653,5 +631,23 @@ static func debug_draw_confirmed_states(gs: Plat.GameState, prop_id: int):
 	for i in range(prop.saved_states.size):
 		var state = prop.saved_states.get_relative(-i)
 		if state is Vector2:
+			state += Vector2(0, -11)
 			PlatPublic.spawn_box_trail(gs, state, (float(i) / prop.saved_states.size) / 4.0, 0)
 			#Log.outc(gs.wctx, "debtrail, got state %s" % state)
+
+
+static func debug_draw_timewarped_state(
+	gs: Plat.GameState, prop_ids: Array[int]):
+	#gs: Plat.GameState, prop_ids: Array[int], event: Plat.EventPlayerShootTimewarp):
+
+	var ctx = gs.wctx
+	
+	for prop_id: int in prop_ids:
+		var prop := WyncTrack.get_prop(ctx, prop_id)
+		if prop == null:
+			continue
+		if prop.user_data_type != Plat.LERP_TYPE_VECTOR2:
+			continue
+
+		PlatPublic.spawn_box_trail(gs, prop.interpolated_state, 0.8, 1.5*60)
+
