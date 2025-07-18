@@ -55,6 +55,12 @@ static func setup_connect_client(gs: Plat.GameState):
 		# Note: In bigger games with different levels you might set this up also on level change
 		setup_new_client_level_props(gs, wync_peer_id)
 
+		# assign newly created entity to 'nete peer'
+		for peer: Plat.Server.Peer in gs.net.server.peers:
+			if peer.peer_id == nete_peer_id:
+				peer.player_actor_id = actor_id
+
+
 	WyncJoin.clear_peers_pending_to_setup(ctx)
 
 
@@ -208,12 +214,11 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 		func(user_ctx: Variant, input: Plat.PlayerInput): input.copyTo((user_ctx as Plat.Player).input),
 	)
 
+	WyncLerp.prop_set_interpolate(
+		wctx, pos_prop_id, Plat.LERP_TYPE_VECTOR2
+	)
+
 	if wctx.is_client:
-		# interpolation
-		
-		WyncLerp.prop_set_interpolate(
-			wctx, pos_prop_id, Plat.LERP_TYPE_VECTOR2
-		)
 	
 		# setup extrapolation
 			
@@ -223,9 +228,10 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 		#WyncTrack.prop_set_predict(wctx, events_prop_id)
 	
 	# it is server
-	#else:
-		## time warp
-		#WyncTimeWarp.prop_set_timewarpable(wctx, pos_prop_id) 
+	else:
+		# time warp
+		WyncTimeWarp.prop_set_timewarpable(wctx, pos_prop_id) 
+		WyncTimeWarp.prop_set_timewarpable(wctx, input_prop_id) 
 
 
 static func setup_sync_for_rocket_actor(gs: Plat.GameState, actor_id: int):
@@ -646,8 +652,17 @@ static func debug_draw_timewarped_state(
 		var prop := WyncTrack.get_prop(ctx, prop_id)
 		if prop == null:
 			continue
-		if prop.user_data_type != Plat.LERP_TYPE_VECTOR2:
+		if prop.name_id != "position":
 			continue
 
-		PlatPublic.spawn_box_trail(gs, prop.interpolated_state, 0.8, 1.5*60)
+		# get size by getting the ball
 
+		var entity: int = WyncTrack.prop_get_entity(gs.wctx, prop_id)
+		assert(entity != -1)
+
+		var actor: Plat.Actor = PlatPublic.get_actor(gs, entity)
+		assert(actor.actor_type == Plat.ACTOR_TYPE_BALL)
+
+		var ball := gs.balls[actor.instance_id]
+
+		PlatPublic.spawn_box_trail_size(gs, prop.interpolated_state, ball.size, 0.8, 1.5*60)

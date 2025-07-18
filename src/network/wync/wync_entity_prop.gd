@@ -12,7 +12,7 @@ enum PROP_TYPE {
 
 var name_id: String
 var prop_type: PROP_TYPE
-var user_data_type: int
+var user_data_type: int # DO not use for checking prop data type, this is only for 'lerping' and 'subtick timewarp'
 
 # Optional properties:
 # TODO: Move these elsewhere

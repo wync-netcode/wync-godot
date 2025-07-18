@@ -48,7 +48,7 @@ static func generate_world(gs: Plat.GameState):
 			for y in range(Plat.CHUNK_HEIGHT_BLOCKS):
 				var block = chunk.blocks[i][y] as Plat.Block
 
-				var sinus_value = sin(x / 2.0) * 1.2 + 3
+				var sinus_value = sin((x+6) / 2.0) * 1.2 + 3
 				print(x, " ", sin(x), " ", sinus_value)
 				if y < sinus_value:
 					block.type = Plat.BLOCK_TYPE_DIRT

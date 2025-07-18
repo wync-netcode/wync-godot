@@ -103,12 +103,17 @@ static func draw_rockets(canvas: Node2D, gs: Plat.GameState, offset: Vector2i):
 		canvas.draw_rect(rect, Color.BLACK, false, -1, true)
 
 
-static func draw_box_trails(canvas: Node2D, gs: Plat.GameState, offset: Vector2):
-	var trail_rect = Rect2(Vector2.ZERO, Vector2(round(Plat.BLOCK_LENGTH_PIXELS * 0.66), Plat.BLOCK_LENGTH_PIXELS * 1.5))
-	trail_rect.size.y = 10
+static func draw_box_trails(canvas: Node2D, gs: Plat.GameState, offset: Vector2, size: Vector2 = Vector2.ZERO):
+
+	var default_trail_size = Vector2(round(Plat.BLOCK_LENGTH_PIXELS * 0.66), 10)
+	var trail_rect = Rect2()
 	var color = Color.RED
+
 	for trail: Plat.Trail in gs.box_trails:
+
+		trail_rect.size = default_trail_size if trail.size == Vector2.ZERO else trail.size
 		trail_rect.position = Vector2(trail.position.x -trail_rect.size.x/2, -trail.position.y -trail_rect.size.y/2) + offset
+
 		color.h = trail.hue
 		canvas.draw_rect(trail_rect, color, false)
 

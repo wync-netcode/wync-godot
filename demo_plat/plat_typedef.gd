@@ -25,6 +25,7 @@ static var CHUNK_ACTOR_ID_RANGE_START: int = 500
 static var CHUNK_ACTOR_ID_RANGE_END: int = CHUNK_ACTOR_ID_RANGE_START + CHUNK_AMOUNT
 
 enum {
+	LERP_TYPE_INVALID,
 	LERP_TYPE_FLOAT,
 	LERP_TYPE_VECTOR2,
 	LERP_TYPE_VECTOR3,
@@ -61,26 +62,30 @@ enum {
 class PlayerInput:
 	var movement_dir: Vector2
 	var aim: Vector2
-	var shoot: bool
-	var shoot_secondary: bool
+	var action1: bool
+	var action2: bool
+	var action3: bool
 
 	func copy() -> PlayerInput:
 		var i = PlayerInput.new()
 		i.movement_dir = movement_dir
 		i.aim = aim
-		i.shoot = shoot
-		i.shoot_secondary = shoot_secondary
+		i.action1 = action1
+		i.action2 = action2
+		i.action3 = action3
 		return i
 
 	func copyTo(i: PlayerInput):
 		i.movement_dir = movement_dir
 		i.aim = aim
-		i.shoot = shoot
-		i.shoot_secondary = shoot_secondary
+		i.action1 = action1
+		i.action2 = action2
+		i.action3 = action3
 
 
 class Trail:
 	var position: Vector2
+	var size: Vector2
 	var hue: float # [0.0 - 1.0]
 	var tick_duration: int
 
@@ -182,8 +187,9 @@ class NetState:
 
 class Server:
 	class Peer:
-		var identifier: int
 		var peer_id: int
+		var identifier: int  # TODO: deleteme?
+		var player_actor_id: int
 	var peer_count: int
 	var peers: Array[Server.Peer]
 
@@ -249,10 +255,10 @@ class EventDeltaBlockReplace:
 
 class EventPlayerShootTimewarp:
 	var last_tick_rendered_left: int
-	var lerp_delta: float
+	var lerp_delta_ms: float
 
 	func duplicate() -> EventPlayerShootTimewarp:
 		var newi = EventPlayerShootTimewarp.new()
 		newi.last_tick_rendered_left = last_tick_rendered_left
-		newi.lerp_delta = lerp_delta
+		newi.lerp_delta_ms = lerp_delta_ms
 		return newi

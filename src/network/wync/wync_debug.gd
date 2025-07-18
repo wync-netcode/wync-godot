@@ -1,6 +1,11 @@
 class_name WyncDebug
 
 
+static var debug_flag1: bool = false
+static var debug_flag2: bool = false
+static var debug_int1: int = 0
+
+
 static func log_packet_received(ctx: WyncCtx, packet_type_id: int):
 	if not WyncPacketUtil.wync_packet_type_exists(packet_type_id):
 		Log.err("Invalid packet_type_id(%s)" % [packet_type_id])

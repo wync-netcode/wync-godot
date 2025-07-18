@@ -6,6 +6,7 @@ static func prop_set_timewarpable(ctx: WyncCtx, prop_id: int) -> int:
 	var prop := WyncTrack.get_prop(ctx, prop_id)
 	if prop == null:
 		return 1
+	if prop.interpolated: assert(prop.user_data_type > 0) # avoid accidental default values
 	prop.timewarpable = true
 	prop.saved_states = RingBuffer.new(ctx.max_tick_history_timewarp, null)
 	prop.state_id_to_tick = RingBuffer.new(ctx.max_tick_history_timewarp, -1)

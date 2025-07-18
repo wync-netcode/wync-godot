@@ -47,7 +47,7 @@ static func wync_reset_state_to_saved_absolute (
 
 		value = WyncEntityProp.saved_state_get(prop, tick)
 		if value == null:
-			Log.outc(ctx, "debugtimewarp, NOT FOUND tick %s" % [tick])
+			Log.errc(ctx, "debugtimewarp, NOT FOUND tick %s" % [tick])
 			continue
 
 		var setter = ctx.wrapper.prop_setter[prop_id]

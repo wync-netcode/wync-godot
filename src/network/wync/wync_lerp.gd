@@ -114,9 +114,12 @@ static func prop_set_interpolate(ctx: WyncCtx, prop_id: int, user_data_type: int
 	var prop := WyncTrack.get_prop(ctx, prop_id)
 	if prop == null:
 		return 1
+	assert(user_data_type > 0) # avoid accidental default values
 	prop.user_data_type = user_data_type
-	if ctx.is_client:
-		prop.interpolated = true
+
+	# * the server needs to know for subtick timewarping
+	# * client needs to know for visual lerping
+	prop.interpolated = true
 	return OK
 	
 
@@ -327,7 +330,7 @@ static func wync_reset_state_to_interpolated_absolute (
 		left_value = WyncEntityProp.saved_state_get(prop, tick_left)
 		right_value = WyncEntityProp.saved_state_get(prop, tick_left +1)
 		if left_value == null || right_value == null:
-			Log.outc(ctx, "debugtimewarp, NOT FOUND one of: left %s right %s" % [left_value, right_value])
+			Log.errc(ctx, "debugtimewarp, (tick %s) NOT FOUND one of: left %s right %s" % [tick_left, left_value, right_value])
 			continue
 
 		# TODO: wrap this into a function

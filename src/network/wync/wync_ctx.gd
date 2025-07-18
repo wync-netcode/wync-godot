@@ -105,9 +105,10 @@ const INPUT_AMOUNT_TO_SEND = 20
 var max_amount_cache_events = 1000 # it could be useful to have a different value for server cache
 var max_peers = 4
 var max_channels = 12
-var max_tick_history_timewarp = 64 # 1 second at 60 fps
 var max_prop_relative_sync_history_ticks = 20 # set to 1 to see if it's working alright 
 var max_delta_prop_predicted_ticks = 60 # 1000ms ping at 60fps 2000ms ping at 30fps
+
+var max_tick_history_timewarp = 2**7 # must be a power of two, 64 ~= 1 second at 60 tps
 var max_age_user_events_for_consumption = 120 # almost two seconds
 
 # how many ticks in the past to keep state cache for a regular prop
@@ -313,7 +314,8 @@ var was_any_prop_added_deleted := false
 var filtered_clients_input_and_event_prop_ids: Array[int] = []
 var filtered_delta_prop_ids: Array[int] = [] # client & server
 var filtered_regular_extractable_prop_ids: Array[int] = []
-var filtered_regular_timewarpable_prop_ids: Array[int] = []
+var filtered_regular_timewarpable_prop_ids: Array[int] = [] # either interpolable or not
+var filtered_regular_timewarpable_interpolable_prop_ids: Array[int] = [] # to easily do subtick timewarp
 
 var entity_last_predicted_tick: Dictionary[int, int] = {}
 var entity_last_received_tick: Dictionary[int, int] = {}

@@ -163,6 +163,15 @@ static func entity_get_prop(ctx: WyncCtx, entity_id: int, prop_name_id: StringNa
 	return null
 
 
+## @returns Array[int]
+static func entity_get_prop_id_list(ctx: WyncCtx, entity_id: int) -> Array:
+	
+	if not is_entity_tracked(ctx, entity_id):
+		return []
+	
+	return ctx.entity_has_props[entity_id] as Array
+
+
 ## @returns int: prop_id; -1 if not found
 static func entity_get_prop_id(ctx: WyncCtx, entity_id: int, prop_name_id: StringName) -> int:
 	

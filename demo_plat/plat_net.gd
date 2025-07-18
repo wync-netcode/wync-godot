@@ -27,9 +27,9 @@ static func initialize_net_state(gs: Plat.GameState, is_client: bool):
 		#Loopback.setup_io_peer(gs.net.io_peer, 1, 0, 0, 0)
 
 		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 0, 0)
-		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 0, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 10, 0)
 		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 0, 100)
-		Loopback.setup_io_peer(gs.net.io_peer, 200, 30, 10, 10)
+		Loopback.setup_io_peer(gs.net.io_peer, 200, 30, 5, 10)
 
 	else:
 		gs.net.server = Plat.Server.new()
