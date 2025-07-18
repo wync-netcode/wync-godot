@@ -168,7 +168,7 @@ static func get_loopback_latency_info(ctx: Loopback.Context) -> String:
 	var txt := ""
 	for peer_id: int in range(ctx.peers.size()):
 		var peer := ctx.peers[peer_id]
-		txt += "peer(%d) lat %0*dms, loss %s%% dups %s%%" % [peer_id, 3, peer.latency_current_ms, peer.packet_loss_percentage, peer.packet_duplicate_percentage]
+		txt += "peer(%d) lat %0*dms, loss %s%% dups %s%% d %sms" % [peer_id, 3, peer.latency_current_ms, peer.packet_loss_percentage, peer.packet_duplicate_percentage, peer.latency_std_dev_ms]
 		if peer_id < ctx.peers.size() -1:
 			txt += '\n'
 	return txt

@@ -455,25 +455,32 @@ static func system_player_shoot_rocket(gs: Plat.GameState):
 			WyncThrottle.wync_entity_set_spawn_data(gs.wctx, actor_id, ball_spawn_data, 20)
 
 
-# Note: Keeping this for 'timewarp strategy' comparison
-static func system_all_players_shoot_bullet(gs: Plat.GameState):
-	for player: Plat.Player in gs.players:
+static func system_players_shoot_bullet_timewarp_ping_based(gs: Plat.GameState):
+
+	for nete_peer: Plat.Server.Peer in gs.net.server.peers:
+		if !nete_peer.already_setup:
+			continue
+		var actor := PlatPublic.get_actor(gs, nete_peer.player_actor_id)
+		var player := gs.players[actor.instance_id]
 		if player == null:
 			continue
 		if player.input.action2 == false:
 			continue
-		system_player_shoot_bullet(gs, player, true)
+		var wync_peer_id = WyncJoin.get_wync_peer_id_from_nete_peer_id(gs.wctx, nete_peer.peer_id)
+		if wync_peer_id == -1:
+			continue
+
+		handle_player_shoot_timewarp_ping_based(gs, wync_peer_id, gs.wctx.co_ticks.ticks)
 
 
 static func system_player_shoot_bullet(
-	gs: Plat.GameState, player: Plat.Player, debug_color: bool = false):
+	gs: Plat.GameState, player: Plat.Player, ray_hue: float = 0):
 
 	if player == null:
 		return
 
 	var box = Rect2()
 	var ray_length = 400
-	var hue = .0 if not debug_color else .3
 	var origin = player.position
 	var direction = origin.direction_to(player.input.aim)
 
@@ -483,15 +490,15 @@ static func system_player_shoot_bullet(
 		box.position = ball.position
 		box.size = ball.size
 
-		if debug_color: origin += Vector2(2,2)
+		#if debug_color: origin += Vector2(2,2)
 
-		spawn_ray_trail(gs, origin, origin + direction * ray_length, hue, 1)
+		spawn_ray_trail(gs, origin, origin + direction * ray_length, ray_hue, 1)
 
 		var coll = Rect2Col.AABB_raycast(origin, direction, box)
 		if coll.z < 0:
 			continue
 
-		spawn_particle(gs, Vector2(coll.x, coll.y), 1, hue, 5, 0)
+		spawn_particle(gs, Vector2(coll.x, coll.y), 1, ray_hue, 5, 0)
 
 
 static func player_input_additive(gs: Plat.GameState, player: Plat.Player, node2d: Node2D):
@@ -539,9 +546,16 @@ static func system_player_grid_events(gs: Plat.GameState, player: Plat.Player):
 
 static func system_player_timewarp_shoot_event(gs: Plat.GameState, player: Plat.Player):
 
-	if not player.input.action2:
+	# ping based
+	if player.input.action2:
+		PlatWync.debug_draw_timewarped_state(gs, [18], 0.8)
+		player.input.action2 = false
 		return
-	player.input.action2 = false
+
+	# event based
+	if not player.input.action3:
+		return
+	player.input.action3 = false
 
 	var ctx = gs.wctx
 
@@ -561,9 +575,9 @@ static func system_player_timewarp_shoot_event(gs: Plat.GameState, player: Plat.
 	var event_id = WyncEventUtils.new_event_wrap_up(gs.wctx, Plat.EVENT_PLAYER_SHOOT_TIMEWARP, event_data)
 	WyncEventUtils.publish_global_event_as_client(gs.wctx, 0, event_id)
 
-	PlatWync.debug_draw_timewarped_state(gs, [18])
+	PlatWync.debug_draw_timewarped_state(gs, [18], 0.6)
 
-	Log.outc(gs.wctx, "debugtimewarpevent | sending event (left_tick %s lerp_delta %.2f)" % [event_data.last_tick_rendered_left, event_data.lerp_delta_ms])
+	Log.outc(gs.wctx, "debugtimewarpevent | sending event (left_tick %s lerp_delta %.2f) server_tick %s last pred %s" % [event_data.last_tick_rendered_left, event_data.lerp_delta_ms, ctx.co_ticks.server_ticks, ctx.current_predicted_tick])
 
 
 static func system_client_simulate_own_events(gs: Plat.GameState, tick: int):
@@ -623,14 +637,15 @@ static func system_server_events(gs: Plat.GameState):
 	# -----
 
 
-static func handle_events(gs: Plat.GameState, event_data: WyncEvent.EventData, peer_id: int, tick: int):
+static func handle_events(gs: Plat.GameState, event_data: WyncEvent.EventData, wync_peer_id: int, tick: int):
 	match event_data.event_type_id:
 		Plat.EVENT_PLAYER_BLOCK_BREAK:
 			var data = event_data.event_data as Plat.EventPlayerBlockBreak
 			grid_block_break(gs, data.pos)
 		Plat.EVENT_PLAYER_SHOOT_TIMEWARP:
 			var data = event_data.event_data as Plat.EventPlayerShootTimewarp
-			handle_player_shoot_timewarp(gs, data, peer_id, tick)
+			handle_player_shoot_timewarp(gs, data, wync_peer_id, tick, 0.3)
+			# Note: see plat_server main loop for _ping based timewarp_
 		_:
 			Log.errc(gs.wctx, "Event not recognized %s" % [event_data.event_type_id])
 
@@ -690,22 +705,49 @@ static func grid_block_break(gs: Plat.GameState, block_pos: Vector2i):
 	Log.outc(gs.wctx, "debugrela applied successfully grid_block_break")
 
 
+static func handle_player_shoot_timewarp_ping_based(gs: Plat.GameState, wync_peer_id: int, origin_tick: int):
+
+	# * approximates what tick the client saw based on his ping + lerp configuration
+	# * this method can support sub-tick timing but it's an approximation
+	
+	var ctx = gs.wctx
+	var frame_ms = 1000.0 / ctx.physic_ticks_per_second
+	var peer_latency_info := ctx.peer_latency_info[wync_peer_id] as WyncCtx.PeerLatencyInfo
+	var client_info := ctx.client_has_info[wync_peer_id] as WyncClientInfo
+
+	# predicted_tick_offset = ceil(peer_latency_info.latency_stable_ms / frame_ms) + 2
+	# tick_target = origin_tick -latency_stable -lerp_ticks -predicted_tick_offset -frame -frame
+
+	var tick_target = origin_tick -  ceil(float(peer_latency_info.latency_stable_ms * 2 + client_info.lerp_ms)/frame_ms) - 2 - 2
+	Log.outc(ctx, "debugtimewarp, ping based. origin_tick %s target %s" % [origin_tick, tick_target])
+
+	var event_data := Plat.EventPlayerShootTimewarp.new()
+	event_data.last_tick_rendered_left = tick_target
+	event_data.lerp_delta_ms = 0
+	handle_player_shoot_timewarp(gs, event_data, wync_peer_id, origin_tick, 0)
+
+
 ## temporarily resets props to a previous state to perform physics checks
 ## @arg origin_tick: int. tick from which this event originates from
 static func handle_player_shoot_timewarp(
-	gs: Plat.GameState, data: Plat.EventPlayerShootTimewarp, peer_id: int, origin_tick: int):
+	gs: Plat.GameState,
+	data: Plat.EventPlayerShootTimewarp,
+	wync_peer_id: int,
+	origin_tick: int,
+	ray_hue: float
+	):
 
 	var ctx = gs.wctx
 	if data is not Plat.EventPlayerShootTimewarp:
 		Log.errc(ctx, "timewarp, wrong data type %s" % [data])
 		return
 
-	if peer_id == 0:
-		Log.errc(ctx, "timewarp, peer_id == 0, server event, ignoring")
+	if wync_peer_id == 0:
+		Log.errc(ctx, "timewarp, wync_peer_id == 0, server event, ignoring")
 		return
 
 	var co_ticks = ctx.co_ticks
-	var client_info := ctx.client_has_info[peer_id] as WyncClientInfo
+	var client_info := ctx.client_has_info[wync_peer_id] as WyncClientInfo
 	var lerp_ms: int = client_info.lerp_ms
 	var tick_left: int = data.last_tick_rendered_left
 	var lerp_delta_ms: float = data.lerp_delta_ms
@@ -768,7 +810,9 @@ static func handle_player_shoot_timewarp(
 
 	# from peer get player actor
 
-	var peer = PlatPublic.get_nete_peer(gs, peer_id)
+	var nete_peer_id = WyncJoin.get_nete_peer_id_from_wync_peer_id(ctx, wync_peer_id)
+	assert(nete_peer_id != -1)
+	var peer = PlatPublic.get_nete_peer(gs, nete_peer_id)
 	assert(peer != null)
 	var actor_id = peer.player_actor_id
 	var actor: Plat.Actor = PlatPublic.get_actor(gs, actor_id)
@@ -786,7 +830,7 @@ static func handle_player_shoot_timewarp(
 
 	# then perform ray
 
-	PlatPublic.system_player_shoot_bullet(gs, player)
+	PlatPublic.system_player_shoot_bullet(gs, player, ray_hue)
 
 	# 4. restore original state
 

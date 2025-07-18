@@ -188,6 +188,7 @@ var client_owns_prop: Dictionary
 
 var client_ownership_updated: bool
 
+# Note: Might want to merge with PeerLatencyInfo
 # Stores client metadata
 # Array<client_id: int, WyncClientInfo>
 var client_has_info: Array

@@ -147,12 +147,17 @@ static func peer_register(ctx: WyncCtx, peer_data: int = -1) -> int:
 
 
 ## @returns int: peer_id if found; -1 if not found
-static func is_peer_registered(ctx: WyncCtx, peer_data: int) -> int:
+static func is_peer_registered(ctx: WyncCtx, nete_peer_id: int) -> int:
 	for peer_id: int in range(ctx.peers.size()):
 		var i_peer_data = ctx.peers[peer_id]
-		if i_peer_data == peer_data:
+		if i_peer_data == nete_peer_id:
 			return peer_id
 	return -1
+
+
+## @returns int: peer_id if found; -1 if not found
+static func get_wync_peer_id_from_nete_peer_id(ctx: WyncCtx, nete_peer_id: int) -> int:
+	return is_peer_registered(ctx, nete_peer_id)
 
 
 static func wync_set_my_nete_peer_id (ctx: WyncCtx, nete_peer_id: int) -> int:

@@ -190,6 +190,7 @@ class Server:
 		var peer_id: int
 		var identifier: int  # TODO: deleteme?
 		var player_actor_id: int
+		var already_setup: bool
 	var peer_count: int
 	var peers: Array[Server.Peer]
 

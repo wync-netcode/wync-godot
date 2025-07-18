@@ -59,6 +59,7 @@ static func setup_connect_client(gs: Plat.GameState):
 		for peer: Plat.Server.Peer in gs.net.server.peers:
 			if peer.peer_id == nete_peer_id:
 				peer.player_actor_id = actor_id
+				peer.already_setup = true
 
 
 	WyncJoin.clear_peers_pending_to_setup(ctx)
@@ -643,7 +644,7 @@ static func debug_draw_confirmed_states(gs: Plat.GameState, prop_id: int):
 
 
 static func debug_draw_timewarped_state(
-	gs: Plat.GameState, prop_ids: Array[int]):
+	gs: Plat.GameState, prop_ids: Array[int], hue: float):
 	#gs: Plat.GameState, prop_ids: Array[int], event: Plat.EventPlayerShootTimewarp):
 
 	var ctx = gs.wctx
@@ -665,4 +666,4 @@ static func debug_draw_timewarped_state(
 
 		var ball := gs.balls[actor.instance_id]
 
-		PlatPublic.spawn_box_trail_size(gs, prop.interpolated_state, ball.size, 0.8, 1.5*60)
+		PlatPublic.spawn_box_trail_size(gs, prop.interpolated_state, ball.size, hue, 1.5*60)
