@@ -181,7 +181,7 @@ static func get_wync_latency_info(ctx: WyncCtx) -> String:
 		if peer_id == ctx.my_peer_id:
 			continue
 		lat_info = ctx.peer_latency_info[peer_id]
-		txt += "peer(%d->%d) lat_stable %3.dms, m:%3.d, d:%d" % [ctx.my_peer_id, peer_id, lat_info.latency_stable_ms, lat_info.latency_mean_ms, lat_info.latency_std_dev_ms]
+		txt += "peer(%d->%d) lat_stable %3.dms, m:%3.d, d:%d mean %.2f" % [ctx.my_peer_id, peer_id, lat_info.latency_stable_ms, lat_info.latency_mean_ms, lat_info.latency_std_dev_ms, lat_info.debug_latency_mean_ms]
 		if peer_id < ctx.peers.size() -1:
 			txt += '\n'
 	return txt

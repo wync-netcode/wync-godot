@@ -77,9 +77,9 @@ static func wync_system_stabilize_latency (ctx: WyncCtx, lat_info: WyncCtx.PeerL
 	lat_info.latency_buffer_head += 1
 	
 	# sliding window mean
-	var counter = 0
-	var accum = 0
-	var mean = 0
+	var counter: int = 0
+	var accum: int = 0
+	var mean: int = 0
 	for lat: int in lat_info.latency_buffer:
 		if lat == 0:
 			continue
@@ -87,6 +87,7 @@ static func wync_system_stabilize_latency (ctx: WyncCtx, lat_info: WyncCtx.PeerL
 		accum += lat
 	if counter == 0: return
 	mean = ceil(float(accum) / counter)
+	lat_info.debug_latency_mean_ms = float(accum) / counter
 	
 	# if new mean is outside range, then update everything
 	

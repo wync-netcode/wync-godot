@@ -47,6 +47,7 @@ class PeerLatencyInfo:
 	var latency_std_dev_ms: int
 	var latency_buffer: Array[int]
 	var latency_buffer_head: int
+	var debug_latency_mean_ms: float
 
 # Array[12] <peer_id: int, PeerLatencyInfo>
 var peer_latency_info: Array[PeerLatencyInfo]
