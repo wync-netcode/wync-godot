@@ -3,10 +3,10 @@
 [ext_resource type="Script" uid="uid://c0ytsjda1qlcf" path="res://demo_plat/plat_server.gd" id="1_8i2rb"]
 [ext_resource type="Script" uid="uid://bdd6tve8scq67" path="res://demo_plat/plat_globals.gd" id="1_685w5"]
 [ext_resource type="Script" uid="uid://crcrj34k485a7" path="res://demo_plat/plat_client.gd" id="3_jpy0n"]
-[ext_resource type="Script" uid="uid://sc3wcybp83gb" path="res://src/ui/plat_debug_info_setup.gd" id="4_vjyac"]
-[ext_resource type="PackedScene" uid="uid://dr76xgr158sfu" path="res://src/ui/debug_info.tscn" id="5_mx31v"]
-[ext_resource type="Texture2D" uid="uid://y5l5gatkjql0" path="res://assets/graphics/ufo.png" id="6_6qooy"]
-[ext_resource type="Script" uid="uid://dhmsw04qwscyc" path="res://src/utils/debug/debug_ufo.gd" id="7_l51qt"]
+[ext_resource type="Script" uid="uid://sc3wcybp83gb" path="res://demo_plat/debug/plat_debug_info_setup.gd" id="4_vjyac"]
+[ext_resource type="PackedScene" uid="uid://dr76xgr158sfu" path="res://demo_plat/debug/debug_info.tscn" id="5_mx31v"]
+[ext_resource type="Texture2D" uid="uid://y5l5gatkjql0" path="res://assets/ufo.png" id="6_6qooy"]
+[ext_resource type="Script" uid="uid://dhmsw04qwscyc" path="res://demo_plat/debug/debug_ufo.gd" id="7_l51qt"]
 
 [node name="Root" type="Node"]
 
