@@ -39,7 +39,7 @@ func _physics_process(delta: float) -> void:
 		WyncClock.wync_peer_set_current_latency(gs.wctx, WyncCtx.SERVER_PEER_ID, gs.net.io_peer.latency_current_ms)
 		WyncFlow.wync_client_tick_end(gs.wctx)
 
-		PlatWync.extrapolate(gs, delta)
+		PlatWync.extrapolate(gs)
 
 		WyncPacketUtil.wync_set_data_limit_chars_for_out_packets(gs.wctx, 50000)
 		WyncFlow.wync_system_gather_packets(gs.wctx)

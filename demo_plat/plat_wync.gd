@@ -474,7 +474,7 @@ static func find_out_what_player_i_control(gs: Plat.GameState):
 			break
 
 
-static func extrapolate(gs: Plat.GameState, delta: float):
+static func extrapolate(gs: Plat.GameState):
 
 	var ctx = gs.wctx
 	var target_tick = ctx.co_predict_data.target_tick
@@ -607,7 +607,6 @@ static func debug_draw_confirmed_interpolated_states(gs: Plat.GameState):
 
 	var left_value: Variant
 	var right_value: Variant
-	var last_value: Variant
 
 	for prop_id in ctx.type_state__interpolated_regular_prop_ids:
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)

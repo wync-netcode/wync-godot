@@ -133,7 +133,7 @@ static func publish_global_event_as_server \
 
 static func wync_send_event_data (ctx: WyncCtx):
 	if not ctx.connected:
-		Log.err("Not connected", Log.TAG_EVENT_DATA)
+		Log.errc(ctx, "Not connected")
 		return
 
 	# send events
@@ -165,7 +165,7 @@ static func wync_system_send_events_to_peer (ctx: WyncCtx, wync_peer_id: int) ->
 		# get event data
 		
 		if not ctx.events.has(event_id):
-			Log.err("couldn't find event_id %s" % event_id, Log.TAG_EVENT_DATA)
+			Log.errc(ctx, "couldn't find event_id %s" % event_id)
 			continue
 		
 		var wync_event := ctx.events[event_id]
@@ -206,7 +206,7 @@ static func wync_system_send_events_to_peer (ctx: WyncCtx, wync_peer_id: int) ->
 		var packet_out = result[1] as WyncPacketOut
 		WyncPacketUtil.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.RELIABLE, true)
 
-	Log.out("sent", Log.TAG_EVENT_DATA)
+	Log.outc(ctx, "sent")
 
 	return OK
 

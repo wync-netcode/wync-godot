@@ -563,7 +563,7 @@ static func system_player_timewarp_shoot_event(gs: Plat.GameState, player: Plat.
 	# poll once per tick
 
 	if player.last_tick_polled == ctx.co_ticks.ticks:
-		Log.outc(ctx, "skipping %s" % Log.TAG_SUBTICK_EVENT)
+		Log.outc(ctx, "skipping tick %s" % ctx.co_ticks.ticks)
 		return
 	player.last_tick_polled = ctx.co_ticks.ticks
 
@@ -599,7 +599,7 @@ static func system_client_simulate_own_events(gs: Plat.GameState, tick: int):
 			continue
 
 		# handle it
-		Log.outc(gs.wctx, "debugrela event handling | tick(%s) handling peer%s event %s" % [tick, wync_peer_id, event_id], Log.TAG_GAME_EVENT)
+		Log.outc(gs.wctx, "debugrela event handling | tick(%s) handling peer%s event %s" % [tick, wync_peer_id, event_id])
 		handle_events(gs, event.data, wync_peer_id, tick)
 
 
@@ -765,10 +765,10 @@ static func handle_player_shoot_timewarp(
 	if ((tick_left <= co_ticks.ticks - ctx.max_tick_history_timewarp) ||
 		(tick_left > co_ticks.ticks)
 		):
-		Log.errc(ctx, "debugtimewarp, tick_left out of range (%s)" % [tick_left], Log.TAG_TIMEWARP)
+		Log.warc(ctx, "debugtimewarp, tick_left out of range (%s) skipping" % [tick_left])
 		return
 	
-	Log.outc(ctx, "debugtimewarp, client shoots at tick_left %d | lerp_delta %s | lerp_ms %s | tick_diff %s" % [ tick_left, lerp_delta_ms, lerp_ms, co_ticks.ticks - tick_left ], Log.TAG_TIMEWARP)
+	Log.outc(ctx, "debugtimewarp, client shoots at tick_left %d | lerp_delta %s | lerp_ms %s | tick_diff %s" % [ tick_left, lerp_delta_ms, lerp_ms, co_ticks.ticks - tick_left ])
 
 
 	# 1. save current state (for selcted timewarpable props)

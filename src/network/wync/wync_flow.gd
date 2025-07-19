@@ -91,7 +91,7 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 			if not is_client:
 				WyncDeltaSyncUtilsInternal.wync_handle_pkt_delta_prop_ack(ctx, wync_pkt.data, from_nete_peer_id)
 		_:
-			Log.err("wync packet_type_id(%s) not recognized skipping (%s)" % [wync_pkt.packet_type_id, wync_pkt.data])
+			Log.errc(ctx, "wync packet_type_id(%s) not recognized skipping (%s)" % [wync_pkt.packet_type_id, wync_pkt.data])
 			return -1
 
 	return OK

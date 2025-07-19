@@ -108,8 +108,6 @@ static func saved_state_insert_in_place (
 	prop.state_id_to_tick.insert_at(state_id, tick) # TODO: deleteme
 	prop.saved_states.insert_at(state_id, state)
 
-	Log.outc(_ctx, "prop_name_id %s saved tick %s" % [prop.name_id, tick])
-
 
 static func server_tick_arrived_at_local_tick (prop: WyncEntityProp, server_tick: int) -> int:
 

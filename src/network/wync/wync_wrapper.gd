@@ -123,7 +123,7 @@ static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 
 		var input = WyncEntityProp.saved_state_get(prop, ctx.co_ticks.ticks)
 		if input == null:
-			Log.errc(ctx, "couldn't find input (%s) for tick (%s)" % [prop.name_id, ctx.co_ticks.ticks])
+			Log.warc(ctx, "couldn't find input (%s) for tick (%s)" % [prop.name_id, ctx.co_ticks.ticks])
 			continue
 
 		var setter = ctx.wrapper.prop_setter[prop_id]

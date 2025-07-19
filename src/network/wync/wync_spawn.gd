@@ -233,7 +233,7 @@ static func _wync_confirm_client_can_see_entity(ctx: WyncCtx, client_id: int, en
 	for prop_id: int in ctx.entity_has_props[entity_id]:
 		var prop = WyncTrack.get_prop(ctx, prop_id)
 		if prop == null:
-			Log.err("Couldn't find prop(%s) in entity(%s)" % [prop_id, entity_id])
+			Log.errc(ctx, "Couldn't find prop(%s) in entity(%s)" % [prop_id, entity_id])
 			continue
 		prop = prop as WyncEntityProp
 
@@ -245,5 +245,5 @@ static func _wync_confirm_client_can_see_entity(ctx: WyncCtx, client_id: int, en
 	var new_entity_set = ctx.clients_sees_new_entities[client_id] as Dictionary
 	new_entity_set.erase(entity_id)
 
-	Log.outc(ctx, "I: spawn, confirmed: client %s can now see entity %s" % [
+	Log.outc(ctx, "spawn, confirmed: client %s can now see entity %s" % [
 		client_id, entity_id])

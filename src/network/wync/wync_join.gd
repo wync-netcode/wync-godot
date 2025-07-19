@@ -44,7 +44,7 @@ static func wync_handle_pkt_join_res(ctx: WyncCtx, data: Variant) -> int:
 	data = data as WyncPktJoinRes
 	
 	if not data.approved:
-		Log.err("Connection DENIED for client(%s) (me)" % [ctx.my_nete_peer_id], Log.TAG_WYNC_CONNECT)
+		Log.errc(ctx, "Connection DENIED for client(%s) (me)" % [ctx.my_nete_peer_id])
 		return 2
 		
 	# setup client stuff
@@ -54,7 +54,7 @@ static func wync_handle_pkt_join_res(ctx: WyncCtx, data: Variant) -> int:
 	ctx.my_peer_id = data.wync_client_id
 	WyncJoin.client_setup_my_client(ctx, data.wync_client_id)
 
-	Log.out("client nete_peer_id(%s) connected as wync_peer_id(%s)" % [ctx.my_nete_peer_id, ctx.my_peer_id], Log.TAG_WYNC_CONNECT, Log.TAG_DEBUG2)
+	Log.outc(ctx, "client nete_peer_id(%s) connected as wync_peer_id(%s)" % [ctx.my_nete_peer_id, ctx.my_peer_id])
 	return OK
 
 
@@ -71,7 +71,7 @@ static func wync_handle_pkt_join_req(ctx: WyncCtx, data: Variant, from_nete_peer
 	
 	var wync_client_id = WyncJoin.is_peer_registered(ctx, from_nete_peer_id)
 	if wync_client_id != -1:
-		Log.out("Client %s already setup in Wync as %s" % [from_nete_peer_id, wync_client_id], Log.TAG_WYNC_CONNECT)
+		Log.outc(ctx, "Client %s already setup in Wync as %s" % [from_nete_peer_id, wync_client_id])
 		return 1
 	wync_client_id = WyncJoin.peer_register(ctx, from_nete_peer_id)
 	
@@ -126,7 +126,7 @@ static func wync_handle_packet_res_client_info(ctx: WyncCtx, data: Variant):
 	
 	# set prop ownership
 	WyncInput.prop_set_client_owner(ctx, data.prop_id, data.peer_id)
-	Log.out("Prop %s ownership given to client %s" % [data.prop_id, data.peer_id], Log.TAG_WYNC_PEER_SETUP)
+	Log.outc(ctx, "Prop %s ownership given to client %s" % [data.prop_id, data.peer_id])
 
 	# recompute filtered props
 	ctx.was_any_prop_added_deleted = true

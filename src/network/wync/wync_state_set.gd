@@ -9,13 +9,13 @@ class_name WyncStateSet
 static func does_delta_prop_has_undo_events(ctx: WyncCtx, prop_id: int, tick: int) -> bool:
 	var prop = WyncTrack.get_prop(ctx, prop_id)
 	if prop == null:
-		Log.err("couldn't find prop id(%s)" % [prop_id], Log.TAG_LATEST_VALUE)
+		Log.errc(ctx, "couldn't find prop id(%s)" % [prop_id])
 		return false
 	prop = prop as WyncEntityProp
 
 	var aux_prop = WyncTrack.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
 	if aux_prop == null:
-		Log.err("WyncStateSet | delta sync | couldn't find aux_prop id(%s)" % [prop.auxiliar_delta_events_prop_id], Log.TAG_LATEST_VALUE)
+		Log.errc(ctx, "WyncStateSet | delta sync | couldn't find aux_prop id(%s)" % [prop.auxiliar_delta_events_prop_id])
 		return false
 	aux_prop = aux_prop as WyncEntityProp
 
@@ -48,7 +48,7 @@ static func wync_reset_state_to_saved_absolute (
 		value = WyncEntityProp.saved_state_get(prop, tick)
 
 		if value == null:
-			Log.errc(ctx, "debugtimewarp, prop_id %s NOT FOUND tick %s" % [prop_id, tick])
+			Log.warc(ctx, "debugtimewarp, prop_id %s NOT FOUND tick %s" % [prop_id, tick])
 			if prop.prop_type != WyncEntityProp.PROP_TYPE.INPUT:
 				assert(false)
 				print_stack()
@@ -145,7 +145,7 @@ static func predicted_delta_props_rollback_to_canonic_state (ctx: WyncCtx, prop_
 	for prop_id: int in prop_ids:
 		var prop = WyncTrack.get_prop(ctx, prop_id)
 		if prop == null:
-			Log.err("WyncStateSet | delta sync | couldn't find prop id(%s)" % [prop_id], Log.TAG_LATEST_VALUE)
+			Log.errc(ctx, "WyncStateSet | delta sync | couldn't find prop id(%s)" % [prop_id])
 			continue 
 		prop = prop as WyncEntityProp
 
@@ -154,7 +154,7 @@ static func predicted_delta_props_rollback_to_canonic_state (ctx: WyncCtx, prop_
 
 		var aux_prop = WyncTrack.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
 		if aux_prop == null:
-			Log.err("WyncStateSet | delta sync | couldn't find aux_prop id(%s)" % [prop.auxiliar_delta_events_prop_id], Log.TAG_LATEST_VALUE)
+			Log.errc(ctx, "WyncStateSet | delta sync | couldn't find aux_prop id(%s)" % [prop.auxiliar_delta_events_prop_id])
 			continue
 		aux_prop = aux_prop as WyncEntityProp
 
@@ -207,13 +207,13 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 	for prop_id: int in prop_ids:
 		var prop = WyncTrack.get_prop(ctx, prop_id)
 		if prop == null:
-			Log.err("WyncStateSet | delta sync | couldn't find prop id(%s)" % [prop_id])
+			Log.errc(ctx, "WyncStateSet | delta sync | couldn't find prop id(%s)" % [prop_id])
 			continue 
 		prop = prop as WyncEntityProp
 
 		var aux_prop = WyncTrack.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
 		if aux_prop == null:
-			Log.err("WyncStateSet | delta sync | couldn't find aux_prop id(%s)" % [prop.auxiliar_delta_events_prop_id], Log.TAG_LATEST_VALUE)
+			Log.errc(ctx, "WyncStateSet | delta sync | couldn't find aux_prop id(%s)" % [prop.auxiliar_delta_events_prop_id])
 			continue
 		aux_prop = aux_prop as WyncEntityProp
 		
@@ -294,10 +294,10 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 					# in that case we're gonna continue in hopes we eventually get the event data
 					# TODO: implement measures against this ever happening, write tests againts this.
 					if err:
-						Log.err("delta sync | VERY BAD, couldn't apply event id(%s) err(%s)" % [event_id, err], Log.TAG_LATEST_VALUE)
+						Log.errc(ctx, "delta sync | VERY BAD, couldn't apply event id(%s) err(%s)" % [event_id, err])
 						assert(false)
 						break
-					Log.out("delta sync | client consumed delta event %d" % [event_id], Log.TAG_LATEST_VALUE)
+					Log.outc(ctx, "delta sync | client consumed delta event %d" % [event_id])
 
 			# commit
 

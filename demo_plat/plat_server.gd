@@ -22,7 +22,7 @@ func _ready() -> void:
 	#PlatWync.setup_sync_for_ball_actor(gs, ball_actor_id)
 
 
-func _physics_process(delta: float) -> void:
+func _physics_process(_delta: float) -> void:
 	PlatNet.consume_loopback_packets(gs)
 	WyncFlow.wync_server_tick_start(gs.wctx)
 

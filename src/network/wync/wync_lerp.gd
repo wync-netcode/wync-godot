@@ -101,7 +101,7 @@ static func wync_handle_packet_client_set_lerp_ms(ctx: WyncCtx, data: Variant, f
 	# client and prop exists
 	var client_id = WyncJoin.is_peer_registered(ctx, from_nete_peer_id)
 	if client_id < 0:
-		Log.err("client %s is not registered" % client_id, Log.TAG_INPUT_RECEIVE)
+		Log.errc(ctx, "client %s is not registered" % client_id)
 		return 2
 
 	var client_info := ctx.client_has_info[client_id] as WyncClientInfo

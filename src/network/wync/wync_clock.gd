@@ -54,7 +54,7 @@ static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
 	co_ticks.server_tick_offset = CoTicks.server_tick_offset_collection_get_most_common(co_ticks)
 	co_ticks.server_ticks = co_ticks.ticks + co_ticks.server_tick_offset
 
-	Log.out("Servertime %s, real %s, d %s | server_ticks_aprox %s | latency %s | clock %s | %s" % [
+	Log.outc(ctx, "clock, servertime %s real %s d %s | server_ticks_aprox %s | latency %s | clock %s | %s" % [
 		int(current_server_time),
 		Time.get_ticks_msec(),
 		str(Time.get_ticks_msec() - current_server_time).pad_zeros(2).pad_decimals(1),
@@ -109,7 +109,7 @@ static func wync_system_stabilize_latency (ctx: WyncCtx, lat_info: WyncCtx.PeerL
 		# NOTE: Allow for choosing a latency stabilization strategy:
 		# e.g. none (for using directly what the transport tells) or 98th perc
 		
-		Log.out("latencyme stable updated to %s | mean %s | stddev %s | acum %s" % [lat_info.latency_stable_ms, lat_info.latency_mean_ms, lat_info.latency_std_dev_ms, accum], Log.TAG_LATENCY)
+		Log.outc(ctx, "latencyme stable updated to %s | mean %s | stddev %s | acum %s" % [lat_info.latency_stable_ms, lat_info.latency_mean_ms, lat_info.latency_std_dev_ms, accum])
 
 
 static func wync_update_prediction_ticks (ctx: WyncCtx):
@@ -130,10 +130,9 @@ static func wync_update_prediction_ticks (ctx: WyncCtx):
 		var target_tick = max(co_ticks.server_ticks + co_predict_data.tick_offset, co_predict_data.target_tick)
 		var target_time = curr_time + co_predict_data.tick_offset_desired * (1000.0 / physics_fps)
 
-		Log.out("co_predict_data.tick_offset_desired %s" % [co_predict_data.tick_offset_desired], Log.TAG_PRED_TICK)
-		Log.out("Updating tick offset to %s" % co_predict_data.tick_offset, Log.TAG_PRED_TICK)
-		Log.out("target_tick %s | target_time %s | with tick offset %s" % [target_tick, target_time, curr_time + co_predict_data.tick_offset * (1000.0 / physics_fps) ], Log.TAG_PRED_TICK)
-		Log.out("target_tick_timestamp %s" % [target_tick * (1000.0 / physics_fps) ], Log.TAG_PRED_TICK)
+		Log.outc(ctx, "predict, tick_offset_desired %s tick_offset %s target_tick %s target_time %s" % [
+			co_predict_data.tick_offset_desired, co_predict_data.tick_offset, target_tick, target_time
+		])
 
 			
 	# Smoothly transition tick_offset

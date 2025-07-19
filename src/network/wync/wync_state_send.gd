@@ -251,7 +251,7 @@ static func wync_prop_event_send_event_ids_to_peer(ctx: WyncCtx, prop: WyncEntit
 		
 		var copy = WyncMisc.duplicate_any(input)
 		if copy == null:
-			Log.errc(ctx, "WARNING: input data couldn't be duplicated %s" % [input], Log.TAG_DELTA_EVENT)
+			Log.errc(ctx, "WARNING: input data couldn't be duplicated %s" % [input])
 			continue
 		tick_input_wrap.data = copy if copy != null else input
 			
@@ -272,7 +272,7 @@ static func wync_get_event_data_packet (ctx: WyncCtx, peer_id: int, event_ids: A
 	
 	for event_id: int in event_ids:
 		if not ctx.events.has(event_id):
-			Log.err("couldn't find event_id %s" % event_id, Log.TAG_EVENT_DATA)
+			Log.errc(ctx, "couldn't find event_id %s" % event_id)
 			continue
 		
 		var wync_event := ctx.events[event_id]
@@ -351,7 +351,7 @@ static func wync_client_send_inputs (ctx: WyncCtx):
 			
 			var copy = WyncMisc.duplicate_any(input)
 			if copy == null:
-				Log.out("WARNING: input data couldn't be duplicated %s" % [input], Log.TAG_INPUT_BUFFER)
+				Log.outc(ctx, "WARNING: input data couldn't be duplicated %s" % [input])
 			tick_input_wrap.data = copy if copy != null else input
 				
 			pkt_inputs.inputs.append(tick_input_wrap)

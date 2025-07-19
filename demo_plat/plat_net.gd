@@ -66,7 +66,7 @@ static func client_handle_connection_request_response(gs: Plat.GameState, data: 
 	
 	WyncJoin.wync_set_my_nete_peer_id(gs.wctx, io_peer.peer_id)
 	WyncJoin.wync_set_server_nete_peer_id(gs.wctx, client.server_peer)
-	Log.out("client_peer_id %s connected to server_peer_id %s" % [io_peer.peer_id, client.server_peer], Log.TAG_NETE_CONNECT)
+	Log.outc(gs.wctx, "client_peer_id %s connected to server_peer_id %s" % [io_peer.peer_id, client.server_peer])
 
 
 static func server_handle_connection_request(gs: Plat.GameState, data: NetePktJoinReq, from_peer: int):
@@ -81,7 +81,7 @@ static func server_handle_connection_request(gs: Plat.GameState, data: NetePktJo
 			already_registered = true
 	
 	if already_registered:
-		Log.out("Client %s already registered" % client_peer_id, Log.TAG_NETE_CONNECT)
+		Log.outc(gs.wctx, "Client %s already registered" % client_peer_id)
 		return
 
 	# register client on server

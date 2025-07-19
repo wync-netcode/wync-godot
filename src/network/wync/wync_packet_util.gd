@@ -11,12 +11,12 @@ static func wync_packet_type_exists(packet_type_id: int) -> bool:
 static func wync_wrap_packet_out(ctx: WyncCtx, to_wync_peer_id: int, packet_type_id: int, data: Variant) -> Array:
 
 	if not wync_packet_type_exists(packet_type_id):
-		Log.err("Invalid packet_type_id(%s)" % [packet_type_id])
+		Log.errc(ctx, "Invalid packet_type_id(%s)" % [packet_type_id])
 		return [1, null]
 
 	var nete_peer_id = WyncJoin.get_nete_peer_id_from_wync_peer_id(ctx, to_wync_peer_id)
 	if nete_peer_id == -1:
-		Log.err("Couldn't find a nete_peer_id for wync_peer_id(%s)" % [to_wync_peer_id])
+		Log.errc(ctx, "Couldn't find a nete_peer_id for wync_peer_id(%s)" % [to_wync_peer_id])
 		return [2, null]
 
 	var wync_pkt = WyncPacket.new()

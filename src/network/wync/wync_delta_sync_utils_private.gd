@@ -33,12 +33,12 @@ static func event_is_healthy (ctx: WyncCtx, event_id: int) -> int:
 	# TODO: Make a new function get_event(event_id)
 	
 	if not ctx.events.has(event_id):
-		Log.errc(ctx, "delta sync | couldn't find event (id %s)" % [event_id], Log.TAG_DELTA_EVENT)
+		Log.errc(ctx, "delta sync | couldn't find event (id %s)" % [event_id])
 		return 1
 
 	var event_data = ctx.events[event_id]
 	if event_data is not WyncEvent:
-		Log.errc(ctx, "delta sync | event (id %s) found but invalid" % [event_id], Log.TAG_DELTA_EVENT)
+		Log.errc(ctx, "delta sync | event (id %s) found but invalid" % [event_id])
 		return 2
 
 	return OK

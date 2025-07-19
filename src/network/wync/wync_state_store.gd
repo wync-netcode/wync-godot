@@ -18,7 +18,7 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 
 		var prop = WyncTrack.get_prop(ctx, snap_prop.prop_id)
 		if prop == null:
-			Log.errc(ctx, "couldn't find prop (%s) saving as dummy prop..." % [snap_prop.prop_id], Log.TAG_LATEST_VALUE)
+			Log.warc(ctx, "couldn't find prop (%s) saving as dummy prop..." % [snap_prop.prop_id])
 			WyncTrack.prop_register_update_dummy(ctx, snap_prop.prop_id, data.tick, 99, snap_prop.state)
 			continue
 
@@ -95,11 +95,11 @@ static func wync_server_handle_pkt_inputs(ctx: WyncCtx, data: Variant, from_nete
 	# client and prop exists
 	var client_id = WyncJoin.is_peer_registered(ctx, from_nete_peer_id)
 	if client_id < 0:
-		Log.err("client %s is not registered" % from_nete_peer_id, Log.TAG_INPUT_RECEIVE)
+		Log.errc(ctx, "client %s is not registered" % from_nete_peer_id)
 		return 3
 	var prop_id = data.prop_id
 	if not WyncTrack.prop_exists(ctx, prop_id):
-		Log.err("prop %s doesn't exists" % prop_id, Log.TAG_INPUT_RECEIVE)
+		Log.errc(ctx, "prop %s doesn't exists" % prop_id)
 		return 4
 	
 	# check client has ownership over this prop
@@ -120,7 +120,7 @@ static func wync_server_handle_pkt_inputs(ctx: WyncCtx, data: Variant, from_nete
 	for input: WyncPktInputs.NetTickDataDecorator in data.inputs:
 		var copy = WyncMisc.duplicate_any(input.data)
 		if copy == null:
-			Log.out("WARNING: input data can't be duplicated %s" % [input.data], Log.TAG_INPUT_RECEIVE)
+			Log.outc(ctx, "WARNING: input data can't be duplicated %s" % [input.data])
 		var to_insert = copy
 
 		# TODO: reject input that is too old
@@ -142,7 +142,7 @@ static func wync_client_handle_pkt_inputs(ctx: WyncCtx, data: Variant) -> int:
 
 	var prop := WyncTrack.get_prop(ctx, data.prop_id)
 	if prop == null:
-		Log.err("prop %s doesn't exists" % data.prop_id, Log.TAG_INPUT_RECEIVE)
+		Log.warc(ctx, "prop %s doesn't exists, dropping input..." % data.prop_id)
 		return 4
 	
 	# save the input in the prop before simulation
@@ -153,7 +153,7 @@ static func wync_client_handle_pkt_inputs(ctx: WyncCtx, data: Variant) -> int:
 	for input: WyncPktInputs.NetTickDataDecorator in data.inputs:
 		var copy = WyncMisc.duplicate_any(input.data)
 		if copy == null:
-			Log.out("WARNING: input data can't be duplicated %s" % [input.data], Log.TAG_INPUT_RECEIVE)
+			Log.warc(ctx, "input data can't be duplicated %s" % [input.data])
 		var to_insert = copy if copy != null else input.data
 
 		prop.last_ticks_received.push(input.tick)

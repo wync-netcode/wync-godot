@@ -162,7 +162,7 @@ static func delta_prop_push_event_to_current \
 
 	# append event to current delta events
 	prop.current_delta_events.append(event_id)
-	Log.out("delta_prop_push_event_to_current | delta sync | ticks(%s) event_list %s" % [ctx.co_ticks.ticks, prop.current_delta_events], Log.TAG_DELTA_EVENT)
+	Log.outc(ctx, "delta_prop_push_event_to_current | delta sync | ticks(%s) event_list %s" % [ctx.co_ticks.ticks, prop.current_delta_events])
 	return OK
 
 
@@ -222,7 +222,7 @@ static func _merge_event_to_state \
 	# TODO: Make a new function get_event(event_id)
 	
 	if not ctx.events.has(event_id):
-		Log.err("delta sync | couldn't find event id(%s)" % [event_id], Log.TAG_DELTA_EVENT)
+		Log.errc(ctx, "delta sync | couldn't find event id(%s)" % [event_id])
 		return [14, null]
 	var event_data = (ctx.events[event_id] as WyncEvent).data
 

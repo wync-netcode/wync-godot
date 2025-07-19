@@ -265,7 +265,7 @@ static func wync_add_local_existing_entity \
 	if wync_client_id == WyncCtx.SERVER_PEER_ID:
 		return 2
 	if not WyncTrack.is_entity_tracked(ctx, entity_id): # entity exists
-		Log.err("entity (%s) isn't tracked", Log.TAG_THROTTLE)
+		Log.errc(ctx, "entity (%s) isn't tracked")
 		return 3
 
 	var entity_set = ctx.clients_sees_entities[wync_client_id]

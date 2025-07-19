@@ -106,7 +106,7 @@ static func wync_entity_set_spawn_data(ctx: WyncCtx, entity_id: int, data: Varia
 static func wync_client_now_can_see_entity(ctx: WyncCtx, client_id: int, entity_id: int) -> int:
 	# entity exists
 	if not WyncTrack.is_entity_tracked(ctx, entity_id):
-		Log.err("entity (%s) isn't tracked", Log.TAG_THROTTLE)
+		Log.errc(ctx, "entity (%s) isn't tracked")
 		return 1
 
 	# already viewed
@@ -123,7 +123,7 @@ static func wync_client_now_can_see_entity(ctx: WyncCtx, client_id: int, entity_
 static func wync_client_no_longer_sees_entity(ctx: WyncCtx, client_id: int, entity_id: int) -> int:
 	# entity exists
 	if not WyncTrack.is_entity_tracked(ctx, entity_id):
-		Log.err("entity (%s) isn't tracked", Log.TAG_THROTTLE)
+		Log.errc(ctx, "entity (%s) isn't tracked")
 		return 1
 
 	# add
