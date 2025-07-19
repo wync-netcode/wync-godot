@@ -263,3 +263,15 @@ class EventPlayerShootTimewarp:
 		newi.last_tick_rendered_left = last_tick_rendered_left
 		newi.lerp_delta_ms = lerp_delta_ms
 		return newi
+
+# Move this elsewhere maybe?
+
+## The user has it's own packet types, he must use a magic number to distinguish 
+## his packets from Wync's packets
+
+enum {
+	NETE_PKT_ANY,
+	NETE_PKT_AMOUNT,
+	NETE_PKT_WYNC_PKT = 888
+}
+

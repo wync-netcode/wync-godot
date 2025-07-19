@@ -1,9 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://cf0xt5y7pclvb"]
-
-[ext_resource type="Texture2D" uid="uid://b6vptyjhyt5ty" path="res://icon.svg" id="1_54pxx"]
-
-[node name="CoProjectileRenderer" type="Node2D"]
-
-[node name="Sprite2D" type="Sprite2D" parent="."]
-scale = Vector2(0.15625, 0.15625)
-texture = ExtResource("1_54pxx")

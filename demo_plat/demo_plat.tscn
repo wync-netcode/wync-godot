@@ -6,7 +6,7 @@
 [ext_resource type="Script" uid="uid://sc3wcybp83gb" path="res://src/ui/plat_debug_info_setup.gd" id="4_vjyac"]
 [ext_resource type="PackedScene" uid="uid://dr76xgr158sfu" path="res://src/ui/debug_info.tscn" id="5_mx31v"]
 [ext_resource type="Texture2D" uid="uid://y5l5gatkjql0" path="res://assets/graphics/ufo.png" id="6_6qooy"]
-[ext_resource type="Script" uid="uid://c5ybvp57yfe8u" path="res://src/utils/debug/debug_ufo.gd" id="7_l51qt"]
+[ext_resource type="Script" uid="uid://dhmsw04qwscyc" path="res://src/utils/debug/debug_ufo.gd" id="7_l51qt"]
 
 [node name="Root" type="Node"]
 

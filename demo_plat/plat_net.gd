@@ -45,7 +45,7 @@ static func register_peer_myself(gs: Plat.GameState):
 static func client_send_connection_request(gs: Plat.GameState):
 	var packet_data = NetePktJoinReq.new()
 	var user_packet = UserNetPacket.new()
-	user_packet.packet_type_id = GameInfo.NETE_PKT_ANY
+	user_packet.packet_type_id = Plat.NETE_PKT_ANY
 	user_packet.data = packet_data
 	# assuming server is peer 0
 	Loopback.queue_reliable_packet(PlatGlobals.loopback_ctx, gs.net.io_peer, 0, user_packet)
@@ -100,7 +100,7 @@ static func server_handle_connection_request(gs: Plat.GameState, data: NetePktJo
 	packet_data.identifier = server_peer.identifier
 
 	var user_packet = UserNetPacket.new()
-	user_packet.packet_type_id = GameInfo.NETE_PKT_ANY
+	user_packet.packet_type_id = Plat.NETE_PKT_ANY
 	user_packet.data = packet_data
 
 	Loopback.queue_reliable_packet(PlatGlobals.loopback_ctx, gs.net.io_peer, server_peer.peer_id, user_packet)
@@ -117,7 +117,7 @@ static func consume_loopback_packets(gs: Plat.GameState):
 		var user_pkt = pkt.data as UserNetPacket
 		var data = user_pkt.data
 
-		if user_pkt.packet_type_id == GameInfo.NETE_PKT_WYNC_PKT:
+		if user_pkt.packet_type_id == Plat.NETE_PKT_WYNC_PKT:
 			if data is WyncPacket:
 				WyncFlow.wync_feed_packet(gs.wctx, data, pkt.from_peer)
 		elif data is NetePktJoinReq:
@@ -135,14 +135,14 @@ static func queue_wync_packets(gs: Plat.GameState):
 	for pkt: WyncPacketOut in gs.wctx.out_reliable_packets:
 		
 		var user_packet = UserNetPacket.new()
-		user_packet.packet_type_id = GameInfo.NETE_PKT_WYNC_PKT
+		user_packet.packet_type_id = Plat.NETE_PKT_WYNC_PKT
 		user_packet.data = pkt.data 
 		Loopback.queue_reliable_packet(PlatGlobals.loopback_ctx, io_peer, pkt.to_nete_peer_id, user_packet)
 
 	for pkt: WyncPacketOut in gs.wctx.out_unreliable_packets:
 		
 		var user_packet = UserNetPacket.new()
-		user_packet.packet_type_id = GameInfo.NETE_PKT_WYNC_PKT
+		user_packet.packet_type_id = Plat.NETE_PKT_WYNC_PKT
 		user_packet.data = pkt.data 
 		Loopback.queue_unreliable_packet(PlatGlobals.loopback_ctx, io_peer, pkt.to_nete_peer_id, user_packet)
 
