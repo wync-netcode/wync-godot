@@ -122,8 +122,10 @@ static func wync_server_handle_pkt_inputs(ctx: WyncCtx, data: Variant, from_nete
 		if copy == null:
 			Log.out("WARNING: input data can't be duplicated %s" % [input.data], Log.TAG_INPUT_RECEIVE)
 		var to_insert = copy
+
+		# TODO: reject input that is too old
 		
-		WyncEntityProp.saved_state_insert(ctx, input_prop, input.tick, to_insert)
+		WyncEntityProp.saved_state_insert_in_place(ctx, input_prop, input.tick, to_insert)
 		#Log.outc(ctx, "couldn't find input | inserted input (%s) tick (%s) value (%s)" % [input_prop.name_id, input.tick, copy])
 
 	return OK

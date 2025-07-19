@@ -36,7 +36,8 @@ static func wync_xtrap_server_filter_prop_ids(ctx: WyncCtx):
 			# TODO: Check if it has a healthy _auxiliar prop_
 
 		else:
-			ctx.filtered_regular_extractable_prop_ids.append(prop_id)
+			if (prop.prop_type == WyncEntityProp.PROP_TYPE.STATE):
+				ctx.filtered_regular_extractable_prop_ids.append(prop_id)
 
 			if prop.timewarpable:
 				ctx.filtered_regular_timewarpable_prop_ids.append(prop_id)

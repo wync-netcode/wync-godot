@@ -502,14 +502,15 @@ static func system_player_shoot_bullet(
 
 
 static func player_input_additive(gs: Plat.GameState, player: Plat.Player, node2d: Node2D):
+	var on_frame: bool = Engine.get_physics_frames() % 2 == 0
 	player.input.movement_dir = Vector2(
 		int(Input.is_action_pressed("p1_right")) - int(Input.is_action_pressed("p1_left")),
 		int(Input.is_action_pressed("p1_down")) - int(Input.is_action_pressed("p1_up")),
 	)
 	#player.input.movement_dir = Vector2(signf(sin(Time.get_ticks_msec() / 100.0)), -1)
-	player.input.action1 = player.input.action1 || Input.is_action_pressed("p1_mouse1")
-	player.input.action2 = player.input.action2 || Input.is_action_pressed("p1_mouse2")
-	player.input.action3 = player.input.action3 || Input.is_action_pressed("p1_mouse3")
+	player.input.action1 = player.input.action1 || (Input.is_action_pressed("p1_mouse1") && on_frame)
+	player.input.action2 = player.input.action2 || (Input.is_action_pressed("p1_mouse2") && on_frame)
+	player.input.action3 = player.input.action3 || (Input.is_action_pressed("p1_mouse3") && on_frame)
 	player.input.aim = PlatUtils.SCREEN_CORD_TO_GRID_CORD(gs, node2d.get_global_mouse_position())
 
 
@@ -716,9 +717,9 @@ static func handle_player_shoot_timewarp_ping_based(gs: Plat.GameState, wync_pee
 	var client_info := ctx.client_has_info[wync_peer_id] as WyncClientInfo
 
 	# predicted_tick_offset = ceil(peer_latency_info.latency_stable_ms / frame_ms) + 2
-	# tick_target = origin_tick -latency_stable -lerp_ticks -predicted_tick_offset -frame -frame
+	# tick_target = origin_tick -latency_stable -lerp_ticks -predicted_tick_offset
 
-	var tick_target = origin_tick -  ceil(float(peer_latency_info.latency_stable_ms * 2 + client_info.lerp_ms)/frame_ms) - 2 - 2
+	var tick_target = origin_tick -  ceil(float(peer_latency_info.latency_stable_ms * 2 + client_info.lerp_ms)/frame_ms) - 2
 	Log.outc(ctx, "debugtimewarp, ping based. origin_tick %s target %s" % [origin_tick, tick_target])
 
 	var event_data := Plat.EventPlayerShootTimewarp.new()
@@ -782,8 +783,10 @@ static func handle_player_shoot_timewarp(
 		if prop_id not in ctx.filtered_regular_timewarpable_interpolable_prop_ids:
 			non_interpolable.append(prop_id)
 
-	WyncStateSet.wync_reset_state_to_saved_absolute(
-		ctx, non_interpolable, tick_left + floor(lerp_delta_ms/frame_ms) )
+	var tick_origin_target = tick_left + floor(lerp_delta_ms/frame_ms) 
+	if tick_origin_target != ctx.co_ticks.ticks:
+		WyncStateSet.wync_reset_state_to_saved_absolute(
+			ctx, non_interpolable, tick_left + floor(lerp_delta_ms/frame_ms) )
 	WyncLerp.wync_reset_state_to_interpolated_absolute(
 		ctx, ctx.filtered_regular_timewarpable_interpolable_prop_ids, tick_left, lerp_delta_ms)
 
@@ -823,10 +826,15 @@ static func handle_player_shoot_timewarp(
 
 	# reset player props state to 'origin tick'
 
+	var timewarpable_player_prop_ids: Array[int] = []
 	var player_prop_ids: Array[int] = []
 	player_prop_ids.append_array(WyncTrack.entity_get_prop_id_list(ctx, actor_id))
+	for prop_id in player_prop_ids:
+		if prop_id in ctx.filtered_regular_timewarpable_prop_ids:
+			timewarpable_player_prop_ids.append(prop_id)
+
 	WyncStateSet.wync_reset_state_to_saved_absolute(
-		ctx, player_prop_ids, origin_tick)
+		ctx, timewarpable_player_prop_ids, origin_tick)
 
 	# then perform ray
 

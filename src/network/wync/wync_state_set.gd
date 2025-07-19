@@ -46,8 +46,15 @@ static func wync_reset_state_to_saved_absolute (
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
 
 		value = WyncEntityProp.saved_state_get(prop, tick)
+
 		if value == null:
-			Log.errc(ctx, "debugtimewarp, NOT FOUND tick %s" % [tick])
+			Log.errc(ctx, "debugtimewarp, prop_id %s NOT FOUND tick %s" % [prop_id, tick])
+			if prop.prop_type != WyncEntityProp.PROP_TYPE.INPUT:
+				assert(false)
+				print_stack()
+
+			# Note: What to do with missing inputs?
+
 			continue
 
 		var setter = ctx.wrapper.prop_setter[prop_id]

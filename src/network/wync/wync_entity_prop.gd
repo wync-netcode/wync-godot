@@ -56,21 +56,27 @@ static func saved_state_get(
 	return prop.saved_states.get_absolute(state_id)
 
 
+# TODO: Explain why this is necessary
 static func saved_state_get_throughout(
 	prop: WyncEntityProp, tick: int) -> Variant:
 
 	#return saved_state_get_quick(prop, tick)
 
 	# look up tick
-	for i in range(prop.saved_states.size):
-		#var state_id = WyncTrack.fast_modulus(
-			#prop.state_id_to_tick.head_pointer -i, prop.state_id_to_tick.size)
-		var state_id = i
+	for state_id in range(prop.saved_states.size):
+
 		var saved_tick = prop.state_id_to_tick.get_absolute(state_id) 
 		if saved_tick == tick:
-		#if prop.state_id_to_tick.get_relative(-i) == tick:
-		#if prop.state_id_to_tick.get_absolute(i) == tick:
 			return prop.saved_states.get_absolute(state_id)
+
+		##var state_id = WyncTrack.fast_modulus(
+			##prop.state_id_to_tick.head_pointer -i, prop.state_id_to_tick.size)
+		##var state_id = i
+		#var saved_tick = prop.state_id_to_tick.get_absolute(state_id) 
+		#if saved_tick == tick:
+		##if prop.state_id_to_tick.get_relative(-i) == tick:
+		##if prop.state_id_to_tick.get_absolute(i) == tick:
+			#return prop.saved_states.get_absolute(state_id)
 
 	return null
 
@@ -83,6 +89,26 @@ static func saved_state_insert (
 	var state_id = prop.saved_states.head_pointer
 	prop.state_id_to_tick.insert_at(state_id, tick)
 	prop.tick_to_state_id.insert_at(tick, state_id)
+
+
+# TODO: Use this for all input related stuff
+static func saved_state_insert_in_place (
+	_ctx: WyncCtx, prop: WyncEntityProp, tick: int, state: Variant):
+
+	# Note: version that is direct: (no benefits from the structure)
+	#var state_id = WyncMisc.fast_modulus(tick, prop.saved_states.size)
+	#prop.saved_states.insert_at(tick, state)
+	#prop.state_id_to_tick.insert_at(state_id, tick)
+	#prop.tick_to_state_id.insert_at(tick, state_id)
+
+	var state_id = prop.tick_to_state_id.get_at(tick)
+	if state_id == -1 || prop.state_id_to_tick.get_absolute(state_id) != tick:
+		return saved_state_insert(_ctx, prop, tick, state)
+	
+	prop.state_id_to_tick.insert_at(state_id, tick) # TODO: deleteme
+	prop.saved_states.insert_at(state_id, state)
+
+	Log.outc(_ctx, "prop_name_id %s saved tick %s" % [prop.name_id, tick])
 
 
 static func server_tick_arrived_at_local_tick (prop: WyncEntityProp, server_tick: int) -> int:

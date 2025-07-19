@@ -17,7 +17,7 @@ static func wync_set_prop_callbacks \
 # Part of module 'wync_input'. Used in 'wync_flow'
 static func wync_buffer_inputs(ctx: WyncCtx):
 	
-	if not ctx.connected:
+	if not ctx.connected: # TODO: delme
 		return
 
 	## Buffer state (extract) from props we own, to create a state history
@@ -131,4 +131,3 @@ static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 		setter.call(user_ctx, input)
 
 	return OK
-
