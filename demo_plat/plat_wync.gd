@@ -102,7 +102,7 @@ static func setup_blueprints(ctx: WyncCtx):
 
 
 static func blueprint_handle_event_delta_block_replace \
-	(user_ctx: Variant, event: WyncEvent.EventData, requires_undo: bool, ctx: WyncCtx) -> Array[int]:
+	(user_ctx: Variant, event: WyncCtx.WyncEventEventData, requires_undo: bool, ctx: WyncCtx) -> Array[int]:
 	
 	# TODO: maybe check event integrity before casting
 	var chunk := user_ctx as Plat.Chunk

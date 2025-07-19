@@ -50,8 +50,8 @@ static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
 
 	# Note: at the beggining 'server_ticks' will be equal to 0
 
-	CoTicks.server_tick_offset_collection_add_value(co_ticks, new_server_ticks_offset)
-	co_ticks.server_tick_offset = CoTicks.server_tick_offset_collection_get_most_common(co_ticks)
+	CoTicksUtils.server_tick_offset_collection_add_value(co_ticks, new_server_ticks_offset)
+	co_ticks.server_tick_offset = CoTicksUtils.server_tick_offset_collection_get_most_common(co_ticks)
 	co_ticks.server_ticks = co_ticks.ticks + co_ticks.server_tick_offset
 
 	Log.outc(ctx, "clock, servertime %s real %s d %s | server_ticks_aprox %s | latency %s | clock %s | %s" % [

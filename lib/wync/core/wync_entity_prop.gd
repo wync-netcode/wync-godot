@@ -131,8 +131,8 @@ var last_ticks_received: RingBuffer = null
 var last_cached_predicted_tick: int = -1
 
 ## store predicted state
-var pred_curr: NetTickData = null
-var pred_prev: NetTickData = null
+var pred_curr: WyncCtx.NetTickData = null
+var pred_prev: WyncCtx.NetTickData = null
 
 # UNUSED
 # Precalculate which ticks we're gonna be interpolating between

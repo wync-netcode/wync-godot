@@ -37,7 +37,7 @@ static func event_is_healthy (ctx: WyncCtx, event_id: int) -> int:
 		return 1
 
 	var event_data = ctx.events[event_id]
-	if event_data is not WyncEvent:
+	if event_data is not WyncCtx.WyncEvent:
 		Log.errc(ctx, "delta sync | event (id %s) found but invalid" % [event_id])
 		return 2
 

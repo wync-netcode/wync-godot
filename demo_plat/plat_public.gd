@@ -638,7 +638,7 @@ static func system_server_events(gs: Plat.GameState):
 	# -----
 
 
-static func handle_events(gs: Plat.GameState, event_data: WyncEvent.EventData, wync_peer_id: int, tick: int):
+static func handle_events(gs: Plat.GameState, event_data: WyncCtx.WyncEventEventData, wync_peer_id: int, tick: int):
 	match event_data.event_type_id:
 		Plat.EVENT_PLAYER_BLOCK_BREAK:
 			var data = event_data.event_data as Plat.EventPlayerBlockBreak
@@ -714,7 +714,7 @@ static func handle_player_shoot_timewarp_ping_based(gs: Plat.GameState, wync_pee
 	var ctx = gs.wctx
 	var frame_ms = 1000.0 / ctx.physic_ticks_per_second
 	var peer_latency_info := ctx.peer_latency_info[wync_peer_id] as WyncCtx.PeerLatencyInfo
-	var client_info := ctx.client_has_info[wync_peer_id] as WyncClientInfo
+	var client_info := ctx.client_has_info[wync_peer_id] as WyncCtx.WyncClientInfo
 
 	# predicted_tick_offset = ceil(peer_latency_info.latency_stable_ms / frame_ms) + 2
 	# tick_target = origin_tick -latency_stable -lerp_ticks -predicted_tick_offset
@@ -748,7 +748,7 @@ static func handle_player_shoot_timewarp(
 		return
 
 	var co_ticks = ctx.co_ticks
-	var client_info := ctx.client_has_info[wync_peer_id] as WyncClientInfo
+	var client_info := ctx.client_has_info[wync_peer_id] as WyncCtx.WyncClientInfo
 	var lerp_ms: int = client_info.lerp_ms
 	var tick_left: int = data.last_tick_rendered_left
 	var lerp_delta_ms: float = data.lerp_delta_ms

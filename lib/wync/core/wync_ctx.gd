@@ -1,26 +1,153 @@
 class_name WyncCtx
 
+const SERVER_TICK_OFFSET_COLLECTION_SIZE := 4
+
+class CoTicks:
+
+	# for "debug_tick_offset" just set ctx.co_ticks.ticks to any value
+	var debug_time_offset_ms: int
+
+	var ticks: int
+	var server_ticks: int
+
+	## Strategy for getting a stable server_tick_offset value:
+	## We have a list of of common values and their count
+	## value | percentage
+	## -199  | 212
+	## -201  | 98
+	## -202  | 13
+	## Then we just pick the most common one, if we encounter
+	## a new value just replace the one with less count. Also, there shouldn't
+	## be fight between two adyacent values (e.g. -199 & -200) because the
+	## code for picking a value prevents fluctuation of one unit
+	
+	## List<Tuple<int, int>>
+	## Array[Array[Variant]]
+	var server_tick_offset_collection: Array[Array]
+	var server_tick_offset: int
+
+	# TODO: Move this elsewhere
+	# used to (1) lerp and (2) time warp
+	var lerp_delta_accumulator_ms: float
+	var last_tick_rendered_left: int
+	var minimum_lerp_fraction_accumulated_ms: float
+
+
+class CoPredictionData:
+
+	# periodical vars
+	
+	## to get target_time add this to curr_time -> curr_time + tick_offset * fixed_step
+	var tick_offset: int = 0
+	var tick_offset_prev: int = 0
+	var tick_offset_desired: int = 0
+	var target_tick: int = 0 # co_ticks.ticks + tick_offset
+	## fixed timestamp for current tick
+	## It's the point of reference for other ticks
+	var current_tick_timestamp: float = 0
+	
+	# For calculating clock_offset_mean
+	# TODO: Move this to co_ticks
+	
+	var clock_offset_sliding_window: RingBuffer = null
+	var clock_offset_sliding_window_size: int = 16
+	var clock_offset_mean: float
+	
+	# Interpolation data
+	# TODO: Move this elsewhere
+	
+	var lerp_ms: int = 50
+	var lerp_latency_ms: int = 0
+
+
+class NetTickData:
+
+	var server_tick: int
+	var arrived_at_tick: int ## local tick
+	var data#: Any
+
+	func copy() -> NetTickData:
+		var new_instance = NetTickData.new()
+		new_instance.server_tick = server_tick
+		new_instance.arrived_at_tick = arrived_at_tick
+		new_instance.data = data
+		if data is Object && data.has_method("copy"):
+			new_instance.data = data.copy()
+		return new_instance
+
+
+## user network info feed
+
+const LATENCY_BUFFER_SIZE: int = 20 ## 20 size, 2 polls per second -> 10 seconds worth
+class PeerLatencyInfo:
+	var latency_raw_latest_ms: int ## Recently polled latency
+	var latency_stable_ms: int ## Stabilized latency
+	var latency_mean_ms: int
+	var latency_std_dev_ms: int
+	var latency_buffer: Array[int]
+	var latency_buffer_head: int
+	var debug_latency_mean_ms: float
+
+class WyncClientInfo:
+	var lerp_ms: int
+
+	func _init() -> void:
+		lerp_ms = 200
+
+## throttling
+
+class PeerEntityPair:
+	var peer_id: int = -1
+	var entity_id: int = -1
+
+class PeerPropPair:
+	var peer_id: int = -1
+	var prop_id: int = -1
+
+
+class EntitySpawnEvent:
+	var spawn: bool  ## wheter to spawn or to dispawn
+	var already_spawned: bool
+	var entity_id: int
+	var entity_type_id: int
+	var spawn_data: Variant
+
+
+class DummyProp:
+	var last_tick: int
+	var data_size: int
+	var data: Variant
+
+
+# NOTE: Do not confuse with WyncPktEventData.EventData
+# TODO: define data types somewhere + merge with WyncEntityProp
+
+class WyncEventEventData:
+	var event_type_id: int
+	var event_data: Variant
+	# var event_size?: int # first compare size before comparing data
+
+	func duplicate() -> WyncEventEventData:
+		var newi = WyncEventEventData.new()
+		newi.event_type_id = event_type_id
+		newi.event_data = WyncMisc.duplicate_any(event_data)
+		return newi
+
+
+class WyncEvent:
+
+	var data: WyncEventEventData
+	var data_hash: int # used to avoid sending duplicates
+
+	func _init() -> void:
+		data = WyncEventEventData.new()
+
 
 # ------------------------------
-# Wrapper
 
-const WRAPPER_MAX_USER_TYPES = 256
 
-class Wrapper:
-	# Array<prop_id: int, Callable>
-	var prop_user_ctx: Array[Variant]
-	var prop_getter: Array[Callable]
-	var prop_setter: Array[Callable] # Maybe use a b-tree set?
+var wrapper: WyncWrapperStructs.WyncWrapperCtx
 
-	# Array[256] <user_type_id: int, lerp_function_id: int>
-	var lerp_type_to_lerp_function: Array[int]
-	# DynArr[0] <order_id: int, Callable[a: Variant, b: Variant, c: float]>
-	var lerp_function: Array[Callable]
-
-	# Array<delta_blueprint_id: int, Blueprint>
-	var delta_blueprints: Array[WyncDeltaBlueprint]
-
-var wrapper: Wrapper
 
 # ------------------------------
 
@@ -37,17 +164,6 @@ var xtrap_prev_local_tick: Variant = null # Optional<int>
 var xtrap_local_tick: Variant = null # Optional<int>
 
 
-## user network info feed
-
-const LATENCY_BUFFER_SIZE: int = 20 ## 20 size, 2 polls per second -> 10 seconds worth
-class PeerLatencyInfo:
-	var latency_raw_latest_ms: int ## Recently polled latency
-	var latency_stable_ms: int ## Stabilized latency
-	var latency_mean_ms: int
-	var latency_std_dev_ms: int
-	var latency_buffer: Array[int]
-	var latency_buffer_head: int
-	var debug_latency_mean_ms: float
 
 # Array[12] <peer_id: int, PeerLatencyInfo>
 var peer_latency_info: Array[PeerLatencyInfo]
@@ -141,7 +257,7 @@ var entity_is_of_type: Dictionary
 
 # TODO: Separate generated events from CACHED events
 # Map<event_id: uint, WyncEvent>
-var events: Dictionary[int, WyncEvent]
+var events: Dictionary[int, WyncCtx.WyncEvent]
 
 var event_id_counter: int
 
@@ -326,14 +442,6 @@ var predicted_entity_ids: Array[int] = []
 # throttling
 # --------------------------------------------------------------------------------
 
-class PeerEntityPair:
-	var peer_id: int = -1
-	var entity_id: int = -1
-
-class PeerPropPair:
-	var peer_id: int = -1
-	var prop_id: int = -1
-
 # Sync priorities:
 # * VIP
 # * Spawning
@@ -360,13 +468,6 @@ var clients_no_longer_sees_entities: Array[Dictionary]
 #       For big data use _delta props_
 # Map <entity_id: int, data: Variant>
 var entity_spawn_data: Dictionary
-
-class EntitySpawnEvent:
-	var spawn: bool  ## wheter to spawn or to dispawn
-	var already_spawned: bool
-	var entity_id: int
-	var entity_type_id: int
-	var spawn_data: Variant
 
 ## User facing variable
 ## Client only
@@ -413,11 +514,6 @@ var out_peer_pending_to_setup: Array[int]
 # dummy props
 # --------------------------------------------------------------------------------
 
-class DummyProp:
-	var last_tick: int
-	var data_size: int
-	var data: Variant
-
 # Map <prop_id: int, DummyProp*>
 var dummy_props: Dictionary
 
@@ -449,6 +545,10 @@ static var debug_flag1: bool = false
 
 # TODO: Move to WyncTrack
 func _init() -> void:
+
+	CoTicksUtils.init_co_ticks(co_ticks)
+	CoTicksUtils.init_co_prediction_data(co_predict_data)
+
 	props.resize(MAX_PROPS)
 	prop_id_cursor = 0
 	active_prop_ids = []
@@ -523,9 +623,9 @@ func _init() -> void:
 		
 
 static func wrapper_initialize(ctx: WyncCtx):
-	ctx.wrapper = WyncCtx.Wrapper.new()
+	ctx.wrapper = WyncWrapperStructs.WyncWrapperCtx.new()
 	ctx.wrapper.prop_user_ctx.resize(MAX_PROPS)
 	ctx.wrapper.prop_getter.resize(MAX_PROPS)
 	ctx.wrapper.prop_setter.resize(MAX_PROPS)
-	ctx.wrapper.lerp_type_to_lerp_function.resize(WRAPPER_MAX_USER_TYPES)
+	ctx.wrapper.lerp_type_to_lerp_function.resize(WyncWrapperStructs.WRAPPER_MAX_USER_TYPES)
 	ctx.wrapper.lerp_function = []

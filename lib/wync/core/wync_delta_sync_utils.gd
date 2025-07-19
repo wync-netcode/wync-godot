@@ -28,7 +28,7 @@ static func prop_is_relative_syncable(ctx: WyncCtx, prop_id: int) -> bool:
 ## @returns int. delta blueprint id
 static func create_delta_blueprint (ctx: WyncCtx) -> int:
 	var id = ctx.wrapper.delta_blueprints.size()
-	var blueprint = WyncDeltaBlueprint.new()
+	var blueprint = WyncWrapperStructs.WyncDeltaBlueprint.new()
 	ctx.wrapper.delta_blueprints.append(blueprint)
 	return id
 	
@@ -37,13 +37,13 @@ static func delta_blueprint_exists (ctx: WyncCtx, delta_blueprint_id: int) -> bo
 	if delta_blueprint_id < 0 || delta_blueprint_id >= ctx.wrapper.delta_blueprints.size():
 		return false
 	var blueprint = ctx.wrapper.delta_blueprints[delta_blueprint_id]
-	if blueprint is not WyncDeltaBlueprint:
+	if blueprint is not WyncWrapperStructs.WyncDeltaBlueprint:
 		return false
 	return true
 
 
-## @returns Optional<WyncDeltaBlueprint>
-static func get_delta_blueprint (ctx: WyncCtx, delta_blueprint_id: int) -> WyncDeltaBlueprint:
+## @returns Optional<WyncWrapperStructs.WyncDeltaBlueprint>
+static func get_delta_blueprint (ctx: WyncCtx, delta_blueprint_id: int) -> WyncWrapperStructs.WyncDeltaBlueprint:
 	if delta_blueprint_exists(ctx, delta_blueprint_id):
 		return ctx.wrapper.delta_blueprints[delta_blueprint_id]
 	return null
@@ -58,7 +58,7 @@ static func delta_blueprint_register_event (
 	) -> Error:
 	
 	var blueprint = get_delta_blueprint(ctx, delta_blueprint_id)
-	if blueprint is not WyncDeltaBlueprint:
+	if blueprint is not WyncWrapperStructs.WyncDeltaBlueprint:
 		return ERR_DOES_NOT_EXIST
 
 	# NOTE: check argument integrity
@@ -154,7 +154,7 @@ static func delta_prop_push_event_to_current \
 	var blueprint = get_delta_blueprint(ctx, prop.delta_blueprint_id)
 	if not blueprint:
 		return 3
-	blueprint = blueprint as WyncDeltaBlueprint
+	blueprint = blueprint as WyncWrapperStructs.WyncDeltaBlueprint
 
 	# check if this event belongs to this blueprint
 	if not blueprint.event_handlers.has(event_type_id):
@@ -224,14 +224,14 @@ static func _merge_event_to_state \
 	if not ctx.events.has(event_id):
 		Log.errc(ctx, "delta sync | couldn't find event id(%s)" % [event_id])
 		return [14, null]
-	var event_data = (ctx.events[event_id] as WyncEvent).data
+	var event_data = (ctx.events[event_id] as WyncCtx.WyncEvent).data
 
 	# NOTE: Maybe confirm this prop's blueprint supports this event_type
 
 	var blueprint = get_delta_blueprint(ctx, prop.delta_blueprint_id)
 	if blueprint == null:
 		return [15, null]
-	blueprint = blueprint as WyncDeltaBlueprint
+	blueprint = blueprint as WyncWrapperStructs.WyncDeltaBlueprint
 
 	var handler = blueprint.event_handlers[event_data.event_type_id] as Callable
 	var result: Array[int] = handler.call(state, event_data, requires_undo, ctx if requires_undo else null)

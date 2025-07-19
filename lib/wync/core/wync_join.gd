@@ -141,7 +141,7 @@ static func peer_register(ctx: WyncCtx, peer_data: int = -1) -> int:
 	ctx.client_owns_prop[peer_id] = []
 	ctx.client_has_relative_prop_has_last_tick[peer_id] = {}
 	
-	ctx.client_has_info[peer_id] = WyncClientInfo.new()
+	ctx.client_has_info[peer_id] = WyncCtx.WyncClientInfo.new()
 
 	return peer_id
 

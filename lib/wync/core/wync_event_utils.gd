@@ -45,8 +45,8 @@ static func instantiate_new_event(
 		return null
 		
 	var event_id = _get_new_event_id(ctx)
-	var event = WyncEvent.new()
-	event.data = WyncEvent.EventData.new()
+	var event = WyncCtx.WyncEvent.new()
+	event.data = WyncCtx.WyncEventEventData.new()
 	event.data.event_type_id = event_user_type_id
 	event.data.event_data = null
 
@@ -63,9 +63,9 @@ static func event_set_data(
 	) -> int:
 	
 	var event = ctx.events[event_id]
-	if event is not WyncEvent:
+	if event is not WyncCtx.WyncEvent:
 		return 1
-	event = event as WyncEvent
+	event = event as WyncCtx.WyncEvent
 	event.data.event_data = event_data
 	return 0
 
@@ -300,7 +300,7 @@ static func wync_handle_pkt_event_data(ctx: WyncCtx, data: Variant) -> int:
 
 	for event: WyncPktEventData.EventData in data.events:
 		
-		var wync_event = WyncEvent.new()
+		var wync_event = WyncCtx.WyncEvent.new()
 		wync_event.data.event_type_id = event.event_type_id
 		wync_event.data.event_data = event.event_data
 		ctx.events[event.event_id] = wync_event

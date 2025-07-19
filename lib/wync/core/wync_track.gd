@@ -106,8 +106,8 @@ static func prop_register_minimal(
 	# instantiate structs
 	# todo: some might not be necessary for all
 	prop.last_ticks_received = RingBuffer.new(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT, -1)
-	prop.pred_curr = NetTickData.new()
-	prop.pred_prev = NetTickData.new()
+	prop.pred_curr = WyncCtx.NetTickData.new()
+	prop.pred_prev = WyncCtx.NetTickData.new()
 
 	# TODO: Dynamic sized buffer for all owned predicted props?
 	# TODO: Only do this if this prop is predicted, move to prop_set_predict ?

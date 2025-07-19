@@ -104,7 +104,7 @@ static func wync_handle_packet_client_set_lerp_ms(ctx: WyncCtx, data: Variant, f
 		Log.errc(ctx, "client %s is not registered" % client_id)
 		return 2
 
-	var client_info := ctx.client_has_info[client_id] as WyncClientInfo
+	var client_info := ctx.client_has_info[client_id] as WyncCtx.WyncClientInfo
 	client_info.lerp_ms = data.lerp_ms
 
 	return OK
@@ -220,7 +220,7 @@ static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: i
 
 
 static func wync_register_lerp_type (ctx: WyncCtx, user_type_id: int, lerp_fun: Callable):
-	if user_type_id < 0 || user_type_id >= WyncCtx.WRAPPER_MAX_USER_TYPES:
+	if user_type_id < 0 || user_type_id >= WyncWrapperStructs.WRAPPER_MAX_USER_TYPES:
 		assert(false)
 	ctx.wrapper.lerp_type_to_lerp_function[user_type_id] = ctx.wrapper.lerp_function.size()
 	ctx.wrapper.lerp_function.append(lerp_fun)
