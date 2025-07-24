@@ -5,8 +5,8 @@ static func prop_set_auxiliar(ctx: WyncCtx, prop_id: int, auxiliar_pair: int, un
 	var prop = WyncTrack.get_prop(ctx, prop_id)
 	if prop == null:
 		return 1
-	prop = prop as WyncEntityProp
-	if (prop.prop_type != WyncEntityProp.PROP_TYPE.EVENT):
+	prop = prop as WyncProp
+	if (prop.prop_type != WyncProp.PROP_TYPE.EVENT):
 		return 2
 	prop.is_auxiliar_prop = true
 	prop.auxiliar_delta_events_prop_id = auxiliar_pair

@@ -139,7 +139,7 @@ static func setup_sync_for_ball_actor(gs: Plat.GameState, actor_id: int):
 		wctx,
 		actor_id,
 		"position",
-		WyncEntityProp.PROP_TYPE.STATE
+		WyncProp.PROP_TYPE.STATE
 	)
 	WyncWrapper.wync_set_prop_callbacks(
 		wctx,
@@ -177,7 +177,7 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 		wctx,
 		actor_id,
 		"position",
-		WyncEntityProp.PROP_TYPE.STATE
+		WyncProp.PROP_TYPE.STATE
 	)
 	WyncWrapper.wync_set_prop_callbacks(
 		wctx,
@@ -191,7 +191,7 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 		wctx,
 		actor_id,
 		"velocity",
-		WyncEntityProp.PROP_TYPE.STATE
+		WyncProp.PROP_TYPE.STATE
 	)
 	WyncWrapper.wync_set_prop_callbacks(
 		wctx,
@@ -205,7 +205,7 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 		wctx,
 		actor_id,
 		"input",
-		WyncEntityProp.PROP_TYPE.INPUT
+		WyncProp.PROP_TYPE.INPUT
 	)
 	WyncWrapper.wync_set_prop_callbacks(
 		wctx,
@@ -248,7 +248,7 @@ static func setup_sync_for_rocket_actor(gs: Plat.GameState, actor_id: int):
 		wctx,
 		actor_id,
 		"position",
-		WyncEntityProp.PROP_TYPE.STATE
+		WyncProp.PROP_TYPE.STATE
 	)
 	WyncWrapper.wync_set_prop_callbacks(
 		wctx,
@@ -288,7 +288,7 @@ static func setup_sync_for_chunk_actor(gs: Plat.GameState, actor_id: int):
 		wctx,
 		actor_id,
 		"blocks",
-		WyncEntityProp.PROP_TYPE.STATE
+		WyncProp.PROP_TYPE.STATE
 	)
 	WyncWrapper.wync_set_prop_callbacks(
 		wctx,

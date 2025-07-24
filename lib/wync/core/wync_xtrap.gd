@@ -145,7 +145,7 @@ static func wync_xtrap_tick_end(ctx: WyncCtx, tick: int):
 static func wync_xtrap_reset_all_state_to_confirmed_tick_absolute(ctx: WyncCtx, prop_ids: Array[int], tick: int):
 	for prop_id: int in prop_ids:
 		var prop := ctx.props[prop_id]
-		var value = WyncEntityProp.saved_state_get(prop, tick)
+		var value = WyncProp.saved_state_get(prop, tick)
 		if value == null:
 			continue
 		var setter = ctx.wrapper.prop_setter[prop_id]
@@ -158,7 +158,7 @@ static func wync_xtrap_props_update_predicted_states_data(ctx: WyncCtx, props_id
 	
 	for prop_id: int in props_ids:
 		
-		var prop = ctx.props[prop_id] as WyncEntityProp
+		var prop = ctx.props[prop_id] as WyncProp
 		if prop == null:
 			continue
 		if prop.relative_syncable:

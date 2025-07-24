@@ -41,14 +41,14 @@ static func prop_save_confirmed_state(ctx: WyncCtx, prop_id: int, tick: int, sta
 	var prop = WyncTrack.get_prop(ctx, prop_id)
 	if prop == null:
 		return 1
-	prop = prop as WyncEntityProp
+	prop = prop as WyncProp
 
 	prop.just_received_new_state = true
 	prop.last_ticks_received.push(tick)
 	prop.last_ticks_received.sort()
 	prop.state_id_to_local_tick.insert_at(prop.saved_states.head_pointer, ctx.co_ticks.ticks)
 
-	WyncEntityProp.saved_state_insert(ctx, prop, tick, state)
+	WyncProp.saved_state_insert(ctx, prop, tick, state)
 
 	if prop.relative_syncable:
 		# FIXME: check for max? what about unordered packets?
@@ -125,7 +125,7 @@ static func wync_server_handle_pkt_inputs(ctx: WyncCtx, data: Variant, from_nete
 
 		# TODO: reject input that is too old
 		
-		WyncEntityProp.saved_state_insert_in_place(ctx, input_prop, input.tick, to_insert)
+		WyncProp.saved_state_insert_in_place(ctx, input_prop, input.tick, to_insert)
 		#Log.outc(ctx, "couldn't find input | inserted input (%s) tick (%s) value (%s)" % [input_prop.name_id, input.tick, copy])
 
 	return OK
@@ -158,7 +158,7 @@ static func wync_client_handle_pkt_inputs(ctx: WyncCtx, data: Variant) -> int:
 
 		prop.last_ticks_received.push(input.tick)
 		
-		WyncEntityProp.saved_state_insert(ctx, prop, input.tick, to_insert)
+		WyncProp.saved_state_insert(ctx, prop, input.tick, to_insert)
 		max_tick = max(max_tick, input.tick)
 
 	prop.last_ticks_received.sort()
@@ -179,14 +179,14 @@ static func wync_insert_state_to_entity_prop (
 	var prop = WyncTrack.entity_get_prop(ctx, entity_id, prop_name_id)
 	if prop == null:
 		return 1
-	prop = prop as WyncEntityProp
+	prop = prop as WyncProp
 
 	# Note: The code below was copied from 'prop_save_confirmed_state'
 
 	prop.last_ticks_received.push(tick)
 	prop.last_ticks_received.sort()
 
-	WyncEntityProp.saved_state_insert(ctx, prop, tick, state)
+	WyncProp.saved_state_insert(ctx, prop, tick, state)
 
 	prop.state_id_to_local_tick.insert_at(prop.saved_states.head_pointer, ctx.co_ticks.ticks)
 

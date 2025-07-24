@@ -235,7 +235,7 @@ static func _wync_confirm_client_can_see_entity(ctx: WyncCtx, client_id: int, en
 		if prop == null:
 			Log.errc(ctx, "Couldn't find prop(%s) in entity(%s)" % [prop_id, entity_id])
 			continue
-		prop = prop as WyncEntityProp
+		prop = prop as WyncProp
 
 		if prop.relative_syncable:
 			var delta_prop_last_tick = ctx.client_has_relative_prop_has_last_tick[client_id] as Dictionary

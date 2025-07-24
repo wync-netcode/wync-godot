@@ -1,4 +1,4 @@
-class_name WyncEntityProp
+class_name WyncProp
 
 enum PROP_TYPE {
 	STATE,
@@ -47,7 +47,7 @@ var state_id_to_local_tick: RingBuffer = null
 
 # Warning: Use only if you know what you're doing
 static func saved_state_get(
-	prop: WyncEntityProp, tick: int) -> Variant:
+	prop: WyncProp, tick: int) -> Variant:
 
 	var state_id = prop.tick_to_state_id.get_at(tick)
 	if state_id == -1 || prop.state_id_to_tick.get_absolute(state_id) != tick:
@@ -58,7 +58,7 @@ static func saved_state_get(
 
 # TODO: Explain why this is necessary
 static func saved_state_get_throughout(
-	prop: WyncEntityProp, tick: int) -> Variant:
+	prop: WyncProp, tick: int) -> Variant:
 
 	#return saved_state_get_quick(prop, tick)
 
@@ -82,7 +82,7 @@ static func saved_state_get_throughout(
 
 
 static func saved_state_insert (
-	_ctx: WyncCtx, prop: WyncEntityProp, tick: int, state: Variant):
+	_ctx: WyncCtx, prop: WyncProp, tick: int, state: Variant):
 	
 	var err = prop.saved_states.push(state)
 	if err == -1: return
@@ -93,7 +93,7 @@ static func saved_state_insert (
 
 # TODO: Use this for all input related stuff
 static func saved_state_insert_in_place (
-	_ctx: WyncCtx, prop: WyncEntityProp, tick: int, state: Variant):
+	_ctx: WyncCtx, prop: WyncProp, tick: int, state: Variant):
 
 	# Note: version that is direct: (no benefits from the structure)
 	#var state_id = WyncMisc.fast_modulus(tick, prop.saved_states.size)
@@ -109,7 +109,7 @@ static func saved_state_insert_in_place (
 	prop.saved_states.insert_at(state_id, state)
 
 
-static func server_tick_arrived_at_local_tick (prop: WyncEntityProp, server_tick: int) -> int:
+static func server_tick_arrived_at_local_tick (prop: WyncProp, server_tick: int) -> int:
 
 	for i in range(prop.saved_states.size):
 		var state_id = i

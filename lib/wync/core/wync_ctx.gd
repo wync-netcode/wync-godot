@@ -2,7 +2,7 @@ class_name WyncCtx
 
 const SERVER_TICK_OFFSET_COLLECTION_SIZE := 4
 
-class CoTicks:
+class CoTicks: ## Clock?
 
 	# for "debug_tick_offset" just set ctx.co_ticks.ticks to any value
 	var debug_time_offset_ms: int
@@ -20,6 +20,11 @@ class CoTicks:
 	## a new value just replace the one with less count. Also, there shouldn't
 	## be fight between two adyacent values (e.g. -199 & -200) because the
 	## code for picking a value prevents fluctuation of one unit
+
+	## TODO: Since the main use of this stable latency is to convert this time
+	## into the equivalente ticks, then better to constantly update stable 
+	## latency and use the previous strategy to slowly update the tick number.
+	## Trying to have the tick be always bigger (ceil).
 	
 	## List<Tuple<int, int>>
 	## Array[Array[Variant]]
@@ -120,7 +125,7 @@ class DummyProp:
 
 
 # NOTE: Do not confuse with WyncPktEventData.EventData
-# TODO: define data types somewhere + merge with WyncEntityProp
+# TODO: define data types somewhere + merge with WyncProp
 
 class WyncEventEventData:
 	var event_type_id: int
@@ -238,8 +243,8 @@ var tracked_entities: Dictionary[int, bool]
 
 const MAX_PROPS = 4096 # default to 2**16 (65536)
 
-# Array<prop_id: int, WyncEntityProp>
-var props: Array[WyncEntityProp]
+# Array<prop_id: int, WyncProp>
+var props: Array[WyncProp]
 
 var prop_id_cursor: int
 
@@ -616,16 +621,8 @@ func _init() -> void:
 
 	dummy_props = {}
 
+	max_lerp_factor_symmetric = 1.0
+
 	## TODO: Move wrapper initialization elsewhere
 
-	wrapper_initialize(self)
-	max_lerp_factor_symmetric = 1.0
-		
-
-static func wrapper_initialize(ctx: WyncCtx):
-	ctx.wrapper = WyncWrapperStructs.WyncWrapperCtx.new()
-	ctx.wrapper.prop_user_ctx.resize(MAX_PROPS)
-	ctx.wrapper.prop_getter.resize(MAX_PROPS)
-	ctx.wrapper.prop_setter.resize(MAX_PROPS)
-	ctx.wrapper.lerp_type_to_lerp_function.resize(WyncWrapperStructs.WRAPPER_MAX_USER_TYPES)
-	ctx.wrapper.lerp_function = []
+	WyncWrapper.wrapper_initialize(self)

@@ -14,7 +14,7 @@ static func prop_is_relative_syncable(ctx: WyncCtx, prop_id: int) -> bool:
 	var prop = WyncTrack.get_prop(ctx, prop_id)
 	if prop == null:
 		return false
-	prop = prop as WyncEntityProp
+	prop = prop as WyncProp
 	return prop.relative_syncable
 
 
@@ -118,15 +118,15 @@ static func prop_set_relative_syncable (
 		ctx,
 		entity_id,
 		"auxiliar_delta_events",
-		WyncEntityProp.PROP_TYPE.EVENT
+		WyncProp.PROP_TYPE.EVENT
 	)
 	WyncWrapper.wync_set_prop_callbacks(
 		ctx,
 		events_prop_id,
 		prop,
-		func(prop_ctx: WyncEntityProp):
+		func(prop_ctx: WyncProp):
 			return prop_ctx.current_delta_events.duplicate(true),
-		func(prop_ctx: WyncEntityProp, events: Array):
+		func(prop_ctx: WyncProp, events: Array):
 			prop_ctx.current_delta_events.clear()
 			# NOTE: somehow can't check cast like this `if events is not Array[int]:`
 			prop_ctx.current_delta_events.append_array(events)
@@ -148,7 +148,7 @@ static func delta_prop_push_event_to_current \
 	var prop = WyncTrack.get_prop(ctx, prop_id)
 	if prop == null:
 		return 1
-	prop = prop as WyncEntityProp
+	prop = prop as WyncProp
 	if not prop.relative_syncable:
 		return 2
 	var blueprint = get_delta_blueprint(ctx, prop.delta_blueprint_id)
@@ -171,7 +171,7 @@ static func merge_event_to_state_real_state \
 	var prop = WyncTrack.get_prop(ctx, prop_id)
 	if prop == null:
 		return 1
-	prop = prop as WyncEntityProp
+	prop = prop as WyncProp
 	if not prop.relative_syncable:
 		return 2
 
@@ -187,14 +187,14 @@ static func merge_event_to_state_real_state \
 	var is_client_predicting = ctx.is_client \
 			&& WyncXtrap.prop_is_predicted(ctx, prop_id) \
 			&& ctx.currently_on_predicted_tick 
-	var aux_prop = null # : WyncEntityProp*
+	var aux_prop = null # : WyncProp*
 
 	# get auxiliar prop
 	if (is_client_predicting):
 		aux_prop = WyncTrack.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
 		if aux_prop == null:
 			return 3
-		aux_prop = aux_prop as WyncEntityProp
+		aux_prop = aux_prop as WyncProp
 		if not aux_prop.is_auxiliar_prop:
 			return 4
 
@@ -217,7 +217,7 @@ static func merge_event_to_state_real_state \
 ## TODO: Move to wrapper
 ## @returns Tuple[int, Optional<int>]. [0] -> Error, [1] -> undo_event_id || null
 static func _merge_event_to_state \
-	(ctx: WyncCtx, prop: WyncEntityProp, event_id: int, state: Variant, requires_undo: bool) -> Array[Variant]:
+	(ctx: WyncCtx, prop: WyncProp, event_id: int, state: Variant, requires_undo: bool) -> Array[Variant]:
 	# get event transform function
 	# TODO: Make a new function get_event(event_id)
 	

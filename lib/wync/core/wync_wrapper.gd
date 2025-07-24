@@ -1,6 +1,15 @@
 class_name WyncWrapper
 
 
+static func wrapper_initialize(ctx: WyncCtx):
+	ctx.wrapper = WyncWrapperStructs.WyncWrapperCtx.new()
+	ctx.wrapper.prop_user_ctx.resize(WyncCtx.MAX_PROPS)
+	ctx.wrapper.prop_getter.resize(WyncCtx.MAX_PROPS)
+	ctx.wrapper.prop_setter.resize(WyncCtx.MAX_PROPS)
+	ctx.wrapper.lerp_type_to_lerp_function.resize(WyncWrapperStructs.WRAPPER_MAX_USER_TYPES)
+	ctx.wrapper.lerp_function = []
+
+
 static func wync_set_prop_callbacks \
 	(ctx: WyncCtx, prop_id: int, user_ctx: Variant, getter: Callable, setter: Callable):
 	ctx.wrapper.prop_user_ctx[prop_id] = user_ctx
@@ -30,14 +39,14 @@ static func wync_buffer_inputs(ctx: WyncCtx):
 		var new_state = getter.call(user_ctx)
 		assert(new_state != null)
 
-		WyncEntityProp.saved_state_insert(ctx, input_prop, ctx.co_predict_data.target_tick, new_state)
+		WyncProp.saved_state_insert(ctx, input_prop, ctx.co_predict_data.target_tick, new_state)
 
 
 # Part of module 'wync_state_store'. Used in 'wync_flow'
 static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
 
-	var prop: WyncEntityProp = null
-	var prop_aux: WyncEntityProp = null
+	var prop: WyncProp = null
+	var prop_aux: WyncProp = null
 	var getter: Variant = null # Callable*
 	var user_ctx: Variant = null
 
@@ -48,7 +57,7 @@ static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
 		getter = ctx.wrapper.prop_getter[prop_id]
 		user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
 		
-		WyncEntityProp.saved_state_insert(ctx, prop, save_on_tick, getter.call(user_ctx))
+		WyncProp.saved_state_insert(ctx, prop, save_on_tick, getter.call(user_ctx))
 		# Note: safe to call user getter like that?
 
 	# extracts events ids from auxiliar delta props
@@ -60,7 +69,7 @@ static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
 		
 		getter = ctx.wrapper.prop_getter[prop.auxiliar_delta_events_prop_id]
 		user_ctx = ctx.wrapper.prop_user_ctx[prop.auxiliar_delta_events_prop_id]
-		WyncEntityProp.saved_state_insert(ctx, prop_aux, save_on_tick, getter.call(user_ctx))
+		WyncProp.saved_state_insert(ctx, prop_aux, save_on_tick, getter.call(user_ctx))
 
 
 
@@ -71,7 +80,7 @@ static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
 static func extract_data_to_tick_for_regular_state_props(
 	ctx: WyncCtx, save_on_tick: int, prop_ids: Array[int]):
 
-	var prop: WyncEntityProp = null
+	var prop: WyncProp = null
 	var getter: Variant = null # Callable*
 	var user_ctx: Variant = null
 
@@ -85,13 +94,13 @@ static func extract_data_to_tick_for_regular_state_props(
 		getter = ctx.wrapper.prop_getter[prop_id]
 		user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
 		
-		WyncEntityProp.saved_state_insert(ctx, prop, save_on_tick, getter.call(user_ctx))
+		WyncProp.saved_state_insert(ctx, prop, save_on_tick, getter.call(user_ctx))
 
 
 static func extract_rela_prop_fullsnapshot_to_tick (
 	ctx: WyncCtx, save_on_tick: int = -1):
 
-	var prop: WyncEntityProp = null
+	var prop: WyncProp = null
 	var getter: Variant = null # Callable*
 	var user_ctx: Variant = null
 
@@ -109,7 +118,7 @@ static func extract_rela_prop_fullsnapshot_to_tick (
 		getter = ctx.wrapper.prop_getter[prop_id]
 		user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
 		
-		WyncEntityProp.saved_state_insert(ctx, prop, save_on_tick, getter.call(user_ctx))
+		WyncProp.saved_state_insert(ctx, prop, save_on_tick, getter.call(user_ctx))
 
 		Log.outc(ctx, "debugdelta, extracting fullsnap for prop(%s) %s" %
 		[ prop_id, prop.name_id ])
@@ -121,7 +130,7 @@ static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 	for prop_id in ctx.filtered_clients_input_and_event_prop_ids:
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)	
 
-		var input = WyncEntityProp.saved_state_get(prop, ctx.co_ticks.ticks)
+		var input = WyncProp.saved_state_get(prop, ctx.co_ticks.ticks)
 		if input == null:
 			Log.warc(ctx, "couldn't find input (%s) for tick (%s)" % [prop.name_id, ctx.co_ticks.ticks])
 			continue

@@ -338,7 +338,7 @@ static func wync_get_events_from_channel_from_peer(
 		confirmed_event_ids = ctx.peer_has_channel_has_events[wync_peer_id][channel]
 	else:
 		# TODO: Rewrite me
-		var state = WyncEntityProp.saved_state_get(prop_channel, tick)
+		var state = WyncProp.saved_state_get(prop_channel, tick)
 		if state == null:
 			return out_events_id
 		confirmed_event_ids = state
@@ -374,7 +374,7 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 		ctx,
 		entity_id,
 		"channel_%d" % [channel_id],
-		WyncEntityProp.PROP_TYPE.EVENT
+		WyncProp.PROP_TYPE.EVENT
 	)
 	WyncWrapper.wync_set_prop_callbacks(
 		ctx,

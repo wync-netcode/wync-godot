@@ -18,25 +18,25 @@ static func wync_xtrap_server_filter_prop_ids(ctx: WyncCtx):
 	for client_id in range(1, ctx.peers.size()):
 		for prop_id in ctx.client_owns_prop[client_id]:
 			var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
-			if (prop.prop_type != WyncEntityProp.PROP_TYPE.INPUT &&
-				prop.prop_type != WyncEntityProp.PROP_TYPE.EVENT):
+			if (prop.prop_type != WyncProp.PROP_TYPE.INPUT &&
+				prop.prop_type != WyncProp.PROP_TYPE.EVENT):
 				continue
 			ctx.filtered_clients_input_and_event_prop_ids.append(prop_id)
 
 	for prop_id in ctx.active_prop_ids:
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
 
-		if (prop.prop_type != WyncEntityProp.PROP_TYPE.STATE &&
-			prop.prop_type != WyncEntityProp.PROP_TYPE.INPUT):
+		if (prop.prop_type != WyncProp.PROP_TYPE.STATE &&
+			prop.prop_type != WyncProp.PROP_TYPE.INPUT):
 			continue
 
 		if (prop.relative_syncable &&
-			prop.prop_type == WyncEntityProp.PROP_TYPE.STATE):
+			prop.prop_type == WyncProp.PROP_TYPE.STATE):
 			ctx.filtered_delta_prop_ids.append(prop_id)
 			# TODO: Check if it has a healthy _auxiliar prop_
 
 		else:
-			if (prop.prop_type == WyncEntityProp.PROP_TYPE.STATE):
+			if (prop.prop_type == WyncProp.PROP_TYPE.STATE):
 				ctx.filtered_regular_extractable_prop_ids.append(prop_id)
 
 			if prop.timewarpable:
@@ -69,7 +69,7 @@ static func wync_xtrap_client_filter_prop_ids(ctx: WyncCtx):
 		var prop := WyncTrack.get_prop(ctx, prop_id)
 		if prop == null:
 			continue
-		if prop.prop_type != WyncEntityProp.PROP_TYPE.STATE:
+		if prop.prop_type != WyncProp.PROP_TYPE.STATE:
 			ctx.type_input_event__owned_prop_ids.append(prop_id)
 			if WyncXtrap.prop_is_predicted(ctx, prop_id):
 				ctx.type_input_event__predicted_owned_prop_ids.append(prop_id)
@@ -78,7 +78,7 @@ static func wync_xtrap_client_filter_prop_ids(ctx: WyncCtx):
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
 		var is_predicted := WyncXtrap.prop_is_predicted(ctx, prop_id)
 
-		if prop.prop_type == WyncEntityProp.PROP_TYPE.EVENT:
+		if prop.prop_type == WyncProp.PROP_TYPE.EVENT:
 			if is_predicted:
 				ctx.type_event__predicted_prop_ids.append(prop_id)
 
@@ -90,7 +90,7 @@ static func wync_xtrap_client_filter_prop_ids(ctx: WyncCtx):
 				if WyncXtrap.prop_is_predicted(ctx, prop.auxiliar_delta_events_prop_id):
 					ctx.type_event__predicted_auxiliar_prop_ids.append(prop_id)
 
-		if prop.prop_type == WyncEntityProp.PROP_TYPE.STATE:
+		if prop.prop_type == WyncProp.PROP_TYPE.STATE:
 			if prop.relative_syncable:
 				ctx.type_state__delta_prop_ids.append(prop_id)
 				if is_predicted:

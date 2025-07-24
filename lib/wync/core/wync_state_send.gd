@@ -39,12 +39,12 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 				continue
 
 			# ignore inputs
-			if prop.prop_type == WyncEntityProp.PROP_TYPE.INPUT:
+			if prop.prop_type == WyncProp.PROP_TYPE.INPUT:
 				continue
 
 			# sync events, including their data
 			# (auxiliar props included)
-			elif prop.prop_type == WyncEntityProp.PROP_TYPE.EVENT:
+			elif prop.prop_type == WyncProp.PROP_TYPE.EVENT:
 				
 				# don't send if client owns this prop
 				if ctx.client_owns_prop[client_id].has(prop_id):
@@ -151,11 +151,11 @@ static func _wync_queue_out_snapshots_for_delivery (ctx: WyncCtx):
 				Log.errc(ctx, "error wrapping packet")
 
 
-static func _wync_sync_regular_prop(_ctx: WyncCtx, prop: WyncEntityProp, prop_id: int, tick: int) -> WyncPktSnap.SnapProp:
+static func _wync_sync_regular_prop(_ctx: WyncCtx, prop: WyncProp, prop_id: int, tick: int) -> WyncPktSnap.SnapProp:
 
 	# copy cached data
 	
-	var state = WyncEntityProp.saved_state_get(prop, tick)
+	var state = WyncProp.saved_state_get(prop, tick)
 	if state == null:
 		return null
 
@@ -232,7 +232,7 @@ static func wync_send_pending_rela_props_fullsnapshot(ctx: WyncCtx):
 
 # TODO: Make a separate version only for _event_ids_ different from _inputs any_
 # TODO: Make a separate version only for _delta event_ids_
-static func wync_prop_event_send_event_ids_to_peer(ctx: WyncCtx, prop: WyncEntityProp, prop_id: int) -> WyncPktInputs:
+static func wync_prop_event_send_event_ids_to_peer(ctx: WyncCtx, prop: WyncProp, prop_id: int) -> WyncPktInputs:
 
 	# prepare packet
 
@@ -240,7 +240,7 @@ static func wync_prop_event_send_event_ids_to_peer(ctx: WyncCtx, prop: WyncEntit
 
 	for tick in range(ctx.co_ticks.ticks - WyncCtx.INPUT_AMOUNT_TO_SEND, ctx.co_ticks.ticks +1):
 
-		var input = WyncEntityProp.saved_state_get(prop, tick)
+		var input = WyncProp.saved_state_get(prop, tick)
 		if input == null:
 			# FIXME: document this
 			#Log.errc(ctx, "we don't have an input for this tick %s prop %s(id %s)" % [tick, prop.name_id, prop_id], Log.TAG_DELTA_EVENT)
@@ -339,7 +339,7 @@ static func wync_client_send_inputs (ctx: WyncCtx):
 		var pkt_inputs = WyncPktInputs.new()
 
 		for i in range(tick_pred - WyncCtx.INPUT_AMOUNT_TO_SEND, tick_pred +1):
-			var input = WyncEntityProp.saved_state_get(input_prop, i)
+			var input = WyncProp.saved_state_get(input_prop, i)
 			if input == null:
 				# TODO: Implement input duplication on frame skip
 				# FIXME: document this
@@ -357,7 +357,7 @@ static func wync_client_send_inputs (ctx: WyncCtx):
 			pkt_inputs.inputs.append(tick_input_wrap)
 			
 			# compile events ids
-			if (input_prop.prop_type == WyncEntityProp.PROP_TYPE.EVENT &&
+			if (input_prop.prop_type == WyncProp.PROP_TYPE.EVENT &&
 				input is Array):
 				input = input as Array
 				for event_id: int in input:
@@ -366,7 +366,7 @@ static func wync_client_send_inputs (ctx: WyncCtx):
 		pkt_inputs.amount = pkt_inputs.inputs.size()
 		pkt_inputs.prop_id = prop_id
 		#Log.out(self, "INPUT Sending prop %s" % [input_prop.name_id]) 
-		#if input_prop.prop_type == WyncEntityProp.prop_type.EVENT:
+		#if input_prop.prop_type == WyncProp.prop_type.EVENT:
 			#Log.outc(ctx, "tic(%s) setted | sending prop (%s) (%s) " % [tick_pred, prop_id, pkt_inputs.inputs[0].data])
 
 		# prepare peer packet and send (queue)

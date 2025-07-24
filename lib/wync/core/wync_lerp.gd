@@ -37,7 +37,7 @@ static func precompute_lerping_prop_confirmed_states(
 	var prop = WyncTrack.get_prop(ctx, prop_id)
 	if prop == null:
 		return
-	prop = prop as WyncEntityProp
+	prop = prop as WyncProp
 
 	var snaps = WyncLerp.find_closest_two_snapshots_from_prop(ctx, target_time, prop)
 	if snaps[0] == -1:
@@ -57,8 +57,8 @@ static func precompute_lerping_prop_confirmed_states(
 	# NOTE: might want to limit how much it grows
 	ctx.co_ticks.last_tick_rendered_left = max(ctx.co_ticks.last_tick_rendered_left, prop.lerp_left_confirmed_state_tick)
 
-	var val_left = WyncEntityProp.saved_state_get_throughout(prop, prop.lerp_left_confirmed_state_tick)
-	var val_right = WyncEntityProp.saved_state_get_throughout(prop, prop.lerp_right_confirmed_state_tick)
+	var val_left = WyncProp.saved_state_get_throughout(prop, prop.lerp_left_confirmed_state_tick)
+	var val_right = WyncProp.saved_state_get_throughout(prop, prop.lerp_right_confirmed_state_tick)
 
 	prop.lerp_left_state = val_left
 	prop.lerp_right_state = val_right
@@ -71,7 +71,7 @@ static func precompute_lerping_prop_predicted(
 	var prop = WyncTrack.get_prop(ctx, prop_id)
 	if prop == null:
 		return
-	prop = prop as WyncEntityProp
+	prop = prop as WyncProp
 
 	prop.lerp_use_confirmed_state = false
 	prop.lerp_left_local_tick = ctx.co_ticks.ticks
@@ -132,7 +132,7 @@ static func prop_is_interpolated(ctx: WyncCtx, prop_id: int) -> bool:
 
 ## NOTE: Here we asume `prop.last_ticks_received` is sorted
 ## @returns tuple[int, int, int, int]. server tick left, server tick right, local tick left, local tick right
-static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: int, prop: WyncEntityProp) -> Array:
+static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: int, prop: WyncProp) -> Array:
 	
 	## Note: Maybe we don't need local ticks here
 	var done_selecting_right = false
@@ -169,7 +169,7 @@ static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: i
 		# This check is necessary because of the current strategy
 		# where we sort last_ticks_received causing newer received ticks (albeit older
 		# numerically) to overlive older received ticks with higher number
-		var data = WyncEntityProp.saved_state_get_throughout(prop, server_tick)
+		var data = WyncProp.saved_state_get_throughout(prop, server_tick)
 		if data == null:
 			continue
 
@@ -327,8 +327,8 @@ static func wync_reset_state_to_interpolated_absolute (
 		if prop == null:
 			continue
 
-		left_value = WyncEntityProp.saved_state_get(prop, tick_left)
-		right_value = WyncEntityProp.saved_state_get(prop, tick_left +1)
+		left_value = WyncProp.saved_state_get(prop, tick_left)
+		right_value = WyncProp.saved_state_get(prop, tick_left +1)
 		if left_value == null || right_value == null:
 			Log.errc(ctx, "debugtimewarp, (tick %s) NOT FOUND one of: left %s right %s" % [tick_left, left_value, right_value])
 			continue

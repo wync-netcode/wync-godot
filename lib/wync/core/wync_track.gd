@@ -75,7 +75,7 @@ static func prop_register_minimal(
 	ctx: WyncCtx, 
 	entity_id: int,
 	name_id: String,
-	data_type: WyncEntityProp.PROP_TYPE,
+	data_type: WyncProp.PROP_TYPE,
 	) -> int:
 	
 	if not is_entity_tracked(ctx, entity_id):
@@ -99,7 +99,7 @@ static func prop_register_minimal(
 	if prop_id == -1:
 		return -1
 		
-	var prop = WyncEntityProp.new()
+	var prop = WyncProp.new()
 	prop.name_id = name_id
 	prop.prop_type = data_type
 
@@ -111,8 +111,8 @@ static func prop_register_minimal(
 
 	# TODO: Dynamic sized buffer for all owned predicted props?
 	# TODO: Only do this if this prop is predicted, move to prop_set_predict ?
-	if (data_type == WyncEntityProp.PROP_TYPE.INPUT ||
-		data_type == WyncEntityProp.PROP_TYPE.EVENT):
+	if (data_type == WyncProp.PROP_TYPE.INPUT ||
+		data_type == WyncProp.PROP_TYPE.EVENT):
 		prop.saved_states = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, null)
 		prop.state_id_to_tick = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, -1)
 		prop.tick_to_state_id = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, -1)
@@ -147,8 +147,8 @@ static func get_new_prop_id(ctx) -> int:
 	return -1
 
 
-## @returns Optional<WyncEntityProp>
-static func entity_get_prop(ctx: WyncCtx, entity_id: int, prop_name_id: StringName) -> WyncEntityProp:
+## @returns Optional<WyncProp>
+static func entity_get_prop(ctx: WyncCtx, entity_id: int, prop_name_id: StringName) -> WyncProp:
 	
 	if not is_entity_tracked(ctx, entity_id):
 		return null
@@ -156,7 +156,7 @@ static func entity_get_prop(ctx: WyncCtx, entity_id: int, prop_name_id: StringNa
 	var entity_prop_ids = ctx.entity_has_props[entity_id] as Array
 	
 	for prop_id in entity_prop_ids:
-		var prop = ctx.props[prop_id] as WyncEntityProp
+		var prop = ctx.props[prop_id] as WyncProp
 		if prop.name_id == prop_name_id:
 			return prop
 	
@@ -181,7 +181,7 @@ static func entity_get_prop_id(ctx: WyncCtx, entity_id: int, prop_name_id: Strin
 	var entity_prop_ids = ctx.entity_has_props[entity_id] as Array
 	
 	for prop_id in entity_prop_ids:
-		var prop = ctx.props[prop_id] as WyncEntityProp
+		var prop = ctx.props[prop_id] as WyncProp
 		if prop.name_id == prop_name_id:
 			return prop_id
 	
@@ -205,17 +205,17 @@ static func prop_exists(ctx: WyncCtx, prop_id: int) -> bool:
 	if prop_id < 0 || prop_id >= ctx.MAX_PROPS:
 		return false
 	var prop = ctx.props[prop_id]
-	return prop is WyncEntityProp
+	return prop is WyncProp
 
 
-## @returns Optional<WyncEntityProp>
-static func get_prop(ctx: WyncCtx, prop_id: int) -> WyncEntityProp:
+## @returns Optional<WyncProp>
+static func get_prop(ctx: WyncCtx, prop_id: int) -> WyncProp:
 	if prop_id < 0 || prop_id >= ctx.MAX_PROPS:
 		return null
 	return ctx.props[prop_id]
 
 
-static func get_prop_unsafe(ctx: WyncCtx, prop_id: int) -> WyncEntityProp:
+static func get_prop_unsafe(ctx: WyncCtx, prop_id: int) -> WyncProp:
 	return ctx.props[prop_id]
 
 
