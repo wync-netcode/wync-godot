@@ -60,7 +60,6 @@ static func wync_xtrap_client_filter_prop_ids(ctx: WyncCtx):
 	ctx.type_state__predicted_regular_prop_ids.clear()
 	ctx.type_state__interpolated_regular_prop_ids.clear()
 
-	ctx.predicted_integrable_entity_ids.clear()
 	ctx.predicted_entity_ids.clear()
 
 	# Where are active props set?
@@ -100,11 +99,6 @@ static func wync_xtrap_client_filter_prop_ids(ctx: WyncCtx):
 					ctx.type_state__predicted_regular_prop_ids.append(prop_id)
 				if prop.interpolated:
 					ctx.type_state__interpolated_regular_prop_ids.append(prop_id)
-
-	for wync_entity_id: int in ctx.entity_has_integrate_fun.keys():
-		if not WyncXtrap.entity_is_predicted(ctx, wync_entity_id):
-			continue
-		ctx.predicted_integrable_entity_ids.append(wync_entity_id)
 
 	for wync_entity_id in ctx.tracked_entities.keys():
 		if not WyncXtrap.entity_is_predicted(ctx, wync_entity_id):
@@ -174,12 +168,7 @@ static func wync_xtrap_internal_tick_end(ctx: WyncCtx, tick: int):
 	# wync bookkeeping
 	# --------------------------------------------------
 
-	# integration functions
-
-	for wync_entity_id: int in ctx.predicted_integrable_entity_ids:
-		# TODO: Move this to user level wrapper
-		var int_fun = WyncIntegrate.entity_get_integrate_fun(ctx, wync_entity_id)
-		int_fun.call()
+	# NOTE: Integration functions would go here
 
 	# extract / poll for generated predicted _undo delta events_
 

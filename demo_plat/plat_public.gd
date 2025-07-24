@@ -470,7 +470,7 @@ static func system_players_shoot_bullet_timewarp_ping_based(gs: Plat.GameState):
 		if wync_peer_id == -1:
 			continue
 
-		handle_player_shoot_timewarp_ping_based(gs, wync_peer_id, gs.wctx.co_ticks.ticks)
+		handle_player_shoot_timewarp_ping_based(gs, wync_peer_id, gs.wctx.ticks)
 
 
 static func system_player_shoot_bullet(
@@ -562,10 +562,10 @@ static func system_player_timewarp_shoot_event(gs: Plat.GameState, player: Plat.
 
 	# poll once per tick
 
-	if player.last_tick_polled == ctx.co_ticks.ticks:
-		Log.outc(ctx, "skipping tick %s" % ctx.co_ticks.ticks)
+	if player.last_tick_polled == ctx.ticks:
+		Log.outc(ctx, "skipping tick %s" % ctx.ticks)
 		return
-	player.last_tick_polled = ctx.co_ticks.ticks
+	player.last_tick_polled = ctx.ticks
 
 	# build and queue event
 
@@ -610,8 +610,8 @@ static func system_server_events(gs: Plat.GameState):
 	var channel_id = 0
 	var server_wync_peer_id = 1
 
-	var tick_start = gs.wctx.co_ticks.ticks - gs.wctx.max_age_user_events_for_consumption
-	var tick_end = gs.wctx.co_ticks.ticks +1
+	var tick_start = gs.wctx.ticks - gs.wctx.max_age_user_events_for_consumption
+	var tick_end = gs.wctx.ticks +1
 
 	for tick: int in range(tick_start, tick_end):
 
@@ -762,19 +762,19 @@ static func handle_player_shoot_timewarp(
 	# * (3) High. Only allow ranges of 1 tick (the small range defined by the
 	#   client's: latency + lerp_ms + last_packet_sent)
 
-	if ((tick_left <= co_ticks.ticks - ctx.max_tick_history_timewarp) ||
-		(tick_left > co_ticks.ticks)
+	if ((tick_left <= ctx.ticks - ctx.max_tick_history_timewarp) ||
+		(tick_left > ctx.ticks)
 		):
 		Log.warc(ctx, "debugtimewarp, tick_left out of range (%s) skipping" % [tick_left])
 		return
 	
-	Log.outc(ctx, "debugtimewarp, client shoots at tick_left %d | lerp_delta %s | lerp_ms %s | tick_diff %s" % [ tick_left, lerp_delta_ms, lerp_ms, co_ticks.ticks - tick_left ])
+	Log.outc(ctx, "debugtimewarp, client shoots at tick_left %d | lerp_delta %s | lerp_ms %s | tick_diff %s" % [ tick_left, lerp_delta_ms, lerp_ms, ctx.ticks - tick_left ])
 
 
 	# 1. save current state (for selcted timewarpable props)
 
 	WyncWrapper.extract_data_to_tick_for_regular_state_props(
-		ctx, co_ticks.ticks, ctx.filtered_regular_timewarpable_prop_ids)
+		ctx, ctx.ticks, ctx.filtered_regular_timewarpable_prop_ids)
 
 	# 2. set previous state
 
@@ -784,7 +784,7 @@ static func handle_player_shoot_timewarp(
 			non_interpolable.append(prop_id)
 
 	var tick_origin_target = tick_left + floor(lerp_delta_ms/frame_ms) 
-	if tick_origin_target != ctx.co_ticks.ticks:
+	if tick_origin_target != ctx.ticks:
 		WyncStateSet.wync_reset_state_to_saved_absolute(
 			ctx, non_interpolable, tick_left + floor(lerp_delta_ms/frame_ms) )
 	WyncLerp.wync_reset_state_to_interpolated_absolute(
@@ -843,7 +843,7 @@ static func handle_player_shoot_timewarp(
 	# 4. restore original state
 
 	WyncStateSet.wync_reset_state_to_saved_absolute(
-		ctx, ctx.filtered_regular_timewarpable_prop_ids, co_ticks.ticks)
+		ctx, ctx.filtered_regular_timewarpable_prop_ids, ctx.ticks)
 
 	# 4.1. optional: integrate physics
 

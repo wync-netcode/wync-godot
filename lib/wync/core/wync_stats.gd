@@ -3,19 +3,19 @@ class_name WyncStats
 
 ## Call every time a WyncPktSnap contains _the prob_prop id_
 static func wync_try_to_update_prob_prop_rate(ctx: WyncCtx):
-	if ctx.low_priority_entity_tick_last_update == ctx.co_ticks.ticks:
+	if ctx.low_priority_entity_tick_last_update == ctx.ticks:
 		return
 
-	var tick_rate = ctx.co_ticks.ticks - ctx.low_priority_entity_tick_last_update -1
+	var tick_rate = ctx.ticks - ctx.low_priority_entity_tick_last_update -1
 	ctx.low_priority_entity_update_rate_sliding_window.push(tick_rate)
-	ctx.low_priority_entity_tick_last_update = ctx.co_ticks.ticks
+	ctx.low_priority_entity_tick_last_update = ctx.ticks
 
 
 ## Call every physic tick
 static func wync_system_calculate_server_tick_rate(ctx: WyncCtx):
 	var accumulative = 0
 	var amount = 0
-	for i in range(ctx.server_tick_rate_sliding_window_size):
+	for i in range(ctx.SERVER_TICK_RATE_SLIDING_WINDOW_SIZE):
 		var value = ctx.server_tick_rate_sliding_window.get_at(i)
 		if value is not int:
 			continue
@@ -54,12 +54,12 @@ static func wync_system_calculate_prob_prop_rate(ctx: WyncCtx):
 
 ## Call every time a packet is received
 static func _wync_report_update_received(ctx: WyncCtx):
-	if ctx.tick_last_packet_received_from_server == ctx.co_ticks.ticks:
+	if ctx.tick_last_packet_received_from_server == ctx.ticks:
 		return
 
-	var tick_rate = ctx.co_ticks.ticks - ctx.tick_last_packet_received_from_server -1
+	var tick_rate = ctx.ticks - ctx.tick_last_packet_received_from_server -1
 	ctx.server_tick_rate_sliding_window.push(tick_rate)
-	ctx.tick_last_packet_received_from_server = ctx.co_ticks.ticks
+	ctx.tick_last_packet_received_from_server = ctx.ticks
 
 
 ## calculate statistic data per tick
@@ -110,7 +110,7 @@ static func setup_entity_prob_for_entity_update_delay_ticks(ctx: WyncCtx, peer_i
 		ctx,
 		func(p_ctx: Variant) -> int: # getter
 			# use any value that constantly changes, don't really need to read it
-			return (p_ctx as WyncCtx).co_ticks.ticks, 
+			return (p_ctx as WyncCtx).ticks, 
 		func(_prob_ctx: Variant, _value: Variant): # setter
 			pass,
 	)

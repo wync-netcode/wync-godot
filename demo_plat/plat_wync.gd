@@ -2,7 +2,7 @@ class_name PlatWync
 
 
 static func setup_server(ctx: WyncCtx):
-	ctx.co_ticks.ticks = 0
+	ctx.ticks = 0
 	WyncFlow.server_setup(ctx)
 	WyncClock.wync_client_set_physics_ticks_per_second(ctx, Engine.physics_ticks_per_second)
 	setup_lerp_types(ctx)
@@ -10,7 +10,7 @@ static func setup_server(ctx: WyncCtx):
 
 
 static func setup_client(ctx: WyncCtx):
-	ctx.co_ticks.ticks = 200
+	ctx.ticks = 200
 	WyncFlow.client_init(ctx)
 	
 	WyncClock.wync_client_set_physics_ticks_per_second(ctx, Engine.physics_ticks_per_second)

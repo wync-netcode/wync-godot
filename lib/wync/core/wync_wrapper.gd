@@ -130,9 +130,9 @@ static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 	for prop_id in ctx.filtered_clients_input_and_event_prop_ids:
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)	
 
-		var input = WyncProp.saved_state_get(prop, ctx.co_ticks.ticks)
+		var input = WyncProp.saved_state_get(prop, ctx.ticks)
 		if input == null:
-			Log.warc(ctx, "couldn't find input (%s) for tick (%s)" % [prop.name_id, ctx.co_ticks.ticks])
+			Log.warc(ctx, "couldn't find input (%s) for tick (%s)" % [prop.name_id, ctx.ticks])
 			continue
 
 		var setter = ctx.wrapper.prop_setter[prop_id]

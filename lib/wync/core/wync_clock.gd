@@ -41,7 +41,7 @@ static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
 	# update ticks
 
 	var cal_server_ticks: float = (data.tick + ((curr_time - data.time_og) / 2.0) / (1000.0 / physics_fps))
-	var new_server_ticks_offset: int = roundi(cal_server_ticks - co_ticks.ticks)
+	var new_server_ticks_offset: int = roundi(cal_server_ticks - ctx.ticks)
 
 	# Note: needs further reviewing
 	# to avoid fluctuations by one unit, always prefer the biggest value
@@ -52,7 +52,7 @@ static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
 
 	CoTicksUtils.server_tick_offset_collection_add_value(co_ticks, new_server_ticks_offset)
 	co_ticks.server_tick_offset = CoTicksUtils.server_tick_offset_collection_get_most_common(co_ticks)
-	co_ticks.server_ticks = co_ticks.ticks + co_ticks.server_tick_offset
+	co_ticks.server_ticks = ctx.ticks + co_ticks.server_tick_offset
 
 	Log.outc(ctx, "clock, servertime %s real %s d %s | server_ticks_aprox %s | latency %s | clock %s | %s" % [
 		int(current_server_time),
@@ -69,7 +69,7 @@ static func wync_handle_pkt_clock(ctx: WyncCtx, data: Variant):
 static func wync_system_stabilize_latency (ctx: WyncCtx, lat_info: WyncCtx.PeerLatencyInfo):
 	
 	# Poll latency
-	if WyncMisc.fast_modulus(ctx.co_ticks.ticks, 16) != 0:
+	if WyncMisc.fast_modulus(ctx.ticks, 16) != 0:
 		return
 
 	lat_info.latency_buffer[
@@ -123,7 +123,7 @@ static func wync_update_prediction_ticks (ctx: WyncCtx):
 
 	# Adjust tick_offset_desired periodically to compensate for unstable ping
 	
-	if WyncMisc.fast_modulus(co_ticks.ticks, 32) == 0:
+	if WyncMisc.fast_modulus(ctx.ticks, 32) == 0:
 
 		co_predict_data.tick_offset_desired = ceil(lat_info.latency_stable_ms / (1000.0 / physics_fps)) + 2
 		
@@ -187,7 +187,7 @@ static func wync_server_handle_clock_req(ctx: WyncCtx, data: Variant, from_nete_
 	var packet = WyncPktClock.new()
 	packet.time_og = data.time_og
 	packet.tick_og = data.tick_og
-	packet.tick = ctx.co_ticks.ticks
+	packet.tick = ctx.ticks
 	packet.time = WyncClock.clock_get_ms(ctx)
 
 	# queue for sending
@@ -201,12 +201,12 @@ static func wync_server_handle_clock_req(ctx: WyncCtx, data: Variant, from_nete_
 static func wync_client_ask_for_clock(ctx: WyncCtx):
 
 	# Note: Maybe increase frequency when: beggining, or when detected high packet loss
-	if WyncMisc.fast_modulus(ctx.co_ticks.ticks, 16) != 0:
+	if WyncMisc.fast_modulus(ctx.ticks, 16) != 0:
 		return
 
 	var packet = WyncPktClock.new()
 	packet.time_og = WyncClock.clock_get_ms(ctx)
-	packet.tick_og = ctx.co_ticks.ticks
+	packet.tick_og = ctx.ticks
 
 	# prepare peer packet and send (queue)
 
@@ -223,7 +223,7 @@ static func wync_client_ask_for_clock(ctx: WyncCtx):
 
 static func wync_advance_ticks(ctx: WyncCtx):
 	
-	ctx.co_ticks.ticks += 1
+	ctx.ticks += 1
 	ctx.co_ticks.server_ticks += 1
 	ctx.co_ticks.lerp_delta_accumulator_ms = 0
 
@@ -248,8 +248,8 @@ static func clock_get_ms(ctx: WyncCtx) -> float:
 
 static func clock_get_tick_timestamp_ms(ctx: WyncCtx, ticks: int) -> float:
 	var frame = 1000.0 / Engine.physics_ticks_per_second
-	return ctx.co_predict_data.current_tick_timestamp + (ticks - ctx.co_ticks.ticks) * frame
+	return ctx.co_predict_data.current_tick_timestamp + (ticks - ctx.ticks) * frame
 
 
 static func wync_get_ticks(ctx: WyncCtx):
-	return ctx.co_ticks.ticks
+	return ctx.ticks

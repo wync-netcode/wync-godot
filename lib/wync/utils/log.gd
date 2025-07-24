@@ -3,7 +3,7 @@ class_name Log
 
 static func outc(ctx: WyncCtx, msg: String):
 	var prefix = "cli_%s" % [ctx.my_peer_id] if ctx.is_client else "serve"
-	prefix += " %s| " % [ctx.co_ticks.ticks]
+	prefix += " %s| " % [ctx.ticks]
 	var color = "yellow" if ctx.is_client else "magenta"
 	var function_name = get_function_name(1)
 	print_rich("[color=%s]IN %s%s | %s" % [color, prefix, msg, function_name])
@@ -11,7 +11,7 @@ static func outc(ctx: WyncCtx, msg: String):
 
 static func warc(ctx: WyncCtx, msg: String):
 	var prefix = "cli_%s" % [ctx.my_peer_id] if ctx.is_client else "serve"
-	prefix += " %s| " % [ctx.co_ticks.ticks]
+	prefix += " %s| " % [ctx.ticks]
 	var color = "orange" if ctx.is_client else "pink"
 	var function_name = get_function_name(1)
 	print_rich("[color=%s]WA %s%s | %s" % [color, prefix, msg, function_name])
@@ -19,7 +19,7 @@ static func warc(ctx: WyncCtx, msg: String):
 
 static func errc(ctx: WyncCtx, msg: String):
 	var prefix = "cli_%s" % [ctx.my_peer_id] if ctx.is_client else "serve"
-	prefix += " %s| " % [ctx.co_ticks.ticks]
+	prefix += " %s| " % [ctx.ticks]
 	var function_name = get_function_name(1)
 	printerr("ER %s%s | %s" % [prefix, msg, function_name])
 

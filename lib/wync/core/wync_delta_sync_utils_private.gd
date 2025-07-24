@@ -96,7 +96,7 @@ static func wync_handle_pkt_delta_prop_ack(ctx: WyncCtx, data: Variant, from_net
 		var prop_id: int = data.delta_prop_ids[i]
 		var last_tick: int = data.last_tick_received[i]
 
-		if last_tick > ctx.co_ticks.ticks: # cannot be in the future
+		if last_tick > ctx.ticks: # cannot be in the future
 			Log.errc(ctx, "W: last_tick is in the future prop(%s) tick(%s)" % [prop_id, last_tick])
 			continue
 

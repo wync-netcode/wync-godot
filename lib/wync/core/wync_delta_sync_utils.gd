@@ -162,7 +162,7 @@ static func delta_prop_push_event_to_current \
 
 	# append event to current delta events
 	prop.current_delta_events.append(event_id)
-	Log.outc(ctx, "delta_prop_push_event_to_current | delta sync | ticks(%s) event_list %s" % [ctx.co_ticks.ticks, prop.current_delta_events])
+	Log.outc(ctx, "delta_prop_push_event_to_current | delta sync | ticks(%s) event_list %s" % [ctx.ticks, prop.current_delta_events])
 	return OK
 
 

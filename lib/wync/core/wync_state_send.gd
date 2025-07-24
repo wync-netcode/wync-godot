@@ -95,7 +95,7 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 			else:
 
 				var snap_prop: WyncPktSnap.SnapProp = _wync_sync_regular_prop\
-					(ctx, prop, prop_id, ctx.co_ticks.ticks)
+					(ctx, prop, prop_id, ctx.ticks)
 				if snap_prop == null:
 					continue
 
@@ -115,9 +115,9 @@ static func _wync_queue_out_snapshots_for_delivery (ctx: WyncCtx):
 	for client_id: int in range(1, ctx.peers.size()):
 
 		var reliable_snap := WyncPktSnap.new()
-		reliable_snap.tick = ctx.co_ticks.ticks
+		reliable_snap.tick = ctx.ticks
 		var unreliable_snap := WyncPktSnap.new()
-		unreliable_snap.tick = ctx.co_ticks.ticks
+		unreliable_snap.tick = ctx.ticks
 
 		if ctx.clients_cached_reliable_snapshots[client_id].size() > 0:
 			for packet: WyncPktSnap.SnapProp in ctx.clients_cached_reliable_snapshots[client_id]:
@@ -220,12 +220,12 @@ static func wync_send_pending_rela_props_fullsnapshot(ctx: WyncCtx):
 		prop_id = pair.prop_id
 		var prop = WyncTrack.get_prop_unsafe(ctx, prop_id)
 
-		var snap_prop := _wync_sync_regular_prop(ctx, prop, prop_id, ctx.co_ticks.ticks)
+		var snap_prop := _wync_sync_regular_prop(ctx, prop, prop_id, ctx.ticks)
 		if snap_prop != null:
 
 			ctx.clients_cached_reliable_snapshots[pair.peer_id].append(snap_prop)
 
-			ctx.client_has_relative_prop_has_last_tick[pair.peer_id][prop_id] = ctx.co_ticks.ticks
+			ctx.client_has_relative_prop_has_last_tick[pair.peer_id][prop_id] = ctx.ticks
 
 			## Note: data consumed was already calculated before when queuing
 
@@ -238,7 +238,7 @@ static func wync_prop_event_send_event_ids_to_peer(ctx: WyncCtx, prop: WyncProp,
 
 	var pkt_inputs = WyncPktInputs.new()
 
-	for tick in range(ctx.co_ticks.ticks - WyncCtx.INPUT_AMOUNT_TO_SEND, ctx.co_ticks.ticks +1):
+	for tick in range(ctx.ticks - WyncCtx.INPUT_AMOUNT_TO_SEND, ctx.ticks +1):
 
 		var input = WyncProp.saved_state_get(prop, tick)
 		if input == null:
@@ -309,7 +309,7 @@ static func system_update_delta_base_state_tick(ctx: WyncCtx) -> void:
 
 	# move base_state_tick forward
 
-	var new_base_tick = ctx.co_ticks.ticks - ctx.max_prop_relative_sync_history_ticks +1
+	var new_base_tick = ctx.ticks - ctx.max_prop_relative_sync_history_ticks +1
 	if not (ctx.delta_base_state_tick < new_base_tick):
 		return
 	ctx.delta_base_state_tick = new_base_tick

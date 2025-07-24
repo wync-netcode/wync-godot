@@ -31,8 +31,6 @@ static func untrack_entity(ctx: WyncCtx, entity_id: int):
 	ctx.tracked_entities.erase(entity_id)
 	ctx.entity_has_props.erase(entity_id)
 	ctx.entity_is_of_type.erase(entity_id)
-	ctx.entity_has_integrate_fun.erase(entity_id)
-	ctx.entity_has_simulation_fun.erase(entity_id)
 	ctx.entity_spawn_data.erase(entity_id)
 	ctx.entity_last_predicted_tick.erase(entity_id)
 	ctx.entity_last_received_tick.erase(entity_id)

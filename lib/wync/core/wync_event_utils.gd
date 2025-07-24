@@ -244,7 +244,7 @@ static func global_event_consume_tick \
 
 
 static func module_events_consumed_advance_tick(ctx: WyncCtx):
-	var tick = ctx.co_ticks.ticks
+	var tick = ctx.ticks
 
 	for prop_id: int in ctx.active_prop_ids:
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
@@ -334,7 +334,7 @@ static func wync_get_events_from_channel_from_peer(
 	var consumed_event_ids: Array[int] = prop_channel.events_consumed_at_tick.get_at(tick)
 	var confirmed_event_ids: Array
 
-	if ctx.co_ticks.ticks == tick:
+	if ctx.ticks == tick:
 		confirmed_event_ids = ctx.peer_has_channel_has_events[wync_peer_id][channel]
 	else:
 		# TODO: Rewrite me

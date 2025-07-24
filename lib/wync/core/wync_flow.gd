@@ -167,7 +167,7 @@ static func wync_server_tick_end(ctx: WyncCtx):
 	# This function extracts regular props, plus _auxiliar delta event props_
 	# We need a function to extract data exclusively of events... Like the equivalent
 	# of the client's _input_bufferer_
-	WyncWrapper.extract_data_to_tick(ctx, ctx.co_ticks.ticks) # wrapper function
+	WyncWrapper.extract_data_to_tick(ctx, ctx.ticks) # wrapper function
 
 
 static func wync_client_tick_end(ctx: WyncCtx):
@@ -199,5 +199,5 @@ static func wync_client_tick_end(ctx: WyncCtx):
 static func wync_system_gather_packets(ctx: WyncCtx):
 	_internal_wync_system_gather_packets_start(ctx)
 	if !ctx.is_client:
-		WyncWrapper.extract_rela_prop_fullsnapshot_to_tick(ctx, ctx.co_ticks.ticks)
+		WyncWrapper.extract_rela_prop_fullsnapshot_to_tick(ctx, ctx.ticks)
 	_internal_wync_system_gather_packets_end(ctx)

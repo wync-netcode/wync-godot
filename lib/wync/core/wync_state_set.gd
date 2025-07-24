@@ -130,9 +130,7 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 
 	delta_props_update_and_apply_delta_events(ctx, ctx.type_state__delta_prop_ids)
 	
-	# call integration function to sync new transforms with physics server
-
-	integrate_state(ctx)
+	# NOTE: Physics integration would go after this
 
 
 static func predicted_delta_props_rollback_to_canonic_state (ctx: WyncCtx, prop_ids: Array[int]):
@@ -319,18 +317,3 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 
 			# Note: you have last tick applied per prop and globally, so the user
 			# can choose what to use
-
-
-# TODO: Move to wrapper
-
-static func integrate_state(ctx: WyncCtx):
-	
-	# iterate all entities
-	# check if they have a prop that was affected?
-	# run entity integration function
-
-	for entity_id: int in ctx.entity_has_integrate_fun.keys():
-				
-		var int_fun = WyncIntegrate.entity_get_integrate_fun(ctx, entity_id)
-		if int_fun is Callable:
-			int_fun.call()

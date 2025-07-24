@@ -6,7 +6,7 @@ static func service_wync_try_to_connect(ctx: WyncCtx) -> int:
 		return OK
 
 	# throttle
-	if WyncMisc.fast_modulus(ctx.co_ticks.ticks, 8) != 0:
+	if WyncMisc.fast_modulus(ctx.ticks, 8) != 0:
 		return OK
 
 	# try get server nete_peer_id

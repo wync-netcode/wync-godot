@@ -13,9 +13,9 @@ static func wync_xtrap_preparation(ctx: WyncCtx) -> int:
 	if ctx.last_tick_received == 0:
 		return 1
 	ctx.currently_on_predicted_tick = true
-	ctx.xtrap_is_local_tick_duplicated = false
-	ctx.xtrap_prev_local_tick = null # Optional<int>
-	ctx.xtrap_local_tick = null # Optional<int>
+	#ctx.xtrap_is_local_tick_duplicated = false
+	#ctx.xtrap_prev_local_tick = null # Optional<int>
+	#ctx.xtrap_local_tick = null # Optional<int>
 
 	if (
 		ctx.last_tick_received_at_tick_prev != ctx.last_tick_received_at_tick ||

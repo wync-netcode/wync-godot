@@ -3,7 +3,7 @@ class_name WyncStateStore ## WyncStateKeep WyncStateSave
 
 static func wync_client_update_last_tick_received(ctx: WyncCtx, tick: int):
 	ctx.last_tick_received = max(ctx.last_tick_received, tick)
-	ctx.last_tick_received_at_tick = ctx.co_ticks.ticks
+	ctx.last_tick_received_at_tick = ctx.ticks
 
 
 static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
@@ -46,7 +46,7 @@ static func prop_save_confirmed_state(ctx: WyncCtx, prop_id: int, tick: int, sta
 	prop.just_received_new_state = true
 	prop.last_ticks_received.push(tick)
 	prop.last_ticks_received.sort()
-	prop.state_id_to_local_tick.insert_at(prop.saved_states.head_pointer, ctx.co_ticks.ticks)
+	prop.state_id_to_local_tick.insert_at(prop.saved_states.head_pointer, ctx.ticks)
 
 	WyncProp.saved_state_insert(ctx, prop, tick, state)
 
@@ -65,7 +65,7 @@ static func prop_save_confirmed_state(ctx: WyncCtx, prop_id: int, tick: int, sta
 static func wync_service_cleanup_dummy_props(ctx: WyncCtx):
 	# run every few frames
 	#if ctx.co_ticks.ticks % 10 != 0:
-	if WyncMisc.fast_modulus(ctx.co_ticks.ticks, 16) != 0:
+	if WyncMisc.fast_modulus(ctx.ticks, 16) != 0:
 		return
 
 	var curr_tick = ctx.co_ticks.server_ticks
@@ -188,7 +188,7 @@ static func wync_insert_state_to_entity_prop (
 
 	WyncProp.saved_state_insert(ctx, prop, tick, state)
 
-	prop.state_id_to_local_tick.insert_at(prop.saved_states.head_pointer, ctx.co_ticks.ticks)
+	prop.state_id_to_local_tick.insert_at(prop.saved_states.head_pointer, ctx.ticks)
 
 	prop.just_received_new_state = true
 

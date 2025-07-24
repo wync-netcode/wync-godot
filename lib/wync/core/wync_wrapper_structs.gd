@@ -38,3 +38,12 @@ class WyncWrapperCtx:
 
 	# Array<delta_blueprint_id: int, Blueprint>
 	var delta_blueprints: Array[WyncWrapperStructs.WyncDeltaBlueprint]
+
+
+	# TODO(Future): Physics integration functions
+	## Maybe this is the user's responsibility
+	## Map<entity_id: int, sim_fun_id>
+	#var entity_has_integrate_fun: Dictionary
+	## Syncs entity transform with physic server 
+	## Array<sim_fun_id: int, Callable>
+	#var integration_functions: Array[Callable]

@@ -11,7 +11,7 @@ static func wync_lerp_precompute (ctx: WyncCtx):
 
 	var latency_info: WyncCtx.PeerLatencyInfo = ctx.peer_latency_info[WyncCtx.SERVER_PEER_ID]
 	ctx.co_predict_data.lerp_latency_ms = latency_info.latency_stable_ms
-	var curr_time = WyncClock.clock_get_tick_timestamp_ms(ctx, ctx.co_ticks.ticks)
+	var curr_time = WyncClock.clock_get_tick_timestamp_ms(ctx, ctx.ticks)
 	var target_time_conf = curr_time - co_predict_data.lerp_ms - ctx.co_predict_data.lerp_latency_ms
 
 	# precompute which ticks we'll be interpolating
@@ -74,8 +74,8 @@ static func precompute_lerping_prop_predicted(
 	prop = prop as WyncProp
 
 	prop.lerp_use_confirmed_state = false
-	prop.lerp_left_local_tick = ctx.co_ticks.ticks
-	prop.lerp_right_local_tick = ctx.co_ticks.ticks +1
+	prop.lerp_left_local_tick = ctx.ticks
+	prop.lerp_right_local_tick = ctx.ticks +1
 
 
 static func wync_client_set_lerp_ms (ctx: WyncCtx, server_tick_rate: float, lerp_ms: int):
@@ -240,7 +240,7 @@ static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 
 	# time between last rendered tick and current frame target
 	var last_tick_rendered_left_timestamp = frame * (
-		ctx.co_ticks.last_tick_rendered_left - ctx.co_ticks.server_tick_offset - ctx.co_ticks.ticks)
+		ctx.co_ticks.last_tick_rendered_left - ctx.co_ticks.server_tick_offset - ctx.ticks)
 	ctx.co_ticks.minimum_lerp_fraction_accumulated_ms = target_time_conf - last_tick_rendered_left_timestamp
 
 	# NOTE, Expanded equation: frame * (ctx.co_ticks.server_tick_offset + ctx.co_ticks.ticks + delta_lerp_fraction - ctx.co_ticks.last_tick_rendered_left -1) - ctx.co_predict_data.lerp_ms - ctx.co_predict_data.lerp_latency_ms
@@ -261,9 +261,9 @@ static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 			## Note: getting time by ticks strictly
 
 			left_timestamp_ms = (prop.lerp_left_confirmed_state_tick
-			- ctx.co_ticks.server_tick_offset - ctx.co_ticks.ticks) * frame
+			- ctx.co_ticks.server_tick_offset - ctx.ticks) * frame
 			right_timestamp_ms = (prop.lerp_right_confirmed_state_tick
-			- ctx.co_ticks.server_tick_offset - ctx.co_ticks.ticks) * frame
+			- ctx.co_ticks.server_tick_offset - ctx.ticks) * frame
 
 		else:
 
@@ -277,8 +277,8 @@ static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 
 			# MAYBEDO: opportunity to optimize this by not recalculating this each loop (prediction only)
 
-			left_timestamp_ms = (prop.lerp_left_local_tick - ctx.co_ticks.ticks) * frame
-			right_timestamp_ms = (prop.lerp_right_local_tick - ctx.co_ticks.ticks) * frame
+			left_timestamp_ms = (prop.lerp_left_local_tick - ctx.ticks) * frame
+			right_timestamp_ms = (prop.lerp_right_local_tick - ctx.ticks) * frame
 
 		if left_value == null:
 			continue
