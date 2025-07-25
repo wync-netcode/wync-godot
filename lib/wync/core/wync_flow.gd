@@ -10,8 +10,8 @@ class_name WyncFlow
 ## Calls all the systems that produce packets to send whilst respecting the data limit
 
 static func _internal_wync_system_gather_packets_start(ctx: WyncCtx):
-	if ctx.is_client:
-		if not ctx.connected:
+	if ctx.common.is_client:
+		if not ctx.common.connected:
 			WyncJoin.service_wync_try_to_connect(ctx)  # reliable, commited
 		else:
 			WyncClock.wync_client_ask_for_clock(ctx)   # unreliable
@@ -41,7 +41,7 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 
 	# debug statistics
 	WyncDebug.log_packet_received(ctx, wync_pkt.packet_type_id)
-	var is_client = ctx.is_client
+	var is_client = ctx.common.is_client
 
 	# tick rate calculation	
 	if is_client:
@@ -101,29 +101,29 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 
 static func server_setup(ctx: WyncCtx) -> int:
 	# peer id 0 reserved for server
-	ctx.is_client = false
-	ctx.my_peer_id = 0
-	ctx.peers.resize(1)
-	ctx.peers[ctx.my_peer_id] = -1
-	ctx.connected = true
+	ctx.common.is_client = false
+	ctx.common.my_peer_id = 0
+	ctx.common.peers.resize(1)
+	ctx.common.peers[ctx.common.my_peer_id] = -1
+	ctx.common.connected = true
 
 	# setup event caching
-	ctx.events_hash_to_id.init(ctx.max_amount_cache_events)
-	ctx.to_peers_i_sent_events = []
-	ctx.to_peers_i_sent_events.resize(ctx.max_peers)
-	for i in range(ctx.max_peers):
-		ctx.to_peers_i_sent_events[i] = FIFOMap.new()
-		ctx.to_peers_i_sent_events[i].init(ctx.max_amount_cache_events)
+	ctx.co_events.events_hash_to_id.init(ctx.common.max_amount_cache_events)
+	ctx.co_events.to_peers_i_sent_events = []
+	ctx.co_events.to_peers_i_sent_events.resize(ctx.common.max_peers)
+	for i in range(ctx.common.max_peers):
+		ctx.co_events.to_peers_i_sent_events[i] = FIFOMap.new()
+		ctx.co_events.to_peers_i_sent_events[i].init(ctx.common.max_amount_cache_events)
 
 	# setup relative synchronization
-	ctx.peers_events_to_sync = []
-	ctx.peers_events_to_sync.resize(ctx.max_peers)
-	for i in range(ctx.max_peers):
-		ctx.peers_events_to_sync[i] = {} as Dictionary
+	ctx.co_throttling.peers_events_to_sync = []
+	ctx.co_throttling.peers_events_to_sync.resize(ctx.common.max_peers)
+	for i in range(ctx.common.max_peers):
+		ctx.co_throttling.peers_events_to_sync[i] = {} as Dictionary
 
 	# setup peer channels
 	WyncEventUtils.setup_peer_global_events(ctx, WyncCtx.SERVER_PEER_ID)
-	for i in range(1, ctx.max_peers):
+	for i in range(1, ctx.common.max_peers):
 		WyncEventUtils.setup_peer_global_events(ctx, i)
 
 	# setup prob prop
@@ -133,7 +133,7 @@ static func server_setup(ctx: WyncCtx) -> int:
 
 
 static func client_init(ctx: WyncCtx) -> int:
-	ctx.is_client = true
+	ctx.common.is_client = true
 	return OK
 
 
@@ -155,8 +155,8 @@ static func wync_server_tick_start(ctx: WyncCtx):
 
 
 static func wync_server_tick_end(ctx: WyncCtx):
-	for peer_id: int in range(1, ctx.peers.size()):
-		WyncClock.wync_system_stabilize_latency(ctx, ctx.peer_latency_info[peer_id])
+	for peer_id: int in range(1, ctx.common.peers.size()):
+		WyncClock.wync_system_stabilize_latency(ctx, ctx.common.peer_latency_info[peer_id])
 
 	WyncXtrapInternal.wync_xtrap_server_filter_prop_ids(ctx)
 
@@ -167,14 +167,14 @@ static func wync_server_tick_end(ctx: WyncCtx):
 	# This function extracts regular props, plus _auxiliar delta event props_
 	# We need a function to extract data exclusively of events... Like the equivalent
 	# of the client's _input_bufferer_
-	WyncWrapper.extract_data_to_tick(ctx, ctx.ticks) # wrapper function
+	WyncWrapper.extract_data_to_tick(ctx, ctx.common.ticks) # wrapper function
 
 
 static func wync_client_tick_end(ctx: WyncCtx):
 
 	WyncXtrapInternal.wync_xtrap_client_filter_prop_ids(ctx)
 	WyncClock.wync_advance_ticks(ctx)
-	WyncClock.wync_system_stabilize_latency(ctx, ctx.peer_latency_info[WyncCtx.SERVER_PEER_ID])
+	WyncClock.wync_system_stabilize_latency(ctx, ctx.common.peer_latency_info[WyncCtx.SERVER_PEER_ID])
 	WyncClock.wync_update_prediction_ticks(ctx)
 	
 	WyncWrapper.wync_buffer_inputs(ctx) # wrapper function
@@ -198,6 +198,6 @@ static func wync_client_tick_end(ctx: WyncCtx):
 
 static func wync_system_gather_packets(ctx: WyncCtx):
 	_internal_wync_system_gather_packets_start(ctx)
-	if !ctx.is_client:
-		WyncWrapper.extract_rela_prop_fullsnapshot_to_tick(ctx, ctx.ticks)
+	if !ctx.common.is_client:
+		WyncWrapper.extract_rela_prop_fullsnapshot_to_tick(ctx, ctx.common.ticks)
 	_internal_wync_system_gather_packets_end(ctx)

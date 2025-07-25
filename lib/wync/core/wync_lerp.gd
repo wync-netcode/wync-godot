@@ -7,19 +7,19 @@ class_name WyncLerp
 
 
 static func wync_lerp_precompute (ctx: WyncCtx):
-	var co_predict_data = ctx.co_predict_data
+	var co_predict_data = ctx.co_pred
 
-	var latency_info: WyncCtx.PeerLatencyInfo = ctx.peer_latency_info[WyncCtx.SERVER_PEER_ID]
-	ctx.co_predict_data.lerp_latency_ms = latency_info.latency_stable_ms
-	var curr_time = WyncClock.clock_get_tick_timestamp_ms(ctx, ctx.ticks)
-	var target_time_conf = curr_time - co_predict_data.lerp_ms - ctx.co_predict_data.lerp_latency_ms
+	var latency_info: WyncCtx.PeerLatencyInfo = ctx.common.peer_latency_info[WyncCtx.SERVER_PEER_ID]
+	ctx.co_pred.lerp_latency_ms = latency_info.latency_stable_ms
+	var curr_time = WyncClock.clock_get_tick_timestamp_ms(ctx, ctx.common.ticks)
+	var target_time_conf = curr_time - co_predict_data.lerp_ms - ctx.co_pred.lerp_latency_ms
 
 	# precompute which ticks we'll be interpolating
 	# TODO: might want to use another filtered prop list for 'predicted'.
 	# Before doing that we might need to settled on our strategy for extrapolation as fallback
 	# of interpolation for confirmed states
 
-	for prop_id in ctx.type_state__interpolated_regular_prop_ids:
+	for prop_id in ctx.co_filter_c.type_state__interpolated_regular_prop_ids:
 
 		# -> for predictes states
 
@@ -74,8 +74,8 @@ static func precompute_lerping_prop_predicted(
 	prop = prop as WyncProp
 
 	prop.lerp_use_confirmed_state = false
-	prop.lerp_left_local_tick = ctx.ticks
-	prop.lerp_right_local_tick = ctx.ticks +1
+	prop.lerp_left_local_tick = ctx.common.ticks
+	prop.lerp_right_local_tick = ctx.common.ticks +1
 
 
 static func wync_client_set_lerp_ms (ctx: WyncCtx, server_tick_rate: float, lerp_ms: int):
@@ -83,13 +83,13 @@ static func wync_client_set_lerp_ms (ctx: WyncCtx, server_tick_rate: float, lerp
 	#var server_update_rate: int = ceil((1.0 / (ctx.server_tick_rate + 1)) * physics_fps)
 	#ctx.lerp_ms = max(lerp_ms, (1000 / server_update_rate) * 2)
 
-	ctx.co_predict_data.lerp_ms = max(lerp_ms, ceil((1000.0 / server_tick_rate) * 2))
+	ctx.co_pred.lerp_ms = max(lerp_ms, ceil((1000.0 / server_tick_rate) * 2))
 	# TODO: also set maximum based on tick history size
 	# NOTE: what about tick differences between server and clients?
 
 ## How much the lerping is allowed to extrapolate when missing packages
 static func wync_client_set_max_lerp_factor_symmetric (ctx: WyncCtx, max_lerp_factor_symmetric: float):
-	ctx.max_lerp_factor_symmetric = max_lerp_factor_symmetric
+	ctx.co_lerp.max_lerp_factor_symmetric = max_lerp_factor_symmetric
 
 
 static func wync_handle_packet_client_set_lerp_ms(ctx: WyncCtx, data: Variant, from_nete_peer_id: int) -> int:
@@ -104,7 +104,7 @@ static func wync_handle_packet_client_set_lerp_ms(ctx: WyncCtx, data: Variant, f
 		Log.errc(ctx, "client %s is not registered" % client_id)
 		return 2
 
-	var client_info := ctx.client_has_info[client_id] as WyncCtx.WyncClientInfo
+	var client_info := ctx.common.client_has_info[client_id] as WyncCtx.WyncClientInfo
 	client_info.lerp_ms = data.lerp_ms
 
 	return OK
@@ -235,12 +235,12 @@ static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 	# TODO: Replace "Engine.get_physics_interpolation_fraction" with user arg
 	var delta_fraction_ms: float = delta_lerp_fraction * frame
 	# Note: substracting one frame to compensate for one frame added by delta_fraction_ms
-	var target_time_conf: float = delta_fraction_ms - frame - ctx.co_predict_data.lerp_ms - ctx.co_predict_data.lerp_latency_ms
+	var target_time_conf: float = delta_fraction_ms - frame - ctx.co_pred.lerp_ms - ctx.co_pred.lerp_latency_ms
 	var target_time_pred: float = delta_fraction_ms
 
 	# time between last rendered tick and current frame target
 	var last_tick_rendered_left_timestamp = frame * (
-		ctx.co_ticks.last_tick_rendered_left - ctx.co_ticks.server_tick_offset - ctx.ticks)
+		ctx.co_ticks.last_tick_rendered_left - ctx.co_ticks.server_tick_offset - ctx.common.ticks)
 	ctx.co_ticks.minimum_lerp_fraction_accumulated_ms = target_time_conf - last_tick_rendered_left_timestamp
 
 	# NOTE, Expanded equation: frame * (ctx.co_ticks.server_tick_offset + ctx.co_ticks.ticks + delta_lerp_fraction - ctx.co_ticks.last_tick_rendered_left -1) - ctx.co_predict_data.lerp_ms - ctx.co_predict_data.lerp_latency_ms
@@ -251,7 +251,7 @@ static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 	var right_value: Variant
 	var factor: float
 
-	for prop_id in ctx.type_state__interpolated_regular_prop_ids:
+	for prop_id in ctx.co_filter_c.type_state__interpolated_regular_prop_ids:
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
 
 		if prop.lerp_use_confirmed_state:
@@ -261,9 +261,9 @@ static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 			## Note: getting time by ticks strictly
 
 			left_timestamp_ms = (prop.lerp_left_confirmed_state_tick
-			- ctx.co_ticks.server_tick_offset - ctx.ticks) * frame
+			- ctx.co_ticks.server_tick_offset - ctx.common.ticks) * frame
 			right_timestamp_ms = (prop.lerp_right_confirmed_state_tick
-			- ctx.co_ticks.server_tick_offset - ctx.ticks) * frame
+			- ctx.co_ticks.server_tick_offset - ctx.common.ticks) * frame
 
 		else:
 
@@ -277,8 +277,8 @@ static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 
 			# MAYBEDO: opportunity to optimize this by not recalculating this each loop (prediction only)
 
-			left_timestamp_ms = (prop.lerp_left_local_tick - ctx.ticks) * frame
-			right_timestamp_ms = (prop.lerp_right_local_tick - ctx.ticks) * frame
+			left_timestamp_ms = (prop.lerp_left_local_tick - ctx.common.ticks) * frame
+			right_timestamp_ms = (prop.lerp_right_local_tick - ctx.common.ticks) * frame
 
 		if left_value == null:
 			continue
@@ -292,8 +292,8 @@ static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 				factor = (target_time_conf - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms)
 			else:
 				factor = (target_time_pred - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms)
-			if (factor < (0 - ctx.max_lerp_factor_symmetric) ||
-				factor > (1 + ctx.max_lerp_factor_symmetric)):
+			if (factor < (0 - ctx.co_lerp.max_lerp_factor_symmetric) ||
+				factor > (1 + ctx.co_lerp.max_lerp_factor_symmetric)):
 				continue
 
 			var lerp_func_id = ctx.wrapper.lerp_type_to_lerp_function[prop.user_data_type]
@@ -301,8 +301,8 @@ static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 
 			prop.interpolated_state = lerp_func.call(left_value, right_value, factor)
 
-	ctx.debug_lerp_prev_curr_time = delta_fraction_ms
-	ctx.debug_lerp_prev_target = target_time_conf
+	ctx.co_metrics.debug_lerp_prev_curr_time = delta_fraction_ms
+	ctx.co_metrics.debug_lerp_prev_target = target_time_conf
 
 
 ## timewarp, server only
@@ -314,7 +314,7 @@ static func wync_reset_state_to_interpolated_absolute (
 	lerp_delta_ms: float,
 	):
 
-	var frame = 1000.0 / ctx.physic_ticks_per_second
+	var frame = 1000.0 / ctx.common.physic_ticks_per_second
 
 	# then interpolate them
 

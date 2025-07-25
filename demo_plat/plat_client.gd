@@ -24,7 +24,7 @@ func _physics_process(delta: float) -> void:
 
 	#elif gs.net.client.state == Plat.Client.STATE.CONNECTED:
 
-	if not gs.wctx.connected:
+	if not gs.wctx.common.connected:
 		WyncClock.wync_advance_ticks(gs.wctx)
 		WyncFlow.wync_system_gather_packets(gs.wctx)
 	else:

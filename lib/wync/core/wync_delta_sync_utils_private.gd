@@ -19,7 +19,7 @@ static func prop_set_auxiliar(ctx: WyncCtx, prop_id: int, auxiliar_pair: int, un
 
 
 static func auxiliar_props_clear_current_delta_events(ctx: WyncCtx):
-	for prop_id in ctx.filtered_delta_prop_ids:
+	for prop_id in ctx.co_filter_s.filtered_delta_prop_ids:
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
 		prop.current_delta_events.clear()
 		
@@ -32,11 +32,11 @@ static func event_is_healthy (ctx: WyncCtx, event_id: int) -> int:
 	# get event transform function
 	# TODO: Make a new function get_event(event_id)
 	
-	if not ctx.events.has(event_id):
+	if not ctx.co_events.events.has(event_id):
 		Log.errc(ctx, "delta sync | couldn't find event (id %s)" % [event_id])
 		return 1
 
-	var event_data = ctx.events[event_id]
+	var event_data = ctx.co_events.events[event_id]
 	if event_data is not WyncCtx.WyncEvent:
 		Log.errc(ctx, "delta sync | event (id %s) found but invalid" % [event_id])
 		return 2
@@ -50,9 +50,9 @@ static func wync_system_client_send_delta_prop_acks(ctx: WyncCtx):
 	var prop_amount = 0
 	var delta_prop_ids: Array[int] = []
 	var last_tick_received: Array[int] = []
-	var delta_props_last_tick = ctx.client_has_relative_prop_has_last_tick[ctx.my_peer_id] as Dictionary
+	var delta_props_last_tick = ctx.co_track.client_has_relative_prop_has_last_tick[ctx.common.my_peer_id] as Dictionary
 
-	for prop_id in ctx.type_state__delta_prop_ids:
+	for prop_id in ctx.co_filter_c.type_state__delta_prop_ids:
 		if not delta_props_last_tick.has(prop_id) || delta_props_last_tick[prop_id] == -1:
 			continue
 		var last_tick = delta_props_last_tick[prop_id]
@@ -88,7 +88,7 @@ static func wync_handle_pkt_delta_prop_ack(ctx: WyncCtx, data: Variant, from_net
 		Log.errc(ctx, "client %s is not registered" % client_id)
 		return 2
 
-	var client_relative_props = ctx.client_has_relative_prop_has_last_tick[client_id] as Dictionary
+	var client_relative_props = ctx.co_track.client_has_relative_prop_has_last_tick[client_id] as Dictionary
 
 	# update latest _delta prop_ acked tick
 
@@ -96,7 +96,7 @@ static func wync_handle_pkt_delta_prop_ack(ctx: WyncCtx, data: Variant, from_net
 		var prop_id: int = data.delta_prop_ids[i]
 		var last_tick: int = data.last_tick_received[i]
 
-		if last_tick > ctx.ticks: # cannot be in the future
+		if last_tick > ctx.common.ticks: # cannot be in the future
 			Log.errc(ctx, "W: last_tick is in the future prop(%s) tick(%s)" % [prop_id, last_tick])
 			continue
 
@@ -116,9 +116,9 @@ static func wync_handle_pkt_delta_prop_ack(ctx: WyncCtx, data: Variant, from_net
 
 
 static func entity_has_delta_prop(ctx: WyncCtx, entity_id: int) -> bool:
-	if not ctx.entity_has_props.has(entity_id):
+	if not ctx.co_track.entity_has_props.has(entity_id):
 		return false
-	for prop_id in ctx.entity_has_props[entity_id]:
+	for prop_id in ctx.co_track.entity_has_props[entity_id]:
 		var prop := WyncTrack.get_prop(ctx, prop_id)
 		if prop == null:
 			continue

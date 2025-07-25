@@ -108,7 +108,7 @@ static func prop_set_relative_syncable (
 
 
 	var need_undo_events = false
-	if ctx.is_client && predictable:
+	if ctx.common.is_client && predictable:
 		need_undo_events = true
 		WyncXtrap.prop_set_predict(ctx, prop_id)
 
@@ -162,7 +162,7 @@ static func delta_prop_push_event_to_current \
 
 	# append event to current delta events
 	prop.current_delta_events.append(event_id)
-	Log.outc(ctx, "delta_prop_push_event_to_current | delta sync | ticks(%s) event_list %s" % [ctx.ticks, prop.current_delta_events])
+	Log.outc(ctx, "delta_prop_push_event_to_current | delta sync | ticks(%s) event_list %s" % [ctx.common.ticks, prop.current_delta_events])
 	return OK
 
 
@@ -175,18 +175,18 @@ static func merge_event_to_state_real_state \
 	if not prop.relative_syncable:
 		return 2
 
-	if (ctx.is_client
+	if (ctx.common.is_client
 		&& not WyncXtrap.prop_is_predicted(ctx, prop_id)
-		&& ctx.currently_on_predicted_tick
+		&& ctx.co_pred.currently_on_predicted_tick
 		):
 		return OK
 
 # every time we merge a delta event WHILE PREDICTING (that is, not when merging received data)
 # we make sure to always produce an _undo delta event_ 
 
-	var is_client_predicting = ctx.is_client \
+	var is_client_predicting = ctx.common.is_client \
 			&& WyncXtrap.prop_is_predicted(ctx, prop_id) \
-			&& ctx.currently_on_predicted_tick 
+			&& ctx.co_pred.currently_on_predicted_tick 
 	var aux_prop = null # : WyncProp*
 
 	# get auxiliar prop
@@ -221,10 +221,10 @@ static func _merge_event_to_state \
 	# get event transform function
 	# TODO: Make a new function get_event(event_id)
 	
-	if not ctx.events.has(event_id):
+	if not ctx.co_events.events.has(event_id):
 		Log.errc(ctx, "delta sync | couldn't find event id(%s)" % [event_id])
 		return [14, null]
-	var event_data = (ctx.events[event_id] as WyncCtx.WyncEvent).data
+	var event_data = (ctx.co_events.events[event_id] as WyncCtx.WyncEvent).data
 
 	# NOTE: Maybe confirm this prop's blueprint supports this event_type
 
@@ -241,7 +241,7 @@ static func _merge_event_to_state \
 
 
 static func predicted_event_props_clear_events(ctx: WyncCtx):
-	for prop_id in ctx.type_event__predicted_prop_ids:
+	for prop_id in ctx.co_filter_c.type_event__predicted_prop_ids:
 		var setter = ctx.wrapper.prop_setter[prop_id]
 		var user_cxt = ctx.wrapper.prop_user_ctx[prop_id]
 		setter.call(user_cxt, [] as Array[int])

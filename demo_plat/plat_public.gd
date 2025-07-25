@@ -470,7 +470,7 @@ static func system_players_shoot_bullet_timewarp_ping_based(gs: Plat.GameState):
 		if wync_peer_id == -1:
 			continue
 
-		handle_player_shoot_timewarp_ping_based(gs, wync_peer_id, gs.wctx.ticks)
+		handle_player_shoot_timewarp_ping_based(gs, wync_peer_id, gs.wctx.common.ticks)
 
 
 static func system_player_shoot_bullet(
@@ -562,10 +562,10 @@ static func system_player_timewarp_shoot_event(gs: Plat.GameState, player: Plat.
 
 	# poll once per tick
 
-	if player.last_tick_polled == ctx.ticks:
-		Log.outc(ctx, "skipping tick %s" % ctx.ticks)
+	if player.last_tick_polled == ctx.common.ticks:
+		Log.outc(ctx, "skipping tick %s" % ctx.common.ticks)
 		return
-	player.last_tick_polled = ctx.ticks
+	player.last_tick_polled = ctx.common.ticks
 
 	# build and queue event
 
@@ -578,22 +578,22 @@ static func system_player_timewarp_shoot_event(gs: Plat.GameState, player: Plat.
 
 	PlatWync.debug_draw_timewarped_state(gs, [18], 0.6)
 
-	Log.outc(gs.wctx, "debugtimewarpevent | sending event (left_tick %s lerp_delta %.2f) server_tick %s last pred %s" % [event_data.last_tick_rendered_left, event_data.lerp_delta_ms, ctx.co_ticks.server_ticks, ctx.current_predicted_tick])
+	Log.outc(gs.wctx, "debugtimewarpevent | sending event (left_tick %s lerp_delta %.2f) server_tick %s last pred %s" % [event_data.last_tick_rendered_left, event_data.lerp_delta_ms, ctx.co_ticks.server_ticks, ctx.co_pred.current_predicted_tick])
 
 
 static func system_client_simulate_own_events(gs: Plat.GameState, tick: int):
 
 	var EVENTS_TO_PREDICT = [Plat.EVENT_PLAYER_BLOCK_BREAK]
 	var channel_id = 0
-	var wync_peer_id = gs.wctx.my_peer_id
+	var wync_peer_id = gs.wctx.common.my_peer_id
 
 	#var event_list: Array[int] = WyncWrapper.wync_get_events_from_channel_from_peer(
 		#gs.wctx, wync_peer_id, channel_id, tick)
 	# TODO: wrap on a new function or fix ^^^
-	var event_list: Array = gs.wctx.peer_has_channel_has_events[wync_peer_id][channel_id]
+	var event_list: Array = gs.wctx.co_events.peer_has_channel_has_events[wync_peer_id][channel_id]
 
 	for event_id in event_list:
-		var event := gs.wctx.events[event_id]
+		var event := gs.wctx.co_events.events[event_id]
 
 		if event.data.event_type_id not in EVENTS_TO_PREDICT:
 			continue
@@ -610,8 +610,8 @@ static func system_server_events(gs: Plat.GameState):
 	var channel_id = 0
 	var server_wync_peer_id = 1
 
-	var tick_start = gs.wctx.ticks - gs.wctx.max_age_user_events_for_consumption
-	var tick_end = gs.wctx.ticks +1
+	var tick_start = gs.wctx.common.ticks - gs.wctx.common.max_age_user_events_for_consumption
+	var tick_end = gs.wctx.common.ticks +1
 
 	for tick: int in range(tick_start, tick_end):
 
@@ -619,7 +619,7 @@ static func system_server_events(gs: Plat.GameState):
 			gs.wctx, server_wync_peer_id, channel_id, tick)
 
 		for event_id in event_list:
-			var event := gs.wctx.events[event_id]
+			var event := gs.wctx.co_events.events[event_id]
 
 			# handle it
 			#Log.outc(gs.wctx, "event handling | tick(%s) handling peer%s event %s" % [tick, server_wync_peer_id, event_id], Log.TAG_GAME_EVENT)
@@ -653,7 +653,7 @@ static func handle_events(gs: Plat.GameState, event_data: WyncCtx.WyncEventEvent
 
 static func grid_block_break(gs: Plat.GameState, block_pos: Vector2i):
 	# debug code: desync delta prop
-	if gs.wctx.is_client:
+	if gs.wctx.common.is_client:
 		block_pos.x -= 1
 
 	# block pos is valid
@@ -685,7 +685,7 @@ static func grid_block_break(gs: Plat.GameState, block_pos: Vector2i):
 
 	# allowed to predict this entity?
 	# TODO: make a wrapper maybe?
-	if gs.wctx.is_client && !gs.wctx.global_entity_ids_to_predict.has(chunk.actor_id):
+	if gs.wctx.common.is_client && !gs.wctx.co_pred.global_entity_ids_to_predict.has(chunk.actor_id):
 		Log.outc(gs.wctx, "debugrela DENIED delta change, prop(%s)" % [blocks_prop_id])
 		return
 
@@ -712,9 +712,9 @@ static func handle_player_shoot_timewarp_ping_based(gs: Plat.GameState, wync_pee
 	# * this method can support sub-tick timing but it's an approximation
 	
 	var ctx = gs.wctx
-	var frame_ms = 1000.0 / ctx.physic_ticks_per_second
-	var peer_latency_info := ctx.peer_latency_info[wync_peer_id] as WyncCtx.PeerLatencyInfo
-	var client_info := ctx.client_has_info[wync_peer_id] as WyncCtx.WyncClientInfo
+	var frame_ms = 1000.0 / ctx.common.physic_ticks_per_second
+	var peer_latency_info := ctx.common.peer_latency_info[wync_peer_id] as WyncCtx.PeerLatencyInfo
+	var client_info := ctx.common.client_has_info[wync_peer_id] as WyncCtx.WyncClientInfo
 
 	# predicted_tick_offset = ceil(peer_latency_info.latency_stable_ms / frame_ms) + 2
 	# tick_target = origin_tick -latency_stable -lerp_ticks -predicted_tick_offset
@@ -748,11 +748,11 @@ static func handle_player_shoot_timewarp(
 		return
 
 	var co_ticks = ctx.co_ticks
-	var client_info := ctx.client_has_info[wync_peer_id] as WyncCtx.WyncClientInfo
+	var client_info := ctx.common.client_has_info[wync_peer_id] as WyncCtx.WyncClientInfo
 	var lerp_ms: int = client_info.lerp_ms
 	var tick_left: int = data.last_tick_rendered_left
 	var lerp_delta_ms: float = data.lerp_delta_ms
-	var frame_ms: float = 1000.0 / ctx.physic_ticks_per_second
+	var frame_ms: float = 1000.0 / ctx.common.physic_ticks_per_second
 	
 	# Notes for anti-cheat measures:
 	# * One could add some guards like "if lerp_delta < 0 || lerp_delta > 1"
@@ -762,37 +762,37 @@ static func handle_player_shoot_timewarp(
 	# * (3) High. Only allow ranges of 1 tick (the small range defined by the
 	#   client's: latency + lerp_ms + last_packet_sent)
 
-	if ((tick_left <= ctx.ticks - ctx.max_tick_history_timewarp) ||
-		(tick_left > ctx.ticks)
+	if ((tick_left <= ctx.common.ticks - ctx.max_tick_history_timewarp) ||
+		(tick_left > ctx.common.ticks)
 		):
 		Log.warc(ctx, "debugtimewarp, tick_left out of range (%s) skipping" % [tick_left])
 		return
 	
-	Log.outc(ctx, "debugtimewarp, client shoots at tick_left %d | lerp_delta %s | lerp_ms %s | tick_diff %s" % [ tick_left, lerp_delta_ms, lerp_ms, ctx.ticks - tick_left ])
+	Log.outc(ctx, "debugtimewarp, client shoots at tick_left %d | lerp_delta %s | lerp_ms %s | tick_diff %s" % [ tick_left, lerp_delta_ms, lerp_ms, ctx.common.ticks - tick_left ])
 
 
 	# 1. save current state (for selcted timewarpable props)
 
 	WyncWrapper.extract_data_to_tick_for_regular_state_props(
-		ctx, ctx.ticks, ctx.filtered_regular_timewarpable_prop_ids)
+		ctx, ctx.common.ticks, ctx.co_filter_s.filtered_regular_timewarpable_prop_ids)
 
 	# 2. set previous state
 
 	var non_interpolable: Array[int] = []
-	for prop_id in ctx.filtered_regular_timewarpable_prop_ids:
-		if prop_id not in ctx.filtered_regular_timewarpable_interpolable_prop_ids:
+	for prop_id in ctx.co_filter_s.filtered_regular_timewarpable_prop_ids:
+		if prop_id not in ctx.co_filter_s.filtered_regular_timewarpable_interpolable_prop_ids:
 			non_interpolable.append(prop_id)
 
 	var tick_origin_target = tick_left + floor(lerp_delta_ms/frame_ms) 
-	if tick_origin_target != ctx.ticks:
+	if tick_origin_target != ctx.common.ticks:
 		WyncStateSet.wync_reset_state_to_saved_absolute(
 			ctx, non_interpolable, tick_left + floor(lerp_delta_ms/frame_ms) )
 	WyncLerp.wync_reset_state_to_interpolated_absolute(
-		ctx, ctx.filtered_regular_timewarpable_interpolable_prop_ids, tick_left, lerp_delta_ms)
+		ctx, ctx.co_filter_s.filtered_regular_timewarpable_interpolable_prop_ids, tick_left, lerp_delta_ms)
 
 	# show debug trail
 		
-	for prop_id: int in ctx.filtered_regular_timewarpable_prop_ids:
+	for prop_id: int in ctx.co_filter_s.filtered_regular_timewarpable_prop_ids:
 		var prop := WyncTrack.get_prop(ctx, prop_id)
 		if prop == null:
 			continue
@@ -830,7 +830,7 @@ static func handle_player_shoot_timewarp(
 	var player_prop_ids: Array[int] = []
 	player_prop_ids.append_array(WyncTrack.entity_get_prop_id_list(ctx, actor_id))
 	for prop_id in player_prop_ids:
-		if prop_id in ctx.filtered_regular_timewarpable_prop_ids:
+		if prop_id in ctx.co_filter_s.filtered_regular_timewarpable_prop_ids:
 			timewarpable_player_prop_ids.append(prop_id)
 
 	WyncStateSet.wync_reset_state_to_saved_absolute(
@@ -843,7 +843,7 @@ static func handle_player_shoot_timewarp(
 	# 4. restore original state
 
 	WyncStateSet.wync_reset_state_to_saved_absolute(
-		ctx, ctx.filtered_regular_timewarpable_prop_ids, ctx.ticks)
+		ctx, ctx.co_filter_s.filtered_regular_timewarpable_prop_ids, ctx.common.ticks)
 
 	# 4.1. optional: integrate physics
 

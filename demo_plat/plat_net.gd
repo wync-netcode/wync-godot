@@ -132,14 +132,14 @@ static func queue_wync_packets(gs: Plat.GameState):
 	# queue packets for delivery
 	var io_peer = gs.net.io_peer
 
-	for pkt: WyncPacketOut in gs.wctx.out_reliable_packets:
+	for pkt: WyncPacketOut in gs.wctx.common.out_reliable_packets:
 		
 		var user_packet = UserNetPacket.new()
 		user_packet.packet_type_id = Plat.NETE_PKT_WYNC_PKT
 		user_packet.data = pkt.data 
 		Loopback.queue_reliable_packet(PlatGlobals.loopback_ctx, io_peer, pkt.to_nete_peer_id, user_packet)
 
-	for pkt: WyncPacketOut in gs.wctx.out_unreliable_packets:
+	for pkt: WyncPacketOut in gs.wctx.common.out_unreliable_packets:
 		
 		var user_packet = UserNetPacket.new()
 		user_packet.packet_type_id = Plat.NETE_PKT_WYNC_PKT
@@ -147,6 +147,6 @@ static func queue_wync_packets(gs: Plat.GameState):
 		Loopback.queue_unreliable_packet(PlatGlobals.loopback_ctx, io_peer, pkt.to_nete_peer_id, user_packet)
 
 	# clear & flush
-	gs.wctx.out_reliable_packets.clear()
-	gs.wctx.out_unreliable_packets.clear()
+	gs.wctx.common.out_reliable_packets.clear()
+	gs.wctx.common.out_unreliable_packets.clear()
 	Loopback.system_flush(PlatGlobals.loopback_ctx)

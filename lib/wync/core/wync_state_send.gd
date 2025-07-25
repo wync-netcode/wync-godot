@@ -13,16 +13,16 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 
 	var data_used = 0
 
-	ctx.rela_prop_ids_for_full_snapshot.clear()
-	ctx.pending_rela_props_to_sync_to_peer.clear()
+	ctx.co_throttling.rela_prop_ids_for_full_snapshot.clear()
+	ctx.co_throttling.pending_rela_props_to_sync_to_peer.clear()
 
-	for client_id: int in range(1, ctx.max_peers):
-		ctx.clients_cached_reliable_snapshots[client_id].clear()
-		ctx.clients_cached_unreliable_snapshots[client_id].clear()
+	for client_id: int in range(1, ctx.common.max_peers):
+		ctx.co_throttling.clients_cached_reliable_snapshots[client_id].clear()
+		ctx.co_throttling.clients_cached_unreliable_snapshots[client_id].clear()
 
 	# build packet
 
-	for pair: WyncCtx.PeerEntityPair in ctx.queue_entity_pairs_to_sync:
+	for pair: WyncCtx.PeerEntityPair in ctx.co_throttling.queue_entity_pairs_to_sync:
 		var client_id = pair.peer_id
 		var entity_id = pair.entity_id
 
@@ -30,7 +30,7 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 
 		# fill all the data for the props, then see if it fits
 
-		var prop_ids_array = ctx.entity_has_props[entity_id] as Array
+		var prop_ids_array = ctx.co_track.entity_has_props[entity_id] as Array
 		assert(prop_ids_array.size())
 
 		for prop_id in prop_ids_array:
@@ -47,7 +47,7 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 			elif prop.prop_type == WyncProp.PROP_TYPE.EVENT:
 				
 				# don't send if client owns this prop
-				if ctx.client_owns_prop[client_id].has(prop_id):
+				if ctx.co_clientauth.client_owns_prop[client_id].has(prop_id):
 					continue
 
 				# this includes _regular_ and _auxiliar_ props
@@ -95,16 +95,16 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 			else:
 
 				var snap_prop: WyncPktSnap.SnapProp = _wync_sync_regular_prop\
-					(ctx, prop, prop_id, ctx.ticks)
+					(ctx, prop, prop_id, ctx.common.ticks)
 				if snap_prop == null:
 					continue
 
-				ctx.clients_cached_unreliable_snapshots[client_id].append(snap_prop)
+				ctx.co_throttling.clients_cached_unreliable_snapshots[client_id].append(snap_prop)
 				data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_PROP_SNAP)
 
 		# exceeded size, stop
 
-		if (data_used >= ctx.out_packets_size_remaining_chars):
+		if (data_used >= ctx.common.out_packets_size_remaining_chars):
 			break
 
 
@@ -112,15 +112,15 @@ static func _wync_queue_out_snapshots_for_delivery (ctx: WyncCtx):
 
 	# queue _out packets_ for delivery
 
-	for client_id: int in range(1, ctx.peers.size()):
+	for client_id: int in range(1, ctx.common.peers.size()):
 
 		var reliable_snap := WyncPktSnap.new()
-		reliable_snap.tick = ctx.ticks
+		reliable_snap.tick = ctx.common.ticks
 		var unreliable_snap := WyncPktSnap.new()
-		unreliable_snap.tick = ctx.ticks
+		unreliable_snap.tick = ctx.common.ticks
 
-		if ctx.clients_cached_reliable_snapshots[client_id].size() > 0:
-			for packet: WyncPktSnap.SnapProp in ctx.clients_cached_reliable_snapshots[client_id]:
+		if ctx.co_throttling.clients_cached_reliable_snapshots[client_id].size() > 0:
+			for packet: WyncPktSnap.SnapProp in ctx.co_throttling.clients_cached_reliable_snapshots[client_id]:
 
 				## duplicating here in gdscript to be safe
 				var packet_dup = WyncMisc.duplicate_any(packet)
@@ -134,8 +134,8 @@ static func _wync_queue_out_snapshots_for_delivery (ctx: WyncCtx):
 			else:
 				Log.errc(ctx, "error wrapping packet")
 
-		if ctx.clients_cached_unreliable_snapshots[client_id].size() > 0:
-			for packet: WyncPktSnap.SnapProp in ctx.clients_cached_unreliable_snapshots[client_id]:
+		if ctx.co_throttling.clients_cached_unreliable_snapshots[client_id].size() > 0:
+			for packet: WyncPktSnap.SnapProp in ctx.co_throttling.clients_cached_unreliable_snapshots[client_id]:
 
 				## duplicating here in gdscript to be safe
 				var packet_dup = WyncMisc.duplicate_any(packet)
@@ -187,18 +187,18 @@ static func _wync_sync_queue_rela_prop_fullsnap(
 	# temporalmente (1-3 mins); Wync actualmente no sabe cuando un peer está sufriendo desconexión
 	# temporal; se podría crear un mecanismo para esto o usar _last_tick_.
 
-	var client_relative_props = ctx.client_has_relative_prop_has_last_tick[client_id] as Dictionary
+	var client_relative_props = ctx.co_track.client_has_relative_prop_has_last_tick[client_id] as Dictionary
 	if not client_relative_props.has(prop_id):
 		client_relative_props[prop_id] = -1
 
-	var peer_latency_info = ctx.peer_latency_info[client_id] as WyncCtx.PeerLatencyInfo
-	var latency_ticks: int = (peer_latency_info.latency_stable_ms) / (1000.0 / ctx.physic_ticks_per_second)
+	var peer_latency_info = ctx.common.peer_latency_info[client_id] as WyncCtx.PeerLatencyInfo
+	var latency_ticks: int = (peer_latency_info.latency_stable_ms) / (1000.0 / ctx.common.physic_ticks_per_second)
 
-	if (ctx.delta_base_state_tick - client_relative_props[prop_id] < (latency_ticks * 4)):
+	if (ctx.co_events.delta_base_state_tick - client_relative_props[prop_id] < (latency_ticks * 4)):
 		return 1
 
 	Log.outc(ctx, "debugack | client_has (%s) (%s) , base_tick (%s)" % [
-		client_relative_props[prop_id], client_relative_props[prop_id] + latency_ticks, ctx.delta_base_state_tick])
+		client_relative_props[prop_id], client_relative_props[prop_id] + latency_ticks, ctx.co_events.delta_base_state_tick])
 
 	# queue to sync later (+ queue for state extraction)
 
@@ -206,8 +206,8 @@ static func _wync_sync_queue_rela_prop_fullsnap(
 	peer_prop_pair.peer_id = client_id
 	peer_prop_pair.prop_id = prop_id
 
-	ctx.pending_rela_props_to_sync_to_peer.append(peer_prop_pair)
-	ctx.rela_prop_ids_for_full_snapshot.append(prop_id)
+	ctx.co_throttling.pending_rela_props_to_sync_to_peer.append(peer_prop_pair)
+	ctx.co_throttling.rela_prop_ids_for_full_snapshot.append(prop_id)
 
 	return 0
 
@@ -216,16 +216,16 @@ static func wync_send_pending_rela_props_fullsnapshot(ctx: WyncCtx):
 
 	var prop_id: int
 
-	for pair: WyncCtx.PeerPropPair in ctx.pending_rela_props_to_sync_to_peer:
+	for pair: WyncCtx.PeerPropPair in ctx.co_throttling.pending_rela_props_to_sync_to_peer:
 		prop_id = pair.prop_id
 		var prop = WyncTrack.get_prop_unsafe(ctx, prop_id)
 
-		var snap_prop := _wync_sync_regular_prop(ctx, prop, prop_id, ctx.ticks)
+		var snap_prop := _wync_sync_regular_prop(ctx, prop, prop_id, ctx.common.ticks)
 		if snap_prop != null:
 
-			ctx.clients_cached_reliable_snapshots[pair.peer_id].append(snap_prop)
+			ctx.co_throttling.clients_cached_reliable_snapshots[pair.peer_id].append(snap_prop)
 
-			ctx.client_has_relative_prop_has_last_tick[pair.peer_id][prop_id] = ctx.ticks
+			ctx.co_track.client_has_relative_prop_has_last_tick[pair.peer_id][prop_id] = ctx.common.ticks
 
 			## Note: data consumed was already calculated before when queuing
 
@@ -238,7 +238,7 @@ static func wync_prop_event_send_event_ids_to_peer(ctx: WyncCtx, prop: WyncProp,
 
 	var pkt_inputs = WyncPktInputs.new()
 
-	for tick in range(ctx.ticks - WyncCtx.INPUT_AMOUNT_TO_SEND, ctx.ticks +1):
+	for tick in range(ctx.common.ticks - WyncCtx.INPUT_AMOUNT_TO_SEND, ctx.common.ticks +1):
 
 		var input = WyncProp.saved_state_get(prop, tick)
 		if input == null:
@@ -271,20 +271,20 @@ static func wync_get_event_data_packet (ctx: WyncCtx, peer_id: int, event_ids: A
 	# get event data
 	
 	for event_id: int in event_ids:
-		if not ctx.events.has(event_id):
+		if not ctx.co_events.events.has(event_id):
 			Log.errc(ctx, "couldn't find event_id %s" % event_id)
 			continue
 		
-		var wync_event := ctx.events[event_id]
+		var wync_event := ctx.co_events.events[event_id]
 		var wync_event_data = wync_event.data
 		
 		# check if peer already has it
 		# NOTE: is_serve_cached could be skipped? all events should be cached on our side...
-		var is_event_cached = ctx.events_hash_to_id.has_item_hash(wync_event.data_hash)
+		var is_event_cached = ctx.co_events.events_hash_to_id.has_item_hash(wync_event.data_hash)
 		if (is_event_cached):
-			var cached_event_id = ctx.events_hash_to_id.get_item_by_hash(wync_event.data_hash)
+			var cached_event_id = ctx.co_events.events_hash_to_id.get_item_by_hash(wync_event.data_hash)
 			if (cached_event_id != null):
-				var peer_has_it = ctx.to_peers_i_sent_events[peer_id].has_item_hash(cached_event_id)
+				var peer_has_it = ctx.co_events.to_peers_i_sent_events[peer_id].has_item_hash(cached_event_id)
 				if (peer_has_it):
 					continue
 		
@@ -298,7 +298,7 @@ static func wync_get_event_data_packet (ctx: WyncCtx, peer_id: int, event_ids: A
 
 		# commit
 		# since peer doesn't have it, then mark it as sent
-		ctx.to_peers_i_sent_events[peer_id].push_head_hash_and_item(event_id, true)
+		ctx.co_events.to_peers_i_sent_events[peer_id].push_head_hash_and_item(event_id, true)
 
 	return packet
 
@@ -309,10 +309,10 @@ static func system_update_delta_base_state_tick(ctx: WyncCtx) -> void:
 
 	# move base_state_tick forward
 
-	var new_base_tick = ctx.ticks - ctx.max_prop_relative_sync_history_ticks +1
-	if not (ctx.delta_base_state_tick < new_base_tick):
+	var new_base_tick = ctx.common.ticks - ctx.common.max_prop_relative_sync_history_ticks +1
+	if not (ctx.co_events.delta_base_state_tick < new_base_tick):
 		return
-	ctx.delta_base_state_tick = new_base_tick
+	ctx.co_events.delta_base_state_tick = new_base_tick
 
 
 ## * Sends inputs/events in chunks
@@ -321,16 +321,16 @@ static func system_update_delta_base_state_tick(ctx: WyncCtx) -> void:
 ## So think about it as if it didn't write state
 static func wync_client_send_inputs (ctx: WyncCtx):
 
-	assert(ctx.connected)
+	assert(ctx.common.connected)
 
-	var co_predict_data = ctx.co_predict_data
+	var co_predict_data = ctx.co_pred
 	var tick_pred = co_predict_data.target_tick
 	
 	# reset events_id to sync
-	var event_set = ctx.peers_events_to_sync[WyncCtx.SERVER_PEER_ID] as Dictionary
+	var event_set = ctx.co_throttling.peers_events_to_sync[WyncCtx.SERVER_PEER_ID] as Dictionary
 	event_set.clear()
 	
-	for prop_id in ctx.type_input_event__owned_prop_ids:
+	for prop_id in ctx.co_filter_c.type_input_event__owned_prop_ids:
 		var input_prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
 
 		# prepare packet

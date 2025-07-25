@@ -4,10 +4,10 @@ class_name WyncThrottle
 
 # TODO: rename
 static func _wync_remove_entity_from_sync_queue(ctx: WyncCtx, peer_id: int, entity_id: int):
-	var synced_last_time = ctx.entities_synced_last_time[peer_id] as Dictionary
+	var synced_last_time = ctx.co_throttling.entities_synced_last_time[peer_id] as Dictionary
 	synced_last_time[entity_id] = true
 
-	var entity_queue := ctx.queue_clients_entities_to_sync[peer_id] as FIFORing
+	var entity_queue := ctx.co_throttling.queue_clients_entities_to_sync[peer_id] as FIFORing
 	var saved_entity_id = entity_queue.pop_tail()
 
 	#Log.outc(ctx, "deb5 marking entity as already synced %s" % [entity_id], Log.TAG_SYNC_QUEUE)
@@ -21,13 +21,13 @@ static func _wync_remove_entity_from_sync_queue(ctx: WyncCtx, peer_id: int, enti
 
 static func wync_system_fill_entity_sync_queue(ctx: WyncCtx):
 
-	for client_id: int in range(1, ctx.peers.size()):
+	for client_id: int in range(1, ctx.common.peers.size()):
 
-		var entity_queue := ctx.queue_clients_entities_to_sync[client_id] as FIFORing
-		var synced_last_time := ctx.entities_synced_last_time[client_id] as Dictionary
+		var entity_queue := ctx.co_throttling.queue_clients_entities_to_sync[client_id] as FIFORing
+		var synced_last_time := ctx.co_throttling.entities_synced_last_time[client_id] as Dictionary
 		var everything_fitted = true
 
-		for entity_id_key in ctx.clients_sees_entities[client_id].keys():
+		for entity_id_key in ctx.co_throttling.clients_sees_entities[client_id].keys():
 
 			# Note. No need to check if entity is tracked. On entity removal
 			# the removed entity_id will be removed from all queues / lists / etc.
@@ -43,7 +43,7 @@ static func wync_system_fill_entity_sync_queue(ctx: WyncCtx):
 
 			# give it a second pass
 
-			for entity_id_key in ctx.clients_sees_entities[client_id].keys():
+			for entity_id_key in ctx.co_throttling.clients_sees_entities[client_id].keys():
 				if not entity_queue.has_item(entity_id_key):
 					if entity_queue.push_head(entity_id_key) != OK:
 						break
@@ -55,7 +55,7 @@ static func wync_system_fill_entity_sync_queue(ctx: WyncCtx):
 static func wync_compute_entity_sync_order(ctx: WyncCtx):
 
 	# clear 
-	ctx.queue_entity_pairs_to_sync.clear()
+	ctx.co_throttling.queue_entity_pairs_to_sync.clear()
 
 	# populate / compute
 	
@@ -67,9 +67,9 @@ static func wync_compute_entity_sync_order(ctx: WyncCtx):
 
 		# from each client we get the Nth item in queue (entity_index'th)
 
-		for client_id: int in range(1, ctx.peers.size()):
+		for client_id: int in range(1, ctx.common.peers.size()):
 			
-			var entity_queue := ctx.queue_clients_entities_to_sync[client_id] as FIFORing
+			var entity_queue := ctx.co_throttling.queue_clients_entities_to_sync[client_id] as FIFORing
 			
 			# has it?
 			if entity_index >= entity_queue.size:
@@ -81,7 +81,7 @@ static func wync_compute_entity_sync_order(ctx: WyncCtx):
 			var pair = WyncCtx.PeerEntityPair.new()
 			pair.peer_id = client_id
 			pair.entity_id = entity_id_key
-			ctx.queue_entity_pairs_to_sync.append(pair)
+			ctx.co_throttling.queue_entity_pairs_to_sync.append(pair)
 
 			# enough to continue
 			ran_out_of_entities = false
@@ -94,13 +94,13 @@ static func wync_compute_entity_sync_order(ctx: WyncCtx):
 
 
 static func wync_everyone_now_can_see_entity(ctx: WyncCtx, entity_id: int) -> void:
-	for peer_id in range(1, ctx.peers.size()):
+	for peer_id in range(1, ctx.common.peers.size()):
 		wync_client_now_can_see_entity(ctx, peer_id, entity_id)
 
 
 static func wync_entity_set_spawn_data(ctx: WyncCtx, entity_id: int, data: Variant, _data_size: int):
-	assert(not ctx.entity_spawn_data.has(entity_id))
-	ctx.entity_spawn_data[entity_id] = data
+	assert(not ctx.co_spawn.entity_spawn_data.has(entity_id))
+	ctx.co_spawn.entity_spawn_data[entity_id] = data
 
 
 static func wync_client_now_can_see_entity(ctx: WyncCtx, client_id: int, entity_id: int) -> int:
@@ -110,11 +110,11 @@ static func wync_client_now_can_see_entity(ctx: WyncCtx, client_id: int, entity_
 		return 1
 
 	# already viewed
-	if ctx.clients_sees_entities[client_id].has(entity_id):
+	if ctx.co_throttling.clients_sees_entities[client_id].has(entity_id):
 		return OK
 
 	# add
-	var entity_set = ctx.clients_sees_new_entities[client_id] as Dictionary
+	var entity_set = ctx.co_throttling.clients_sees_new_entities[client_id] as Dictionary
 	entity_set[entity_id] = true
 
 	return OK
@@ -127,7 +127,7 @@ static func wync_client_no_longer_sees_entity(ctx: WyncCtx, client_id: int, enti
 		return 1
 
 	# add
-	var entity_set = ctx.clients_no_longer_sees_entities[client_id] as Dictionary
+	var entity_set = ctx.co_throttling.clients_no_longer_sees_entities[client_id] as Dictionary
 	entity_set[entity_id] = true
 
 	return OK

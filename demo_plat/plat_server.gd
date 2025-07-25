@@ -41,8 +41,8 @@ func _physics_process(_delta: float) -> void:
 
 	PlatWync.update_what_the_clients_can_see(gs)
 
-	for wync_peer_id: int in range(1, gs.wctx.peers.size()):
-		var nete_peer_id = gs.wctx.peers[wync_peer_id]
+	for wync_peer_id: int in range(1, gs.wctx.common.peers.size()):
+		var nete_peer_id = gs.wctx.common.peers[wync_peer_id]
 		var io_peer := PlatGlobals.loopback_ctx.peers[nete_peer_id]
 		WyncClock.wync_peer_set_current_latency(gs.wctx, wync_peer_id, io_peer.latency_current_ms)
 

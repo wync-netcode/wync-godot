@@ -68,8 +68,8 @@ func _process(_delta: float) -> void:
 
 func get_info_general() -> String:
 	var client_time_ms = WyncClock.clock_get_ms(client_wctx)
-	var pred_server_time_ms = client_time_ms + client_wctx.co_predict_data.clock_offset_mean
-	var prob_prop_ms = (1000.0 / client_wctx.physic_ticks_per_second) * (client_wctx.low_priority_entity_update_rate +1)
+	var pred_server_time_ms = client_time_ms + client_wctx.co_pred.clock_offset_mean
+	var prob_prop_ms = (1000.0 / client_wctx.common.physic_ticks_per_second) * (client_wctx.co_metrics.low_priority_entity_update_rate +1)
 
 	var text = \
 	"""PhysicsFPS: %s
@@ -116,34 +116,34 @@ func get_info_general() -> String:
 		get_wync_latency_info(server_wctx),
 		get_wync_latency_info(client_wctx),
 
-		server_wctx.ticks,
+		server_wctx.common.ticks,
 		client_wctx.co_ticks.server_ticks,
-		(client_wctx.co_ticks.server_ticks -server_wctx.ticks), 
+		(client_wctx.co_ticks.server_ticks -server_wctx.common.ticks), 
 		client_wctx.co_ticks.server_tick_offset,
 		WyncClock.clock_get_ms(server_wctx),
 		pred_server_time_ms,
 		(WyncClock.clock_get_ms(server_wctx) - pred_server_time_ms),
-		client_wctx.co_predict_data.clock_offset_mean,
+		client_wctx.co_pred.clock_offset_mean,
 
-		client_wctx.ticks,
-		client_wctx.co_predict_data.target_tick,
-		client_wctx.co_predict_data.tick_offset,
-		(client_wctx.last_tick_predicted -client_wctx.first_tick_predicted),
+		client_wctx.common.ticks,
+		client_wctx.co_pred.target_tick,
+		client_wctx.co_pred.tick_offset,
+		(client_wctx.co_pred.last_tick_predicted -client_wctx.co_pred.first_tick_predicted),
 
-		server_wctx.delta_base_state_tick,
+		server_wctx.co_events.delta_base_state_tick,
 
-		client_wctx.co_predict_data.lerp_ms,
-		server_wctx.debug_data_per_tick_sliding_window_mean,
-		client_wctx.debug_data_per_tick_sliding_window_mean,
-		client_wctx.server_tick_rate,
-		((1.0 / (client_wctx.server_tick_rate + 1)) * Engine.physics_ticks_per_second),
+		client_wctx.co_pred.lerp_ms,
+		server_wctx.co_metrics.debug_data_per_tick_sliding_window_mean,
+		client_wctx.co_metrics.debug_data_per_tick_sliding_window_mean,
+		client_wctx.co_metrics.server_tick_rate,
+		((1.0 / (client_wctx.co_metrics.server_tick_rate + 1)) * Engine.physics_ticks_per_second),
 
-		client_wctx.low_priority_entity_update_rate,
-		client_wctx.low_priority_entity_update_rate_sliding_window.get_relative(0),
+		client_wctx.co_metrics.low_priority_entity_update_rate,
+		client_wctx.co_metrics.low_priority_entity_update_rate_sliding_window.get_relative(0),
 		prob_prop_ms,
 
-		client_wctx.max_prediction_tick_threeshold,
-		client_wctx.dummy_props.size(), client_wctx.stat_lost_dummy_props
+		client_wctx.co_pred.max_prediction_tick_threeshold,
+		client_wctx.co_dummy.dummy_props.size(), client_wctx.co_dummy.stat_lost_dummy_props
 	]
 	return text
 
@@ -177,12 +177,12 @@ static func get_loopback_latency_info(ctx: Loopback.Context) -> String:
 static func get_wync_latency_info(ctx: WyncCtx) -> String:
 	var txt := ""
 	var lat_info: WyncCtx.PeerLatencyInfo = null
-	for peer_id in range(ctx.peers.size()):
-		if peer_id == ctx.my_peer_id:
+	for peer_id in range(ctx.common.peers.size()):
+		if peer_id == ctx.common.my_peer_id:
 			continue
-		lat_info = ctx.peer_latency_info[peer_id]
-		txt += "peer(%d->%d) lat_stable %3.dms, m:%3.d, d:%d mean %.2f" % [ctx.my_peer_id, peer_id, lat_info.latency_stable_ms, lat_info.latency_mean_ms, lat_info.latency_std_dev_ms, lat_info.debug_latency_mean_ms]
-		if peer_id < ctx.peers.size() -1:
+		lat_info = ctx.common.peer_latency_info[peer_id]
+		txt += "peer(%d->%d) lat_stable %3.dms, m:%3.d, d:%d mean %.2f" % [ctx.common.my_peer_id, peer_id, lat_info.latency_stable_ms, lat_info.latency_mean_ms, lat_info.latency_std_dev_ms, lat_info.debug_latency_mean_ms]
+		if peer_id < ctx.common.peers.size() -1:
 			txt += '\n'
 	return txt
 
@@ -192,7 +192,7 @@ static func get_info_packets_received_text(ctx: WyncCtx, prop_amount: int) -> St
 	var number_length = 4
 
 	var text = ""
-	var prefix = "client_%s" % [ctx.my_peer_id] if ctx.is_client else "server"
+	var prefix = "client_%s" % [ctx.common.my_peer_id] if ctx.common.is_client else "server"
 
 	text += prefix + " Received \n"
 	text += string_exact_length("", name_length) + " "
@@ -204,7 +204,7 @@ static func get_info_packets_received_text(ctx: WyncCtx, prop_amount: int) -> St
 		text += "\n"
 		text += string_exact_length(WyncPacket.PKT_NAMES[packet_type_id], name_length) + " "
 
-		var history = ctx.debug_packets_received[packet_type_id] as Array[int]
+		var history = ctx.co_metrics.debug_packets_received[packet_type_id] as Array[int]
 		for j in range(prop_amount):
 			text += str(history[j]).rpad(number_length)
 
@@ -214,9 +214,9 @@ static func get_info_packets_received_text(ctx: WyncCtx, prop_amount: int) -> St
 static func get_info_prop_identifiers(ctx: WyncCtx) -> String:
 	var text = ""
 
-	for entity_id in ctx.tracked_entities.keys():
+	for entity_id in ctx.co_track.tracked_entities.keys():
 
-		for i in ctx.entity_has_props[entity_id]:
+		for i in ctx.co_track.entity_has_props[entity_id]:
 			var prop := WyncTrack.get_prop(ctx, i)
 			if prop == null:
 				continue

@@ -43,7 +43,7 @@ static func wync_try_to_queue_out_packet (
 	) -> int:
 
 	var packet_size = HashUtils.calculate_wync_packet_data_size(out_packet.data.packet_type_id)
-	if packet_size >= ctx.out_packets_size_remaining_chars:
+	if packet_size >= ctx.common.out_packets_size_remaining_chars:
 		if already_commited:
 			#Log.err("(%s) COMMITED anyways, Packet too big (%s), remaining data (%s), d(%s)" %
 			#[WyncPacket.PKT_NAMES[out_packet.data.packet_type_id],
@@ -55,17 +55,17 @@ static func wync_try_to_queue_out_packet (
 			Log.errc(ctx, "(%s) DROPPED, Packet too big (%s), remaining data (%s), d(%s)" %
 			[WyncPacket.PKT_NAMES[out_packet.data.packet_type_id],
 			packet_size,
-			ctx.out_packets_size_remaining_chars,
-			packet_size-ctx.out_packets_size_remaining_chars])
+			ctx.common.out_packets_size_remaining_chars,
+			packet_size-ctx.common.out_packets_size_remaining_chars])
 			return 1
 
 	if not dont_ocuppy:
-		ctx.out_packets_size_remaining_chars -= packet_size
+		ctx.common.out_packets_size_remaining_chars -= packet_size
 	
 	if reliable:
-		ctx.out_reliable_packets.append(out_packet)
+		ctx.common.out_reliable_packets.append(out_packet)
 	else:
-		ctx.out_unreliable_packets.append(out_packet)
+		ctx.common.out_unreliable_packets.append(out_packet)
 
 	#Log.outc(ctx, "queued packet %s, remaining data (%s)" %
 	#[WyncPacket.PKT_NAMES[out_packet.data.packet_type_id], ctx.out_packets_size_remaining_chars])
@@ -75,10 +75,10 @@ static func wync_try_to_queue_out_packet (
 ## Just like the function above, except this just "ocuppies" space without queuing anything
 ## Used for preserving space for queuing event data.
 static func wync_ocuppy_space_towards_packets_data_size_limit(ctx: WyncCtx, chars: int):
-	ctx.out_packets_size_remaining_chars -= chars
+	ctx.common.out_packets_size_remaining_chars -= chars
 
 
 ## Call every time before gathering packets
 static func wync_set_data_limit_chars_for_out_packets(ctx: WyncCtx, data_limit_chars: int):
-	ctx.out_packets_size_limit = data_limit_chars
-	ctx.out_packets_size_remaining_chars = data_limit_chars
+	ctx.common.out_packets_size_limit = data_limit_chars
+	ctx.common.out_packets_size_remaining_chars = data_limit_chars

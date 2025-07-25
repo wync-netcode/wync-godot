@@ -7,10 +7,10 @@ class_name WyncInput ## or WyncClientAuthority
 ## * can't return 0
 ## * returns > 0 (peer_id) if it belongs to a client
 static func prop_get_peer_owner(ctx: WyncCtx, prop_id: int) -> int:
-	for peer_id in range(1, ctx.max_peers):
-		if not ctx.client_owns_prop.has(peer_id):
+	for peer_id in range(1, ctx.common.max_peers):
+		if not ctx.co_clientauth.client_owns_prop.has(peer_id):
 			continue
-		if (ctx.client_owns_prop[peer_id] as Array).has(prop_id):
+		if (ctx.co_clientauth.client_owns_prop[peer_id] as Array).has(prop_id):
 			return peer_id
 	return -1
 
@@ -19,26 +19,26 @@ static func prop_set_client_owner(ctx: WyncCtx, prop_id: int, client_id: int) ->
 	# NOTE: maybe don't check because this prop could be synced later
 	#if not prop_exists(ctx, prop_id):
 		#return false
-	if not ctx.client_owns_prop.has(client_id):
-		ctx.client_owns_prop[client_id] = []
-	ctx.client_owns_prop[client_id].append(prop_id)
+	if not ctx.co_clientauth.client_owns_prop.has(client_id):
+		ctx.co_clientauth.client_owns_prop[client_id] = []
+	ctx.co_clientauth.client_owns_prop[client_id].append(prop_id)
 
-	ctx.client_ownership_updated = true
+	ctx.co_clientauth.client_ownership_updated = true
 	return true
 
 
 ## Server only
 ## Sends data
 static func wync_system_sync_client_ownership(ctx: WyncCtx):
-	if not ctx.client_ownership_updated:
+	if not ctx.co_clientauth.client_ownership_updated:
 		return
-	ctx.client_ownership_updated = false
+	ctx.co_clientauth.client_ownership_updated = false
 
 	# update all clients about their prop ownership
 
-	for wync_client_id in range(1, ctx.peers.size()):
+	for wync_client_id in range(1, ctx.common.peers.size()):
 		# TODO: Check peer health / is connected
-		for prop_id: int in ctx.client_owns_prop[wync_client_id] as Array[int]:
+		for prop_id: int in ctx.co_clientauth.client_owns_prop[wync_client_id] as Array[int]:
 
 			var packet = WyncPktResClientInfo.new()
 			packet.prop_id = prop_id

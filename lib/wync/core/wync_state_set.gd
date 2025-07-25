@@ -93,9 +93,9 @@ static func reset_all_state_to_confirmed_tick_relative(
 	
 static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 	
-	ctx.type_state__newstate_prop_ids.clear()
+	ctx.co_filter_c.type_state__newstate_prop_ids.clear()
 
-	for prop_id: int in ctx.active_prop_ids:
+	for prop_id: int in ctx.co_track.active_prop_ids:
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
 
 		if prop.prop_type != WyncProp.PROP_TYPE.STATE:
@@ -104,18 +104,18 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 			continue
 
 		prop.just_received_new_state = false
-		ctx.type_state__newstate_prop_ids.append(prop_id)
+		ctx.co_filter_c.type_state__newstate_prop_ids.append(prop_id)
 
 		if WyncXtrap.prop_is_predicted(ctx, prop_id):
 
 			if not prop.relative_syncable: # regular prop
 				var entity_id = WyncTrack.prop_get_entity(ctx, prop_id)
-				ctx.entity_last_predicted_tick[entity_id] = prop.last_ticks_received.get_relative(0)
+				ctx.co_pred.entity_last_predicted_tick[entity_id] = prop.last_ticks_received.get_relative(0)
 			else:
 
 				# get aux_prop and clean the confirmed_states_undo
 				var aux_prop = WyncTrack.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
-				for j in range(ctx.first_tick_predicted, ctx.last_tick_predicted +1):
+				for j in range(ctx.co_pred.first_tick_predicted, ctx.co_pred.last_tick_predicted +1):
 
 					WyncProp.saved_state_insert(ctx, aux_prop, j, [] as Array[int])
 
@@ -124,13 +124,12 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 		
 	# rest state to _canonic_
 
-	reset_all_state_to_confirmed_tick_relative(ctx, ctx.type_state__newstate_prop_ids, 0)
+	reset_all_state_to_confirmed_tick_relative(ctx, ctx.co_filter_c.type_state__newstate_prop_ids, 0)
 
 	# only rollback if new state was received and is applicable:
 
-	delta_props_update_and_apply_delta_events(ctx, ctx.type_state__delta_prop_ids)
-	
-	# NOTE: Physics integration would go after this
+	delta_props_update_and_apply_delta_events(ctx, ctx.co_filter_c.type_state__delta_prop_ids)
+
 
 
 static func predicted_delta_props_rollback_to_canonic_state (ctx: WyncCtx, prop_ids: Array[int]):
@@ -138,7 +137,7 @@ static func predicted_delta_props_rollback_to_canonic_state (ctx: WyncCtx, prop_
 	#if (ctx.last_tick_predicted - ctx.first_tick_predicted) == 0:
 		#return
 
-	var delta_props_last_tick = ctx.client_has_relative_prop_has_last_tick[ctx.my_peer_id] as Dictionary
+	var delta_props_last_tick = ctx.co_track.client_has_relative_prop_has_last_tick[ctx.common.my_peer_id] as Dictionary
 
 	for prop_id: int in prop_ids:
 		var prop = WyncTrack.get_prop(ctx, prop_id)
@@ -164,7 +163,7 @@ static func predicted_delta_props_rollback_to_canonic_state (ctx: WyncCtx, prop_
 
 		var last_uptodate_tick = delta_props_last_tick[prop_id]
 
-		for tick: int in range(ctx.last_tick_predicted, last_uptodate_tick, -1):
+		for tick: int in range(ctx.co_pred.last_tick_predicted, last_uptodate_tick, -1):
 
 			if aux_prop.confirmed_states_undo_tick.get_at(tick) != tick:
 				# NOTE: for now, if we find nothing, we do nothing.
@@ -181,7 +180,7 @@ static func predicted_delta_props_rollback_to_canonic_state (ctx: WyncCtx, prop_
 			for event_id: int in undo_event_id_list:
 				WyncDeltaSyncUtils.merge_event_to_state_real_state(ctx, prop_id, event_id)
 
-				if not ctx.events.has(event_id):
+				if not ctx.co_events.events.has(event_id):
 					assert(false)
 					continue
 
@@ -200,7 +199,7 @@ static func predicted_delta_props_rollback_to_canonic_state (ctx: WyncCtx, prop_
 
 static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Array[int]):
 
-	var delta_props_last_tick = ctx.client_has_relative_prop_has_last_tick[ctx.my_peer_id] as Dictionary
+	var delta_props_last_tick = ctx.co_track.client_has_relative_prop_has_last_tick[ctx.common.my_peer_id] as Dictionary
 
 	for prop_id: int in prop_ids:
 		var prop = WyncTrack.get_prop(ctx, prop_id)
@@ -230,7 +229,7 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 
 		var applied_events_until = -1
 
-		for tick: int in range(delta_props_last_tick[prop_id] +1, ctx.last_tick_received +1):
+		for tick: int in range(delta_props_last_tick[prop_id] +1, ctx.co_pred.last_tick_received +1):
 
 			var delta_event_list = WyncProp.saved_state_get(aux_prop, tick)
 			if delta_event_list is not Array[int]:
@@ -312,8 +311,8 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 			# if predicted
 			var entity_id = WyncTrack.prop_get_entity(ctx, prop_id)
 			if (we_modified_or_applied_events || 
-				ctx.entity_last_predicted_tick[entity_id] < applied_events_until):
-				ctx.entity_last_predicted_tick[entity_id] = applied_events_until
+				ctx.co_pred.entity_last_predicted_tick[entity_id] < applied_events_until):
+				ctx.co_pred.entity_last_predicted_tick[entity_id] = applied_events_until
 
 			# Note: you have last tick applied per prop and globally, so the user
 			# can choose what to use

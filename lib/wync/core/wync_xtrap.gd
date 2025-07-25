@@ -10,31 +10,31 @@ class_name WyncXtrap
 
 
 static func wync_xtrap_preparation(ctx: WyncCtx) -> int:
-	if ctx.last_tick_received == 0:
+	if ctx.co_pred.last_tick_received == 0:
 		return 1
-	ctx.currently_on_predicted_tick = true
+	ctx.co_pred.currently_on_predicted_tick = true
 	#ctx.xtrap_is_local_tick_duplicated = false
 	#ctx.xtrap_prev_local_tick = null # Optional<int>
 	#ctx.xtrap_local_tick = null # Optional<int>
 
 	if (
-		ctx.last_tick_received_at_tick_prev != ctx.last_tick_received_at_tick ||
-		ctx.last_tick_received > ctx.first_tick_predicted
+		ctx.co_pred.last_tick_received_at_tick_prev != ctx.co_pred.last_tick_received_at_tick ||
+		ctx.co_pred.last_tick_received > ctx.co_pred.first_tick_predicted
 	):
-		ctx.pred_intented_first_tick = ctx.last_tick_received +1
-		ctx.last_tick_received_at_tick_prev = ctx.last_tick_received_at_tick
+		ctx.co_pred.pred_intented_first_tick = ctx.co_pred.last_tick_received +1
+		ctx.co_pred.last_tick_received_at_tick_prev = ctx.co_pred.last_tick_received_at_tick
 	else:
-		ctx.pred_intented_first_tick = ctx.last_tick_predicted
+		ctx.co_pred.pred_intented_first_tick = ctx.co_pred.last_tick_predicted
 	#ctx.last_tick_received_at_tick_prev = ctx.last_tick_received_at_tick
 
 	# DEBUG: Uncomment this line to overwrite the decision
 	#ctx.pred_intented_first_tick = ctx.last_tick_received +1
 
-	ctx.first_tick_predicted = ctx.pred_intented_first_tick
+	ctx.co_pred.first_tick_predicted = ctx.co_pred.pred_intented_first_tick
 
-	if ctx.co_predict_data.target_tick <= ctx.co_ticks.server_ticks:
+	if ctx.co_pred.target_tick <= ctx.co_ticks.server_ticks:
 		return 2
-	if ctx.pred_intented_first_tick - ctx.max_prediction_tick_threeshold < 0:
+	if ctx.co_pred.pred_intented_first_tick - ctx.co_pred.max_prediction_tick_threeshold < 0:
 		return 3
 
 	return OK
@@ -50,15 +50,15 @@ static func wync_xtrap_preparation(ctx: WyncCtx) -> int:
 
 # Composes a list of ids of entities TO PREDICT THIS TICK
 static func wync_xtrap_regular_entities_to_predict(ctx: WyncCtx, tick: int):
-	ctx.global_entity_ids_to_predict.clear()
+	ctx.co_pred.global_entity_ids_to_predict.clear()
 
 	var entity_last_tick: int
 	var entity_last_predicted_tick: int
 
 	# iterate each entity and determine if they should be predicted
-	for entity_id in ctx.predicted_entity_ids:
+	for entity_id in ctx.co_pred.predicted_entity_ids:
 
-		entity_last_tick = ctx.entity_last_received_tick[entity_id]
+		entity_last_tick = ctx.co_pred.entity_last_received_tick[entity_id]
 		
 		# no history
 		if entity_last_tick == -1:
@@ -68,7 +68,7 @@ static func wync_xtrap_regular_entities_to_predict(ctx: WyncCtx, tick: int):
 		elif entity_last_tick >= tick:
 			continue
 
-		entity_last_predicted_tick = ctx.entity_last_predicted_tick[entity_id]
+		entity_last_predicted_tick = ctx.co_pred.entity_last_predicted_tick[entity_id]
 
 		# already predicted
 		if tick <= entity_last_predicted_tick:
@@ -76,16 +76,16 @@ static func wync_xtrap_regular_entities_to_predict(ctx: WyncCtx, tick: int):
 
 		# else, aprove prediction and assume this tick as predicted
 		if tick > entity_last_predicted_tick:
-			ctx.entity_last_predicted_tick[entity_id] = tick
+			ctx.co_pred.entity_last_predicted_tick[entity_id] = tick
 
-		ctx.global_entity_ids_to_predict.append(entity_id)
+		ctx.co_pred.global_entity_ids_to_predict.append(entity_id)
 
 
 static func wync_xtrap_termination(ctx: WyncCtx):
 	WyncDeltaSyncUtilsInternal.auxiliar_props_clear_current_delta_events(ctx)
 	WyncDeltaSyncUtils.predicted_event_props_clear_events(ctx)
-	ctx.currently_on_predicted_tick = false
-	ctx.global_entity_ids_to_predict.clear()
+	ctx.co_pred.currently_on_predicted_tick = false
+	ctx.co_pred.global_entity_ids_to_predict.clear()
 
 
 # NOTE: rename to prop_enable_prediction
@@ -93,7 +93,7 @@ static func prop_set_predict(ctx: WyncCtx, prop_id: int) -> int:
 	var prop := WyncTrack.get_prop(ctx, prop_id)
 	if prop == null:
 		return 1
-	ctx.props_to_predict.append(prop_id)
+	ctx.co_pred.props_to_predict.append(prop_id)
 
 	# TODO: set only if it isn't _delta prop_
 	#prop.pred_curr = NetTickData.new()
@@ -103,13 +103,13 @@ static func prop_set_predict(ctx: WyncCtx, prop_id: int) -> int:
 
 # TODO: this is not very well optimized
 static func prop_is_predicted(ctx: WyncCtx, prop_id: int) -> bool:
-	return ctx.props_to_predict.has(prop_id)
+	return ctx.co_pred.props_to_predict.has(prop_id)
 	
 
 static func entity_is_predicted(ctx: WyncCtx, entity_id: int) -> bool:
-	if not ctx.entity_has_props.has(entity_id):
+	if not ctx.co_track.entity_has_props.has(entity_id):
 		return false
-	for prop_id in ctx.entity_has_props[entity_id]:
+	for prop_id in ctx.co_track.entity_has_props[entity_id]:
 		if prop_is_predicted(ctx, prop_id):
 			return true
 	return false
@@ -121,10 +121,10 @@ static func entity_is_predicted(ctx: WyncCtx, entity_id: int) -> bool:
 
 
 static func wync_xtrap_tick_init(ctx: WyncCtx, tick: int):
-	ctx.current_predicted_tick = tick
+	ctx.co_pred.current_predicted_tick = tick
 
 	# reset predicted inputs / events
-	WyncXtrap.wync_xtrap_reset_all_state_to_confirmed_tick_absolute(ctx, ctx.type_input_event__predicted_owned_prop_ids, tick)
+	WyncXtrap.wync_xtrap_reset_all_state_to_confirmed_tick_absolute(ctx, ctx.co_filter_c.type_input_event__predicted_owned_prop_ids, tick)
 
 	# reset predicted regular
 	#WyncWrapper.wync_xtrap_reset_all_state_to_confirmed_tick_absolute(ctx, ctx.type_state__predicted_regular_prop_ids, tick)
@@ -144,7 +144,7 @@ static func wync_xtrap_tick_end(ctx: WyncCtx, tick: int):
 ## for inputs / events
 static func wync_xtrap_reset_all_state_to_confirmed_tick_absolute(ctx: WyncCtx, prop_ids: Array[int], tick: int):
 	for prop_id: int in prop_ids:
-		var prop := ctx.props[prop_id]
+		var prop := ctx.co_track.props[prop_id]
 		var value = WyncProp.saved_state_get(prop, tick)
 		if value == null:
 			continue
@@ -158,7 +158,7 @@ static func wync_xtrap_props_update_predicted_states_data(ctx: WyncCtx, props_id
 	
 	for prop_id: int in props_ids:
 		
-		var prop = ctx.props[prop_id] as WyncProp
+		var prop = ctx.co_track.props[prop_id] as WyncProp
 		if prop == null:
 			continue
 		if prop.relative_syncable:
@@ -187,12 +187,12 @@ static func wync_xtrap_save_latest_predicted_state(ctx: WyncCtx, tick: int):
 
 	# (run on last two iterations)
 
-	var store_predicted_states = tick > (ctx.co_predict_data.target_tick - 1)
+	var store_predicted_states = tick > (ctx.co_pred.target_tick - 1)
 	if store_predicted_states:
-		for wync_entity_id: int in ctx.predicted_entity_ids:
+		for wync_entity_id: int in ctx.co_pred.predicted_entity_ids:
 			# TODO: Make this call user-level
 			# store predicted states
-			WyncXtrap.wync_xtrap_props_update_predicted_states_data(ctx, ctx.entity_has_props[wync_entity_id])
+			WyncXtrap.wync_xtrap_props_update_predicted_states_data(ctx, ctx.co_track.entity_has_props[wync_entity_id])
 
 			# update/store predicted state metadata
-			WyncXtrapInternal.wync_xtrap_props_update_predicted_states_ticks(ctx, ctx.entity_has_props[wync_entity_id], ctx.co_predict_data.target_tick)
+			WyncXtrapInternal.wync_xtrap_props_update_predicted_states_ticks(ctx, ctx.co_track.entity_has_props[wync_entity_id], ctx.co_pred.target_tick)

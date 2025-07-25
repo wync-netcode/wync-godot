@@ -3,12 +3,12 @@ class_name WyncStats
 
 ## Call every time a WyncPktSnap contains _the prob_prop id_
 static func wync_try_to_update_prob_prop_rate(ctx: WyncCtx):
-	if ctx.low_priority_entity_tick_last_update == ctx.ticks:
+	if ctx.co_metrics.low_priority_entity_tick_last_update == ctx.common.ticks:
 		return
 
-	var tick_rate = ctx.ticks - ctx.low_priority_entity_tick_last_update -1
-	ctx.low_priority_entity_update_rate_sliding_window.push(tick_rate)
-	ctx.low_priority_entity_tick_last_update = ctx.ticks
+	var tick_rate = ctx.common.ticks - ctx.co_metrics.low_priority_entity_tick_last_update -1
+	ctx.co_metrics.low_priority_entity_update_rate_sliding_window.push(tick_rate)
+	ctx.co_metrics.low_priority_entity_tick_last_update = ctx.common.ticks
 
 
 ## Call every physic tick
@@ -16,68 +16,68 @@ static func wync_system_calculate_server_tick_rate(ctx: WyncCtx):
 	var accumulative = 0
 	var amount = 0
 	for i in range(ctx.SERVER_TICK_RATE_SLIDING_WINDOW_SIZE):
-		var value = ctx.server_tick_rate_sliding_window.get_at(i)
+		var value = ctx.co_metrics.server_tick_rate_sliding_window.get_at(i)
 		if value is not int:
 			continue
 		accumulative += value
 		amount += 1
 	if amount <= 0:
-		ctx.server_tick_rate = 0
+		ctx.co_metrics.server_tick_rate = 0
 	else:
-		ctx.server_tick_rate = accumulative / float(amount)
+		ctx.co_metrics.server_tick_rate = accumulative / float(amount)
 
 
 ## Call every physic tick
 static func wync_system_calculate_prob_prop_rate(ctx: WyncCtx):
 	var accumulative = 0
 	var amount = 0
-	for i in range(ctx.low_priority_entity_update_rate_sliding_window_size):
-		var value = ctx.low_priority_entity_update_rate_sliding_window.get_at(i)
+	for i in range(ctx.co_metrics.low_priority_entity_update_rate_sliding_window_size):
+		var value = ctx.co_metrics.low_priority_entity_update_rate_sliding_window.get_at(i)
 		if value is not int:
 			continue
 		accumulative += value
 		amount += 1
 	if amount <= 0:
-		ctx.low_priority_entity_update_rate = 0
+		ctx.co_metrics.low_priority_entity_update_rate = 0
 	else:
-		ctx.low_priority_entity_update_rate = accumulative / float(amount)
+		ctx.co_metrics.low_priority_entity_update_rate = accumulative / float(amount)
 
 	# TODO: Move this elsewhere
 	# calculate prediction threeshold
 	# adding 1 of padding for good measure
-	ctx.max_prediction_tick_threeshold = int(ceil(ctx.low_priority_entity_update_rate)) + 1
+	ctx.co_pred.max_prediction_tick_threeshold = int(ceil(ctx.co_metrics.low_priority_entity_update_rate)) + 1
 
 	# 'REGULAR_PROP_CACHED_STATE_AMOUNT -1' because for xtrap we need to set it
 	# to the value just before 'ctx.max_prediction_tick_threeshold -1'
-	ctx.max_prediction_tick_threeshold = min(ctx.REGULAR_PROP_CACHED_STATE_AMOUNT-1, ctx.max_prediction_tick_threeshold)
+	ctx.co_pred.max_prediction_tick_threeshold = min(ctx.co_track.REGULAR_PROP_CACHED_STATE_AMOUNT-1, ctx.co_pred.max_prediction_tick_threeshold)
 
 
 ## Call every time a packet is received
 static func _wync_report_update_received(ctx: WyncCtx):
-	if ctx.tick_last_packet_received_from_server == ctx.ticks:
+	if ctx.co_metrics.tick_last_packet_received_from_server == ctx.common.ticks:
 		return
 
-	var tick_rate = ctx.ticks - ctx.tick_last_packet_received_from_server -1
-	ctx.server_tick_rate_sliding_window.push(tick_rate)
-	ctx.tick_last_packet_received_from_server = ctx.ticks
+	var tick_rate = ctx.common.ticks - ctx.co_metrics.tick_last_packet_received_from_server -1
+	ctx.co_metrics.server_tick_rate_sliding_window.push(tick_rate)
+	ctx.co_metrics.tick_last_packet_received_from_server = ctx.common.ticks
 
 
 ## calculate statistic data per tick
 static func wync_system_calculate_data_per_tick(ctx: WyncCtx):
 
-	var data_sent = ctx.out_packets_size_limit - ctx.out_packets_size_remaining_chars
-	ctx.debug_data_per_tick_current = data_sent
+	var data_sent = ctx.common.out_packets_size_limit - ctx.common.out_packets_size_remaining_chars
+	ctx.co_metrics.debug_data_per_tick_current = data_sent
 
-	ctx.debug_ticks_sent += 1
-	ctx.debug_data_per_tick_total_mean = (ctx.debug_data_per_tick_total_mean * (ctx.debug_ticks_sent -1) + data_sent) / float(ctx.debug_ticks_sent)
+	ctx.co_metrics.debug_ticks_sent += 1
+	ctx.co_metrics.debug_data_per_tick_total_mean = (ctx.co_metrics.debug_data_per_tick_total_mean * (ctx.co_metrics.debug_ticks_sent -1) + data_sent) / float(ctx.co_metrics.debug_ticks_sent)
 
-	ctx.debug_data_per_tick_sliding_window.push(data_sent)
+	ctx.co_metrics.debug_data_per_tick_sliding_window.push(data_sent)
 	var data_sent_acc = 0
-	for i in range(ctx.debug_data_per_tick_sliding_window_size):
-		var value = ctx.debug_data_per_tick_sliding_window.get_at(i)
+	for i in range(ctx.co_metrics.debug_data_per_tick_sliding_window_size):
+		var value = ctx.co_metrics.debug_data_per_tick_sliding_window.get_at(i)
 		if value is int:
-			data_sent_acc += ctx.debug_data_per_tick_sliding_window.get_at(i)
-	ctx.debug_data_per_tick_sliding_window_mean = data_sent_acc / ctx.debug_data_per_tick_sliding_window_size
+			data_sent_acc += ctx.co_metrics.debug_data_per_tick_sliding_window.get_at(i)
+	ctx.co_metrics.debug_data_per_tick_sliding_window_mean = data_sent_acc / ctx.co_metrics.debug_data_per_tick_sliding_window_size
 
 
 # ==================================================
@@ -110,15 +110,15 @@ static func setup_entity_prob_for_entity_update_delay_ticks(ctx: WyncCtx, peer_i
 		ctx,
 		func(p_ctx: Variant) -> int: # getter
 			# use any value that constantly changes, don't really need to read it
-			return (p_ctx as WyncCtx).ticks, 
+			return (p_ctx as WyncCtx).common.ticks, 
 		func(_prob_ctx: Variant, _value: Variant): # setter
 			pass,
 	)
 	if prop_prob != -1:
-		ctx.PROP_ID_PROB = prop_prob
+		ctx.co_metrics.PROP_ID_PROB = prop_prob
 
 	# add as local existing prop
-	if not ctx.is_client:
+	if not ctx.common.is_client:
 		WyncTrack.wync_add_local_existing_entity(ctx, peer_id, entity_id)
 
 	return 0

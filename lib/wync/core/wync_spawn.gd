@@ -17,7 +17,7 @@ static func wync_handle_pkt_spawn(ctx: WyncCtx, data: Variant):
 		var spawn_data = data.entity_spawn_data[i]
 
 		# "flag" it
-		ctx.pending_entity_to_spawn_props[entity_id] = [prop_start, prop_end, 0] as Array[int]
+		ctx.co_spawn.pending_entity_to_spawn_props[entity_id] = [prop_start, prop_end, 0] as Array[int]
 
 		# queue it to user facing variable
 		entity_to_spawn = WyncCtx.EntitySpawnEvent.new()
@@ -27,7 +27,7 @@ static func wync_handle_pkt_spawn(ctx: WyncCtx, data: Variant):
 		entity_to_spawn.entity_type_id = entity_type_id
 		entity_to_spawn.spawn_data = spawn_data
 
-		ctx.out_queue_spawn_events.push_head(entity_to_spawn)
+		ctx.co_spawn.out_queue_spawn_events.push_head(entity_to_spawn)
 
 
 static func wync_handle_pkt_despawn(ctx: WyncCtx, data: Variant):
@@ -47,11 +47,11 @@ static func wync_handle_pkt_despawn(ctx: WyncCtx, data: Variant):
 		WyncTrack.untrack_entity(ctx, entity_id)
 
 		## remove from spawn list if found
-		if ctx.pending_entity_to_spawn_props.has(entity_id):
+		if ctx.co_spawn.pending_entity_to_spawn_props.has(entity_id):
 
-			assert(ctx.pending_entity_to_spawn_props.erase(entity_id))
+			assert(ctx.co_spawn.pending_entity_to_spawn_props.erase(entity_id))
 
-			var queue = ctx.out_queue_spawn_events
+			var queue = ctx.co_spawn.out_queue_spawn_events
 
 			for k: int in range(queue.size):
 				var item: WyncCtx.EntitySpawnEvent = queue.get_relative_to_tail(k)
@@ -66,54 +66,54 @@ static func wync_handle_pkt_despawn(ctx: WyncCtx, data: Variant):
 			entity_to_spawn = WyncCtx.EntitySpawnEvent.new()
 			entity_to_spawn.spawn = false
 			entity_to_spawn.entity_id = entity_id
-			ctx.out_queue_spawn_events.push_head(entity_to_spawn)
+			ctx.co_spawn.out_queue_spawn_events.push_head(entity_to_spawn)
 
 
 static func wync_get_next_entity_event_spawn(ctx: WyncCtx) -> WyncCtx.EntitySpawnEvent:
-	var size = ctx.out_queue_spawn_events.size
+	var size = ctx.co_spawn.out_queue_spawn_events.size
 	if size <= 0:
 		return null
 
-	var event = ctx.out_queue_spawn_events.pop_tail()
+	var event = ctx.co_spawn.out_queue_spawn_events.pop_tail()
 	if event is not WyncCtx.EntitySpawnEvent:
 		return null
 
-	ctx.next_entity_to_spawn = event
+	ctx.co_spawn.next_entity_to_spawn = event
 	return event
 
 
 static func finish_spawning_entity(ctx: WyncCtx, entity_id: int) -> int:
 
-	var entity_to_spawn = ctx.next_entity_to_spawn
+	var entity_to_spawn = ctx.co_spawn.next_entity_to_spawn
 	entity_to_spawn.already_spawned = true
 
-	assert(ctx.pending_entity_to_spawn_props.has(entity_id))
-	var entity_auth_props: Array[int] = ctx.pending_entity_to_spawn_props[entity_id]
+	assert(ctx.co_spawn.pending_entity_to_spawn_props.has(entity_id))
+	var entity_auth_props: Array[int] = ctx.co_spawn.pending_entity_to_spawn_props[entity_id]
 	assert((entity_auth_props[1] - entity_auth_props[0]) == (entity_auth_props[2] - 1))
 
-	ctx.pending_entity_to_spawn_props.erase(entity_id)
+	ctx.co_spawn.pending_entity_to_spawn_props.erase(entity_id)
 
 	Log.outc(ctx, "spawn, spawned entity %s" % [entity_id])
 
 	# apply dummy props if any
 
-	for prop_id: int in ctx.entity_has_props[entity_id]:
-		if not ctx.dummy_props.has(prop_id):
+	for prop_id: int in ctx.co_track.entity_has_props[entity_id]:
+		if not ctx.co_dummy.dummy_props.has(prop_id):
 			continue
 		
-		var dummy_prop = ctx.dummy_props[prop_id] as WyncCtx.DummyProp
+		var dummy_prop = ctx.co_dummy.dummy_props[prop_id] as WyncCtx.DummyProp
 		WyncStateStore.prop_save_confirmed_state(ctx, prop_id, dummy_prop.last_tick, dummy_prop.data)
 
 		# clean up
 
-		ctx.dummy_props.erase(prop_id)
+		ctx.co_dummy.dummy_props.erase(prop_id)
 
 	return OK
 
 
 ## Call after finishing spawning entities
 static func wync_system_spawned_props_cleanup(ctx: WyncCtx):
-	ctx.out_queue_spawn_events.clear()
+	ctx.co_spawn.out_queue_spawn_events.clear()
 
 
 ## TODO: fix all these comments
@@ -125,10 +125,10 @@ static func wync_system_send_entities_to_spawn(ctx: WyncCtx, _commit: bool = tru
 	var data_used = 0
 	var ids_to_spawn: Dictionary = {} # : Set<int>
 
-	for client_id in range(1, ctx.peers.size()):
+	for client_id in range(1, ctx.common.peers.size()):
 
-		var new_entities_set = ctx.clients_sees_new_entities[client_id] as Dictionary
-		var current_entities_set = ctx.clients_sees_entities[client_id] as Dictionary
+		var new_entities_set = ctx.co_throttling.clients_sees_new_entities[client_id] as Dictionary
+		var current_entities_set = ctx.co_throttling.clients_sees_entities[client_id] as Dictionary
 		ids_to_spawn.clear()
 
 		# compile ids to sync
@@ -153,21 +153,21 @@ static func wync_system_send_entities_to_spawn(ctx: WyncCtx, _commit: bool = tru
 			i += 1
 
 			packet.entity_ids[i] = entity_id
-			packet.entity_type_ids[i] = ctx.entity_is_of_type[entity_id]
-			var entity_prop_ids = ctx.entity_has_props[entity_id]
+			packet.entity_type_ids[i] = ctx.co_track.entity_is_of_type[entity_id]
+			var entity_prop_ids = ctx.co_track.entity_has_props[entity_id]
 			assert(entity_prop_ids.size() > 0)
 			packet.entity_prop_id_start[i] = entity_prop_ids[0]
 			packet.entity_prop_id_end[i] = entity_prop_ids[entity_prop_ids.size() -1]
 
-			if ctx.entity_spawn_data.has(entity_id):
-				packet.entity_spawn_data[i] = WyncMisc.duplicate_any(ctx.entity_spawn_data[entity_id])
+			if ctx.co_spawn.entity_spawn_data.has(entity_id):
+				packet.entity_spawn_data[i] = WyncMisc.duplicate_any(ctx.co_spawn.entity_spawn_data[entity_id])
 
 			# commit / confirm as _client can see it_
 
 			_wync_confirm_client_can_see_entity(ctx, client_id, entity_id)
 
 			data_used += HashUtils.calculate_wync_packet_data_size(WyncPacket.WYNC_PKT_SPAWN)
-			if (data_used >= ctx.out_packets_size_remaining_chars):
+			if (data_used >= ctx.common.out_packets_size_remaining_chars):
 				break
 
 		if ((i + 1) != entity_amount):
@@ -179,7 +179,7 @@ static func wync_system_send_entities_to_spawn(ctx: WyncCtx, _commit: bool = tru
 			var pkt_out = res[1] as WyncPacketOut
 			WyncPacketUtil.wync_try_to_queue_out_packet(ctx, pkt_out, WyncCtx.RELIABLE, true)
 
-		if (data_used >= ctx.out_packets_size_remaining_chars):
+		if (data_used >= ctx.common.out_packets_size_remaining_chars):
 			break
 		
 	return OK
@@ -188,13 +188,13 @@ static func wync_system_send_entities_to_spawn(ctx: WyncCtx, _commit: bool = tru
 # This system is not throttled
 static func wync_system_send_entities_to_despawn(ctx: WyncCtx, _commit: bool = true) -> int:
 
-	for client_id in range(1, ctx.peers.size()):
+	for client_id in range(1, ctx.common.peers.size()):
 
-		var current_entities_set = ctx.clients_sees_entities[client_id] as Dictionary
+		var current_entities_set = ctx.co_throttling.clients_sees_entities[client_id] as Dictionary
 		var entity_id_list: Array[int] = []
 		var entity_amount = 0
 
-		for entity_id: int in ctx.despawned_entity_ids:
+		for entity_id: int in ctx.co_spawn.despawned_entity_ids:
 			if current_entities_set.has(entity_id):
 				entity_id_list.append(entity_id)
 				entity_amount += 1
@@ -218,7 +218,7 @@ static func wync_system_send_entities_to_despawn(ctx: WyncCtx, _commit: bool = t
 		var pkt_out = res[1] as WyncPacketOut
 		WyncPacketUtil.wync_try_to_queue_out_packet(ctx, pkt_out, WyncCtx.RELIABLE, true)
 
-	ctx.despawned_entity_ids.clear()
+	ctx.co_spawn.despawned_entity_ids.clear()
 
 	return OK
 
@@ -227,10 +227,10 @@ static func wync_system_send_entities_to_despawn(ctx: WyncCtx, _commit: bool = t
 ## Removes an entity from clients_sees_new_entities
 static func _wync_confirm_client_can_see_entity(ctx: WyncCtx, client_id: int, entity_id: int) -> void:
 
-	var entity_set = ctx.clients_sees_entities[client_id]
+	var entity_set = ctx.co_throttling.clients_sees_entities[client_id]
 	entity_set[entity_id] = true
 
-	for prop_id: int in ctx.entity_has_props[entity_id]:
+	for prop_id: int in ctx.co_track.entity_has_props[entity_id]:
 		var prop = WyncTrack.get_prop(ctx, prop_id)
 		if prop == null:
 			Log.errc(ctx, "Couldn't find prop(%s) in entity(%s)" % [prop_id, entity_id])
@@ -238,11 +238,11 @@ static func _wync_confirm_client_can_see_entity(ctx: WyncCtx, client_id: int, en
 		prop = prop as WyncProp
 
 		if prop.relative_syncable:
-			var delta_prop_last_tick = ctx.client_has_relative_prop_has_last_tick[client_id] as Dictionary
+			var delta_prop_last_tick = ctx.co_track.client_has_relative_prop_has_last_tick[client_id] as Dictionary
 			delta_prop_last_tick[prop_id] = -1
 
 	# remove from new entities
-	var new_entity_set = ctx.clients_sees_new_entities[client_id] as Dictionary
+	var new_entity_set = ctx.co_throttling.clients_sees_new_entities[client_id] as Dictionary
 	new_entity_set.erase(entity_id)
 
 	Log.outc(ctx, "spawn, confirmed: client %s can now see entity %s" % [

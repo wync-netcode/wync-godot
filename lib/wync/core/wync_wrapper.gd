@@ -26,12 +26,12 @@ static func wync_set_prop_callbacks \
 # Part of module 'wync_input'. Used in 'wync_flow'
 static func wync_buffer_inputs(ctx: WyncCtx):
 	
-	if not ctx.connected: # TODO: delme
+	if not ctx.common.connected: # TODO: delme
 		return
 
 	## Buffer state (extract) from props we own, to create a state history
 	
-	for prop_id: int in ctx.type_input_event__owned_prop_ids:
+	for prop_id: int in ctx.co_filter_c.type_input_event__owned_prop_ids:
 
 		var input_prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
 		var getter = ctx.wrapper.prop_getter[prop_id]
@@ -39,7 +39,7 @@ static func wync_buffer_inputs(ctx: WyncCtx):
 		var new_state = getter.call(user_ctx)
 		assert(new_state != null)
 
-		WyncProp.saved_state_insert(ctx, input_prop, ctx.co_predict_data.target_tick, new_state)
+		WyncProp.saved_state_insert(ctx, input_prop, ctx.co_pred.target_tick, new_state)
 
 
 # Part of module 'wync_state_store'. Used in 'wync_flow'
@@ -52,7 +52,7 @@ static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
 
 	# Save state history per tick
 
-	for prop_id in ctx.filtered_regular_extractable_prop_ids:
+	for prop_id in ctx.co_filter_s.filtered_regular_extractable_prop_ids:
 		prop = WyncTrack.get_prop_unsafe(ctx, prop_id)
 		getter = ctx.wrapper.prop_getter[prop_id]
 		user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
@@ -62,7 +62,7 @@ static func extract_data_to_tick(ctx: WyncCtx, save_on_tick: int = -1):
 
 	# extracts events ids from auxiliar delta props
 
-	for prop_id in ctx.filtered_delta_prop_ids:
+	for prop_id in ctx.co_filter_s.filtered_delta_prop_ids:
 		
 		prop = WyncTrack.get_prop_unsafe(ctx, prop_id)
 		prop_aux = WyncTrack.get_prop_unsafe(ctx, prop.auxiliar_delta_events_prop_id)
@@ -104,10 +104,10 @@ static func extract_rela_prop_fullsnapshot_to_tick (
 	var getter: Variant = null # Callable*
 	var user_ctx: Variant = null
 
-	ctx.rela_prop_ids_for_full_snapshot.sort()
+	ctx.co_throttling.rela_prop_ids_for_full_snapshot.sort()
 	var last_prop_id = -1
 
-	for prop_id: int in ctx.rela_prop_ids_for_full_snapshot:
+	for prop_id: int in ctx.co_throttling.rela_prop_ids_for_full_snapshot:
 
 		# sorted list might contain duplicated entries
 		if prop_id == last_prop_id:
@@ -127,12 +127,12 @@ static func extract_rela_prop_fullsnapshot_to_tick (
 # Part of module 'wync_input'. Used in 'wync_flow'
 static func wync_input_props_set_tick_value (ctx: WyncCtx) -> int:
 		
-	for prop_id in ctx.filtered_clients_input_and_event_prop_ids:
+	for prop_id in ctx.co_filter_s.filtered_clients_input_and_event_prop_ids:
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)	
 
-		var input = WyncProp.saved_state_get(prop, ctx.ticks)
+		var input = WyncProp.saved_state_get(prop, ctx.common.ticks)
 		if input == null:
-			Log.warc(ctx, "couldn't find input (%s) for tick (%s)" % [prop.name_id, ctx.ticks])
+			Log.warc(ctx, "couldn't find input (%s) for tick (%s)" % [prop.name_id, ctx.common.ticks])
 			continue
 
 		var setter = ctx.wrapper.prop_setter[prop_id]

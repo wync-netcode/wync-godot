@@ -11,7 +11,7 @@ class_name WyncEventUtils
 # TODO: write tests for this
 static func _get_new_event_id(ctx: WyncCtx) -> int:
 	# get my peer id (1 byte, 255 max)
-	var peer_id = ctx.my_peer_id
+	var peer_id = ctx.common.my_peer_id
 	
 	"""
 	# alternative approach:
@@ -23,13 +23,13 @@ static func _get_new_event_id(ctx: WyncCtx) -> int:
 	"""
 	
 	# generate an event id ending in my peer id
-	ctx.event_id_counter += 1
+	ctx.co_events.event_id_counter += 1
 	var event_id = peer_id << 24
-	event_id += ctx.event_id_counter & (2**24-1)
+	event_id += ctx.co_events.event_id_counter & (2**24-1)
 	
 	# reset event_id_counter every 2^24 (3 bytes)
-	if ctx.event_id_counter >= (2**24-1):
-		ctx.event_id_counter = 0
+	if ctx.co_events.event_id_counter >= (2**24-1):
+		ctx.co_events.event_id_counter = 0
 		
 	# return the generated id
 	assert(event_id > 0)
@@ -41,7 +41,7 @@ static func instantiate_new_event(
 	ctx: WyncCtx,
 	event_user_type_id: int,
 	) -> Variant:
-	if not ctx.connected:
+	if not ctx.common.connected:
 		return null
 		
 	var event_id = _get_new_event_id(ctx)
@@ -50,7 +50,7 @@ static func instantiate_new_event(
 	event.data.event_type_id = event_user_type_id
 	event.data.event_data = null
 
-	ctx.events[event_id] = event
+	ctx.co_events.events[event_id] = event
 	return event_id
 
 
@@ -62,7 +62,7 @@ static func event_set_data(
 		#event_size: int
 	) -> int:
 	
-	var event = ctx.events[event_id]
+	var event = ctx.co_events.events[event_id]
 	if event is not WyncCtx.WyncEvent:
 		return 1
 	event = event as WyncCtx.WyncEvent
@@ -76,21 +76,21 @@ static func _event_wrap_up(
 		event_id: int,
 	) -> Variant:
 		
-	var event := ctx.events[event_id]
+	var event := ctx.co_events.events[event_id]
 	if event == null:
 		return null
 	
 	event.data_hash = HashUtils.hash_any(event.data)
 	
 	# this event is a duplicate
-	if ctx.events_hash_to_id.has_item_hash(event.data_hash):
-		ctx.events.erase(event_id)
-		var cached_event_id = ctx.events_hash_to_id.get_item_by_hash(event.data_hash)
+	if ctx.co_events.events_hash_to_id.has_item_hash(event.data_hash):
+		ctx.co_events.events.erase(event_id)
+		var cached_event_id = ctx.co_events.events_hash_to_id.get_item_by_hash(event.data_hash)
 		print("WyncCtx: EventData: this event is a duplicate")
 		return cached_event_id
 	
 	# not a duplicate -> cache it
-	ctx.events_hash_to_id.push_head_hash_and_item(event.data_hash, event_id)
+	ctx.co_events.events_hash_to_id.push_head_hash_and_item(event.data_hash, event_id)
 	return event_id
 
 
@@ -110,20 +110,20 @@ static func new_event_wrap_up(
 
 static func publish_global_event_as_client \
 	(ctx: WyncCtx, channel: int, event_id: int) -> int:
-	if (channel < 0 || channel > ctx.max_channels):
+	if (channel < 0 || channel > ctx.common.max_channels):
 		return 5
 	
 	# TODO: improve safety
-	ctx.peer_has_channel_has_events[ctx.my_peer_id][channel].append(event_id)
+	ctx.co_events.peer_has_channel_has_events[ctx.common.my_peer_id][channel].append(event_id)
 	return 0
 
 
 static func publish_global_event_as_server \
 	(ctx: WyncCtx, channel: int, event_id: int) -> int:
-	if (channel < 0 || channel > ctx.max_channels):
+	if (channel < 0 || channel > ctx.common.max_channels):
 		return 5
 	
-	ctx.peer_has_channel_has_events[WyncCtx.SERVER_PEER_ID][channel].append(event_id)
+	ctx.co_events.peer_has_channel_has_events[WyncCtx.SERVER_PEER_ID][channel].append(event_id)
 	return 0
 
 
@@ -132,16 +132,16 @@ static func publish_global_event_as_server \
 
 
 static func wync_send_event_data (ctx: WyncCtx):
-	if not ctx.connected:
+	if not ctx.common.connected:
 		Log.errc(ctx, "Not connected")
 		return
 
 	# send events
 	
-	if ctx.is_client:
+	if ctx.common.is_client:
 		wync_system_send_events_to_peer(ctx, WyncCtx.SERVER_PEER_ID)
 	else: # server
-		for wync_peer_id in range(1, ctx.peers.size()):
+		for wync_peer_id in range(1, ctx.common.peers.size()):
 			wync_system_send_events_to_peer(ctx, wync_peer_id)
 
 
@@ -151,7 +151,7 @@ static func wync_send_event_data (ctx: WyncCtx):
 ## @returns int: 0 -> OK, 1 -> OK, but couldn't queue all packets, >1 -> Error
 static func wync_system_send_events_to_peer (ctx: WyncCtx, wync_peer_id: int) -> int:
 	
-	var event_keys = ctx.peers_events_to_sync[wync_peer_id].keys()
+	var event_keys = ctx.co_throttling.peers_events_to_sync[wync_peer_id].keys()
 	var event_amount = event_keys.size()
 	if event_amount <= 0:
 		return OK
@@ -164,21 +164,21 @@ static func wync_system_send_events_to_peer (ctx: WyncCtx, wync_peer_id: int) ->
 		
 		# get event data
 		
-		if not ctx.events.has(event_id):
+		if not ctx.co_events.events.has(event_id):
 			Log.errc(ctx, "couldn't find event_id %s" % event_id)
 			continue
 		
-		var wync_event := ctx.events[event_id]
+		var wync_event := ctx.co_events.events[event_id]
 		var wync_event_data = wync_event.data
 		
 		# check if peer already has it
 		# NOTE: is_serve_cached could be skipped? all events should be cached on our side...
-		var is_event_cached = ctx.events_hash_to_id.has_item_hash(wync_event.data_hash)
+		var is_event_cached = ctx.co_events.events_hash_to_id.has_item_hash(wync_event.data_hash)
 		if (is_event_cached):
-			var cached_event_id = ctx.events_hash_to_id.get_item_by_hash(wync_event.data_hash)
+			var cached_event_id = ctx.co_events.events_hash_to_id.get_item_by_hash(wync_event.data_hash)
 			if (cached_event_id != null):
 				#see ctx.max_amount_cache_events
-				var peer_has_it = ctx.to_peers_i_sent_events[wync_peer_id].has_item_hash(cached_event_id)
+				var peer_has_it = ctx.co_events.to_peers_i_sent_events[wync_peer_id].has_item_hash(cached_event_id)
 				if (peer_has_it):
 					continue
 		
@@ -192,7 +192,7 @@ static func wync_system_send_events_to_peer (ctx: WyncCtx, wync_peer_id: int) ->
 
 		# confirm commit (these events are all aready commited)
 		# since peer doesn't have it, then mark it as sent
-		ctx.to_peers_i_sent_events[wync_peer_id].push_head_hash_and_item(event_id, true)
+		ctx.co_events.to_peers_i_sent_events[wync_peer_id].push_head_hash_and_item(event_id, true)
 	
 
 	if (data.events.size() == 0):
@@ -221,18 +221,18 @@ static func prop_set_module_events_consumed(ctx: WyncCtx, prop_id: int) -> int:
 	if prop == null:
 		return 1
 	prop.module_events_consumed = true
-	prop.events_consumed_at_tick = RingBuffer.new(ctx.max_age_user_events_for_consumption, [] as Array[int])
-	prop.events_consumed_at_tick_tick = RingBuffer.new(ctx.max_age_user_events_for_consumption, -1)
+	prop.events_consumed_at_tick = RingBuffer.new(ctx.common.max_age_user_events_for_consumption, [] as Array[int])
+	prop.events_consumed_at_tick_tick = RingBuffer.new(ctx.common.max_age_user_events_for_consumption, -1)
 	return OK
 
 
 static func global_event_consume_tick \
 	(ctx: WyncCtx, wync_peer_id: int, channel: int, tick: int, event_id: int) -> void:
 	
-	assert(channel >= 0 && channel < ctx.max_channels)
-	assert(wync_peer_id >= 0 && wync_peer_id < ctx.max_peers)
+	assert(channel >= 0 && channel < ctx.common.max_channels)
+	assert(wync_peer_id >= 0 && wync_peer_id < ctx.common.max_peers)
 	
-	var prop_id: int = ctx.prop_id_by_peer_by_channel[wync_peer_id][channel]
+	var prop_id: int = ctx.co_events.prop_id_by_peer_by_channel[wync_peer_id][channel]
 	var prop_channel := WyncTrack.get_prop_unsafe(ctx, prop_id)
 
 	var consumed_event_ids_tick: int = prop_channel.events_consumed_at_tick_tick.get_at(tick)
@@ -244,9 +244,9 @@ static func global_event_consume_tick \
 
 
 static func module_events_consumed_advance_tick(ctx: WyncCtx):
-	var tick = ctx.ticks
+	var tick = ctx.common.ticks
 
-	for prop_id: int in ctx.active_prop_ids:
+	for prop_id: int in ctx.co_track.active_prop_ids:
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
 		if not prop.module_events_consumed:
 			continue
@@ -261,7 +261,7 @@ static func module_events_consumed_advance_tick(ctx: WyncCtx):
 
 
 static func action_already_ran_on_tick(ctx: WyncCtx, predicted_tick: int, action_id: String) -> bool:
-	var action_set = ctx.tick_action_history.get_at(predicted_tick)
+	var action_set = ctx.co_pred.tick_action_history.get_at(predicted_tick)
 	if action_set is not Dictionary:
 		return false
 	action_set = action_set as Dictionary
@@ -269,7 +269,7 @@ static func action_already_ran_on_tick(ctx: WyncCtx, predicted_tick: int, action
 
 
 static func action_mark_as_ran_on_tick(ctx: WyncCtx, predicted_tick: int, action_id: String) -> int:
-	var action_set = ctx.tick_action_history.get_at(predicted_tick)
+	var action_set = ctx.co_pred.tick_action_history.get_at(predicted_tick)
 	# This error should never happen as long as we initialize it correctly
 	# However, the user might provide any 'tick' which would result in
 	# confusing results
@@ -282,7 +282,7 @@ static func action_mark_as_ran_on_tick(ctx: WyncCtx, predicted_tick: int, action
 
 # run once each game tick
 static func action_tick_history_reset(ctx: WyncCtx, predicted_tick: int) -> int:
-	var action_set = ctx.tick_action_history.get_at(predicted_tick)
+	var action_set = ctx.co_pred.tick_action_history.get_at(predicted_tick)
 	if action_set is not Dictionary:
 		return 1
 	action_set = action_set as Dictionary
@@ -303,7 +303,7 @@ static func wync_handle_pkt_event_data(ctx: WyncCtx, data: Variant) -> int:
 		var wync_event = WyncCtx.WyncEvent.new()
 		wync_event.data.event_type_id = event.event_type_id
 		wync_event.data.event_data = event.event_data
-		ctx.events[event.event_id] = wync_event
+		ctx.co_events.events[event.event_id] = wync_event
 	
 		#Log.out("events | got this events %s" % [event.event_id], Log.TAG_EVENT_DATA)
 		if event.event_id == 105:
@@ -324,7 +324,7 @@ static func wync_get_events_from_channel_from_peer(
 	if tick < 0:
 		return out_events_id
 
-	var prop_id: int = ctx.prop_id_by_peer_by_channel[wync_peer_id][channel]
+	var prop_id: int = ctx.co_events.prop_id_by_peer_by_channel[wync_peer_id][channel]
 	var prop_channel := WyncTrack.get_prop_unsafe(ctx, prop_id)
 
 	var consumed_event_ids_tick: int = prop_channel.events_consumed_at_tick_tick.get_at(tick)
@@ -334,8 +334,8 @@ static func wync_get_events_from_channel_from_peer(
 	var consumed_event_ids: Array[int] = prop_channel.events_consumed_at_tick.get_at(tick)
 	var confirmed_event_ids: Array
 
-	if ctx.ticks == tick:
-		confirmed_event_ids = ctx.peer_has_channel_has_events[wync_peer_id][channel]
+	if ctx.common.ticks == tick:
+		confirmed_event_ids = ctx.co_events.peer_has_channel_has_events[wync_peer_id][channel]
 	else:
 		# TODO: Rewrite me
 		var state = WyncProp.saved_state_get(prop_channel, tick)
@@ -347,10 +347,10 @@ static func wync_get_events_from_channel_from_peer(
 		var event_id = confirmed_event_ids[i]
 		if consumed_event_ids.has(event_id):
 			continue
-		if not ctx.events.has(event_id):
+		if not ctx.co_events.events.has(event_id):
 			continue
 
-		var event := ctx.events[event_id]
+		var event := ctx.co_events.events[event_id]
 		assert(event != null)
 		out_events_id.append(event_id)
 
@@ -365,7 +365,7 @@ static func wync_get_events_from_channel_from_peer(
 # run on both server & client to set up peer channel
 # NOTE: Maybe it's better to initialize all client channels from the start
 static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
-	assert(ctx.connected)
+	assert(ctx.common.connected)
 	
 	var entity_id = WyncCtx.ENTITY_ID_GLOBAL_EVENTS + peer_id
 	WyncTrack.track_entity(ctx, entity_id, -1)
@@ -381,9 +381,9 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 		channel_prop_id,
 		ctx,
 		func(wync_ctx: Variant) -> Array: # getter
-			return (wync_ctx as WyncCtx).peer_has_channel_has_events[peer_id][channel_id].duplicate(true),
+			return (wync_ctx as WyncCtx).co_events.peer_has_channel_has_events[peer_id][channel_id].duplicate(true),
 		func(wync_ctx: Variant, input: Array): # setter
-			var event_array = (wync_ctx as WyncCtx).peer_has_channel_has_events[peer_id][channel_id] as Array
+			var event_array = (wync_ctx as WyncCtx).co_events.peer_has_channel_has_events[peer_id][channel_id] as Array
 			event_array.clear()
 			event_array.append_array(input),
 	)
@@ -391,7 +391,7 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 	# TODO: add as VIP prop
 
 	# predict my own global channel
-	if (ctx.is_client && peer_id == ctx.my_peer_id):
+	if (ctx.common.is_client && peer_id == ctx.common.my_peer_id):
 		WyncXtrap.prop_set_predict(ctx, channel_prop_id)
 
 	# TODO: why only run on server? Q: ...
@@ -402,6 +402,6 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 		# server module for consuming user events
 		WyncEventUtils.prop_set_module_events_consumed(ctx, channel_prop_id)
 		# populate ctx var
-		ctx.prop_id_by_peer_by_channel[peer_id][channel_id] = channel_prop_id
+		ctx.co_events.prop_id_by_peer_by_channel[peer_id][channel_id] = channel_prop_id
 
 	return 0

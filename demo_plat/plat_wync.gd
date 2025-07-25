@@ -2,7 +2,7 @@ class_name PlatWync
 
 
 static func setup_server(ctx: WyncCtx):
-	ctx.ticks = 0
+	ctx.common.ticks = 0
 	WyncFlow.server_setup(ctx)
 	WyncClock.wync_client_set_physics_ticks_per_second(ctx, Engine.physics_ticks_per_second)
 	setup_lerp_types(ctx)
@@ -10,7 +10,7 @@ static func setup_server(ctx: WyncCtx):
 
 
 static func setup_client(ctx: WyncCtx):
-	ctx.ticks = 200
+	ctx.common.ticks = 200
 	WyncFlow.client_init(ctx)
 	
 	WyncClock.wync_client_set_physics_ticks_per_second(ctx, Engine.physics_ticks_per_second)
@@ -19,7 +19,7 @@ static func setup_client(ctx: WyncCtx):
 	# set server tick rate and lerp_ms
 
 	#var server_tick_rate: float = ctx.physic_ticks_per_second 
-	var server_tick_rate: float = ctx.physic_ticks_per_second / 2.0
+	var server_tick_rate: float = ctx.common.physic_ticks_per_second / 2.0
 	#var server_tick_rate: float = ctx.physic_ticks_per_second / 8.0
 	#var server_tick_rate: float = ctx.physic_ticks_per_second / 16.0
 
@@ -34,7 +34,7 @@ static func setup_client(ctx: WyncCtx):
 
 static func setup_connect_client(gs: Plat.GameState):
 	var ctx := gs.wctx
-	for nete_peer_id: int in ctx.out_peer_pending_to_setup:
+	for nete_peer_id: int in ctx.co_throttling.out_peer_pending_to_setup:
 
 		#pass
 		# get wync_peer_id
@@ -152,7 +152,7 @@ static func setup_sync_for_ball_actor(gs: Plat.GameState, actor_id: int):
 		wctx, pos_prop_id, Plat.LERP_TYPE_VECTOR2
 	)
 
-	if not wctx.is_client: # server
+	if not wctx.common.is_client: # server
 		WyncTimeWarp.prop_set_timewarpable(wctx, pos_prop_id) 
 
 	#if WyncTrack.is_client(wctx):
@@ -219,7 +219,7 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 		wctx, pos_prop_id, Plat.LERP_TYPE_VECTOR2
 	)
 
-	if wctx.is_client:
+	if wctx.common.is_client:
 	
 		# setup extrapolation
 			
@@ -426,7 +426,7 @@ static func update_what_the_clients_can_see(gs: Plat.GameState):
 		gs.actors_added_or_deleted = false
 		var ctx = gs.wctx
 
-		for peer_id in range(1, ctx.peers.size()):
+		for peer_id in range(1, ctx.common.peers.size()):
 			# TODO: get me a list of only active peers!
 
 			#for actor_index: int in range(Plat.ACTOR_AMOUNT):
@@ -447,18 +447,18 @@ static func update_what_the_clients_can_see(gs: Plat.GameState):
 static func find_out_what_player_i_control(gs: Plat.GameState):
 	if gs.i_control_player_id != -1:
 		return
-	if not gs.wctx.connected:
+	if not gs.wctx.common.connected:
 		return
 
 	var ctx = gs.wctx
-	for prop_id: int in ctx.client_owns_prop[ctx.my_peer_id]:
+	for prop_id: int in ctx.co_clientauth.client_owns_prop[ctx.common.my_peer_id]:
 
 		var prop = WyncTrack.get_prop(ctx, prop_id)
 		if prop == null:
 			continue
 		var prop_name = prop.name_id
 		var entity_id = WyncTrack.prop_get_entity(ctx, prop_id)
-		var entity_type = ctx.entity_is_of_type[entity_id]
+		var entity_type = ctx.co_track.entity_is_of_type[entity_id]
 
 		# find a prop that I own
 		# that is called "inputs"
@@ -477,16 +477,16 @@ static func find_out_what_player_i_control(gs: Plat.GameState):
 static func extrapolate(gs: Plat.GameState):
 
 	var ctx = gs.wctx
-	var target_tick = ctx.co_predict_data.target_tick
+	var target_tick = ctx.co_pred.target_tick
 
 	if WyncXtrap.wync_xtrap_preparation(ctx) != OK:
 		return
 
 	#Log.outc(ctx, "starting prediction ==============================")
-	var base_tick = ctx.pred_intented_first_tick - ctx.max_prediction_tick_threeshold
+	var base_tick = ctx.co_pred.pred_intented_first_tick - ctx.co_pred.max_prediction_tick_threeshold
 	if (base_tick - 30 < 0):
 		return
-	for tick in range(ctx.pred_intented_first_tick - ctx.max_prediction_tick_threeshold, target_tick +1):
+	for tick in range(ctx.co_pred.pred_intented_first_tick - ctx.co_pred.max_prediction_tick_threeshold, target_tick +1):
 	#for tick in range(ctx.pred_intented_first_tick - 8, target_tick +1):
 
 		WyncXtrap.wync_xtrap_tick_init(ctx, tick)
@@ -495,7 +495,7 @@ static func extrapolate(gs: Plat.GameState):
 		#Log.outc(ctx, "debugrela to predict %s" % [ctx.global_entity_ids_to_predict])
 
 		PlatPublic.system_player_movement(
-			gs, Plat.LOGIC_DELTA_MS, true, ctx.global_entity_ids_to_predict)
+			gs, Plat.LOGIC_DELTA_MS, true, ctx.co_pred.global_entity_ids_to_predict)
 
 		PlatPublic.system_client_simulate_own_events(gs, tick)
 
@@ -608,7 +608,7 @@ static func debug_draw_confirmed_interpolated_states(gs: Plat.GameState):
 	var left_value: Variant
 	var right_value: Variant
 
-	for prop_id in ctx.type_state__interpolated_regular_prop_ids:
+	for prop_id in ctx.co_filter_c.type_state__interpolated_regular_prop_ids:
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
 
 		if prop.lerp_use_confirmed_state:
