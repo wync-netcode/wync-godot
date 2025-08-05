@@ -15,7 +15,7 @@ static func prop_is_relative_syncable(ctx: WyncCtx, prop_id: int) -> bool:
 	if prop == null:
 		return false
 	prop = prop as WyncProp
-	return prop.relative_syncable
+	return prop.relative_sync_enabled
 
 
 # ==================================================
@@ -71,77 +71,6 @@ static func delta_blueprint_register_event (
 ## ================================================================
 
 
-static func prop_set_relative_syncable (
-	ctx: WyncCtx,
-	entity_id: int,
-	prop_id: int,
-	delta_blueprint_id: int,
-	predictable: bool = false,
-	#state_pointer: Variant,
-	# timewarpable: bool # NOT PLANNED
-	) -> int:
-	var prop := WyncTrack.get_prop(ctx, prop_id)
-	if prop == null:
-		return 1
-
-	if not delta_blueprint_exists(ctx, delta_blueprint_id):
-		Log.errc(ctx, "delta blueprint(%s) doesn't exists" % [delta_blueprint_id])
-		return 2
-	
-	prop.relative_syncable = true
-	#prop.state_pointer = state_pointer
-	prop.delta_blueprint_id = delta_blueprint_id
-
-	# depending on the features and if it's server or client we'll need different things
-	# * delta prop, server side, no timewarp: real state, delta event buffer
-	# * delta prop, client side, no prediction: real state, received delta event buffer
-	# * delta prop, client side, predictable: base state, real state, received delta event buffer, predicted delta event buffer
-	# * delta prop, server side, timewarpable: base state, real state, delta event buffer
-
-	# assuming no timewarpable
-	# minimum storage allowed 0 or 2
-	var buffer_items = 2
-	prop.saved_states = RingBuffer.new(buffer_items, null) 
-	prop.tick_to_state_id = RingBuffer.new(buffer_items, -1)
-	prop.state_id_to_tick = RingBuffer.new(buffer_items, -1)
-	prop.state_id_to_local_tick = RingBuffer.new(buffer_items, -1)
-
-
-	var need_undo_events = false
-	if ctx.common.is_client && predictable:
-		need_undo_events = true
-		WyncXtrap.prop_set_predict(ctx, prop_id)
-
-	# setup auxiliar prop for delta change events
-	prop.current_delta_events = [] as Array[int]
-	var events_prop_id = WyncTrack.prop_register_minimal(
-		ctx,
-		entity_id,
-		"auxiliar_delta_events",
-		WyncProp.PROP_TYPE.EVENT
-	)
-	WyncWrapper.wync_set_prop_callbacks(
-		ctx,
-		events_prop_id,
-		prop,
-		func(prop_ctx: WyncProp):
-			return prop_ctx.current_delta_events.duplicate(true),
-		func(prop_ctx: WyncProp, events: Array):
-			prop_ctx.current_delta_events.clear()
-			# NOTE: somehow can't check cast like this `if events is not Array[int]:`
-			prop_ctx.current_delta_events.append_array(events)
-	)
-	# FIXME: shouldn't we be setting the auxiliar as predicted?
-	# the main prop IS marked as predicted, however, auxiliar props are NOT marked
-	# but we still ALLOCATE and USE the extra buffer space, including space for 'confirmed_states_undo'
-	WyncDeltaSyncUtilsInternal.prop_set_auxiliar(ctx, events_prop_id, prop_id, need_undo_events)
-	WyncXtrap.prop_set_predict(ctx, events_prop_id)
-
-	prop.auxiliar_delta_events_prop_id = events_prop_id
-
-	return OK
-
-
 ## commits a delta event to this tick
 static func delta_prop_push_event_to_current \
 	(ctx: WyncCtx, prop_id: int, event_type_id: int, event_id: int) -> int:
@@ -149,9 +78,9 @@ static func delta_prop_push_event_to_current \
 	if prop == null:
 		return 1
 	prop = prop as WyncProp
-	if not prop.relative_syncable:
+	if not prop.relative_sync_enabled:
 		return 2
-	var blueprint = get_delta_blueprint(ctx, prop.delta_blueprint_id)
+	var blueprint = get_delta_blueprint(ctx, prop.co_rela.delta_blueprint_id)
 	if not blueprint:
 		return 3
 	blueprint = blueprint as WyncWrapperStructs.WyncDeltaBlueprint
@@ -161,18 +90,18 @@ static func delta_prop_push_event_to_current \
 		return 4
 
 	# append event to current delta events
-	prop.current_delta_events.append(event_id)
-	Log.outc(ctx, "delta_prop_push_event_to_current | delta sync | ticks(%s) event_list %s" % [ctx.common.ticks, prop.current_delta_events])
+	prop.co_rela.current_delta_events.append(event_id)
+	Log.outc(ctx, "delta_prop_push_event_to_current | delta sync | ticks(%s) event_list %s" % [ctx.common.ticks, prop.co_rela.current_delta_events])
 	return OK
 
 
 static func merge_event_to_state_real_state \
 	(ctx: WyncCtx, prop_id: int, event_id: int) -> int:
-	var prop = WyncTrack.get_prop(ctx, prop_id)
+	var prop := WyncTrack.get_prop(ctx, prop_id)
 	if prop == null:
 		return 1
-	prop = prop as WyncProp
-	if not prop.relative_syncable:
+
+	if not prop.relative_sync_enabled:
 		return 2
 
 	if (ctx.common.is_client
@@ -181,35 +110,23 @@ static func merge_event_to_state_real_state \
 		):
 		return OK
 
-# every time we merge a delta event WHILE PREDICTING (that is, not when merging received data)
-# we make sure to always produce an _undo delta event_ 
+	# If merging a _delta event_ WHILE PREDICTING (that is, not when merging
+	# received data) we make sure to always produce an _undo delta event_ 
 
 	var is_client_predicting = ctx.common.is_client \
 			&& WyncXtrap.prop_is_predicted(ctx, prop_id) \
 			&& ctx.co_pred.currently_on_predicted_tick 
-	var aux_prop = null # : WyncProp*
-
-	# get auxiliar prop
-	if (is_client_predicting):
-		aux_prop = WyncTrack.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
-		if aux_prop == null:
-			return 3
-		aux_prop = aux_prop as WyncProp
-		if not aux_prop.is_auxiliar_prop:
-			return 4
 
 	var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
 	if user_ctx == null:
-		return 5
+		return 3
 
 	var result: Array[Variant] = _merge_event_to_state(ctx, prop, event_id, user_ctx, true)
 
-	# cache _undo delta event_ to aux_prop
-	if (is_client_predicting):
-		if result[0] == OK:
-			if result[1] != null:
-				aux_prop.current_undo_delta_events.append(result[1])
-				Log.outc(ctx, "debugrela produced undo delta event %s" % [aux_prop.current_undo_delta_events])
+	# cache _undo delta event_
+	if (is_client_predicting && result[0] == OK && result[1] != null):
+		prop.co_rela.current_undo_delta_events.append(result[1])
+		Log.outc(ctx, "debugrela produced undo delta event %s" % [prop.co_rela.current_undo_delta_events])
 	
 	return result[0]
 
@@ -228,7 +145,7 @@ static func _merge_event_to_state \
 
 	# NOTE: Maybe confirm this prop's blueprint supports this event_type
 
-	var blueprint = get_delta_blueprint(ctx, prop.delta_blueprint_id)
+	var blueprint = get_delta_blueprint(ctx, prop.co_rela.delta_blueprint_id)
 	if blueprint == null:
 		return [15, null]
 	blueprint = blueprint as WyncWrapperStructs.WyncDeltaBlueprint

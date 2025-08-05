@@ -39,12 +39,12 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 				continue
 
 			# ignore inputs
-			if prop.prop_type == WyncProp.PROP_TYPE.INPUT:
+			if prop.prop_type == WyncCtx.PROP_TYPE.INPUT:
 				continue
 
 			# sync events, including their data
 			# (auxiliar props included)
-			elif prop.prop_type == WyncProp.PROP_TYPE.EVENT:
+			elif prop.prop_type == WyncCtx.PROP_TYPE.EVENT:
 				
 				# don't send if client owns this prop
 				if ctx.co_clientauth.client_owns_prop[client_id].has(prop_id):
@@ -82,8 +82,8 @@ static func wync_send_extracted_data(ctx: WyncCtx):
 						ctx, result[1], WyncCtx.RELIABLE, true)
 
 			# relative syncable receives special treatment?
-			elif prop.relative_syncable:
-				if prop.timewarpable: # NOT supported: relative_syncable + timewarpable
+			elif prop.relative_sync_enabled:
+				if prop.timewarp_enabled: # NOT supported: relative_syncable + timewarpable
 					continue
 				var err := _wync_sync_queue_rela_prop_fullsnap(ctx, prop_id, client_id)
 				if err == 0: 
@@ -155,7 +155,7 @@ static func _wync_sync_regular_prop(_ctx: WyncCtx, prop: WyncProp, prop_id: int,
 
 	# copy cached data
 	
-	var state = WyncProp.saved_state_get(prop, tick)
+	var state = WyncStateStore.wync_prop_state_buffer_get(prop, tick)
 	if state == null:
 		return null
 
@@ -240,7 +240,7 @@ static func wync_prop_event_send_event_ids_to_peer(ctx: WyncCtx, prop: WyncProp,
 
 	for tick in range(ctx.common.ticks - WyncCtx.INPUT_AMOUNT_TO_SEND, ctx.common.ticks +1):
 
-		var input = WyncProp.saved_state_get(prop, tick)
+		var input = WyncStateStore.wync_prop_state_buffer_get(prop, tick)
 		if input == null:
 			# FIXME: document this
 			#Log.errc(ctx, "we don't have an input for this tick %s prop %s(id %s)" % [tick, prop.name_id, prop_id], Log.TAG_DELTA_EVENT)
@@ -339,7 +339,7 @@ static func wync_client_send_inputs (ctx: WyncCtx):
 		var pkt_inputs = WyncPktInputs.new()
 
 		for i in range(tick_pred - WyncCtx.INPUT_AMOUNT_TO_SEND, tick_pred +1):
-			var input = WyncProp.saved_state_get(input_prop, i)
+			var input = WyncStateStore.wync_prop_state_buffer_get(input_prop, i)
 			if input == null:
 				# TODO: Implement input duplication on frame skip
 				# FIXME: document this
@@ -357,7 +357,7 @@ static func wync_client_send_inputs (ctx: WyncCtx):
 			pkt_inputs.inputs.append(tick_input_wrap)
 			
 			# compile events ids
-			if (input_prop.prop_type == WyncProp.PROP_TYPE.EVENT &&
+			if (input_prop.prop_type == WyncCtx.PROP_TYPE.EVENT &&
 				input is Array):
 				input = input as Array
 				for event_id: int in input:

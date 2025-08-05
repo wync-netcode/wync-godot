@@ -61,7 +61,7 @@ static func delete_prop(ctx: WyncCtx, prop_id: int):
 
 	ctx.co_track.props[prop_id] = null
 
-	if prop.relative_syncable:
+	if prop.relative_sync_enabled:
 		delete_prop(ctx, prop.auxiliar_delta_events_prop_id)
 
 	ctx.common.was_any_prop_added_deleted = true
@@ -73,7 +73,7 @@ static func prop_register_minimal(
 	ctx: WyncCtx, 
 	entity_id: int,
 	name_id: String,
-	data_type: WyncProp.PROP_TYPE,
+	data_type: WyncCtx.PROP_TYPE,
 	) -> int:
 	
 	if not is_entity_tracked(ctx, entity_id):
@@ -81,7 +81,8 @@ static func prop_register_minimal(
 
 	var prop_id = -1
 
-	# if it's pending to spawn then extract the prop_id
+	# if pending to spawn then extract the prop_id
+
 	var entity_pending_to_spawn = false
 
 	if ctx.common.is_client:
@@ -104,13 +105,11 @@ static func prop_register_minimal(
 	# instantiate structs
 	# todo: some might not be necessary for all
 	prop.last_ticks_received = RingBuffer.new(ctx.co_track.REGULAR_PROP_CACHED_STATE_AMOUNT, -1)
-	prop.pred_curr = WyncCtx.NetTickData.new()
-	prop.pred_prev = WyncCtx.NetTickData.new()
 
 	# TODO: Dynamic sized buffer for all owned predicted props?
 	# TODO: Only do this if this prop is predicted, move to prop_set_predict ?
-	if (data_type == WyncProp.PROP_TYPE.INPUT ||
-		data_type == WyncProp.PROP_TYPE.EVENT):
+	if (data_type == WyncCtx.PROP_TYPE.INPUT ||
+		data_type == WyncCtx.PROP_TYPE.EVENT):
 		prop.saved_states = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, null)
 		prop.state_id_to_tick = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, -1)
 		prop.tick_to_state_id = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, -1)

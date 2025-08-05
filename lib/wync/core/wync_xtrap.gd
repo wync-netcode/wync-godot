@@ -82,28 +82,16 @@ static func wync_xtrap_regular_entities_to_predict(ctx: WyncCtx, tick: int):
 
 
 static func wync_xtrap_termination(ctx: WyncCtx):
-	WyncDeltaSyncUtilsInternal.auxiliar_props_clear_current_delta_events(ctx)
+	WyncDeltaSyncUtilsInternal.delta_props_clear_current_delta_events(ctx)
 	WyncDeltaSyncUtils.predicted_event_props_clear_events(ctx)
 	ctx.co_pred.currently_on_predicted_tick = false
 	ctx.co_pred.global_entity_ids_to_predict.clear()
 
 
-# NOTE: rename to prop_enable_prediction
-static func prop_set_predict(ctx: WyncCtx, prop_id: int) -> int:
-	var prop := WyncTrack.get_prop(ctx, prop_id)
-	if prop == null:
-		return 1
-	ctx.co_pred.props_to_predict.append(prop_id)
-
-	# TODO: set only if it isn't _delta prop_
-	#prop.pred_curr = NetTickData.new()
-	#prop.pred_prev = NetTickData.new()
-	return OK
-
-
 # TODO: this is not very well optimized
 static func prop_is_predicted(ctx: WyncCtx, prop_id: int) -> bool:
-	return ctx.co_pred.props_to_predict.has(prop_id)
+	var prop = WyncTrack.get_prop(ctx, prop_id)
+	return false if prop == null else prop.xtrap_enabled
 	
 
 static func entity_is_predicted(ctx: WyncCtx, entity_id: int) -> bool:
@@ -131,7 +119,7 @@ static func wync_xtrap_tick_init(ctx: WyncCtx, tick: int):
 
 	# clearing delta events before predicting, predicted delta events will be
 	# polled and cached at the end of the predicted tick
-	WyncXtrapInternal.wync_xtrap_auxiliar_props_clear_current_delta_events(ctx)
+	WyncXtrapInternal.wync_xtrap_delta_props_clear_current_delta_events(ctx)
 
 
 static func wync_xtrap_tick_end(ctx: WyncCtx, tick: int):
@@ -145,7 +133,7 @@ static func wync_xtrap_tick_end(ctx: WyncCtx, tick: int):
 static func wync_xtrap_reset_all_state_to_confirmed_tick_absolute(ctx: WyncCtx, prop_ids: Array[int], tick: int):
 	for prop_id: int in prop_ids:
 		var prop := ctx.co_track.props[prop_id]
-		var value = WyncProp.saved_state_get(prop, tick)
+		var value = WyncStateStore.wync_prop_state_buffer_get(prop, tick)
 		if value == null:
 			continue
 		var setter = ctx.wrapper.prop_setter[prop_id]
@@ -161,11 +149,11 @@ static func wync_xtrap_props_update_predicted_states_data(ctx: WyncCtx, props_id
 		var prop = ctx.co_track.props[prop_id] as WyncProp
 		if prop == null:
 			continue
-		if prop.relative_syncable:
+		if prop.relative_sync_enabled:
 			continue
 
-		var pred_curr = prop.pred_curr
-		var pred_prev = prop.pred_prev
+		var pred_curr = prop.co_xtrap.pred_curr
+		var pred_prev = prop.co_xtrap.pred_prev
 		
 		# Initialize stored predicted states. TODO: Move elsewhere
 		

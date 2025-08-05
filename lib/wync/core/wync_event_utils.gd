@@ -338,7 +338,7 @@ static func wync_get_events_from_channel_from_peer(
 		confirmed_event_ids = ctx.co_events.peer_has_channel_has_events[wync_peer_id][channel]
 	else:
 		# TODO: Rewrite me
-		var state = WyncProp.saved_state_get(prop_channel, tick)
+		var state = WyncStateStore.wync_prop_state_buffer_get(prop_channel, tick)
 		if state == null:
 			return out_events_id
 		confirmed_event_ids = state
@@ -374,7 +374,7 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 		ctx,
 		entity_id,
 		"channel_%d" % [channel_id],
-		WyncProp.PROP_TYPE.EVENT
+		WyncCtx.PROP_TYPE.EVENT
 	)
 	WyncWrapper.wync_set_prop_callbacks(
 		ctx,
@@ -392,7 +392,7 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 
 	# predict my own global channel
 	if (ctx.common.is_client && peer_id == ctx.common.my_peer_id):
-		WyncXtrap.prop_set_predict(ctx, channel_prop_id)
+		WyncPropUtils.prop_enable_prediction(ctx, channel_prop_id)
 
 	# TODO: why only run on server? Q: ...
 	#if not ctx.is_client:

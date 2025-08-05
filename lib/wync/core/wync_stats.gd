@@ -99,7 +99,7 @@ static func setup_entity_prob_for_entity_update_delay_ticks(ctx: WyncCtx, peer_i
 		ctx,
 		entity_id,
 		"entity_prob",
-		WyncProp.PROP_TYPE.STATE
+		WyncCtx.PROP_TYPE.STATE
 	)
 	# TODO: internal functions shouldn't be using wrapper functions...
 	# Maybe we can treat these differently? These are all internal, so it

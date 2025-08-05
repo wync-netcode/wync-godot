@@ -139,7 +139,7 @@ static func setup_sync_for_ball_actor(gs: Plat.GameState, actor_id: int):
 		wctx,
 		actor_id,
 		"position",
-		WyncProp.PROP_TYPE.STATE
+		WyncCtx.PROP_TYPE.STATE
 	)
 	WyncWrapper.wync_set_prop_callbacks(
 		wctx,
@@ -148,7 +148,7 @@ static func setup_sync_for_ball_actor(gs: Plat.GameState, actor_id: int):
 		func(user_ctx: Variant) -> Vector2: return (user_ctx as Plat.Ball).position,
 		func(user_ctx: Variant, pos: Vector2): (user_ctx as Plat.Ball).position = pos,
 	)
-	WyncLerp.prop_set_interpolate(
+	WyncPropUtils.prop_enable_interpolation(
 		wctx, pos_prop_id, Plat.LERP_TYPE_VECTOR2
 	)
 
@@ -177,7 +177,7 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 		wctx,
 		actor_id,
 		"position",
-		WyncProp.PROP_TYPE.STATE
+		WyncCtx.PROP_TYPE.STATE
 	)
 	WyncWrapper.wync_set_prop_callbacks(
 		wctx,
@@ -191,7 +191,7 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 		wctx,
 		actor_id,
 		"velocity",
-		WyncProp.PROP_TYPE.STATE
+		WyncCtx.PROP_TYPE.STATE
 	)
 	WyncWrapper.wync_set_prop_callbacks(
 		wctx,
@@ -205,7 +205,7 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 		wctx,
 		actor_id,
 		"input",
-		WyncProp.PROP_TYPE.INPUT
+		WyncCtx.PROP_TYPE.INPUT
 	)
 	WyncWrapper.wync_set_prop_callbacks(
 		wctx,
@@ -215,7 +215,7 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 		func(user_ctx: Variant, input: Plat.PlayerInput): input.copyTo((user_ctx as Plat.Player).input),
 	)
 
-	WyncLerp.prop_set_interpolate(
+	WyncPropUtils.prop_enable_interpolation(
 		wctx, pos_prop_id, Plat.LERP_TYPE_VECTOR2
 	)
 
@@ -223,9 +223,9 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 	
 		# setup extrapolation
 			
-		WyncXtrap.prop_set_predict(wctx, pos_prop_id)
-		WyncXtrap.prop_set_predict(wctx, vel_prop_id)
-		WyncXtrap.prop_set_predict(wctx, input_prop_id)
+		WyncPropUtils.prop_enable_prediction(wctx, pos_prop_id)
+		WyncPropUtils.prop_enable_prediction(wctx, vel_prop_id)
+		WyncPropUtils.prop_enable_prediction(wctx, input_prop_id)
 		#WyncTrack.prop_set_predict(wctx, events_prop_id)
 	
 	# it is server
@@ -248,7 +248,7 @@ static func setup_sync_for_rocket_actor(gs: Plat.GameState, actor_id: int):
 		wctx,
 		actor_id,
 		"position",
-		WyncProp.PROP_TYPE.STATE
+		WyncCtx.PROP_TYPE.STATE
 	)
 	WyncWrapper.wync_set_prop_callbacks(
 		wctx,
@@ -258,7 +258,7 @@ static func setup_sync_for_rocket_actor(gs: Plat.GameState, actor_id: int):
 		#func(user_ctx: Variant, pos: Vector2): (user_ctx as Plat.Rocket).position = pos,
 		func(_user_ctx, _pos): pass,
 	)
-	WyncLerp.prop_set_interpolate(
+	WyncPropUtils.prop_enable_interpolation(
 		wctx, pos_prop_id, Plat.LERP_TYPE_VECTOR2
 	)
 
@@ -288,7 +288,7 @@ static func setup_sync_for_chunk_actor(gs: Plat.GameState, actor_id: int):
 		wctx,
 		actor_id,
 		"blocks",
-		WyncProp.PROP_TYPE.STATE
+		WyncCtx.PROP_TYPE.STATE
 	)
 	WyncWrapper.wync_set_prop_callbacks(
 		wctx,
@@ -299,7 +299,7 @@ static func setup_sync_for_chunk_actor(gs: Plat.GameState, actor_id: int):
 	)
 
 	# hook blueprint to prop
-	var err = WyncDeltaSyncUtils.prop_set_relative_syncable(
+	var err = WyncPropUtils.prop_enable_relative_sync(
 		wctx,
 		actor_id,
 		blocks_prop,
@@ -546,20 +546,20 @@ static func set_interpolated_state(gs: Plat.GameState):
 		if not WyncTrack.is_entity_tracked(ctx, actor_id):
 			continue
 		var prop = WyncTrack.entity_get_prop(ctx, actor_id, "position")
-		if prop == null || prop.interpolated_state == null:
+		if prop == null || prop.co_lerp.interpolated_state == null:
 			continue
 		#Log.outc(gs.wctx, "deblerp | prop.interpolated_state %s" % [prop.interpolated_state])
 
 		match actor.actor_type:
 			Plat.ACTOR_TYPE_BALL:
 				var instance := gs.balls[actor.instance_id]
-				instance.position = prop.interpolated_state
+				instance.position = prop.co_lerp.interpolated_state
 			Plat.ACTOR_TYPE_PLAYER:
 				var instance := gs.players[actor.instance_id]
-				instance.visual_position = prop.interpolated_state
+				instance.visual_position = prop.co_lerp.interpolated_state
 			Plat.ACTOR_TYPE_ROCKET:
 				var instance := gs.rockets[actor.instance_id]
-				instance.position = prop.interpolated_state
+				instance.position = prop.co_lerp.interpolated_state
 			_:
 				assert(false)
 
@@ -611,9 +611,9 @@ static func debug_draw_confirmed_interpolated_states(gs: Plat.GameState):
 	for prop_id in ctx.co_filter_c.type_state__interpolated_regular_prop_ids:
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
 
-		if prop.lerp_use_confirmed_state:
-			left_value = prop.lerp_left_state
-			right_value = prop.lerp_right_state
+		if prop.co_lerp.lerp_use_confirmed_state:
+			left_value = prop.co_lerp.lerp_left_state
+			right_value = prop.co_lerp.lerp_right_state
 			#last_value = prop.confirmed_states.get_at(prop.last_ticks_received.get_relative(0))
 			
 
@@ -665,4 +665,4 @@ static func debug_draw_timewarped_state(
 
 		var ball := gs.balls[actor.instance_id]
 
-		PlatPublic.spawn_box_trail_size(gs, prop.interpolated_state, ball.size, hue, 1.5*60)
+		PlatPublic.spawn_box_trail_size(gs, prop.co_lerp.interpolated_state, ball.size, hue, 1.5*60)

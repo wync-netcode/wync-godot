@@ -7,22 +7,15 @@ class_name WyncStateSet
 
 
 static func does_delta_prop_has_undo_events(ctx: WyncCtx, prop_id: int, tick: int) -> bool:
-	var prop = WyncTrack.get_prop(ctx, prop_id)
+	var prop := WyncTrack.get_prop(ctx, prop_id)
 	if prop == null:
 		Log.errc(ctx, "couldn't find prop id(%s)" % [prop_id])
 		return false
-	prop = prop as WyncProp
 
-	var aux_prop = WyncTrack.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
-	if aux_prop == null:
-		Log.errc(ctx, "WyncStateSet | delta sync | couldn't find aux_prop id(%s)" % [prop.auxiliar_delta_events_prop_id])
-		return false
-	aux_prop = aux_prop as WyncProp
-
-	if aux_prop.confirmed_states_undo_tick.get_at(tick) != tick:
+	if prop.co_rela.confirmed_states_undo_tick.get_at(tick) != tick:
 		return false
 
-	var undo_event_id_list = aux_prop.confirmed_states_undo.get_at(tick)
+	var undo_event_id_list = prop.co_rela.confirmed_states_undo.get_at(tick)
 	if undo_event_id_list == null || undo_event_id_list is not Array[int]:
 		return false
 			
@@ -45,11 +38,11 @@ static func wync_reset_state_to_saved_absolute (
 
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
 
-		value = WyncProp.saved_state_get(prop, tick)
+		value = WyncStateStore.wync_prop_state_buffer_get(prop, tick)
 
 		if value == null:
 			Log.warc(ctx, "debugtimewarp, prop_id %s NOT FOUND tick %s" % [prop_id, tick])
-			if prop.prop_type != WyncProp.PROP_TYPE.INPUT:
+			if prop.prop_type != WyncCtx.PROP_TYPE.INPUT:
 				assert(false)
 				print_stack()
 
@@ -72,7 +65,7 @@ static func reset_all_state_to_confirmed_tick_relative(
 		if last_confirmed_tick == -1:
 			continue
 
-		var state = WyncProp.saved_state_get(prop, last_confirmed_tick as int)
+		var state = WyncStateStore.wync_prop_state_buffer_get(prop, last_confirmed_tick as int)
 		if state == null:
 			continue
 		
@@ -82,7 +75,7 @@ static func reset_all_state_to_confirmed_tick_relative(
 		var user_ctx = ctx.wrapper.prop_user_ctx[prop_id]
 		setter.call(user_ctx, state)
 
-		if prop.relative_syncable:
+		if prop.relative_sync_enabled:
 			Log.outc(ctx, "debugdelta, Setted absolute state for prop(%s) %s" % [
 			prop_id, prop.name_id])
 
@@ -98,7 +91,7 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 	for prop_id: int in ctx.co_track.active_prop_ids:
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
 
-		if prop.prop_type != WyncProp.PROP_TYPE.STATE:
+		if prop.prop_type != WyncCtx.PROP_TYPE.STATE:
 			continue
 		if not prop.just_received_new_state:
 			continue
@@ -108,7 +101,7 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 
 		if WyncXtrap.prop_is_predicted(ctx, prop_id):
 
-			if not prop.relative_syncable: # regular prop
+			if not prop.relative_sync_enabled: # regular prop
 				var entity_id = WyncTrack.prop_get_entity(ctx, prop_id)
 				ctx.co_pred.entity_last_predicted_tick[entity_id] = prop.last_ticks_received.get_relative(0)
 			else:
@@ -117,10 +110,10 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 				var aux_prop = WyncTrack.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
 				for j in range(ctx.co_pred.first_tick_predicted, ctx.co_pred.last_tick_predicted +1):
 
-					WyncProp.saved_state_insert(ctx, aux_prop, j, [] as Array[int])
+					WyncStateStore.wync_prop_state_buffer_insert(ctx, aux_prop, j, [] as Array[int])
 
-					aux_prop.confirmed_states_undo.insert_at(j, [] as Array[int])
-					aux_prop.confirmed_states_undo_tick.insert_at(j, j)
+					prop.co_rela.confirmed_states_undo.insert_at(j, [] as Array[int])
+					prop.co_rela.confirmed_states_undo_tick.insert_at(j, j)
 		
 	# rest state to _canonic_
 
@@ -140,20 +133,10 @@ static func predicted_delta_props_rollback_to_canonic_state (ctx: WyncCtx, prop_
 	var delta_props_last_tick = ctx.co_track.client_has_relative_prop_has_last_tick[ctx.common.my_peer_id] as Dictionary
 
 	for prop_id: int in prop_ids:
-		var prop = WyncTrack.get_prop(ctx, prop_id)
+		var prop := WyncTrack.get_prop(ctx, prop_id)
 		if prop == null:
 			Log.errc(ctx, "WyncStateSet | delta sync | couldn't find prop id(%s)" % [prop_id])
 			continue 
-		prop = prop as WyncProp
-
-		# not checking if props are valid for this operation or not
-		# that should be checked before passing prop_ids to this function
-
-		var aux_prop = WyncTrack.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
-		if aux_prop == null:
-			Log.errc(ctx, "WyncStateSet | delta sync | couldn't find aux_prop id(%s)" % [prop.auxiliar_delta_events_prop_id])
-			continue
-		aux_prop = aux_prop as WyncProp
 
 		# NOTE: Are we sure we have delta_props_last_tick[prop_id]?
 		if not delta_props_last_tick.has(prop_id) || delta_props_last_tick[prop_id] == -1:
@@ -165,13 +148,13 @@ static func predicted_delta_props_rollback_to_canonic_state (ctx: WyncCtx, prop_
 
 		for tick: int in range(ctx.co_pred.last_tick_predicted, last_uptodate_tick, -1):
 
-			if aux_prop.confirmed_states_undo_tick.get_at(tick) != tick:
+			if prop.co_rela.confirmed_states_undo_tick.get_at(tick) != tick:
 				# NOTE: for now, if we find nothing, we do nothing.
 				# We assume this tick just wasn't predicted.
 				# Needs more testing to be sure this is safe to ignore.
 				# Otherwise we could just store ticks that were actually predicted.
 				break
-			var undo_event_id_list = aux_prop.confirmed_states_undo.get_at(tick) as Array[int]
+			var undo_event_id_list = prop.co_rela.confirmed_states_undo.get_at(tick) as Array[int]
 
 			#Log.outc(ctx, "debugrela | gonna rollback prop %s tick %s event_list %s" % [prop_id, tick, undo_event_id_list])
 
@@ -231,7 +214,7 @@ static func delta_props_update_and_apply_delta_events(ctx: WyncCtx, prop_ids: Ar
 
 		for tick: int in range(delta_props_last_tick[prop_id] +1, ctx.co_pred.last_tick_received +1):
 
-			var delta_event_list = WyncProp.saved_state_get(aux_prop, tick)
+			var delta_event_list = WyncStateStore.wync_prop_state_buffer_get(aux_prop, tick)
 			if delta_event_list is not Array[int]:
 				# FIXME: document this
 				#Log.errc(ctx, "WyncStateSet | delta sync | we don't have an input for this tick %s" % [tick], Log.TAG_LATEST_VALUE)

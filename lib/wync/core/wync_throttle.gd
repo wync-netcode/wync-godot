@@ -29,6 +29,9 @@ static func wync_system_fill_entity_sync_queue(ctx: WyncCtx):
 
 		for entity_id_key in ctx.co_throttling.clients_sees_entities[client_id].keys():
 
+			# Note. A check to only sync on value change shouln't be here.
+			# Instead, check individual props not the whole entity.
+
 			# Note. No need to check if entity is tracked. On entity removal
 			# the removed entity_id will be removed from all queues / lists / etc.
 

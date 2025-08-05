@@ -43,25 +43,25 @@ static func precompute_lerping_prop_confirmed_states(
 	if snaps[0] == -1:
 		return
 
-	if (prop.lerp_left_confirmed_state_tick == snaps[0] &&
-		prop.lerp_right_confirmed_state_tick == snaps[1]):
+	if (prop.co_lerp.lerp_left_canon_tick == snaps[0] &&
+		prop.co_lerp.lerp_right_canon_tick == snaps[1]):
 		return
 
-	prop.lerp_use_confirmed_state = true
-	prop.lerp_left_confirmed_state_tick = snaps[0]
-	prop.lerp_right_confirmed_state_tick = snaps[1]
-	prop.lerp_left_local_tick = snaps[2]
-	prop.lerp_right_local_tick = snaps[3]
+	prop.co_lerp.lerp_use_confirmed_state = true
+	prop.co_lerp.lerp_left_canon_tick = snaps[0]
+	prop.co_lerp.lerp_right_canon_tick = snaps[1]
+	prop.co_lerp.lerp_left_local_tick = snaps[2]
+	prop.co_lerp.lerp_right_local_tick = snaps[3]
 
 	# TODO: Move this elsewhere
 	# NOTE: might want to limit how much it grows
-	ctx.co_ticks.last_tick_rendered_left = max(ctx.co_ticks.last_tick_rendered_left, prop.lerp_left_confirmed_state_tick)
+	ctx.co_ticks.last_tick_rendered_left = max(ctx.co_ticks.last_tick_rendered_left, prop.co_lerp.lerp_left_canon_tick)
 
-	var val_left = WyncProp.saved_state_get_throughout(prop, prop.lerp_left_confirmed_state_tick)
-	var val_right = WyncProp.saved_state_get_throughout(prop, prop.lerp_right_confirmed_state_tick)
+	var val_left = WyncStateStore.wync_prop_state_buffer_get_throughout(prop, prop.co_lerp.lerp_left_canon_tick)
+	var val_right = WyncStateStore.wync_prop_state_buffer_get_throughout(prop, prop.co_lerp.lerp_right_canon_tick)
 
-	prop.lerp_left_state = val_left
-	prop.lerp_right_state = val_right
+	prop.co_lerp.lerp_left_state = val_left
+	prop.co_lerp.lerp_right_state = val_right
 
 
 
@@ -73,9 +73,9 @@ static func precompute_lerping_prop_predicted(
 		return
 	prop = prop as WyncProp
 
-	prop.lerp_use_confirmed_state = false
-	prop.lerp_left_local_tick = ctx.common.ticks
-	prop.lerp_right_local_tick = ctx.common.ticks +1
+	prop.co_lerp.lerp_use_confirmed_state = false
+	prop.co_lerp.lerp_left_local_tick = ctx.common.ticks
+	prop.co_lerp.lerp_right_local_tick = ctx.common.ticks +1
 
 
 static func wync_client_set_lerp_ms (ctx: WyncCtx, server_tick_rate: float, lerp_ms: int):
@@ -110,24 +110,11 @@ static func wync_handle_packet_client_set_lerp_ms(ctx: WyncCtx, data: Variant, f
 	return OK
 
 
-static func prop_set_interpolate(ctx: WyncCtx, prop_id: int, user_data_type: int) -> int:
-	var prop := WyncTrack.get_prop(ctx, prop_id)
-	if prop == null:
-		return 1
-	assert(user_data_type > 0) # avoid accidental default values
-	prop.user_data_type = user_data_type
-
-	# * the server needs to know for subtick timewarping
-	# * client needs to know for visual lerping
-	prop.interpolated = true
-	return OK
-	
-
 static func prop_is_interpolated(ctx: WyncCtx, prop_id: int) -> bool:
 	var prop := WyncTrack.get_prop(ctx, prop_id)
 	if prop == null:
 		return false
-	return prop.interpolated
+	return prop.lerp_enabled
 
 
 ## NOTE: Here we asume `prop.last_ticks_received` is sorted
@@ -169,7 +156,7 @@ static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: i
 		# This check is necessary because of the current strategy
 		# where we sort last_ticks_received causing newer received ticks (albeit older
 		# numerically) to overlive older received ticks with higher number
-		var data = WyncProp.saved_state_get_throughout(prop, server_tick)
+		var data = WyncStateStore.wync_prop_state_buffer_get_throughout(prop, server_tick)
 		if data == null:
 			continue
 
@@ -254,31 +241,31 @@ static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 	for prop_id in ctx.co_filter_c.type_state__interpolated_regular_prop_ids:
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
 
-		if prop.lerp_use_confirmed_state:
-			left_value = prop.lerp_left_state
-			right_value = prop.lerp_right_state
+		if prop.co_lerp.lerp_use_confirmed_state:
+			left_value = prop.co_lerp.lerp_left_state
+			right_value = prop.co_lerp.lerp_right_state
 
 			## Note: getting time by ticks strictly
 
-			left_timestamp_ms = (prop.lerp_left_confirmed_state_tick
+			left_timestamp_ms = (prop.co_lerp.lerp_left_canon_tick
 			- ctx.co_ticks.server_tick_offset - ctx.common.ticks) * frame
-			right_timestamp_ms = (prop.lerp_right_confirmed_state_tick
+			right_timestamp_ms = (prop.co_lerp.lerp_right_canon_tick
 			- ctx.co_ticks.server_tick_offset - ctx.common.ticks) * frame
 
 		else:
 
 			# MAYBEDO: Come up with a better approach with less branches
 			# Maybe mark it for no lerp on precompute
-			if prop.pred_prev == null:
+			if prop.co_xtrap.pred_prev == null:
 				continue
 
-			left_value = prop.pred_prev.data
-			right_value = prop.pred_curr.data
+			left_value = prop.co_xtrap.pred_prev.data
+			right_value = prop.co_xtrap.pred_curr.data
 
 			# MAYBEDO: opportunity to optimize this by not recalculating this each loop (prediction only)
 
-			left_timestamp_ms = (prop.lerp_left_local_tick - ctx.common.ticks) * frame
-			right_timestamp_ms = (prop.lerp_right_local_tick - ctx.common.ticks) * frame
+			left_timestamp_ms = (prop.co_lerp.lerp_left_local_tick - ctx.common.ticks) * frame
+			right_timestamp_ms = (prop.co_lerp.lerp_right_local_tick - ctx.common.ticks) * frame
 
 		if left_value == null:
 			continue
@@ -286,9 +273,9 @@ static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 		# MAYBEDO: Maybe check for value integrity
 
 		if abs(left_timestamp_ms - right_timestamp_ms) < 0.000001:
-			prop.interpolated_state = right_value
+			prop.co_lerp.interpolated_state = right_value
 		else:
-			if prop.lerp_use_confirmed_state:
+			if prop.co_lerp.lerp_use_confirmed_state:
 				factor = (target_time_conf - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms)
 			else:
 				factor = (target_time_pred - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms)
@@ -296,10 +283,10 @@ static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 				factor > (1 + ctx.co_lerp.max_lerp_factor_symmetric)):
 				continue
 
-			var lerp_func_id = ctx.wrapper.lerp_type_to_lerp_function[prop.user_data_type]
+			var lerp_func_id = ctx.wrapper.lerp_type_to_lerp_function[prop.co_lerp.lerp_user_data_type]
 			var lerp_func = ctx.wrapper.lerp_function[lerp_func_id]
 
-			prop.interpolated_state = lerp_func.call(left_value, right_value, factor)
+			prop.co_lerp.interpolated_state = lerp_func.call(left_value, right_value, factor)
 
 	ctx.co_metrics.debug_lerp_prev_curr_time = delta_fraction_ms
 	ctx.co_metrics.debug_lerp_prev_target = target_time_conf
@@ -327,14 +314,14 @@ static func wync_reset_state_to_interpolated_absolute (
 		if prop == null:
 			continue
 
-		left_value = WyncProp.saved_state_get(prop, tick_left)
-		right_value = WyncProp.saved_state_get(prop, tick_left +1)
+		left_value = WyncStateStore.wync_prop_state_buffer_get(prop, tick_left)
+		right_value = WyncStateStore.wync_prop_state_buffer_get(prop, tick_left +1)
 		if left_value == null || right_value == null:
 			Log.errc(ctx, "debugtimewarp, (tick %s) NOT FOUND one of: left %s right %s" % [tick_left, left_value, right_value])
 			continue
 
 		# TODO: wrap this into a function
-		var lerp_func_id = ctx.wrapper.lerp_type_to_lerp_function[prop.user_data_type]
+		var lerp_func_id = ctx.wrapper.lerp_type_to_lerp_function[prop.co_lerp.lerp_user_data_type]
 		var lerp_func: Callable = ctx.wrapper.lerp_function[lerp_func_id]
 		var lerped_state = lerp_func.call(left_value, right_value, lerp_delta_ms/frame)
 

@@ -1,30 +1,11 @@
 class_name WyncDeltaSyncUtilsInternal
 
 
-static func prop_set_auxiliar(ctx: WyncCtx, prop_id: int, auxiliar_pair: int, undo_events: int) -> int: 
-	var prop = WyncTrack.get_prop(ctx, prop_id)
-	if prop == null:
-		return 1
-	prop = prop as WyncProp
-	if (prop.prop_type != WyncProp.PROP_TYPE.EVENT):
-		return 2
-	prop.is_auxiliar_prop = true
-	prop.auxiliar_delta_events_prop_id = auxiliar_pair
-
-	# undo events are only for prediction and timewarp
-	if undo_events:
-		prop.confirmed_states_undo = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, [])
-		prop.confirmed_states_undo_tick = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, -1)
-	return OK
-
-
-static func auxiliar_props_clear_current_delta_events(ctx: WyncCtx):
+static func delta_props_clear_current_delta_events(ctx: WyncCtx):
 	for prop_id in ctx.co_filter_s.filtered_delta_prop_ids:
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
-		prop.current_delta_events.clear()
-		
-		var aux_prop := WyncTrack.get_prop(ctx, prop.auxiliar_delta_events_prop_id)
-		aux_prop.current_undo_delta_events.clear()
+		prop.co_rela.current_delta_events.clear()
+		prop.co_rela.current_undo_delta_events.clear()
 
 
 ## returns int: Error
@@ -122,6 +103,6 @@ static func entity_has_delta_prop(ctx: WyncCtx, entity_id: int) -> bool:
 		var prop := WyncTrack.get_prop(ctx, prop_id)
 		if prop == null:
 			continue
-		if prop.relative_syncable:
+		if prop.relative_sync_enabled:
 			return true
 	return false

@@ -87,6 +87,12 @@ class WyncEvent:
 		data = WyncEventEventData.new()
 
 
+enum PROP_TYPE {
+	STATE,
+	INPUT, # can store Variant
+	EVENT, # aka Array[int]
+}
+
 const SERVER_TICK_OFFSET_COLLECTION_SIZE := 4
 
 const RELIABLE = true
@@ -187,7 +193,7 @@ class CoCommon:
 	var max_age_user_events_for_consumption = 120 
 
 
-class CoStateTrackingCommmon:
+class CoStateTrackingCommon:
 
 	# how many common.ticks in the past to keep state cache for a regular prop
 	var REGULAR_PROP_CACHED_STATE_AMOUNT = 8
@@ -230,6 +236,8 @@ class CoStateTrackingCommmon:
 	var client_has_relative_prop_has_last_tick: Array[Dictionary]
 	# each 10 frames and on prop creation. check for initialization, TODO: Where?
 	# each 1 frame. use it to send needed state
+
+
 	
 
 class CoClientAuthority:
@@ -271,7 +279,6 @@ class CoFilterClient:
 	var type_input_event__owned_prop_ids: Array[int] = []
 	var type_input_event__predicted_owned_prop_ids: Array[int] = []
 	var type_event__predicted_prop_ids: Array[int] = []
-	var type_event__predicted_auxiliar_prop_ids: Array[int] = []
 	var type_state__delta_prop_ids: Array[int] = []
 	var type_state__predicted_delta_prop_ids: Array[int] = []
 	var type_state__predicted_regular_prop_ids: Array[int] = []
@@ -471,10 +478,6 @@ class CoPredictionData:
 	## last tick received from the server
 	var last_tick_received: int
 	
-	# Array<prop_id: int>
-	# Note: Could be replace by a simple flag in WyncProp
-	var props_to_predict: Array[int]
-	
 	var currently_on_predicted_tick: bool = false
 	var current_predicted_tick: int = 0 # only for debugging
 	
@@ -603,7 +606,7 @@ class CoMetrics:
 var common: CoCommon = null
 var wrapper: WyncWrapperStructs.WyncWrapperCtx = null
 
-var co_track: CoStateTrackingCommmon = null
+var co_track: CoStateTrackingCommon = null
 var co_events: CoEvents = null
 var co_clientauth: CoClientAuthority = null
 var co_metrics: CoMetrics = null
@@ -647,7 +650,7 @@ func _init() -> void:
 	common = CoCommon.new()
 	wrapper = WyncWrapperStructs.WyncWrapperCtx.new()
 
-	co_track = CoStateTrackingCommmon.new()
+	co_track = CoStateTrackingCommon.new()
 	co_events = CoEvents.new()
 	co_clientauth = CoClientAuthority.new()
 	co_metrics = CoMetrics.new()

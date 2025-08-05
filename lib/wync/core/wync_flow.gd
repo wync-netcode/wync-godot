@@ -151,7 +151,7 @@ static func wync_server_tick_start(ctx: WyncCtx):
 
 	WyncWrapper.wync_input_props_set_tick_value(ctx) # wrapper function
 
-	WyncDeltaSyncUtilsInternal.auxiliar_props_clear_current_delta_events(ctx)
+	WyncDeltaSyncUtilsInternal.delta_props_clear_current_delta_events(ctx)
 
 
 static func wync_server_tick_end(ctx: WyncCtx):
@@ -181,7 +181,7 @@ static func wync_client_tick_end(ctx: WyncCtx):
 
 	# CANNOT reset events BEFORE polling inputs, WHERE do we put this?
 	
-	WyncDeltaSyncUtilsInternal.auxiliar_props_clear_current_delta_events(ctx)
+	WyncDeltaSyncUtilsInternal.delta_props_clear_current_delta_events(ctx)
 	WyncDeltaSyncUtils.predicted_event_props_clear_events(ctx)
 
 	WyncStateSet.wync_reset_props_to_latest_value(ctx)

@@ -48,9 +48,9 @@ static func prop_save_confirmed_state(ctx: WyncCtx, prop_id: int, tick: int, sta
 	prop.last_ticks_received.sort()
 	prop.state_id_to_local_tick.insert_at(prop.saved_states.head_pointer, ctx.common.ticks)
 
-	WyncProp.saved_state_insert(ctx, prop, tick, state)
+	WyncStateStore.wync_prop_state_buffer_insert(ctx, prop, tick, state)
 
-	if prop.relative_syncable:
+	if prop.relative_sync_enabled:
 		# FIXME: check for max? what about unordered packets?
 		var delta_props_last_tick = ctx.co_track.client_has_relative_prop_has_last_tick[ctx.common.my_peer_id] as Dictionary
 		delta_props_last_tick[prop_id] = tick 
@@ -125,7 +125,7 @@ static func wync_server_handle_pkt_inputs(ctx: WyncCtx, data: Variant, from_nete
 
 		# TODO: reject input that is too old
 		
-		WyncProp.saved_state_insert_in_place(ctx, input_prop, input.tick, to_insert)
+		WyncStateStore.wync_prop_state_buffer_insert_in_place(ctx, input_prop, input.tick, to_insert)
 		#Log.outc(ctx, "couldn't find input | inserted input (%s) tick (%s) value (%s)" % [input_prop.name_id, input.tick, copy])
 
 	return OK
@@ -158,7 +158,7 @@ static func wync_client_handle_pkt_inputs(ctx: WyncCtx, data: Variant) -> int:
 
 		prop.last_ticks_received.push(input.tick)
 		
-		WyncProp.saved_state_insert(ctx, prop, input.tick, to_insert)
+		WyncStateStore.wync_prop_state_buffer_insert(ctx, prop, input.tick, to_insert)
 		max_tick = max(max_tick, input.tick)
 
 	prop.last_ticks_received.sort()
@@ -186,10 +186,78 @@ static func wync_insert_state_to_entity_prop (
 	prop.last_ticks_received.push(tick)
 	prop.last_ticks_received.sort()
 
-	WyncProp.saved_state_insert(ctx, prop, tick, state)
+	WyncStateStore.wync_prop_state_buffer_insert(ctx, prop, tick, state)
 
 	prop.state_id_to_local_tick.insert_at(prop.saved_states.head_pointer, ctx.common.ticks)
 
 	prop.just_received_new_state = true
 
 	return OK
+
+
+# get state from tick
+# @argument int: tick
+# @returns Variant: state
+
+# Warning: Use only if you know what you're doing
+static func wync_prop_state_buffer_get(
+	prop: WyncProp, tick: int) -> Variant:
+
+	var state_id = prop.tick_to_state_id.get_at(tick)
+	if state_id == -1 || prop.state_id_to_tick.get_absolute(state_id) != tick:
+		return null
+
+	return prop.saved_states.get_absolute(state_id)
+
+
+# TODO: Explain why this is necessary
+static func wync_prop_state_buffer_get_throughout(
+	prop: WyncProp, tick: int) -> Variant:
+
+	#return saved_state_get_quick(prop, tick)
+
+	# look up tick
+	for state_id in range(prop.saved_states.size):
+
+		var saved_tick = prop.state_id_to_tick.get_absolute(state_id) 
+		if saved_tick == tick:
+			return prop.saved_states.get_absolute(state_id)
+
+		##var state_id = WyncTrack.fast_modulus(
+			##prop.state_id_to_tick.head_pointer -i, prop.state_id_to_tick.size)
+		##var state_id = i
+		#var saved_tick = prop.state_id_to_tick.get_absolute(state_id) 
+		#if saved_tick == tick:
+		##if prop.state_id_to_tick.get_relative(-i) == tick:
+		##if prop.state_id_to_tick.get_absolute(i) == tick:
+			#return prop.saved_states.get_absolute(state_id)
+
+	return null
+
+
+static func wync_prop_state_buffer_insert (
+	_ctx: WyncCtx, prop: WyncProp, tick: int, state: Variant):
+	
+	var err = prop.saved_states.push(state)
+	if err == -1: return
+	var state_id = prop.saved_states.head_pointer
+	prop.state_id_to_tick.insert_at(state_id, tick)
+	prop.tick_to_state_id.insert_at(tick, state_id)
+
+
+# TODO: Use this for all input related stuff
+static func wync_prop_state_buffer_insert_in_place (
+	_ctx: WyncCtx, prop: WyncProp, tick: int, state: Variant):
+
+	# Note: version that is direct: (no benefits from the structure)
+	#var state_id = WyncMisc.fast_modulus(tick, prop.saved_states.size)
+	#prop.saved_states.insert_at(tick, state)
+	#prop.state_id_to_tick.insert_at(state_id, tick)
+	#prop.tick_to_state_id.insert_at(tick, state_id)
+
+	var state_id = prop.tick_to_state_id.get_at(tick)
+	if state_id == -1 || prop.state_id_to_tick.get_absolute(state_id) != tick:
+		return wync_prop_state_buffer_insert(_ctx, prop, tick, state)
+	
+	prop.state_id_to_tick.insert_at(state_id, tick) # TODO: deleteme
+	prop.saved_states.insert_at(state_id, state)

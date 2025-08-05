@@ -237,7 +237,7 @@ static func _wync_confirm_client_can_see_entity(ctx: WyncCtx, client_id: int, en
 			continue
 		prop = prop as WyncProp
 
-		if prop.relative_syncable:
+		if prop.relative_sync_enabled:
 			var delta_prop_last_tick = ctx.co_track.client_has_relative_prop_has_last_tick[client_id] as Dictionary
 			delta_prop_last_tick[prop_id] = -1
 
