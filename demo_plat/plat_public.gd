@@ -507,11 +507,14 @@ static func player_input_additive(gs: Plat.GameState, player: Plat.Player, node2
 		int(Input.is_action_pressed("p1_right")) - int(Input.is_action_pressed("p1_left")),
 		int(Input.is_action_pressed("p1_down")) - int(Input.is_action_pressed("p1_up")),
 	)
-	#player.input.movement_dir = Vector2(signf(sin(Time.get_ticks_msec() / 100.0)), -1)
 	player.input.action1 = player.input.action1 || (Input.is_action_pressed("p1_mouse1") && on_frame)
 	player.input.action2 = player.input.action2 || (Input.is_action_pressed("p1_mouse2") && on_frame)
 	player.input.action3 = player.input.action3 || (Input.is_action_pressed("p1_mouse3") && on_frame)
 	player.input.aim = PlatUtils.SCREEN_CORD_TO_GRID_CORD(gs, node2d.get_global_mouse_position())
+
+	# debug random movement for extra players
+	if gs.net.io_peer.peer_id > 1:
+		player.input.movement_dir = Vector2(signf(sin(Time.get_ticks_msec() / 100.0)), -1)
 
 
 static func player_input_reset(_gs: Plat.GameState, player: Plat.Player):

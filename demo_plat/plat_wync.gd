@@ -220,21 +220,26 @@ static func setup_sync_for_player_actor(gs: Plat.GameState, actor_id: int):
 	WyncPropUtils.prop_enable_interpolation(
 		wctx, pos_prop_id, Plat.LERP_TYPE_VECTOR2
 	)
-
-	if wctx.common.is_client:
 	
-		# setup extrapolation
-			
-		WyncPropUtils.prop_enable_prediction(wctx, pos_prop_id)
-		WyncPropUtils.prop_enable_prediction(wctx, vel_prop_id)
-		WyncPropUtils.prop_enable_prediction(wctx, input_prop_id)
-		#WyncTrack.prop_set_predict(wctx, events_prop_id)
-	
-	# it is server
-	else:
-		# time warp
+	# setup server timewarp
+	if !wctx.common.is_client:
 		WyncTimeWarp.prop_set_timewarpable(wctx, pos_prop_id) 
 		WyncTimeWarp.prop_set_timewarpable(wctx, input_prop_id) 
+
+
+static func setup_player_actor_prediction(
+	gs: Plat.GameState, entity_id: int):
+
+	var wctx = gs.wctx
+	var pos_prop_id   = WyncTrack.entity_get_prop_id(wctx, entity_id, "position")
+	var vel_prop_id   = WyncTrack.entity_get_prop_id(wctx, entity_id, "velocity")
+	var input_prop_id = WyncTrack.entity_get_prop_id(wctx, entity_id, "input")
+
+	# setup extrapolation
+
+	WyncPropUtils.prop_enable_prediction(wctx, pos_prop_id)
+	WyncPropUtils.prop_enable_prediction(wctx, vel_prop_id)
+	WyncPropUtils.prop_enable_prediction(wctx, input_prop_id)
 
 
 static func setup_sync_for_rocket_actor(gs: Plat.GameState, actor_id: int):
@@ -473,6 +478,11 @@ static func find_out_what_player_i_control(gs: Plat.GameState):
 			var actor_id = entity_id
 			var actor := PlatPublic.get_actor(gs, actor_id)
 			gs.i_control_player_id = actor.instance_id
+
+			# We can now start predicting the entity we own
+
+			PlatWync.setup_player_actor_prediction(gs, entity_id)
+
 			break
 
 

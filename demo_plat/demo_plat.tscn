@@ -26,6 +26,13 @@ script = ExtResource("3_jpy0n")
 
 [node name="Actors" type="Node" parent="Client"]
 
+[node name="Client2" type="Node2D" parent="."]
+unique_name_in_owner = true
+z_index = -10
+script = ExtResource("3_jpy0n")
+
+[node name="Actors" type="Node" parent="Client2"]
+
 [node name="DemoPlat" type="Node2D" parent="."]
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]

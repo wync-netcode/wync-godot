@@ -16,7 +16,7 @@ func _ready() -> void:
 	PlatPrivate.generate_world(gs)
 
 	PlatWync.setup_sync_for_all_chunks(gs)
-	var ball_actor_id = PlatPublic.spawn_ball_server(gs, PlatUtils.GRID_CORD(5, 10), Plat.BALL_BEHAVIOUR_LINE)
+	var ball_actor_id = PlatPublic.spawn_ball_server(gs, PlatUtils.GRID_CORD(5, 8), Plat.BALL_BEHAVIOUR_LINE)
 	PlatWync.setup_sync_for_ball_actor(gs, ball_actor_id)
 	#ball_actor_id = PlatPublic.spawn_ball_server(gs, PlatUtils.GRID_CORD(7, 7), Plat.BALL_BEHAVIOUR_SINE)
 	#PlatWync.setup_sync_for_ball_actor(gs, ball_actor_id)
