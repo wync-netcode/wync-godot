@@ -33,10 +33,9 @@ static func wync_lerp_precompute (ctx: WyncCtx):
 static func precompute_lerping_prop_confirmed_states(
 		ctx: WyncCtx, prop_id: int, target_time: int
 	):
-	var prop = WyncTrack.get_prop(ctx, prop_id)
+	var prop := WyncTrack.get_prop(ctx, prop_id)
 	if prop == null:
 		return
-	prop = prop as WyncProp
 
 	var snaps = WyncLerp.find_closest_two_snapshots_from_prop(ctx, target_time, prop)
 	if snaps[0] == -1:
@@ -46,35 +45,53 @@ static func precompute_lerping_prop_confirmed_states(
 		prop.co_lerp.lerp_right_canon_tick == snaps[1]):
 		return
 
-	prop.co_lerp.lerp_use_confirmed_state = true
+	prop.co_lerp.lerp_ready = false
 	prop.co_lerp.lerp_left_canon_tick = snaps[0]
 	prop.co_lerp.lerp_right_canon_tick = snaps[1]
-	prop.co_lerp.lerp_left_local_tick = snaps[2]
-	prop.co_lerp.lerp_right_local_tick = snaps[3]
+	prop.co_lerp.lerp_left_local_tick = \
+		prop.co_lerp.lerp_left_canon_tick - ctx.co_ticks.server_tick_offset
+	prop.co_lerp.lerp_right_local_tick = \
+		prop.co_lerp.lerp_right_canon_tick - ctx.co_ticks.server_tick_offset
+	# NOTE: ^^^ for more consistent lerp we use equivalent _local tick_ from
+	# _canon_ intead of using real _local tick_
 
-	# TODO: Move this elsewhere
 	# NOTE: might want to limit how much it grows
-	ctx.co_ticks.last_tick_rendered_left = max(ctx.co_ticks.last_tick_rendered_left, prop.co_lerp.lerp_left_canon_tick)
+	# TODO: Move this elsewhere
+	ctx.co_ticks.last_tick_rendered_left = max(
+		ctx.co_ticks.last_tick_rendered_left,
+		prop.co_lerp.lerp_left_canon_tick)
 
-	var val_left = WyncStateStore.wync_prop_state_buffer_get_throughout(prop, prop.co_lerp.lerp_left_canon_tick)
-	var val_right = WyncStateStore.wync_prop_state_buffer_get_throughout(prop, prop.co_lerp.lerp_right_canon_tick)
+	var val_left = WyncStateStore.wync_prop_state_buffer_get_throughout(
+		prop, prop.co_lerp.lerp_left_canon_tick)
+	var val_right = WyncStateStore.wync_prop_state_buffer_get_throughout(
+		prop, prop.co_lerp.lerp_right_canon_tick)
+
+	if val_left == null || val_right == null:
+		return
 
 	prop.co_lerp.lerp_left_state = val_left
 	prop.co_lerp.lerp_right_state = val_right
-
+	prop.co_lerp.lerp_use_confirmed_state = true
+	prop.co_lerp.lerp_ready = true
 
 
 static func precompute_lerping_prop_predicted(
 		ctx: WyncCtx, prop_id: int
 	):
-	var prop = WyncTrack.get_prop(ctx, prop_id)
+	var prop := WyncTrack.get_prop(ctx, prop_id)
 	if prop == null:
 		return
-	prop = prop as WyncProp
 
-	prop.co_lerp.lerp_use_confirmed_state = false
+	if prop.co_xtrap.pred_prev.data == null || prop.co_xtrap.pred_curr.data == null:
+		prop.co_lerp.lerp_ready = false
+		return
+
 	prop.co_lerp.lerp_left_local_tick = ctx.common.ticks
 	prop.co_lerp.lerp_right_local_tick = ctx.common.ticks +1
+	prop.co_lerp.lerp_left_state = prop.co_xtrap.pred_prev.data
+	prop.co_lerp.lerp_right_state = prop.co_xtrap.pred_curr.data
+	prop.co_lerp.lerp_use_confirmed_state = false
+	prop.co_lerp.lerp_ready = true
 
 
 static func wync_client_set_lerp_ms (ctx: WyncCtx, server_tick_rate: float, lerp_ms: int):
@@ -218,7 +235,6 @@ static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 
 	var frame := 1000.0 / Engine.physics_ticks_per_second
 
-	# TODO: Replace "Engine.get_physics_interpolation_fraction" with user arg
 	var delta_fraction_ms: float = delta_lerp_fraction * frame
 	# Note: substracting one frame to compensate for one frame added by delta_fraction_ms
 	var target_time_conf: float = delta_fraction_ms - frame - ctx.co_lerp.lerp_ms - ctx.co_lerp.lerp_latency_ms
@@ -238,54 +254,38 @@ static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 	var factor: float
 
 	for prop_id in ctx.co_filter_c.type_state__interpolated_regular_prop_ids:
+
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
 
-		if prop.co_lerp.lerp_use_confirmed_state:
-			left_value = prop.co_lerp.lerp_left_state
-			right_value = prop.co_lerp.lerp_right_state
-
-			## Note: getting time by ticks strictly
-
-			left_timestamp_ms = (prop.co_lerp.lerp_left_canon_tick
-			- ctx.co_ticks.server_tick_offset - ctx.common.ticks) * frame
-			right_timestamp_ms = (prop.co_lerp.lerp_right_canon_tick
-			- ctx.co_ticks.server_tick_offset - ctx.common.ticks) * frame
-
-		else:
-
-			# MAYBEDO: Come up with a better approach with less branches
-			# Maybe mark it for no lerp on precompute
-			if prop.co_xtrap.pred_prev == null:
-				continue
-
-			left_value = prop.co_xtrap.pred_prev.data
-			right_value = prop.co_xtrap.pred_curr.data
-
-			# MAYBEDO: opportunity to optimize this by not recalculating this each loop (prediction only)
-
-			left_timestamp_ms = (prop.co_lerp.lerp_left_local_tick - ctx.common.ticks) * frame
-			right_timestamp_ms = (prop.co_lerp.lerp_right_local_tick - ctx.common.ticks) * frame
-
-		if left_value == null:
+		if !prop.co_lerp.lerp_ready:
 			continue
+
+		left_value = prop.co_lerp.lerp_left_state
+		right_value = prop.co_lerp.lerp_right_state
+
+		## Note: getting time by ticks strictly
+
+		left_timestamp_ms = (prop.co_lerp.lerp_left_local_tick - ctx.common.ticks) * frame
+		right_timestamp_ms = (prop.co_lerp.lerp_right_local_tick - ctx.common.ticks) * frame
 
 		# MAYBEDO: Maybe check for value integrity
 
 		if abs(left_timestamp_ms - right_timestamp_ms) < 0.000001:
 			prop.co_lerp.interpolated_state = right_value
-		else:
-			if prop.co_lerp.lerp_use_confirmed_state:
-				factor = (target_time_conf - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms)
-			else:
-				factor = (target_time_pred - left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms)
-			if (factor < (0 - ctx.co_lerp.max_lerp_factor_symmetric) ||
-				factor > (1 + ctx.co_lerp.max_lerp_factor_symmetric)):
-				continue
+			continue
 
-			var lerp_func_id = ctx.wrapper.lerp_type_to_lerp_function[prop.co_lerp.lerp_user_data_type]
-			var lerp_func = ctx.wrapper.lerp_function[lerp_func_id]
+		factor = ((target_time_conf if
+		prop.co_lerp.lerp_use_confirmed_state else target_time_pred)
+		- left_timestamp_ms) / (right_timestamp_ms - left_timestamp_ms)
 
-			prop.co_lerp.interpolated_state = lerp_func.call(left_value, right_value, factor)
+		if (factor < (0 - ctx.co_lerp.max_lerp_factor_symmetric) ||
+			factor > (1 + ctx.co_lerp.max_lerp_factor_symmetric)):
+			continue
+
+		var lerp_func_id = ctx.wrapper.lerp_type_to_lerp_function[prop.co_lerp.lerp_user_data_type]
+		var lerp_func = ctx.wrapper.lerp_function[lerp_func_id]
+
+		prop.co_lerp.interpolated_state = lerp_func.call(left_value, right_value, factor)
 
 	ctx.co_metrics.debug_lerp_prev_curr_time = delta_fraction_ms
 	ctx.co_metrics.debug_lerp_prev_target = target_time_conf

@@ -51,13 +51,14 @@ class Lerp:
 	
 	var interpolated_state #: char[4]; can hold 4 bytes
 	
+	var lerp_ready: bool
 	var lerp_use_confirmed_state: bool
 	
 	# Precalculate which ticks we're gonna be interpolating between
 	# Q: Why store specific tick range instead of using current one
 	# A: To support varying update rates per prop
 	# Q: Why store state copy?
-	# A: To allow the buffer to fill and be replaced
+	# A: To allow the state buffer to fill and be replaced
 	
 	var lerp_left_local_tick: int
 	var lerp_right_local_tick: int
