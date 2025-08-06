@@ -1,29 +1,6 @@
 class_name WyncProp
 
 
-# Future: Create pseudo-ECS for prop components
-
-var name_id: String ## char[64]
-var prop_type: WyncCtx.PROP_TYPE
-
-var lerp_enabled: bool
-var xtrap_enabled: bool
-var relative_sync_enabled: bool
-var consumed_events_enabled: bool
-var timewarp_enabled: bool # (server-side) will keep state history
-
-var is_auxiliar_prop: bool
-# if relative_sync_enabled: points to auxiliar prop
-# if is_auxiliar_prop: points to delta prop
-var auxiliar_delta_events_prop_id: int = -1
-
-var statebff: WyncProp.StateBuffer = null
-var co_lerp: WyncProp.Lerp = null
-var co_xtrap: WyncProp.Xtrap = null
-var co_rela: WyncProp.Rela = null
-var co_consumed: WyncProp.Consumed = null
-
-
 ## --------------------------------------------------------
 ## State buffer
 ## --------------------------------------------------------
@@ -136,3 +113,26 @@ class Consumed:
 	## Ring <tick: id, event_ids: Array[int]>
 	var events_consumed_at_tick: RingBuffer = null
 	var events_consumed_at_tick_tick: RingBuffer = null
+
+
+# Future: Create pseudo-ECS for prop components
+
+var name_id: String ## char[64]
+var prop_type: WyncCtx.PROP_TYPE
+
+var lerp_enabled: bool
+var xtrap_enabled: bool
+var relative_sync_enabled: bool
+var consumed_events_enabled: bool
+var timewarp_enabled: bool # (server-side) will keep state history
+
+var is_auxiliar_prop: bool
+# if relative_sync_enabled: points to auxiliar prop
+# if is_auxiliar_prop: points to delta prop
+var auxiliar_delta_events_prop_id: int = -1
+
+var statebff: WyncProp.StateBuffer = null
+var co_lerp: WyncProp.Lerp = null
+var co_xtrap: WyncProp.Xtrap = null
+var co_rela: WyncProp.Rela = null
+var co_consumed: WyncProp.Consumed = null

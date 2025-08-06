@@ -168,7 +168,7 @@ static func wync_update_prediction_ticks (ctx: WyncCtx):
 	# Run before any prediction takes places on the current tick
 	# NOTE: This could be moved elsewhere
 	
-	WyncEventUtils.action_tick_history_reset(ctx, co_predict_data.target_tick)
+	WyncActions.action_tick_history_reset(ctx, co_predict_data.target_tick)
 
 
 static func wync_server_handle_clock_req(ctx: WyncCtx, data: Variant, from_nete_peer_id: int):

@@ -65,8 +65,10 @@ static func delete_prop(ctx: WyncCtx, prop_id: int):
 		delete_prop(ctx, prop.auxiliar_delta_events_prop_id)
 
 	ctx.common.was_any_prop_added_deleted = true
+
 	# free actual prop
 	# prop.free()
+	# free modules
 
 
 static func prop_register_minimal(

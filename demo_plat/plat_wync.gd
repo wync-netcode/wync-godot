@@ -2,6 +2,7 @@ class_name PlatWync
 
 
 static func setup_server(ctx: WyncCtx):
+	WyncFlow.setup_context(ctx)
 	ctx.common.ticks = 0
 	WyncFlow.server_setup(ctx)
 	WyncClock.wync_client_set_physics_ticks_per_second(ctx, Engine.physics_ticks_per_second)
@@ -10,6 +11,7 @@ static func setup_server(ctx: WyncCtx):
 
 
 static func setup_client(ctx: WyncCtx):
+	WyncFlow.setup_context(ctx)
 	ctx.common.ticks = 200
 	WyncFlow.client_init(ctx)
 	

@@ -624,7 +624,7 @@ static func system_server_events(gs: Plat.GameState):
 			# handle it
 			#Log.outc(gs.wctx, "event handling | tick(%s) handling peer%s event %s" % [tick, server_wync_peer_id, event_id], Log.TAG_GAME_EVENT)
 			handle_events(gs, event.data, server_wync_peer_id, tick)
-			WyncEventUtils.global_event_consume_tick(gs.wctx, server_wync_peer_id, channel_id, tick, event_id)
+			WyncActions.global_event_consume_tick(gs.wctx, server_wync_peer_id, channel_id, tick, event_id)
 
 
 	# debug show events that were ommited
