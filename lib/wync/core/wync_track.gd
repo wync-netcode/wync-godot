@@ -102,23 +102,25 @@ static func prop_register_minimal(
 	prop.name_id = name_id
 	prop.prop_type = data_type
 
+	prop.statebff = WyncProp.StateBuffer.new()
+
 	# instantiate structs
 	# todo: some might not be necessary for all
-	prop.last_ticks_received = RingBuffer.new(ctx.co_track.REGULAR_PROP_CACHED_STATE_AMOUNT, -1)
+	prop.statebff.last_ticks_received = RingBuffer.new(ctx.co_track.REGULAR_PROP_CACHED_STATE_AMOUNT, -1)
 
 	# TODO: Dynamic sized buffer for all owned predicted props?
 	# TODO: Only do this if this prop is predicted, move to prop_set_predict ?
 	if (data_type == WyncCtx.PROP_TYPE.INPUT ||
 		data_type == WyncCtx.PROP_TYPE.EVENT):
-		prop.saved_states = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, null)
-		prop.state_id_to_tick = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, -1)
-		prop.tick_to_state_id = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, -1)
-		prop.state_id_to_local_tick = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, -1) # only for lerp
+		prop.statebff.saved_states = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, null)
+		prop.statebff.state_id_to_tick = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, -1)
+		prop.statebff.tick_to_state_id = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, -1)
+		prop.statebff.state_id_to_local_tick = RingBuffer.new(WyncCtx.INPUT_BUFFER_SIZE, -1) # only for lerp
 	else:
-		prop.saved_states = RingBuffer.new(ctx.co_track.REGULAR_PROP_CACHED_STATE_AMOUNT, null)
-		prop.state_id_to_tick = RingBuffer.new(ctx.co_track.REGULAR_PROP_CACHED_STATE_AMOUNT, -1)
-		prop.tick_to_state_id = RingBuffer.new(ctx.co_track.REGULAR_PROP_CACHED_STATE_AMOUNT, -1)
-		prop.state_id_to_local_tick = RingBuffer.new(ctx.co_track.REGULAR_PROP_CACHED_STATE_AMOUNT, -1) # only for lerp
+		prop.statebff.saved_states = RingBuffer.new(ctx.co_track.REGULAR_PROP_CACHED_STATE_AMOUNT, null)
+		prop.statebff.state_id_to_tick = RingBuffer.new(ctx.co_track.REGULAR_PROP_CACHED_STATE_AMOUNT, -1)
+		prop.statebff.tick_to_state_id = RingBuffer.new(ctx.co_track.REGULAR_PROP_CACHED_STATE_AMOUNT, -1)
+		prop.statebff.state_id_to_local_tick = RingBuffer.new(ctx.co_track.REGULAR_PROP_CACHED_STATE_AMOUNT, -1) # only for lerp
 	
 	ctx.co_track.props[prop_id] = prop
 	ctx.co_track.active_prop_ids.push_back(prop_id)

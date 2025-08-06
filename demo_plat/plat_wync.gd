@@ -634,11 +634,11 @@ static func debug_draw_confirmed_states(gs: Plat.GameState, prop_id: int):
 	if prop == null:
 		return
 
-	for i in range(prop.saved_states.size):
-		var state = prop.saved_states.get_relative(-i)
+	for i in range(prop.statebff.saved_states.size):
+		var state = prop.statebff.saved_states.get_relative(-i)
 		if state is Vector2:
 			state += Vector2(0, -11)
-			PlatPublic.spawn_box_trail(gs, state, (float(i) / prop.saved_states.size) / 4.0, 0)
+			PlatPublic.spawn_box_trail(gs, state, (float(i) / prop.statebff.saved_states.size) / 4.0, 0)
 			#Log.outc(gs.wctx, "debtrail, got state %s" % state)
 
 

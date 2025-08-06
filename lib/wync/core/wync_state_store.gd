@@ -23,7 +23,7 @@ static func wync_handle_pkt_prop_snap(ctx: WyncCtx, data: Variant):
 			continue
 
 		# avoid flooding the buffer with old late state
-		var last_tick_received = prop.last_ticks_received.get_relative(0)
+		var last_tick_received = prop.statebff.last_ticks_received.get_relative(0)
 		if not (data.tick > last_tick_received - ctx.co_track.REGULAR_PROP_CACHED_STATE_AMOUNT):
 			continue
 		prop_save_confirmed_state(ctx, snap_prop.prop_id, data.tick, snap_prop.state)
@@ -43,10 +43,10 @@ static func prop_save_confirmed_state(ctx: WyncCtx, prop_id: int, tick: int, sta
 		return 1
 	prop = prop as WyncProp
 
-	prop.just_received_new_state = true
-	prop.last_ticks_received.push(tick)
-	prop.last_ticks_received.sort()
-	prop.state_id_to_local_tick.insert_at(prop.saved_states.head_pointer, ctx.common.ticks)
+	prop.statebff.just_received_new_state = true
+	prop.statebff.last_ticks_received.push(tick)
+	prop.statebff.last_ticks_received.sort()
+	prop.statebff.state_id_to_local_tick.insert_at(prop.statebff.saved_states.head_pointer, ctx.common.ticks)
 
 	WyncStateStore.wync_prop_state_buffer_insert(ctx, prop, tick, state)
 
@@ -156,12 +156,12 @@ static func wync_client_handle_pkt_inputs(ctx: WyncCtx, data: Variant) -> int:
 			Log.warc(ctx, "input data can't be duplicated %s" % [input.data])
 		var to_insert = copy if copy != null else input.data
 
-		prop.last_ticks_received.push(input.tick)
+		prop.statebff.last_ticks_received.push(input.tick)
 		
 		WyncStateStore.wync_prop_state_buffer_insert(ctx, prop, input.tick, to_insert)
 		max_tick = max(max_tick, input.tick)
 
-	prop.last_ticks_received.sort()
+	prop.statebff.last_ticks_received.sort()
 
 	wync_client_update_last_tick_received(ctx, max_tick)
 
@@ -183,14 +183,14 @@ static func wync_insert_state_to_entity_prop (
 
 	# Note: The code below was copied from 'prop_save_confirmed_state'
 
-	prop.last_ticks_received.push(tick)
-	prop.last_ticks_received.sort()
+	prop.statebff.last_ticks_received.push(tick)
+	prop.statebff.last_ticks_received.sort()
 
 	WyncStateStore.wync_prop_state_buffer_insert(ctx, prop, tick, state)
 
-	prop.state_id_to_local_tick.insert_at(prop.saved_states.head_pointer, ctx.common.ticks)
+	prop.statebff.state_id_to_local_tick.insert_at(prop.statebff.saved_states.head_pointer, ctx.common.ticks)
 
-	prop.just_received_new_state = true
+	prop.statebff.just_received_new_state = true
 
 	return OK
 
@@ -203,11 +203,11 @@ static func wync_insert_state_to_entity_prop (
 static func wync_prop_state_buffer_get(
 	prop: WyncProp, tick: int) -> Variant:
 
-	var state_id = prop.tick_to_state_id.get_at(tick)
-	if state_id == -1 || prop.state_id_to_tick.get_absolute(state_id) != tick:
+	var state_id = prop.statebff.tick_to_state_id.get_at(tick)
+	if state_id == -1 || prop.statebff.state_id_to_tick.get_absolute(state_id) != tick:
 		return null
 
-	return prop.saved_states.get_absolute(state_id)
+	return prop.statebff.saved_states.get_absolute(state_id)
 
 
 # TODO: Explain why this is necessary
@@ -217,11 +217,11 @@ static func wync_prop_state_buffer_get_throughout(
 	#return saved_state_get_quick(prop, tick)
 
 	# look up tick
-	for state_id in range(prop.saved_states.size):
+	for state_id in range(prop.statebff.saved_states.size):
 
-		var saved_tick = prop.state_id_to_tick.get_absolute(state_id) 
+		var saved_tick = prop.statebff.state_id_to_tick.get_absolute(state_id) 
 		if saved_tick == tick:
-			return prop.saved_states.get_absolute(state_id)
+			return prop.statebff.saved_states.get_absolute(state_id)
 
 		##var state_id = WyncTrack.fast_modulus(
 			##prop.state_id_to_tick.head_pointer -i, prop.state_id_to_tick.size)
@@ -238,11 +238,11 @@ static func wync_prop_state_buffer_get_throughout(
 static func wync_prop_state_buffer_insert (
 	_ctx: WyncCtx, prop: WyncProp, tick: int, state: Variant):
 	
-	var err = prop.saved_states.push(state)
+	var err = prop.statebff.saved_states.push(state)
 	if err == -1: return
-	var state_id = prop.saved_states.head_pointer
-	prop.state_id_to_tick.insert_at(state_id, tick)
-	prop.tick_to_state_id.insert_at(tick, state_id)
+	var state_id = prop.statebff.saved_states.head_pointer
+	prop.statebff.state_id_to_tick.insert_at(state_id, tick)
+	prop.statebff.tick_to_state_id.insert_at(tick, state_id)
 
 
 # TODO: Use this for all input related stuff
@@ -255,9 +255,9 @@ static func wync_prop_state_buffer_insert_in_place (
 	#prop.state_id_to_tick.insert_at(state_id, tick)
 	#prop.tick_to_state_id.insert_at(tick, state_id)
 
-	var state_id = prop.tick_to_state_id.get_at(tick)
-	if state_id == -1 || prop.state_id_to_tick.get_absolute(state_id) != tick:
+	var state_id = prop.statebff.tick_to_state_id.get_at(tick)
+	if state_id == -1 || prop.statebff.state_id_to_tick.get_absolute(state_id) != tick:
 		return wync_prop_state_buffer_insert(_ctx, prop, tick, state)
 	
-	prop.state_id_to_tick.insert_at(state_id, tick) # TODO: deleteme
-	prop.saved_states.insert_at(state_id, state)
+	prop.statebff.state_id_to_tick.insert_at(state_id, tick) # TODO: deleteme
+	prop.statebff.saved_states.insert_at(state_id, state)

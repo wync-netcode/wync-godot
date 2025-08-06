@@ -130,14 +130,14 @@ static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: i
 	var lhs_tick_server = -1
 	var lhs_tick_local = -1
 	var lhs_timestamp = 0
-	var size = prop.last_ticks_received.size
+	var size = prop.statebff.last_ticks_received.size
 
 	var server_tick = 0
 	var server_tick_prev = 0
 
 	for i in range(size):
 		server_tick_prev = server_tick
-		server_tick = prop.last_ticks_received.get_absolute(size -1 -i)
+		server_tick = prop.statebff.last_ticks_received.get_absolute(size -1 -i)
 
 		if server_tick == -1:
 			if (lhs_tick_server == -1 or

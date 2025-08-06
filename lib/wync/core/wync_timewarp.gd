@@ -8,10 +8,10 @@ static func prop_set_timewarpable(ctx: WyncCtx, prop_id: int) -> int:
 		return 1
 	if prop.lerp_enabled: assert(prop.co_lerp.lerp_user_data_type > 0) # avoid accidental default values
 	prop.timewarp_enabled = true
-	prop.saved_states = RingBuffer.new(ctx.max_tick_history_timewarp, null)
-	prop.state_id_to_tick = RingBuffer.new(ctx.max_tick_history_timewarp, -1)
-	prop.tick_to_state_id = RingBuffer.new(ctx.max_tick_history_timewarp, -1)
-	prop.state_id_to_local_tick = RingBuffer.new(ctx.max_tick_history_timewarp, -1) # TODO: this is only for lerp
+	prop.statebff.saved_states = RingBuffer.new(ctx.max_tick_history_timewarp, null)
+	prop.statebff.state_id_to_tick = RingBuffer.new(ctx.max_tick_history_timewarp, -1)
+	prop.statebff.tick_to_state_id = RingBuffer.new(ctx.max_tick_history_timewarp, -1)
+	prop.statebff.state_id_to_local_tick = RingBuffer.new(ctx.max_tick_history_timewarp, -1) # TODO: this is only for lerp
 	
 	return OK
 

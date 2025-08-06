@@ -215,17 +215,6 @@ static func wync_system_send_events_to_peer (ctx: WyncCtx, wync_peer_id: int) ->
 # "Events Consumed" prop module / add-on
 
 
-# server only?
-static func prop_set_module_events_consumed(ctx: WyncCtx, prop_id: int) -> int:
-	var prop := WyncTrack.get_prop(ctx, prop_id)
-	if prop == null:
-		return 1
-	prop.module_events_consumed = true
-	prop.events_consumed_at_tick = RingBuffer.new(ctx.common.max_age_user_events_for_consumption, [] as Array[int])
-	prop.events_consumed_at_tick_tick = RingBuffer.new(ctx.common.max_age_user_events_for_consumption, -1)
-	return OK
-
-
 static func global_event_consume_tick \
 	(ctx: WyncCtx, wync_peer_id: int, channel: int, tick: int, event_id: int) -> void:
 	
@@ -235,24 +224,25 @@ static func global_event_consume_tick \
 	var prop_id: int = ctx.co_events.prop_id_by_peer_by_channel[wync_peer_id][channel]
 	var prop_channel := WyncTrack.get_prop_unsafe(ctx, prop_id)
 
-	var consumed_event_ids_tick: int = prop_channel.events_consumed_at_tick_tick.get_at(tick)
+	var consumed_event_ids_tick: int = prop_channel.co_consumed.events_consumed_at_tick_tick.get_at(tick)
 	if tick != consumed_event_ids_tick:
 		return
 
-	var consumed_events: Array[int] = prop_channel.events_consumed_at_tick.get_at(tick)
+	var consumed_events: Array[int] = prop_channel.co_consumed.events_consumed_at_tick.get_at(tick)
 	consumed_events.append(event_id)
 
 
 static func module_events_consumed_advance_tick(ctx: WyncCtx):
 	var tick = ctx.common.ticks
 
+	# TODO: Index props with "event consume module"
 	for prop_id: int in ctx.co_track.active_prop_ids:
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
-		if not prop.module_events_consumed:
+		if not prop.consumed_events_enabled:
 			continue
 
-		prop.events_consumed_at_tick_tick.insert_at(tick, tick)
-		var event_ids: Array[int] = prop.events_consumed_at_tick.get_at(tick)
+		prop.co_consumed.events_consumed_at_tick_tick.insert_at(tick, tick)
+		var event_ids: Array[int] = prop.co_consumed.events_consumed_at_tick.get_at(tick)
 		event_ids.clear()
 
 
@@ -327,11 +317,11 @@ static func wync_get_events_from_channel_from_peer(
 	var prop_id: int = ctx.co_events.prop_id_by_peer_by_channel[wync_peer_id][channel]
 	var prop_channel := WyncTrack.get_prop_unsafe(ctx, prop_id)
 
-	var consumed_event_ids_tick: int = prop_channel.events_consumed_at_tick_tick.get_at(tick)
+	var consumed_event_ids_tick: int = prop_channel.co_consumed.events_consumed_at_tick_tick.get_at(tick)
 	if tick != consumed_event_ids_tick:
 		return out_events_id
 
-	var consumed_event_ids: Array[int] = prop_channel.events_consumed_at_tick.get_at(tick)
+	var consumed_event_ids: Array[int] = prop_channel.co_consumed.events_consumed_at_tick.get_at(tick)
 	var confirmed_event_ids: Array
 
 	if ctx.common.ticks == tick:
@@ -400,7 +390,7 @@ static func setup_peer_global_events(ctx: WyncCtx, peer_id: int) -> int:
 		# add as local existing prop
 		WyncTrack.wync_add_local_existing_entity(ctx, peer_id, entity_id)
 		# server module for consuming user events
-		WyncEventUtils.prop_set_module_events_consumed(ctx, channel_prop_id)
+		WyncPropUtils.prop_enable_module_events_consumed(ctx, channel_prop_id)
 		# populate ctx var
 		ctx.co_events.prop_id_by_peer_by_channel[peer_id][channel_id] = channel_prop_id
 

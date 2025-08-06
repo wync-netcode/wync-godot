@@ -61,7 +61,7 @@ static func reset_all_state_to_confirmed_tick_relative(
 	for prop_id: int in prop_ids:
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)
 		
-		var last_confirmed_tick = prop.last_ticks_received.get_relative(tick)
+		var last_confirmed_tick = prop.statebff.last_ticks_received.get_relative(tick)
 		if last_confirmed_tick == -1:
 			continue
 
@@ -93,17 +93,17 @@ static func wync_reset_props_to_latest_value (ctx: WyncCtx):
 
 		if prop.prop_type != WyncCtx.PROP_TYPE.STATE:
 			continue
-		if not prop.just_received_new_state:
+		if not prop.statebff.just_received_new_state:
 			continue
 
-		prop.just_received_new_state = false
+		prop.statebff.just_received_new_state = false
 		ctx.co_filter_c.type_state__newstate_prop_ids.append(prop_id)
 
 		if WyncXtrap.prop_is_predicted(ctx, prop_id):
 
 			if not prop.relative_sync_enabled: # regular prop
 				var entity_id = WyncTrack.prop_get_entity(ctx, prop_id)
-				ctx.co_pred.entity_last_predicted_tick[entity_id] = prop.last_ticks_received.get_relative(0)
+				ctx.co_pred.entity_last_predicted_tick[entity_id] = prop.statebff.last_ticks_received.get_relative(0)
 			else:
 
 				# get aux_prop and clean the confirmed_states_undo

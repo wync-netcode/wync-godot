@@ -138,7 +138,7 @@ static func wync_xtrap_entity_get_last_received_tick_from_pred_props (ctx: WyncC
 		if prop.relative_sync_enabled:
 			continue
 
-		var prop_last_tick = prop.last_ticks_received.get_relative(0)
+		var prop_last_tick = prop.statebff.last_ticks_received.get_relative(0)
 		if prop_last_tick == -1:
 			continue
 
