@@ -67,6 +67,9 @@ func _process(_delta: float) -> void:
 
 
 func get_info_general() -> String:
+	if (!server_wctx.initialized || !client_wctx.initialized):
+		return ""
+
 	var client_time_ms = WyncClock.clock_get_ms(client_wctx)
 	var pred_server_time_ms = client_time_ms + client_wctx.co_pred.clock_offset_mean
 	var prob_prop_ms = (1000.0 / client_wctx.common.physic_ticks_per_second) * (client_wctx.co_metrics.low_priority_entity_update_rate +1)
@@ -132,7 +135,7 @@ func get_info_general() -> String:
 
 		server_wctx.co_events.delta_base_state_tick,
 
-		client_wctx.co_pred.lerp_ms,
+		client_wctx.co_lerp.lerp_ms,
 		server_wctx.co_metrics.debug_data_per_tick_sliding_window_mean,
 		client_wctx.co_metrics.debug_data_per_tick_sliding_window_mean,
 		client_wctx.co_metrics.server_tick_rate,

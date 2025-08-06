@@ -26,7 +26,7 @@ static func service_wync_try_to_connect(ctx: WyncCtx) -> int:
 	# TODO: Ser lerpms could be moved somewhere else, since it could be sent anytime
 
 	var packet_data_lerp := WyncPktClientSetLerpMS.new()
-	packet_data_lerp.lerp_ms = ctx.co_pred.lerp_ms
+	packet_data_lerp.lerp_ms = ctx.co_lerp.lerp_ms
 	result = WyncPacketUtil.wync_wrap_packet_out(ctx, WyncCtx.SERVER_PEER_ID, WyncPacket.WYNC_PKT_CLIENT_SET_LERP_MS, packet_data_lerp)
 	if result[0] == OK:
 		var packet_out = result[1] as WyncPacketOut

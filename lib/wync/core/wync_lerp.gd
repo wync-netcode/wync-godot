@@ -7,12 +7,11 @@ class_name WyncLerp
 
 
 static func wync_lerp_precompute (ctx: WyncCtx):
-	var co_predict_data = ctx.co_pred
 
 	var latency_info: WyncCtx.PeerLatencyInfo = ctx.common.peer_latency_info[WyncCtx.SERVER_PEER_ID]
-	ctx.co_pred.lerp_latency_ms = latency_info.latency_stable_ms
+	ctx.co_lerp.lerp_latency_ms = latency_info.latency_stable_ms
 	var curr_time = WyncClock.clock_get_tick_timestamp_ms(ctx, ctx.common.ticks)
-	var target_time_conf = curr_time - co_predict_data.lerp_ms - ctx.co_pred.lerp_latency_ms
+	var target_time_conf = curr_time - ctx.co_lerp.lerp_ms - ctx.co_lerp.lerp_latency_ms
 
 	# precompute which ticks we'll be interpolating
 	# TODO: might want to use another filtered prop list for 'predicted'.
@@ -83,7 +82,7 @@ static func wync_client_set_lerp_ms (ctx: WyncCtx, server_tick_rate: float, lerp
 	#var server_update_rate: int = ceil((1.0 / (ctx.server_tick_rate + 1)) * physics_fps)
 	#ctx.lerp_ms = max(lerp_ms, (1000 / server_update_rate) * 2)
 
-	ctx.co_pred.lerp_ms = max(lerp_ms, ceil((1000.0 / server_tick_rate) * 2))
+	ctx.co_lerp.lerp_ms = max(lerp_ms, ceil((1000.0 / server_tick_rate) * 2))
 	# TODO: also set maximum based on tick history size
 	# NOTE: what about tick differences between server and clients?
 
@@ -222,7 +221,7 @@ static func wync_interpolate_all(ctx: WyncCtx, delta_lerp_fraction: float):
 	# TODO: Replace "Engine.get_physics_interpolation_fraction" with user arg
 	var delta_fraction_ms: float = delta_lerp_fraction * frame
 	# Note: substracting one frame to compensate for one frame added by delta_fraction_ms
-	var target_time_conf: float = delta_fraction_ms - frame - ctx.co_pred.lerp_ms - ctx.co_pred.lerp_latency_ms
+	var target_time_conf: float = delta_fraction_ms - frame - ctx.co_lerp.lerp_ms - ctx.co_lerp.lerp_latency_ms
 	var target_time_pred: float = delta_fraction_ms
 
 	# time between last rendered tick and current frame target
@@ -330,4 +329,3 @@ static func wync_reset_state_to_interpolated_absolute (
 		setter.call(user_ctx, lerped_state)
 
 		#Log.outc(ctx, "debugtimewarpevent, left %s right %s lerped %s delta %s (%s) --- prop_id %s name %s" % [left_value, right_value, lerped_state, lerp_delta_ms, lerp_delta_ms/frame, prop_id, prop.name_id])
-

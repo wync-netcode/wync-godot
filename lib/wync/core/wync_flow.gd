@@ -10,6 +10,12 @@ class_name WyncFlow
 
 static func _internal_setup_context(ctx: WyncCtx):
 
+	## Misc config
+
+	ctx.max_tick_history_timewarp = 2**7
+
+	## Both server and client
+
 	ctx.common = WyncCtx.CoCommon.new()
 	ctx.wrapper = WyncWrapperStructs.WyncWrapperCtx.new()
 
@@ -32,82 +38,23 @@ static func _internal_setup_context(ctx: WyncCtx):
 	ctx.co_dummy = WyncCtx.CoDummyProps.new()
 	ctx.co_filter_c = WyncCtx.CoFilterClient.new()
 
+	WyncInit.init_ctx_common(ctx)
+	WyncInit.init_ctx_state_tracking(ctx)
+	WyncInit.init_ctx_events(ctx)
+	WyncInit.init_ctx_clientauth(ctx)
+	WyncInit.init_ctx_metrics(ctx)
+	WyncInit.init_ctx_spawn(ctx)
 
-	CoTicksUtils.init_co_ticks(ctx.co_ticks)
-	CoTicksUtils.init_co_prediction_data(ctx.co_pred)
+	WyncInit.init_ctx_throttling(ctx)
+	WyncInit.init_ctx_filter_s(ctx)
 
-	ctx.co_track.props.resize(ctx.MAX_PROPS)
-	ctx.co_track.prop_id_cursor = 0
-	ctx.co_track.active_prop_ids = []
+	WyncInit.init_ctx_ticks(ctx)
+	WyncInit.init_ctx_prediction_data(ctx)
+	WyncInit.init_ctx_lerp(ctx)
+	WyncInit.init_ctx_dummy(ctx)
+	WyncInit.init_ctx_filter_c(ctx)
 
-	var max_peers = ctx.common.max_peers
-	var max_channels = ctx.common.max_channels
-
-	ctx.co_events.peer_has_channel_has_events.resize(max_peers)
-	ctx.co_events.prop_id_by_peer_by_channel.resize(max_peers)
-	ctx.co_track.client_has_relative_prop_has_last_tick.resize(max_peers) # NOTE: index 0 not used
-	ctx.co_spawn.out_queue_spawn_events = FIFORingAny.new(1024)
-
-	ctx.co_throttling.queue_clients_entities_to_sync.resize(max_peers)
-	ctx.co_throttling.queue_entity_pairs_to_sync.resize(100)
-
-	ctx.co_throttling.clients_sees_entities.resize(max_peers)
-	ctx.co_throttling.clients_sees_new_entities.resize(max_peers)
-	ctx.co_throttling.clients_no_longer_sees_entities.resize(max_peers)
-	ctx.co_throttling.entities_synced_last_time.resize(max_peers)
-
-	ctx.co_throttling.clients_cached_unreliable_snapshots.resize(max_peers)
-	ctx.co_throttling.clients_cached_reliable_snapshots.resize(max_peers)
-
-	ctx.common.peer_latency_info.resize(max_peers)
-
-	for peer_i in range(max_peers):
-		ctx.co_events.peer_has_channel_has_events[peer_i] = []
-		ctx.co_events.peer_has_channel_has_events[peer_i].resize(max_channels)
-		for channel_i in range(max_channels):
-			ctx.co_events.peer_has_channel_has_events[peer_i][channel_i] = []
-		ctx.co_track.client_has_relative_prop_has_last_tick[peer_i] = {}
-
-		ctx.co_events.prop_id_by_peer_by_channel[peer_i] = []
-		ctx.co_events.prop_id_by_peer_by_channel[peer_i].resize(max_channels)
-		for channel_i in range(max_channels):
-			ctx.co_events.prop_id_by_peer_by_channel[peer_i][channel_i] = -1
-
-		#if peer_i != WyncCtx.SERVER_PEER_ID:
-		ctx.co_throttling.queue_clients_entities_to_sync[peer_i] = FIFORing.new()
-		ctx.co_throttling.queue_clients_entities_to_sync[peer_i].init(128) # TODO: Make this user defined
-		ctx.co_throttling.clients_sees_entities[peer_i] = {}
-		ctx.co_throttling.clients_sees_new_entities[peer_i] = {}
-		ctx.co_throttling.clients_no_longer_sees_entities[peer_i] = {}
-		ctx.co_throttling.entities_synced_last_time[peer_i] = {}
-
-		var latency_info = WyncCtx.PeerLatencyInfo.new()
-		latency_info.latency_buffer.resize(WyncCtx.LATENCY_BUFFER_SIZE)
-		ctx.common.peer_latency_info[peer_i] = latency_info
-
-		ctx.co_throttling.clients_cached_reliable_snapshots[peer_i] = [] as Array[WyncPktSnap.SnapProp]
-		ctx.co_throttling.clients_cached_unreliable_snapshots[peer_i] = [] as Array[WyncPktSnap.SnapProp]
-	
-	ctx.co_pred.tick_action_history = RingBuffer.new(ctx.co_pred.tick_action_history_size, {})
-	for i in range(ctx.co_pred.tick_action_history_size):
-		ctx.co_pred.tick_action_history.insert_at(i, {} as Dictionary)
-	
-	ctx.common.client_has_info.resize(max_peers)
-
-	ctx.co_metrics.debug_packets_received.resize(WyncPacket.WYNC_PKT_AMOUNT)
-	for i in range(WyncPacket.WYNC_PKT_AMOUNT):
-		ctx.co_metrics.debug_packets_received[i] = [] as Array[int]
-		ctx.co_metrics.debug_packets_received[i].resize(20) # amount of co_track.props, also 0 is reserved for 'total'
-
-	ctx.co_metrics.debug_data_per_tick_sliding_window = RingBuffer.new(ctx.co_metrics.debug_data_per_tick_sliding_window_size, 0)
-
-	ctx.co_metrics.server_tick_rate_sliding_window = RingBuffer.new(ctx.SERVER_TICK_RATE_SLIDING_WINDOW_SIZE, 0)
-
-	ctx.co_metrics.low_priority_entity_update_rate_sliding_window = RingBuffer.new(ctx.co_metrics.low_priority_entity_update_rate_sliding_window_size, 0)
-
-	ctx.co_dummy.dummy_props = {}
-
-	ctx.co_lerp.max_lerp_factor_symmetric = 1.0
+	ctx.initialized = true
 
 
 ## Calls all the systems that produce packets to send whilst respecting the data limit

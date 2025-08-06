@@ -132,7 +132,7 @@ class CoCommon:
 	## General Settings
 	## --------------------------------------------------------
 	
-	var physic_ticks_per_second: int = 60
+	var physic_ticks_per_second: int # default 60
 
 	var was_any_prop_added_deleted: bool
 
@@ -152,7 +152,7 @@ class CoCommon:
 	## Peer Management
 	## --------------------------------------------------------
 	
-	var max_peers = 4
+	var max_peers # default 4
 	
 	# peer[0] = -1: it's reserved for the server
 	# List<wync_peer_id: int, nete_peer_id: int> # NOTE: Should be Ring
@@ -166,17 +166,17 @@ class CoCommon:
 	# Array<client_id: int, WyncClientInfo>
 	var client_has_info: Array
 	
-	var is_client: bool = false
+	var is_client: bool
 	
-	var my_peer_id: int = -1
-	var my_nete_peer_id: int = -1
+	var my_peer_id: int # default -1
+	var my_nete_peer_id: int # default -1
 	
 	## --------------------------------------------------------
 	## Client Only??
 	## --------------------------------------------------------
 	
-	var connected: bool = false
-	var prev_connected: bool = false
+	var connected: bool
+	var prev_connected: bool
 
 
 	## --------------------------------------------------------
@@ -184,19 +184,19 @@ class CoCommon:
 	## --------------------------------------------------------
 	
 	# it could be useful to have a different value for server cache
-	var max_amount_cache_events = 1000 
+	var max_amount_cache_events # default 1024
 	
-	var max_channels = 12
+	var max_channels # default 8
 	# set to 1 to see if it's working alright 
-	var max_prop_relative_sync_history_ticks = 20 
+	var max_prop_relative_sync_history_ticks # default 20 
 	# almost two seconds TODO: separate variables per client/server
-	var max_age_user_events_for_consumption = 120 
+	var max_age_user_events_for_consumption # default 120 
 
 
 class CoStateTrackingCommon:
 
 	# how many common.ticks in the past to keep state cache for a regular prop
-	var REGULAR_PROP_CACHED_STATE_AMOUNT = 8
+	var REGULAR_PROP_CACHED_STATE_AMOUNT # default 8
 	
 	# Map<wync_entity_id: int, unused_bool: bool>
 	var tracked_entities: Dictionary[int, bool]
@@ -261,7 +261,7 @@ class CoDummyProps:
 	var dummy_props: Dictionary
 	
 	## Stat
-	var stat_lost_dummy_props: int = 0
+	var stat_lost_dummy_props: int # default 0
 
 
 class CoFilterServer:
@@ -449,26 +449,20 @@ class CoPredictionData:
 	## --------------------------------------------------------
 	
 	## target_time -> curr_time + tick_offset * fixed_step
-	var tick_offset: int = 0
-	var tick_offset_prev: int = 0
-	var tick_offset_desired: int = 0
-	var target_tick: int = 0 # co_ticks.common.ticks + tick_offset
+	var tick_offset: int
+	var tick_offset_prev: int
+	var tick_offset_desired: int
+	var target_tick: int # co_ticks.common.ticks + tick_offset
 	## fixed timestamp for current tick
 	## It's the point of reference for other common.ticks
-	var current_tick_timestamp: float = 0
+	var current_tick_timestamp: float
 	
 	# For calculating clock_offset_mean
 	# TODO: Move this to co_ticks
 	
 	var clock_offset_sliding_window: RingBuffer = null
-	var clock_offset_sliding_window_size: int = 16
+	var clock_offset_sliding_window_size: int # default 16
 	var clock_offset_mean: float
-	
-	# Interpolation data
-	# TODO: Move this elsewhere
-	
-	var lerp_ms: int = 50
-	var lerp_latency_ms: int = 0
 
 
 	## --------------------------------------------------------
@@ -478,14 +472,14 @@ class CoPredictionData:
 	## last tick received from the server
 	var last_tick_received: int
 	
-	var currently_on_predicted_tick: bool = false
-	var current_predicted_tick: int = 0 # only for debugging
+	var currently_on_predicted_tick: bool
+	var current_predicted_tick: int # only for debugging
 	
 	# tick markers for the prev prediction cycle
-	var first_tick_predicted: int = 1
-	var last_tick_predicted: int = 0
+	var first_tick_predicted: int
+	var last_tick_predicted: int
 	# markers for the current prediction cycle
-	var pred_intented_first_tick: int = 0
+	var pred_intented_first_tick: int
 	
 	# user facing variable, tells the user which entities are safe to predict
 	# this tick
@@ -495,7 +489,7 @@ class CoPredictionData:
 	## throttling
 	## * Limited by co_track.REGULAR_PROP_CACHED_STATE_AMOUNT
 	## TODO: rename
-	var max_prediction_tick_threeshold: int = 0
+	var max_prediction_tick_threeshold: int
 	
 	# to know if we should extrapolate from the beggining (last received tick)
 	# or continue (this implies not getting packets)
@@ -516,7 +510,7 @@ class CoPredictionData:
 	## E.g. shooting sound
 	
 	# This size should be the maximum amount of 'tick_offset' for prediction
-	var tick_action_history_size: int = 32
+	var tick_action_history_size: int # default 32
 	
 	# did action already ran on tick?
 	# Ring < predicted_tick: int, Set <action_id: String> >
@@ -556,6 +550,9 @@ class CoPredictionData:
 	
 
 class CoLerp:
+	
+	var lerp_ms: int # default 50
+	var lerp_latency_ms: int
 
 	# MAYBEDO: use ms as magnitud
 	var max_lerp_factor_symmetric: float
@@ -572,12 +569,12 @@ class CoMetrics:
 	var debug_packets_received: Array[Array]
 	
 	# mean of how much data is being transmitted each tick
-	var debug_data_per_tick_sliding_window_size: int = 8
+	var debug_data_per_tick_sliding_window_size: int # defaults to 8
 	var debug_data_per_tick_sliding_window: RingBuffer
-	var debug_data_per_tick_total_mean: float = 0
-	var debug_data_per_tick_sliding_window_mean: float = 0
-	var debug_data_per_tick_current: float = 0
-	var debug_ticks_sent: int = 0
+	var debug_data_per_tick_total_mean: float
+	var debug_data_per_tick_sliding_window_mean: float
+	var debug_data_per_tick_current: float
+	var debug_ticks_sent: int
 	
 	var debug_lerp_prev_curr_time: float
 	var debug_lerp_prev_target: float
@@ -587,20 +584,20 @@ class CoMetrics:
 	## it's described in common.ticks between receiving updates from the server
 	## So, 3 would mean it's 1 update every 4 common.ticks. 0 means updates
 	## every tick.
-	var server_tick_rate: float = 0
+	var server_tick_rate: float
 	var server_tick_rate_sliding_window: RingBuffer
-	var tick_last_packet_received_from_server: int = 0
+	var tick_last_packet_received_from_server: int
 
 	
 	## (client only)
 	## it's described in common.ticks between receiving updates from the server
 	## So, 3 would mean it's 1 update every 4 common.ticks. 0 means updates
 	## every tick.
-	var low_priority_entity_update_rate: float = 0
+	var low_priority_entity_update_rate: float
 	var low_priority_entity_update_rate_sliding_window: RingBuffer
-	var low_priority_entity_update_rate_sliding_window_size: int = 8
-	var low_priority_entity_tick_last_update: int = 0
-	var PROP_ID_PROB = -1
+	var low_priority_entity_update_rate_sliding_window_size: int
+	var low_priority_entity_tick_last_update: int
+	var PROP_ID_PROB: int
 
 
 var common: CoCommon = null
@@ -625,6 +622,10 @@ var co_lerp: CoLerp = null
 var co_dummy: CoDummyProps = null
 var co_filter_c: CoFilterClient = null
 
+## Misc
+
+var initialized: bool
+
 ## --------------------------------------------------------
 ## Server Settings
 ## --------------------------------------------------------
@@ -633,7 +634,7 @@ var co_filter_c: CoFilterClient = null
 ## Timewarp
 ## --------------------------------------------------------
 # must be a power of two, 64 ~= 1 second at 60 tps
-var max_tick_history_timewarp = 2**7
+var max_tick_history_timewarp: int
 
 ## --------------------------------------------------------
 ## Client Settings
