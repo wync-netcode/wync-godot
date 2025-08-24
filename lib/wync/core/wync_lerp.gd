@@ -126,13 +126,6 @@ static func wync_handle_packet_client_set_lerp_ms(ctx: WyncCtx, data: Variant, f
 	return OK
 
 
-static func prop_is_interpolated(ctx: WyncCtx, prop_id: int) -> bool:
-	var prop := WyncTrack.get_prop(ctx, prop_id)
-	if prop == null:
-		return false
-	return prop.lerp_enabled
-
-
 ## NOTE: Here we asume `prop.last_ticks_received` is sorted
 ## @returns tuple[int, int, int, int]. server tick left, server tick right, local tick left, local tick right
 static func find_closest_two_snapshots_from_prop(ctx: WyncCtx, target_time_ms: int, prop: WyncProp) -> Array:

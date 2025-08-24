@@ -173,6 +173,7 @@ static func wync_client_handle_pkt_inputs(ctx: WyncCtx, data: Variant) -> int:
 	return OK
 
 
+# Used to insert data more manually
 static func wync_insert_state_to_entity_prop (
 	ctx: WyncCtx, entity_id: int, prop_name_id: String, tick: int, state: Variant) -> int:
 
@@ -183,14 +184,14 @@ static func wync_insert_state_to_entity_prop (
 
 	# Note: The code below was copied from 'prop_save_confirmed_state'
 
+	prop.statebff.just_received_new_state = true
+
 	prop.statebff.last_ticks_received.push(tick)
 	prop.statebff.last_ticks_received.sort()
 
 	WyncStateStore.wync_prop_state_buffer_insert(ctx, prop, tick, state)
 
 	prop.statebff.state_id_to_local_tick.insert_at(prop.statebff.saved_states.head_pointer, ctx.common.ticks)
-
-	prop.statebff.just_received_new_state = true
 
 	return OK
 

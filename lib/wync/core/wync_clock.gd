@@ -215,7 +215,6 @@ static func wync_client_ask_for_clock(ctx: WyncCtx):
 		var packet_out = result[1] as WyncPacketOut
 		WyncPacketUtil.wync_try_to_queue_out_packet(ctx, packet_out, WyncCtx.UNRELIABLE, false)
 
-
 ## ==================================================
 ## Public
 ## ==================================================

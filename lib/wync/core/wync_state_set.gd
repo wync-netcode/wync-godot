@@ -65,7 +65,7 @@ static func reset_all_state_to_confirmed_tick_relative(
 		if last_confirmed_tick == -1:
 			continue
 
-		var state = WyncStateStore.wync_prop_state_buffer_get(prop, last_confirmed_tick as int)
+		var state = WyncStateStore.wync_prop_state_buffer_get(prop, last_confirmed_tick)
 		if state == null:
 			continue
 		

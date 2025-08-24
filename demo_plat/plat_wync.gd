@@ -447,8 +447,10 @@ static func update_what_the_clients_can_see(gs: Plat.GameState):
 			
 			# prob prop
 			# Note: Move this to peer setup
-			WyncThrottle.wync_client_now_can_see_entity(ctx, peer_id, WyncCtx.ENTITY_ID_PROB_FOR_ENTITY_UPDATE_DELAY_TICKS)
-			WyncTrack.wync_add_local_existing_entity(ctx, peer_id, WyncCtx.ENTITY_ID_PROB_FOR_ENTITY_UPDATE_DELAY_TICKS)
+			WyncThrottle.wync_client_now_can_see_entity(
+				ctx, peer_id, WyncCtx.ENTITY_ID_PROB_FOR_ENTITY_UPDATE_DELAY_TICKS)
+			WyncTrack.wync_add_local_existing_entity(
+				ctx, peer_id, WyncCtx.ENTITY_ID_PROB_FOR_ENTITY_UPDATE_DELAY_TICKS)
 
 
 static func find_out_what_player_i_control(gs: Plat.GameState):
@@ -460,7 +462,7 @@ static func find_out_what_player_i_control(gs: Plat.GameState):
 	var ctx = gs.wctx
 	for prop_id: int in ctx.co_clientauth.client_owns_prop[ctx.common.my_peer_id]:
 
-		var prop = WyncTrack.get_prop(ctx, prop_id)
+		var prop := WyncTrack.get_prop(ctx, prop_id)
 		if prop == null:
 			continue
 		var prop_name = prop.name_id
@@ -558,7 +560,7 @@ static func set_interpolated_state(gs: Plat.GameState):
 		if not WyncTrack.is_entity_tracked(ctx, actor_id):
 			continue
 		var prop = WyncTrack.entity_get_prop(ctx, actor_id, "position")
-		if prop == null || prop.co_lerp.interpolated_state == null:
+		if prop == null || prop.co_lerp == null || prop.co_lerp.interpolated_state == null:
 			continue
 		#Log.outc(gs.wctx, "deblerp | prop.interpolated_state %s" % [prop.interpolated_state])
 

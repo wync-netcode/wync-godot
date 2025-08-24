@@ -157,7 +157,7 @@ static func entity_get_prop(ctx: WyncCtx, entity_id: int, prop_name_id: StringNa
 	var entity_prop_ids = ctx.co_track.entity_has_props[entity_id] as Array
 	
 	for prop_id in entity_prop_ids:
-		var prop = ctx.co_track.props[prop_id] as WyncProp
+		var prop = get_prop(ctx, prop_id)
 		if prop.name_id == prop_name_id:
 			return prop
 	
@@ -203,10 +203,7 @@ static func is_entity_tracked(ctx: WyncCtx, entity_id: int) -> bool:
 
 
 static func prop_exists(ctx: WyncCtx, prop_id: int) -> bool:
-	if prop_id < 0 || prop_id >= ctx.MAX_PROPS:
-		return false
-	var prop = ctx.co_track.props[prop_id]
-	return prop is WyncProp
+	return get_prop(ctx, prop_id) != null
 
 
 ## @returns Optional<WyncProp>

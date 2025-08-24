@@ -195,15 +195,17 @@ static func wync_system_send_entities_to_despawn(ctx: WyncCtx, _commit: bool = t
 		var entity_amount = 0
 
 		for entity_id: int in ctx.co_spawn.despawned_entity_ids:
-			if current_entities_set.has(entity_id):
-				entity_id_list.append(entity_id)
-				entity_amount += 1
+			if not current_entities_set.has(entity_id):
+				continue
 
-				# ATTENTION: Removing entity here
-				current_entities_set.erase(entity_id)
+			entity_id_list.append(entity_id)
+			entity_amount += 1
 
-				Log.outc(ctx, "I: spawn, confirmed: client %s no longer sees entity %s" % [
-					client_id, entity_id])
+			# ATTENTION: Removing entity here
+			current_entities_set.erase(entity_id)
+
+			Log.outc(ctx, "I: spawn, confirmed: client %s no longer sees entity %s" % [
+				client_id, entity_id])
 
 		if entity_amount == 0:
 			continue

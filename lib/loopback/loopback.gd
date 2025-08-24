@@ -5,8 +5,8 @@ class_name Loopback
 class Context:
 	var peers: Array[IOPeer]  
 	var packets: Array[Packet] # flying packets
-	# Array<peer_from: int, Array<peer_to: int, Array<[0] last_number_sent: int [1] last_number_created> >
-	# Array[Array[int]]
+	# Arr<peer_from: int, Arr<peer_to: int, Arr<[0] last_number_sent: int [1] last_number_created> >
+	# Arr[Arr[int]]
 	var last_pkt_number_sent_from_peer_to_peer: Array[Array] 
 	var random_generator = RandomNumberGenerator.new()
 

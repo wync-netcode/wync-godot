@@ -322,9 +322,6 @@ static func system_update_delta_base_state_tick(ctx: WyncCtx) -> void:
 static func wync_client_send_inputs (ctx: WyncCtx):
 
 	assert(ctx.common.connected)
-
-	var co_predict_data = ctx.co_pred
-	var tick_pred = co_predict_data.target_tick
 	
 	# reset events_id to sync
 	var event_set = ctx.co_throttling.peers_events_to_sync[WyncCtx.SERVER_PEER_ID] as Dictionary
@@ -338,7 +335,7 @@ static func wync_client_send_inputs (ctx: WyncCtx):
 
 		var pkt_inputs = WyncPktInputs.new()
 
-		for i in range(tick_pred - WyncCtx.INPUT_AMOUNT_TO_SEND, tick_pred +1):
+		for i in range(ctx.co_pred.target_tick - WyncCtx.INPUT_AMOUNT_TO_SEND, ctx.co_pred.target_tick +1):
 			var input = WyncStateStore.wync_prop_state_buffer_get(input_prop, i)
 			if input == null:
 				# TODO: Implement input duplication on frame skip

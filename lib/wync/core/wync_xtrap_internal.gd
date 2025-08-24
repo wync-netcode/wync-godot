@@ -3,7 +3,7 @@ class_name WyncXtrapInternal
 
 
 # Note: further optimization could involve removing adding singular props from the list
-# TODO: rename, server doesn't do any xtrap related
+# TODO: move, rename, server doesn't do any xtrap related
 static func wync_xtrap_server_filter_prop_ids(ctx: WyncCtx):
 	if not ctx.common.was_any_prop_added_deleted:
 		return
@@ -34,15 +34,15 @@ static func wync_xtrap_server_filter_prop_ids(ctx: WyncCtx):
 			prop.prop_type == WyncCtx.PROP_TYPE.STATE):
 			ctx.co_filter_s.filtered_delta_prop_ids.append(prop_id)
 			# TODO: Check if it has a healthy _auxiliar prop_
+			continue
 
-		else:
-			if (prop.prop_type == WyncCtx.PROP_TYPE.STATE):
-				ctx.co_filter_s.filtered_regular_extractable_prop_ids.append(prop_id)
+		if (prop.prop_type == WyncCtx.PROP_TYPE.STATE):
+			ctx.co_filter_s.filtered_regular_extractable_prop_ids.append(prop_id)
 
-			if prop.timewarp_enabled:
-				ctx.co_filter_s.filtered_regular_timewarpable_prop_ids.append(prop_id)
-				if prop.lerp_enabled:
-					ctx.co_filter_s.filtered_regular_timewarpable_interpolable_prop_ids.append(prop_id)
+		if prop.timewarp_enabled:
+			ctx.co_filter_s.filtered_regular_timewarpable_prop_ids.append(prop_id)
+			if prop.lerp_enabled:
+				ctx.co_filter_s.filtered_regular_timewarpable_interpolable_prop_ids.append(prop_id)
 
 
 static func wync_xtrap_client_filter_prop_ids(ctx: WyncCtx):
@@ -67,10 +67,11 @@ static func wync_xtrap_client_filter_prop_ids(ctx: WyncCtx):
 		var prop := WyncTrack.get_prop(ctx, prop_id)
 		if prop == null:
 			continue
-		if prop.prop_type != WyncCtx.PROP_TYPE.STATE:
-			ctx.co_filter_c.type_input_event__owned_prop_ids.append(prop_id)
-			if WyncXtrap.prop_is_predicted(ctx, prop_id):
-				ctx.co_filter_c.type_input_event__predicted_owned_prop_ids.append(prop_id)
+		if prop.prop_type == WyncCtx.PROP_TYPE.STATE:
+			continue
+		ctx.co_filter_c.type_input_event__owned_prop_ids.append(prop_id)
+		if WyncXtrap.prop_is_predicted(ctx, prop_id):
+			ctx.co_filter_c.type_input_event__predicted_owned_prop_ids.append(prop_id)
 
 	for prop_id in ctx.co_track.active_prop_ids:
 		var prop := WyncTrack.get_prop_unsafe(ctx, prop_id)

@@ -152,6 +152,19 @@ class Rocket:
 	var time_to_live_ms: int
 
 
+class RocketSpawnData: # This represents the position
+	var tick: int
+	var value1: Vector2
+	var value2: Vector2
+
+	func duplicate() -> RocketSpawnData:
+		var i = RocketSpawnData.new()
+		i.tick = tick
+		i.value1 = value1
+		i.value2 = value2
+		return i
+
+
 class GameState:
 	# game world
 	var actors: Array[Actor]   # Array[Actor*]
@@ -203,19 +216,6 @@ class Client:
 	var state: Client.STATE = Client.STATE.DISCONNECTED
 	var identifier: int = -1
 	var server_peer: int = -1  # key to actual peer, represents the connection stub
-
-
-class RocketSpawnData: # This represents the position
-	var tick: int
-	var value1: Vector2
-	var value2: Vector2
-
-	func duplicate() -> RocketSpawnData:
-		var i = RocketSpawnData.new()
-		i.tick = tick
-		i.value1 = value1
-		i.value2 = value2
-		return i
 
 
 # Events

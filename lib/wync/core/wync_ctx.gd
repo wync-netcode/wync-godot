@@ -517,36 +517,6 @@ class CoPredictionData:
 	# RingBuffer < tick: int, Dictionary <action_id: String, unused_bool: bool> >
 	# RingBuffer [ Dictionary ]
 	var tick_action_history: RingBuffer = null
-
-
-	## --------------------------------------------------------
-	## Predicted Clock / Timing
-	## --------------------------------------------------------
-
-	var server_ticks: int
-
-	## Strategy for getting a stable server_tick_offset value:
-	## We have a list of of common values and their count
-	## value | percentage
-	## -199  | 212
-	## -201  | 98
-	## -202  | 13
-	## Then we just pick the most common one, if we encounter
-	## a new value just replace the one with less count. Also, there shouldn't
-	## be fight between two adyacent values (e.g. -199 & -200) because the
-	## code for picking a value prevents fluctuation of one unit
-
-	## Strategy for more accurate stable latency calculation.
-	## TODO: Since the main use of this stable latency is to convert this time
-	## into the equivalente common.ticks, then better to constantly update stable 
-	## latency and use the previous strategy to slowly update the tick number.
-	## Trying to have the tick be always bigger (ceil).
-	## TLDR: stabilize tick amount instead of latency.
-	
-	## List<Tuple<int, int>>
-	## Array[Array[Variant]]
-	var server_tick_offset_collection: Array[Array]
-	var server_tick_offset: int
 	
 
 class CoLerp:

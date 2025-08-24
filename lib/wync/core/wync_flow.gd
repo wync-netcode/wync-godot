@@ -148,14 +148,15 @@ static func wync_feed_packet(ctx: WyncCtx, wync_pkt: WyncPacket, from_nete_peer_
 
 # Setup functions
 # ================================================================
+# TODO: Modularize this, make different versions for server/client
 
 static func server_setup(ctx: WyncCtx) -> int:
 	# peer id 0 reserved for server
 	ctx.common.is_client = false
 	ctx.common.my_peer_id = 0
+	ctx.common.connected = true
 	ctx.common.peers.resize(1)
 	ctx.common.peers[ctx.common.my_peer_id] = -1
-	ctx.common.connected = true
 
 	# setup event caching
 	ctx.co_events.events_hash_to_id.init(ctx.common.max_amount_cache_events)
