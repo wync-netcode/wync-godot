@@ -11,26 +11,18 @@ config_version=5
 [application]
 
 config/name="combies-ecs"
-run/main_scene="res://rooms/lab2/lab2.tscn"
-config/features=PackedStringArray("4.3", "GL Compatibility")
-run/max_fps=80
+run/main_scene="uid://40h8mrqmmmcf"
+config/features=PackedStringArray("4.4", "GL Compatibility")
 config/icon="res://icon.svg"
-
-[autoload]
-
-Logger="*res://addons/gs_logger/logger.gd"
-ECS="*res://addons/gs_ecs/ecs.gd"
-ECSRootManagerSingleton="*res://src/utils/ecs_root_manager.gd"
 
 [display]
 
 window/size/viewport_width=950
 window/size/viewport_height=640
-window/vsync/vsync_mode=0
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/gs_ecs/plugin.cfg", "res://addons/gs_logger/plugin.cfg")
+enabled=PackedStringArray()
 
 [input]
 
@@ -62,6 +54,11 @@ p1_mouse1={
 p1_mouse2={
 "deadzone": 0.5,
 "events": [Object(InputEventMouseButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"button_mask":2,"position":Vector2(138, 16),"global_position":Vector2(146, 56),"factor":1.0,"button_index":2,"canceled":false,"pressed":true,"double_click":false,"script":null)
+]
+}
+p1_mouse3={
+"deadzone": 0.2,
+"events": [Object(InputEventMouseButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"button_mask":4,"position":Vector2(82, 6),"global_position":Vector2(89, 43),"factor":1.0,"button_index":3,"canceled":false,"pressed":true,"double_click":false,"script":null)
 ]
 }
 p1_reload={
@@ -99,6 +96,21 @@ p1_weapon5={
 "events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":53,"key_label":0,"unicode":53,"location":0,"echo":false,"script":null)
 ]
 }
+key_debug_1={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":49,"key_label":0,"unicode":49,"location":0,"echo":false,"script":null)
+]
+}
+key_debug_2={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":50,"key_label":0,"unicode":50,"location":0,"echo":false,"script":null)
+]
+}
+key_debug_3={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":51,"key_label":0,"unicode":51,"location":0,"echo":false,"script":null)
+]
+}
 
 [layer_names]
 
@@ -110,13 +122,3 @@ limits/debugger/max_chars_per_second=9999999
 limits/debugger/max_queued_messages=9999999
 limits/debugger/max_errors_per_second=9999999
 limits/debugger/max_warnings_per_second=9999999
-
-[physics]
-
-common/physics_ticks_per_second=10
-2d/physics_engine="Rapier2D"
-
-[rendering]
-
-renderer/rendering_method="gl_compatibility"
-renderer/rendering_method.mobile="gl_compatibility"

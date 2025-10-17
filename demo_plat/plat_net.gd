@@ -1,0 +1,152 @@
+class_name PlatNet
+
+
+static func initialize_net_state(gs: Plat.GameState, is_client: bool):
+	gs.net = Plat.NetState.new()
+	gs.net.io_peer = Loopback.IOPeer.new()
+	gs.net.is_client = is_client
+
+	if is_client:
+		gs.net.client = Plat.Client.new()
+		gs.net.client.identifier = -1
+		gs.net.client.server_peer = -1
+		gs.net.client.state = Plat.Client.STATE.DISCONNECTED
+
+		# DEBUG cases
+		# latency, latency_std_dev, loss%, duplicate%
+
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 100, 70, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 200, 50, 100)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 100, 50, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 100, 10, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 0, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 70, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 50, 30, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 10, 5, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 5, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 1, 0, 0, 0)
+
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 0, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 10, 0)
+		#Loopback.setup_io_peer(gs.net.io_peer, 200, 0, 0, 100)
+		Loopback.setup_io_peer(gs.net.io_peer, 200, 10, 5, 10)
+
+	else:
+		gs.net.server = Plat.Server.new()
+		gs.net.server.peer_count = 0
+		gs.net.server.peers = []
+		Loopback.setup_io_peer(gs.net.io_peer, 1, 0, 0, 0)
+
+
+static func register_peer_myself(gs: Plat.GameState):
+	Loopback.register_io_peer(PlatGlobals.loopback_ctx, gs.net.io_peer)
+
+
+static func client_send_connection_request(gs: Plat.GameState):
+	var packet_data = NetePktJoinReq.new()
+	var user_packet = UserNetPacket.new()
+	user_packet.packet_type_id = Plat.NETE_PKT_ANY
+	user_packet.data = packet_data
+	# assuming server is peer 0
+	Loopback.queue_reliable_packet(PlatGlobals.loopback_ctx, gs.net.io_peer, 0, user_packet)
+
+
+static func client_handle_connection_request_response(gs: Plat.GameState, data: NetePktJoinRes, from_peer: int):
+	if not data.approved:
+		return
+
+	var client = gs.net.client
+	var io_peer = gs.net.io_peer
+	client.state = Plat.Client.STATE.CONNECTED
+	client.identifier = data.identifier
+	client.server_peer = from_peer
+
+	# fill in wync nete_peer_ids
+	# wync setup should be done once we've stablished connection
+	
+	WyncJoin.wync_set_my_nete_peer_id(gs.wctx, io_peer.peer_id)
+	WyncJoin.wync_set_server_nete_peer_id(gs.wctx, client.server_peer)
+	Log.outc(gs.wctx, "client_peer_id %s connected to server_peer_id %s" % [io_peer.peer_id, client.server_peer])
+
+
+static func server_handle_connection_request(gs: Plat.GameState, data: NetePktJoinReq, from_peer: int):
+	var server = gs.net.server
+	var client_peer_id = from_peer
+	var already_registered = false
+
+	# check if not already registered
+	
+	for peer: Plat.Server.Peer in server.peers:
+		if peer.peer_id == client_peer_id:
+			already_registered = true
+	
+	if already_registered:
+		Log.outc(gs.wctx, "Client %s already registered" % client_peer_id)
+		return
+
+	# register client on server
+
+	var server_peer = Plat.Server.Peer.new()
+	server_peer.identifier = client_peer_id
+	server_peer.peer_id = client_peer_id
+
+	server.peers.append(server_peer)
+	server.peer_count += 1
+	
+	# send confirmation
+	
+	var packet_data = NetePktJoinRes.new()
+	packet_data.approved = true
+	packet_data.identifier = server_peer.identifier
+
+	var user_packet = UserNetPacket.new()
+	user_packet.packet_type_id = Plat.NETE_PKT_ANY
+	user_packet.data = packet_data
+
+	Loopback.queue_reliable_packet(PlatGlobals.loopback_ctx, gs.net.io_peer, server_peer.peer_id, user_packet)
+
+
+static func consume_loopback_packets(gs: Plat.GameState):
+	var is_client = gs.net.is_client
+	var is_server = not gs.net.is_client
+	var io_peer = gs.net.io_peer
+
+	#for k in range(io_peer.in_packets.size()-1, -1, -1): # for testing with reverse order
+	for k in range(io_peer.in_packets.size()):
+		var pkt = io_peer.in_packets[k] as Loopback.Packet
+		var user_pkt = pkt.data as UserNetPacket
+		var data = user_pkt.data
+
+		if user_pkt.packet_type_id == Plat.NETE_PKT_WYNC_PKT:
+			if data is WyncPacket:
+				WyncFlow.wync_feed_packet(gs.wctx, data, pkt.from_peer)
+		elif data is NetePktJoinReq:
+			if is_server: server_handle_connection_request(gs, data, pkt.from_peer)
+		elif data is NetePktJoinRes:
+			if is_client: client_handle_connection_request_response(gs, data, pkt.from_peer)
+			
+	io_peer.in_packets.clear()
+
+
+static func queue_wync_packets(gs: Plat.GameState):
+	# queue packets for delivery
+	var io_peer = gs.net.io_peer
+
+	for pkt: WyncPacketOut in gs.wctx.common.out_reliable_packets:
+		
+		var user_packet = UserNetPacket.new()
+		user_packet.packet_type_id = Plat.NETE_PKT_WYNC_PKT
+		user_packet.data = pkt.data 
+		Loopback.queue_reliable_packet(PlatGlobals.loopback_ctx, io_peer, pkt.to_nete_peer_id, user_packet)
+
+	for pkt: WyncPacketOut in gs.wctx.common.out_unreliable_packets:
+		
+		var user_packet = UserNetPacket.new()
+		user_packet.packet_type_id = Plat.NETE_PKT_WYNC_PKT
+		user_packet.data = pkt.data 
+		Loopback.queue_unreliable_packet(PlatGlobals.loopback_ctx, io_peer, pkt.to_nete_peer_id, user_packet)
+
+	# clear & flush
+	gs.wctx.common.out_reliable_packets.clear()
+	gs.wctx.common.out_unreliable_packets.clear()
+	Loopback.system_flush(PlatGlobals.loopback_ctx)
